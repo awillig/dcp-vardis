@@ -19,7 +19,7 @@
 #pragma once
 
 #include <inet/linklayer/common/MacAddress.h>
-#include <dcpsim/common/TransmissibleType.h>
+#include <dcp/common/transmissible_type.h>
 #include <dcpsim/common/DcpTypesGlobals.h>
 
 using namespace omnetpp;

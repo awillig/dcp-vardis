@@ -21,8 +21,8 @@
 #include <limits>
 #include <inet/linklayer/common/MacAddress.h>
 #include <dcp/common/memblock.h>
+#include <dcp/common/transmissible_type.h>
 #include <dcpsim/common/DcpTypesGlobals.h>
-#include <dcpsim/common/TransmissibleType.h>
 
 // -----------------------------------------
 
@@ -90,7 +90,7 @@ class VarValueT : public MemBlock, public TransmissibleType<sizeof(VarLenT)> {
         length = area.deserialize_byte ();
         if (length > 0)
         {
-            if (data) throw SerializationException ("VarValueT::deserialize: already contains data");
+	  if (data) throw DisassemblyAreaException ("VarValueT::deserialize", "already contains data");
 
             data = new byte [length];
             area.deserialize_byte_block (length, data);
