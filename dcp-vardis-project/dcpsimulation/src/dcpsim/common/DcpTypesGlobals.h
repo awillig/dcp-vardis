@@ -25,9 +25,10 @@
 #include <omnetpp.h>
 #include <inet/linklayer/common/MacAddress.h>
 #include <inet/common/Protocol.h>
+#include <dcp/common/exceptions.h>
 #include <dcp/common/foundation_types.h>
 #include <dcp/common/memblock.h>
-#include <dcpsim/common/TransmissibleType.h>
+#include <dcp/common/transmissible_type.h>
 
 
 using namespace omnetpp;
@@ -140,7 +141,7 @@ public:
         length = area.deserialize_byte ();
         if (length > 0)
         {
-            if (data) throw SerializationException ("StringT::deserialize: already contains data");
+	  if (data) throw DisassemblyAreaException ("StringT::deserialize", "already contains data");
             data = new byte [length];
             area.deserialize_byte_block (length, data);
         }
