@@ -70,9 +70,9 @@ namespace dcp::vardis {
 
 
     /**
-     * @brief Indicates whether the owner of current object is server of not.
+     * @brief Indicates whether the owner of current object is creator or not.
      *
-     * The server is responsible for allocating and de-allocating the
+     * The creator is responsible for allocating and de-allocating the
      * shared memory segment.
      */
     bool                 isCreator  = false;
