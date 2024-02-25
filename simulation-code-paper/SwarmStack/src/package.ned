@@ -1,0 +1,3 @@
+package swarmstack;
+
+@license(LGPL);
