@@ -1,38 +1,14 @@
-.PHONY : spec
-spec:
-	@-rm complete-spec.html
-	pandoc frontmatter.md \
-	dcp-version-contributors.md \
-	dcp-changelog.md \
-	dcp-context.md \
-	dcp-datatypes.md \
-	dcp-architecture.md \
-	dcp-bp.md \
-	dcp-srp.md \
-	dcp-vardis.md \
-	dcp-issues.md \
-	--toc --number-sections --toc-depth=3 -s -o complete-spec.html
 
+all : dcpvardis-v1-spec.html dcpvardis-v1-spec.pdf
 
-.PHONY : specpdf
-specpdf:
-	@-rm complete-spec.pdf
-	pandoc frontmatter.md \
-	dcp-version-contributors.md \
-	dcp-changelog.md \
-	dcp-context.md \
-	dcp-datatypes.md \
-	dcp-architecture.md \
-	dcp-bp.md \
-	dcp-srp.md \
-	dcp-vardis.md \
-	dcp-issues.md \
-	--toc --number-sections --toc-depth=3 -s -o complete-spec.pdf
+MDFILES = frontmatter.md dcp-version-contributors.md dcp-context.md dcp-datatypes.md dcp-architecture.md dcp-bp.md dcp-srp.md dcp-vardis.md dcp-issues.md
 
-.PHONY : pspec
-pspec:
-	@-rm complete-spec.html
-	pandoc frontmatter.md \
-	dcp-bp.md \
-	dcp-vardis.md \
-	--toc --number-sections --toc-depth=3 -s -o complete-spec.html
+TOCOPTS = --toc --toc-depth=3
+
+dcpvardis-v1-spec.html : $(MDFILES)
+	@-rm $@
+	pandoc $(MDFILES) $(TOCOPTS) --number-sections -s -t html -o $@
+
+dcpvardis-v1-spec.pdf : $(MDFILES)
+	@-rm $@
+	pandoc $(MDFILES) $(TOCOPTS) --number-sections -s -t pdf -o $@
