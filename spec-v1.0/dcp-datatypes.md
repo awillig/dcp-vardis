@@ -22,7 +22,7 @@ DCP introduces its own data types, variables and field names.
   `String`. For the remainder of the name we often adopt the camel
   case convention.
 
-- For data types that will be included in packets (referred do as
+- For data types that will be included in packets (referred to as
   **transmissible data types**) we will usually indicate their width
   (as a number of bits) and, where relevant, their precise
   representation. For data types not to be included in packets
@@ -70,6 +70,10 @@ order.
 
 - When a human-readable string is to be transmitted, then the data
   type `TString` is used, which refers to a zero-terminated string.
+
+When implementations choose representations for any of the
+transmissible data types that are longer than eight bit, these will
+generally adopt network byte order (i.e. big endian).
 
 
 ## Queues and Lists {#sec-queues-lists}
@@ -126,12 +130,12 @@ The `List` data type generally supports the following operations:
 
 - We will specify interfaces offered by protocols through generic
   service primitives, i.e. for a particular service `S` there might be
-  a `request`, a `response` or an `indication` primitive. We do not
+  a `request`, a `confirm` or an `indication` primitive. We do not
   prescribe the precise mechanism through which service primitives are
   being exchanged, this is implementation-dependent. However, when
   describing the processing of a `S.request` primitive for a service
   `S`, we will frequently use the keyword `return`, followed by some
   status code. This indicates that processing of the `S.request`
-  primitive stops and that a `S.response` primitive carrying the
+  primitive stops and that a `S.confirm` primitive carrying the
   indicated status code shall be returned to the entity generating the
   `S.request` primitive.

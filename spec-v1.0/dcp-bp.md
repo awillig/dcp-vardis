@@ -45,7 +45,8 @@ at least for some client protocols.
   client protocols for transmission are being buffered in the BP:
     - `BP_QMODE_QUEUE` means that payloads enter a first-in-first-out
       queue of indefinite length. Any payload is transmitted in a
-      beacon only once, then dropped from the queue.
+      beacon only once, then dropped from the queue. A beacon can
+      contain only one payload from the queue.
 	- `BP_QMODE_ONCE` means that the BP places client payloads handed
 	  down from client protocols into an internal buffer holding at
 	  most one payload. When a new payload arrives before the buffer
@@ -94,6 +95,29 @@ at least for some client protocols.
       payload.
 	- `length` of type `BPLength` contains the length of the payload
 	  as a number of bytes.
+
+- The transmissible data type `BPHeader` is the header for a BP packet
+  including one or more payload blocks. It is a record with the
+  following fields:
+    - `magicNo` is an unsigned 16-bit value. It has to be set to
+      `0x497E`.
+	- `senderId` is of type `NodeIdentifier` and contains the node
+      identifier of the node sending the beacon.
+    - `version` is an unsigned 8-bit value containing the version
+      number of the beaconing protocol being used. It has to be set to
+      `0x01` (corresponding to Version 1 of the DCP protocol stack
+      described in this specification).
+	- `numPayloads` is an unsigned 8-bit value specifying the number
+      of BP payload blocks contained in the remaining BP packet. Each
+      payload block includes a `BPPayloadBlockHeader` followed by a
+      block of bytes specific for the corresponding BP client
+      protocol.
+	- `seqno` is an unsigned 32-bit value. A BP instance maintains a
+      corresponding local unsigned 32-bit variable `bpSequenceNumber`
+      that is initialized to zero and incremented before each
+      construction of a new beacon. The updated value is included in
+      the `BPHeader`. This allows receiving nodes to estimate beacon
+      loss rates towards the sending node.
 
 
 ### Client Protocol List
@@ -215,7 +239,7 @@ The service user invokes this service by using the
 parameters.
 
 After receiving the `BP-ListRegisteredProtocols.request` primitive,
-the BP performs returns a `BP-ListRegisteredProtocols.response`
+the BP performs returns a `BP-ListRegisteredProtocols.confirm`
 primitive, which carries as a parameter the current value of the
 `currentClientProtocols` variable (as registered while processing the
 `BP-RegisterProtocol.request` primitive).
@@ -323,6 +347,10 @@ parameters:
   payload, which is equal to the protocol identifier registered by the
   client protocol.
 
+- `nextBeaconGenerationEpoch` of type `TimeStamp` tells the client
+  protocol when the BP will prepare the _next_ beacon, so that the
+  client protocol can prepare a new payload in time.
+
 
 ### Querying Number of Buffered Payloads
 
@@ -383,11 +411,11 @@ are embedded into the bearer payload) as client payloads or sometimes
 simply as payloads. 
 
 
-The bearer payload is made up of one or more **payload blocks**
-following each other without gap. A payload block wraps a client
-payload, it consists of a value of type `BPPayloadBlockHeader`,
-immediately followed by the actual client payload as a contiguous
-sequence of bytes.
+The bearer payload is made up of a beacon protocol header of type
+`BPHeader` and one or more **payload blocks** following each other
+without gap. A payload block wraps a client payload, it consists of a
+value of type `BPPayloadBlockHeader`, immediately followed by the
+actual client payload as a contiguous sequence of bytes.
 
 
 The combined length of all payload blocks included in the bearer
@@ -402,7 +430,9 @@ beacon, then no beacon is being generated.
 
 During initialization of the BP the list of currently registered
 client protocols (variable `currentClientProtocols`) is initialized as
-the empty list.
+the empty list, and the 32-bit variable `bpSequenceNumber` is
+initialized to zero.
+
 
 Furthermore, BP retrieves from the UWB the maximum allowed packet size
 and stores this in the global variable `maxPacketSize`. The value of
@@ -431,8 +461,8 @@ TransmitPayload](#bp-service-bp-transmit-payload)) in an unspecified,
 implementation-dependent order. It is also left to the implementation
 to decide how many and which payload blocks (see Section [Packet
 Format](#bp-packet-format)) are being added into a bearer payload, as
-long as the combined length of payload blocks does not exceed the
-value of the `BP_MAXIMUM_PACKET_SIZE` parameter.
+long as the combined length of payload blocks and the `BPHeader` does
+not exceed the value of the `BP_MAXIMUM_PACKET_SIZE` parameter.
 
 Let `clientProtocol` of type `BPClientProtocol` be a client protocol
 entry in `currentClientProtocols` currently under consideration for
@@ -454,34 +484,63 @@ adding a payload to the bearer payload. The following rules apply:
   equal to `BP_QMODE_REPEAT`.
 - If `clientProtocol.queueMode` equals `BP_QMODE_QUEUE`, a payload can
   only be added if `clientProtocol.queue.qIsEmpty()` returns `false`
-  and the `length` field of the head-of-queue element of type `BPBufferPayload`
-  (obtained through `clientProtocol.queue.qPeek()`) indicates that the
-  payload length is small enough so that adding the resulting payload
-  block to the bearer payload does not make the bearer payload exceed
-  the maximum bearer payload length (`BP_MAXIMUM_PACKET_SIZE`). When
-  the BP indeed does add a payload from the queue, then it calls
-  `clientProtocol.queue.qTake()` to remove this head-of-line payload
-  from the queue.
+  and the `length` field of the head-of-queue element of type
+  `BPBufferPayload` (obtained through `clientProtocol.queue.qPeek()`)
+  indicates that the payload length is small enough so that adding the
+  resulting payload block to the bearer payload does not make the
+  bearer payload exceed the maximum bearer payload length
+  (`BP_MAXIMUM_PACKET_SIZE`). When the BP indeed does add a payload
+  from the queue, then it calls `clientProtocol.queue.qTake()` to
+  remove this head-of-line payload from the queue. No more than one
+  payload from the queue is added to the beacon.
 
 In any case, if a payload of a client protocol is being added to the
 bearer payload, it must inform the client protocol by sending a
 `BP-PayloadTransmitted.indication` service primitive (see [Service
 BP-PayloadTransmitted](#bp-service-payload-transmitted)), with the
 `protId` parameter being set to the value of the `protocolId` field of
-the variable `clientProtocol`.
+the variable `clientProtocol`. If no client protocol has a payload
+ready, then the BP does not prepare a beacon. 
+
+If no client payloads are being generated, then the BP will not send a
+beacon. Otherwise, the bearer payload will be constructed by first
+creating the `BPHeader` and then appending client protocol payloads as
+long as space is available and the number of appended client protocol
+payloads does not exceed 255. The `BPHeader` is generated as follows:
+- First increment the variable `bpSequenceNumber` modulo 2**32.
+- Set the `magicNo` field to `0x497E`.
+- Set the `senderId` field to the node identifier of the sending node.
+- Set the `version` field to `0x01`.
+- Set the `numPayloads` field to the number of appended client
+  protocol payloads.
+- Set the `seqno` field to the current value of `bpSequenceNumber`.
 
 
 
 ## Receive Path
 
 When the UWB hands over the bearer payload of a received beacon to the
-BP, it parses the contained payload blocks sequentially. Recall that
-each payload block consists of a header of type `BPPayloadBlockHeader`
-followed by the actual payload as a sequence of bytes, without any gap
-(see Section [Packet Format](#bp-packet-format)). We initialize a
-variable `index` to zero, where generally `index` refers to the byte
-position in the bearer payload at which the next payload block
-starts. 
+BP, it first parses the `BPHeader` and then parses the contained
+payload blocks sequentially. When parsing the `BPHeader`, the
+following sanity checks are performed:
+- The `magicNo` field is equal to `0x497E`.
+- The `version` field is equal to `0x01`.
+- The `numPayloads` field is not zero.
+
+If any of these conditions is not satisfied, the received bearer
+payload is discarded without further processing. It is at the
+discretion of an implemention whether and how the `seqno` field of the
+received `BPHeader` is processed. Its main intention is to allow the
+receiver to estimate the beacon loss rate towards the sender of the
+received beacon.
+
+
+Recall that each payload block consists
+of a header of type `BPPayloadBlockHeader` followed by the actual
+payload as a sequence of bytes, without any gap (see Section [Packet
+Format](#bp-packet-format)). We initialize a variable `index` to zero,
+where generally `index` refers to the byte position in the bearer
+payload at which the next payload block starts.
 
 In the following, we refer to the payload block starting at index
 `index` as `pblock`, to its header as `pblock.header` (of type

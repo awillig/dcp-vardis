@@ -127,20 +127,23 @@ We start by defining some data types related to variables.
 
 The VarDis payload of a beacon packet is made up of one or more
 **information elements** (IE), which hence are transmissible data
-types. Each information element is a type-length-value triple as
-follows:
+types. Each information element consists of an `IEHeader`, followed by
+a list of records of the same type, which depends on the type of
+information element -- we refer to this list as the `IEList`. Each
+such record represents information about a variable with given
+`VarId`. Note that the individual records of an information element
+can have different lengths (e.g.\ `VarUpd` records for different
+variables).
 
+The `IEHeader` is a transmissible data type with the following two
+fields:
 - The field `ieType` (for information-element type) specifies the
   particular type of information element being considered.
-- The field `ieLen` (for information-element length) specifies the
-  length of the value part of the IE as a number of bytes.
-- The field `ieVal` (for information-element value) is an array of
-  bytes with a structure suitable for the given `ieType`. There are as
-  many bytes in the array as the `ieLen` field specifies.
+- The field `ieNumRecords` specifies the number of records in this
+  information element.
 
-The precise encoding of the `ieType` and `ieLen` fields is
-implementation-dependent, but it is suggested to ensure that these two
-fields in total use up either 8 or 16 bits.
+The encoding of the `ieType` and `ieNumRecords` fields is
+implementation-dependent.
 
 A VarDis payload transmitted in a beacon can contain at most one of
 each of the following types of information elements, as long as their
@@ -149,16 +152,12 @@ combined size fits within the allowed payload size (cf. parameter
 Parameters](#vardis-configurable-parameters)). 
 
 In the following we describe the key information elements used by
-VarDis. We leave out the computation of the `ieLen` field, which
-should not present any difficulties. In some cases the IE payload is a
-list of elements of another fixed-size data type `T`. In these cases the
-receiver should always check that the `ieLen` field has a value that
-is an integer multiple of `sizeof(T)`.
+VarDis.
 
 
 #### `IETYPE-SUMMARIES` (`ieType` = 1)
 
-The `ieVal` is a list of `VarSumm` records, where each `VarSumm`
+The `IEList` is a list of `VarSumm` records, where each `VarSumm`
 includes a variable identifier (of type `VarId`) and a sequence number
 (of type `VarSeq`), representing the latest sequence number received
 for that variable. A neighbour receiving this information element can
@@ -170,7 +169,7 @@ neighbour.
 
 #### `IETYPE-UPDATES` (`ieType` = 2)
 
-The `ieVal` is a list of `VarUpd` records. The transmitter includes
+The `IEList` is a list of `VarUpd` records. The transmitter includes
 the latest variable values and sequence numbers it has stored in its
 real-time database (but not necessarily for all the variables in the
 database). The intention is that the receiver will itself repeat that
@@ -184,7 +183,7 @@ it previously had stored for the same variable.
 
 #### `IETYPE-REQUEST-VARUPDATES` (`ieType` = 3)
 
-The `ieVal` consists of a list of pairs of type (`VarId`,
+The `IEList` consists of a list of pairs of type (`VarId`,
 `VarSeqno`), which can be represented by elements of type
 `VarSumm`. The intention is that the sending node requests any / all
 of its neighbours to send `VarUpd` records for the requested
@@ -197,7 +196,7 @@ included sequence number.
 
 #### `IETYPE-REQUEST-VARCREATES` (`ieType` = 4)
 
-The `ieVal` consists of a list of `VarId` values. The intention is
+The `IEList` consists of a list of `VarId` values. The intention is
 that the sending node requests any / all of its neighbours to send
 `VarCreate` records for each of the requested variables (each of which
 combines a `VarSpec` record and a `VarUpd` record), which they will
@@ -209,7 +208,7 @@ parameter of the corresponding variable specifications (of type
 
 #### `IETYPE-CREATE-VARIABLES` (`ieType` = 5)
 
-The `ieVal` consists of a list of `VarCreate` records, which
+The `IEList` consists of a list of `VarCreate` records, which
 themselves are pairs of variable specifications (`VarSpec`) and
 initial values and sequence numbers (`VarUpd`). The intention is that
 the sending node notifies the neighbour that new variables (together
@@ -221,7 +220,7 @@ the variable specification (`VarSpec`).
 
 #### `IETYPE-DELETE-VARIABLES` (`ieType` = 6)
 
-The `ieVal` is a list of `VarId` values. The intention is that the
+The `IEList` is a list of `VarId` values. The intention is that the
 sending node notifies the neighbour that the given variables are to be
 deleted from the real-time database, and for the neighbour to further
 repeat the `VarId` values in as many distinct future beacons as
@@ -305,14 +304,14 @@ The real-time database supports three main operations:
 
 
 
-### Queues
+### Queues {#vardis-definitions-queues}
 
 A beacon can contain only one instance of each type of information
 elements. To manipulate and specify the contents of the information
 elements in future beacons, for each `ieType` VarDis maintains a
 number of variables of type `Queue<VarId>` (see Section [Queues and
 Lists](#sec-queues-lists)). In addition to the standard operations on
-queues, in VarDis we make use of the following two additional
+queues, in VarDis we make use of the following three additional
 operations:
 
 - `qDropNonexistingDeleted()` drops all `VarId` values from the given
@@ -323,6 +322,10 @@ operations:
 - `qDropNonexisting()` drops all `VarId` values from the given queue
   for which `RTDB.lookup()` indicates that the corresponding variable
   does not exist in the real-time database.
+- `qDropDeleted()` drops all `VarId` values from the given queue
+  for which `RTDB.lookup()` indicates that the corresponding variable
+  exist in the real-time database but has its `toBeDeleted` flag set
+  to `true`.
 
 A VarDis entity maintains the following queues at runtime, all of type
 `Queue<VarId>`:
@@ -357,7 +360,7 @@ real-time database (RTDB), which is a collection of variables. The
 interaction between an application and the real-time database happens
 through the following pre-defined services. For each service we
 specify a request primitive, which the application uses to request a
-service, and a response primitive, through which the local VarDis
+service, and a confirm primitive, through which the local VarDis
 entity provides its response to the service request to the local
 application. We furthermore sketch how the VarDis entity processes a
 service request.
@@ -365,7 +368,7 @@ service request.
 Whenever an application submits a service request primitive, VarDis
 must check whether it is currently registered as a client protocol
 with BP. If not, then VarDis must reject the service request
-primitive, i.e. send back a response primitive with status code
+primitive, i.e. send back a confirm primitive with status code
 `VARDIS-STATUS-INACTIVE' to the application.
 
 
@@ -379,7 +382,7 @@ primitive. This primitive carries no further parameters. The intention
 is that the application is being provided with a list of `VarSpec`
 records for all variables currently in the RTDB.
 
-The VarDis entity responds with a `RTDB-DescribeDatabase.response`
+The VarDis entity responds with a `RTDB-DescribeDatabase.confirm`
 primitive. This primitive carries as data a list of the `VarSpec`
 records of all variables currently in the real-time database,
 including those that have their `toBeDeleted` flag set in their
@@ -396,7 +399,7 @@ variable does not exist.
 
 If the requested variable does not exist in the real-time database,
 then the VarDis entity responds with a
-`RTDB-DescribeVariable.response` primitive carrying the status code
+`RTDB-DescribeVariable.confirm` primitive carrying the status code
 `VARDIS-STATUS-VARIABLE-DOES-NOT-EXIST`. If the variable does exist,
 the VarDis entity responds with the same primitive, but now carrying
 the status code `VARDIS-STATUS-OK` and the `DBEntry` record for this
@@ -418,16 +421,13 @@ carries the following parameters:
   variable. Its identifier (`spec.varId`) must be unique, i.e. there
   should be no active variable with the same `VarId` value
   currently in the real-time database.
-- `descr` of type `TString`: a textual description of the variable,
-  giving a human user information about the meaning or representation
-  of a variable.
 - `length` of type `VarLen`: The length of the initial value to be
   written.
 - `value` of type byte array: The actual initial value, as a block of
   bytes. This has to be exactly as many bytes as given in the `length`
   parameter.
 
-The `RTDB-Create.response` primitive is returned after the VarDis
+The `RTDB-Create.confirm` primitive is returned after the VarDis
 entity has finished processing the request. As a parameter it only
 includes a status code.
 
@@ -437,7 +437,7 @@ steps:
 ~~~
 1.     If (RTDB.lookup(spec.varId) == true) then
           stop processing, return status code VARDIS_STATUS_VARIABLE_EXISTS
-2.     If (descr.length > (VARDISPAR_MAX_DESCRIPTION_LENGTH-1)) then
+2.     If (spec.descr.length > (VARDISPAR_MAX_DESCRIPTION_LENGTH-1)) then
           stop processing, return status code VARDIS_STATUS_VARIABLE_DESCRIPTION_TOO_LONG
 3.     If (length > VARDISPAR_MAX_VALUE_LENGTH) then
           stop processing, return status code VARDIS_STATUS_VALUE_TOO_LONG
@@ -492,7 +492,7 @@ To request deletion of a variable, an application uses the
 `VarId` value of the variable to be deleted, referred to as `varId`
 below.
 
-The `RTDB-Delete.response` primitive is returned after the VarDis
+The `RTDB-Delete.confirm` primitive is returned after the VarDis
 entity has finished processing the request. As a parameter it only
 carries a status code.
 
@@ -542,7 +542,7 @@ primitive, which carries three parameters:
   block of bytes. This has to be exactly as many bytes as given in
   the `length` parameter.
 
-The `RTDP-Update.response` primitive is returned after the VarDis
+The `RTDB-Update.confirm` primitive is returned after the VarDis
 entity has finished processing the request. As a parameter it only
 carries a status code.
 
@@ -567,9 +567,9 @@ steps:
 		   ent.countUpdate  = ent.spec.repCnt
 		   ent.tStamp       = current system time
 9.     RTDB.update(ent)
-10.    updateQ.qRemove(varId)
-11.    updateQ.qAppend(varId)
-12.    return status code VARDIS_STATUS_OK
+10.    if (not updateQ.contains(varId))
+        updateQ.qAppend(varId)
+11.    return status code VARDIS_STATUS_OK
 ~~~
 
 
@@ -594,7 +594,7 @@ stored in its local real-time database.
 The application issues the `RTDB-Read.request` primitive, which
 carries the `VarId` value of the variable as its only parameter.
 
-The `RTDB-Read.response` primitive is returned after the VarDis entity
+The `RTDB-Read.confirm` primitive is returned after the VarDis entity
 has finished processing the request. As a parameter it carries a
 status code and, if the status code is `VARDIS_STATUS_OK`, also the
 value of the variable (length field, data bytes) and the time stamp of
@@ -627,16 +627,13 @@ implementation needs to support. These are:
 
 - `VARDISPAR_MAX_VALUE_LENGTH` is the maximum allowable length of a
   variable value. Default value is 32. The value must be larger than
-  zero. A hard upper limit is given by the minimum of:
-    - the maximum value representable in the `VarLen` data type
-	- the maximum value representable in the `ieLen` component of any
-	  information element.
+  zero. A hard upper limit is given by the minimum of the maximum
+  value representable in the `VarLen` data type. 
   
 - `VARDISPAR_MAX_DESCRIPTION_LENGTH` is the maximum length of a
   textual variable description (of type `TString`) contained in a
   value of type `VarSpec`. Default value is 32. The value must be
-  larger than zero.   A hard upper limit is given by the maximum value
-  representable in the `ieLen` component of any information element.
+  larger than zero.
 
 - `VARDISPAR_MAX_REPETITIONS` gives the maximally allowed number of
   repetitions for a variable update, variable creation or variable
@@ -673,10 +670,7 @@ to be handed down for transmission to the underlying BP. The payload
 is composed by appending information elements until either no further
 elements are to be added, or the maximum allowed payload size
 (parameter `VARDISPAR_MAX_PAYLOAD_SIZE`, see Section [Configuruable
-Parameters](#vardis-configurable-parameters)) will be exceeded. As
-each information element contains information describing its length
-(its `ieLen` field), it suffices to simply store information elements
-successively without gaps.
+Parameters](#vardis-configurable-parameters)) will be exceeded.
 
 For each of the available types of information elements (see
 [Information Elements](#vardis-definitions-information-elements)) at
@@ -718,9 +712,24 @@ in the following order and under the following conditions:
 When none of these steps produces an information element, then VarDis
 will not generate a BP payload.
 
-We next describe the process of composing each of these types of
-information elements. It is assumed throughout that there is
-sufficient space for placing the respective information element.
+As described in Section [Information
+Elements](#vardis-definitions-information-elements), each such
+information element starts with an `IEHeader`, followed by a list of
+one or more records specific to the type of information element (the
+`IEList`). We next describe the process of composing each of these
+types of information elements. We make use of a pre-defined function
+`numberFittingRecords` which takes as parameters one of the
+pre-defined VarDis runtime queues (see Section
+[Queues](#vardis-definitions-queues)) and an indication of the type of
+records, and calculates how many records of the corresponding record
+type can still fit into the remaining BP payload (also accounting for
+the size of the `IEHeader`). In this calculation, when `Q` is the
+queue under consideration (which has entries of type `VarId`), each
+entry of `Q` is considered at most once (entries are considered in
+first-in-first-out order)), and the function `numberFittingRecords`
+knows how to calculate the size of a record for a given `VarId` (this
+size is calculated based on the current contents of the RTDB for the
+given `VarId`).
 
 
 ### Composing the `IETYPE-SUMMARIES` Element {#vardis-composing-ietype-summaries}
@@ -731,35 +740,34 @@ includes the following steps:
 ~~~
 1.     summaryQ.qDropNonexistingDeleted()
 2.     If (    (summaryQ.qIsEmpty()) 
-            || (no space to add one VarSumm)
+            || (no space to add IEHeader and one VarSumm)
 			|| (VARDISPAR_MAX_SUMMARIES == 0)) then
            stop processing, return empty IETYPE-SUMMARIES element
-3.     Let numSummaries = 0
-		   firstVarId   = summaryQ.qTake()
-4.     Add VarSumm for firstVarId to IETYPE-SUMMARIES element
-5.     summaryQ.qAppend (firstVarId)
-6.     While (    (summaryQ.qPeek() =/= firstVarId) 
-               && (numSummaries < VARDISPAR_MAX_SUMMARIES) 
-			   && (space available for one further VarSumm))
-           nextVarId = summaryQ.qPeek()
-           summaryQ.qTake()
-           summaryQ.qAppend(nextVarId)
-           numSummaries = numSummaries+1
-           Add VarSumm for nextVarId to IETYPE-SUMMARIES element
+3.     Let numRecordsToAdd = min(numberFittingRecords(summaryQ,VarSumm), VARDISPAR_MAX_SUMMARIES)
+           ieHdr : IEHeader
+4.     ieHdr.ieType        = IETYPE-SUMMARIES
+       ieHdr.ieNumRecords  = numRecordsToAdd
+5.     Add ieHdr to IETYPE-SUMMARIES element
+6.     for (i=0 ; i<numRecordsToAdd ; i++)
+           Let nextVarId = summaryQ.qPeek()
+		   summaryQ.qTake()
+		   summaryQ.qAppend(nextVarId)
+		   Add VarSumm for nextVarId to IETYPE-SUMMARIES element
 7.     return the IETYPE-SUMMARIES element
 ~~~
 
 
-The preceding procedure effectively adds summaries to the
-`IETYPE-SUMMARIES` element as long as the queue contains (existing)
-variables that haven't been added to the information element yet. We
-stop when we want to add the starting element again, when we have
-exhausted the maximum number of summaries (`VARDISPAR_MAX_SUMMARIES`)
-or when we run out of space. At the start, we remove those `VarId`
-values from `summaryQ` for which either the underlying variable does
-not exist in the real-time database or has been marked for
-deletion. But as long as a variable exists and is valid, summaries
-will be included in payloads.
+The preceding procedure adds an `IEHeader` and `VarSumm` records to
+the `IETYPE-SUMMARIES` element as long as:
+ - the number of added records does not exceed
+   `VARDISPAR_MAX_SUMMARIES`,
+ - the records fit into the remaining BP payload, and
+ - no record is added twice.
+ 
+A record to be added is taken from the head of `summaryQ` and then
+appended to it. At the start, we remove those `VarId` values from
+`summaryQ` for which either the underlying variable does not exist in
+the real-time database or has been marked for deletion.
 
 
 ### Composing the `IETYPE-CREATE-VARIABLES` Element
@@ -769,42 +777,35 @@ element includes the following steps:
 
 ~~~
 1.     createQ.qDropNonexistingDeleted()
-2.     If (    (createQ.qIsEmpty()) 
-            || (no space to add one VarCreate)) then
+2.     If (    (createQ.qIsEmpty())
+            || (no space to add IEHeader and first (head-of-createQ) VarCreate)) then
            stop processing, return empty IETYPE-CREATE-VARIABLES element
-3.     While (    (createQ.qIsEmpty() == false)
-               && ((createQ.qPeek()).countCreate == 1)
-			   && (enough space to add one VarCreate))
-		   Let firstVarId = createQ.qTake()
-               firstVar   = RTDB.lookup(firstVarId)
-		   Add VarCreate (off firstVar entry) to IETYPE-CREATE-VARIABLES element
-4.	   If (    (createQ.qIsEmpty() == true) 
-            || (no space to add one VarCreate)) then
-	       stop processing, return the constructed IETYPE-CREATE-VARIABLES element
-5.     Let firstVarId = createQ.qTake()
-           firstVar   = RTDB.lookup (firstVarId)
-6.     Decrement firstVar.countCreate
-7.     Add VarCreate (off firstVar entry) to IETYPE-CREATE-VARIABLES element
-8.     createQ.qAppend(firstVarId)
-9.     While (    (createQ.qIsEmpty() == false)
-			   && (createQ.qPeek() =/= firstVarId)
-			   && (enough space to add one VarCreate))
+3.     Let numRecordsToAdd = numberFittingRecords(createQ, VarCreate)
+           ieHdr : IEHeader
+4.     ieHdr.ieType        = IETYPE-CREATE-VARIABLES
+       ieHdr.ieNumRecords  = numRecordsToAdd
+5.     Add ieHdr to IETYPE-CREATE-VARIABLES element
+6.     for (i=0 ; i<numRecordsToAdd ; i++)
            Let nextVarId = createQ.qPeek()
 		       nextVar   = RTDB.lookup(nextVarId)
+   		   assert(nextVar.countCreate > 0)
 		   createQ.qTake()
-		   Add VarCreate (off nextVar entry) to IETYPE-CREATE-VARIABLES element
-           Decrement nextVar.countCreate
-		   if (nextVar.countCreate > 0) then
-		       createQ.qAppend(nextVarId)
-10.    Return the constructed IETYPE-CREATE-VARIABLES element
+		   decrement nextVar.countCreate
+		   Add VarCreate (off nextVar entry) to IETYPE-CREATE-VARIABLES
+           if (nextVar.countCreate > 0)
+		      createQ.qAppend(nextVarId)
+7.     Return the constructed IETYPE-CREATE-VARIABLES element
 ~~~
 
-The preceding procedure adds `VarCreate` records to the
-`IETYPE-CREATE-VARIABLES` information elements as long as there are
-elements available that have not already been added to this element
-and that are small enough to fit into the remaining space. The
-repetition counter for each element is decremented, and the element is
-appended again if it is still larger than zero.
+
+The preceding procedure adds an `IEHeader` and `VarCreate` records to the
+`IETYPE-CREATE-VARIABLES` information elements as long as:
+ - the records fit into the BP payload, and
+ - no record is added twice.
+
+The repetition counter for each variable is decremented, and the
+`VarId` is appended to `createQ` again if the repetition counter is
+still larger than zero.
 
 
 ### Composing the `IETYPE-UPDATES` Element
@@ -820,17 +821,43 @@ This follows almost exactly the same process as for the
 
 ### Composing the `IETYPE-DELETE-VARIABLES` Element
 
-This follows almost exactly the same process as for the
-`IETYPE-CREATE-VARIABLES` element, with the following substitutions:
+The process of composing the `IETYPE-DELETE-VARIABLES` information
+element includes the following steps:
 
-- Replace `createQ` by `deleteQ`
-- Replace `IETYPE-CREATE-VARIABLES` by `IETYPE-DELETE-VARIABLES`
-- Replace `countCreate` by `countDelete`
-- Replace `VarCreate` by `VarId`
-- Replace `qDropNonexistingDeleted()` by `qDropNonexisting()`
+~~~
+1.     deleteQ.qDropNonexisting()
+2.     If (    (deleteQ.qIsEmpty())
+            || (no space to add IEHeader and first (head-of-deleteQ) VarId)) then
+           stop processing, return empty IETYPE-DELETE-VARIABLES element
+3.     Let numRecordsToAdd = numberFittingRecords(deleteQ, VarId)
+           ieHdr : IEHeader
+4.     ieHdr.ieType        = IETYPE-DELETE-VARIABLES
+       ieHdr.ieNumRecords  = numRecordsToAdd
+5.     Add ieHdr to IETYPE-DELETE-VARIABLES element
+6.     for (i=0 ; i<numRecordsToAdd ; i++)
+           Let nextVarId = deleteQ.qPeek()
+		       nextVar   = RTDB.lookup(nextVarId)
+   		   assert(nextVar.countDelete > 0)
+		   deleteQ.qTake()
+		   decrement nextVar.countDelete
+		   Add nextVarId to IETYPE-DELETE-VARIABLES
+           if (nextVar.countDelete > 0)
+		      deleteQ.qAppend(nextVarId)
+		   else
+		      RTDB.remove(nextVarId)
+7.     Return the constructed IETYPE-DELETE-VARIABLES element
+~~~
 
-Furthermore, when `countDelete` counts down to zero, then the variable
-should be completely removed from the RTDB.
+The preceding procedure adds an `IEHeader` and `VarId` records to the
+`IETYPE-DELETE-VARIABLES` information elements as long as:
+ - the records fit into the BP payload, and
+ - no record is added twice.
+
+The repetition counter for each variable is decremented, and the
+`VarId` is appended to `deleteQ` again if the repetition counter is
+still larger than zero. Once the repetition counter has reached zero,
+the variable is also deleted from the local RTDB.
+
 
 
 ### Composing the `IETYPE-REQUEST-VARUPDATES` Element
@@ -839,21 +866,29 @@ The process of composing the `IETYPE-REQUEST-VARUPDATES` information
 element includes the following steps:
 
 ~~~
-1.     reqUpdQ.qDropNonexistingDeleted()
-2.     If (    (reqUpdQ.qIsEmpty()) 
-            || (no space to add one VarSumm)) then
+1.     reqUpdQQ.qDropNonexistingDeleted()
+2.     If (    (reqUpdQ.qIsEmpty())
+            || (no space to add IEHeader and first (head-of-reqUpdQ) VarSumm)) then
            stop processing, return empty IETYPE-REQUEST-VARUPDATES element
-3.     While (    (reqUpdQ.qIsEmpty() == false)
-               && (enough space to add one VarSumm))
-           Let nextVarId = reqUpdQ.qTake()
-           Add VarSumm for nextVarId to IETYPE-REQUEST-VARUPDAES element
-4.     Return the constructed IETYPE-REQUEST-VARUPDATES element
+3.     Let numRecordsToAdd = numberFittingRecords(reqUpdQ, VarSumm)
+           ieHdr : IEHeader
+4.     ieHdr.ieType        = IETYPE-REQUEST-VARUPDATES
+       ieHdr.ieNumRecords  = numRecordsToAdd
+5.     Add ieHdr to IETYPE-REQUEST-VARUPDATES element
+6.     for (i=0 ; i<numRecordsToAdd ; i++)
+           Let nextVarId = reqUpdQ.qPeek()
+		       nextVar   = RTDB.lookup(nextVarId)
+		   reqUpdQ.qTake()
+		   Add VarSumm (off nextVar entry) to IETYPE-REQUEST-VARUPDATES
+7.     Return the constructed IETYPE-REQUEST-VARUPDATES element
 ~~~
 
-The preceding procedure effectively adds summaries to the
-`IETYPE-REQUEST-VARUPDATES` element as long as the queue contains
-(existing) variables and there is enough space. Note that a request
-for a VarUpd is only transmitted once.
+The preceding procedure adds an `IEHeader` and `VarId` records to the
+`IETYPE-REQUEST-VARUPDATES` information elements as long as:
+ - the records fit into the BP payload, and
+ - no record is added twice.
+
+Note that a request for a VarUpd is only transmitted once.
 
 
 ### Composing the `IETYPE-REQUEST-VARCREATES` Element
@@ -864,7 +899,7 @@ This follows exactly the same process as for the
   - Replace `reqUpdQ` by `reqCreateQ`
   - Replace `IETYPE-REQUEST-VARUPDATES` by `IETYPE-REQUEST-VARCREATES`
   - Replace `VarSumm` by `VarId`
-
+  - Replace `qDropNonexistingDeleted` by `qDropDeleted`
 
 
 ## Initialization, Runtime and Shutdown
@@ -906,9 +941,12 @@ of a reactive nature: VarDis waits until the underlying BP has
 indicated that a payload has just been included in a beacon (see
 Section [Service
 BP-PayloadTransmitted](#bp-service-payload-transmitted)), upon which
-VarDis receives the `BP-PayloadTransmitted.indication` primitive. In
-response to this primitive, VarDis then generates the next payload by
-following the process described in Section [Payload
+VarDis receives the `BP-PayloadTransmitted.indication` primitive. Note
+that in this primitive the underlying BP indicates the point in time
+it generates its next beacon, so that the VarDis implementation can
+generate and hand over its own payload ahead of time. In response to
+this primitive, VarDis then generates the next payload by following
+the process described in Section [Payload
 Construction](#vardis-payload-format-construction), and submitting the
 resulting payload (if any) to the BP by invoking the
 `BP-TransmitPayload.request` primitive as follows:
@@ -926,7 +964,7 @@ Parameters](#vardis-configurable-parameters)) the number of payloads
 that the BP currently holds for VarDis. It does so by invoking the
 `BP-QueryNumberBufferedPayloads.request` service primitive with the
 `protId` parameter set to `BP_PROTID_VARDIS`. If the value received in
-the `BP-QueryNumberBufferedPayloads.response` primitive is valid and
+the `BP-QueryNumberBufferedPayloads.confirm` primitive is valid and
 equal to zero, then VarDis generates a beacon payload and, if there is
 any, hands it over to the BP by submitting a
 `BP-TransmitPayload.request` primitive as above.
@@ -1000,14 +1038,18 @@ only has that variable in an outdated version and might itself
 instigate transmission of a `IETYPE-REQUEST-VARUPDATES` element for
 that variable. But that would be un-necessary.
 
-Finally, while the receive path extracts the information elements out
-of the received payload, it needs to perform a range of checks on the
-IE's, including the check of whether the received IE is of known type
-and, for those IE types where the payload is a list of elements
-of a given data type `T`, whether the `ieLen` field has a value that
-is an integer multiple of `sizeof(T)`. If any of these sanity checks
-for an information element fails, then the element shall be silently
-dropped and processing continues with the next element, if any.
+The receive path extracts the information elements (header and list of
+records) out of the received payload in a sequential manner. It needs
+to perform correctness checks on the IE's and their record lists,
+including:
+  - whether the received IE is of known type
+  - when a further record is to read, the as-yet-unprocessed part of
+    the received BP payload contains at least as many bytes as the
+    record requires.
+
+If any of these sanity checks for an information element fails, then
+the element shall be silently dropped and processing continues with
+the next element, if any.
 
 
 

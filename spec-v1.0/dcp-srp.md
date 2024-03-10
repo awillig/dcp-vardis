@@ -38,7 +38,7 @@ protocol.
   short-term trajectory. The precise details of this data type are
   implemention-dependent and therefore the generation of values is
   left to applications, but `SafetyData` records have a fixed size
-  (given by `sizeof(SafetyData)`.
+  (given by `sizeof(SafetyData)`).
 
 - The transmissible data type `ExtendedSafetyData` acts as a wrapper
   around the type `SafetyData`. It contains additional fields, and the
@@ -116,7 +116,7 @@ interface described in the following.
 Whenever an application submits a service request primitive, SRP must
 check whether it is currently registered as a client protocol with
 BP. If not, then SRP must reject the service request primitive,
-i.e. send back a response primitive with status code
+i.e. send back a confirm primitive with status code
 `SRP-STATUS-INACTIVE' to the application.
 
 ### Service SRP-TransmitSafetyData

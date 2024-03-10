@@ -2,6 +2,13 @@
 
 # Known Issues, Shortcomings and Comments
 
+## Overall
+
+- There is not yet a disciplined process to change the value of
+  configuration parameters at runtime (for adaptation purposes), and
+  no statement as to when (and under which conditions) such changes
+  would take effect.
+
 ## Beaconing Protocol
 
 ### Known Issues
@@ -24,13 +31,25 @@
   
 - Offer a management facility to enable and disable the beacon
   transmission process.
-  
+
+- Offer a management facility to change the selection of inter-beacon
+  generation times, in particular the (long-term) rate at which
+  beacons are generated
+
 - There is no runtime liveness checking of client protocols and no
   proper cleanup. That could be a soft-state mechanism for registered
   protocols, together with additional status codes
 
 - Add something like a 'network identifier' to the BP header, so that
   we can reliably separate two swarms in close vicinity
+
+- Introduce a finite queue into the interface between client protocols
+  and BP, in addition to the queue of indefinite size. This finite
+  queue will need additional status codes when the queue is full at
+  the arrival of another payload
+  
+- Allow to control the process of which payloads to include in the
+  beacon by introducing explicit priorities for client protocols
 
 
 ## SRP
@@ -72,12 +91,6 @@
 - It is unclear whether it is necessary to call `qDropNonexisting`
   whenever an information element is created for a payload. 
 
-- When receiving and processing a variable summary and noticing that
-  the summary advertises a more recent sequence number, currently the
-  following update-request includes the older sequence number of the
-  receiving node, not the more recent sequence number received in the
-  summary. That may lead to too many outdated updates being sent by
-  neighbours.
 
 
 ### Potential Future Features
@@ -108,11 +121,13 @@
   updates), to avoid having the entire neighbourhood responding.
 
 - Introduce separate information element types for variables with
-  fixed length (only included in their creation record). For such
-  fixed-length variables the IE header does not need to include length
-  information, but if a node receives such a fixed-length IE for a
-  variable it does not yet know about, the remainder of the packet may
-  become unparse-able.
+  fixed length or of well-known and pre-defined type (only included /
+  specified in their creation record). For such fixed-length variables
+  the IE header does not need to include length information, but if a
+  node receives such a fixed-length IE for a variable it does not yet
+  know about (in particular: for which it does not yet have
+  type/length information), the remainder of the packet may become
+  unparse-able.
 
 - Include a mechanism that allows a node not to include recent updates
   when it has overheard them often enough (the update will still be
@@ -145,3 +160,11 @@
   VarDis. During suspension no service requests shall be accepted and
   no beacons be transmitted or received(?).
 
+- Add a mechanism allowing a node to re-create a variable after it has
+  been re-started, while other nodes still have it in their memory.
+
+- Revise the specification of when exactly VarDis generates a new
+  payload. It could make use of the `nextBeaconGenerationEpoch` value
+  of the `BP-PayloadTransmitted` indication sent by BP to generate the
+  next VarDis payload just in time before the next beacon generation,
+  so that VarDis contents are as 'fresh' as possible.
