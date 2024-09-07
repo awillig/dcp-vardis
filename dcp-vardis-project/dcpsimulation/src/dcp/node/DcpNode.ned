@@ -16,16 +16,16 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-package dcpv1.dcp.node;
+package dcpsimulation.dcp.node;
 
 import inet.mobility.contract.IMobility;
 import inet.linklayer.contract.IMacProtocol;
 import inet.common.MessageDispatcher;
 import inet.networklayer.common.InterfaceTable;
 import inet.node.inet.AdhocHost;
-import dcpv1.dcp.node.DcpStack;
-import dcpv1.dcp.applications.VariableProducer;
-import dcpv1.dcp.applications.VariableConsumer;
+import dcpsimulation.dcp.node.DcpStack;
+import dcpsimulation.dcp.applications.VariableProducer;
+import dcpsimulation.dcp.applications.VariableConsumer;
 
 
 module DcpNode extends AdhocHost

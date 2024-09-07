@@ -16,12 +16,13 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-package dcpv1.dcp.node;
+package dcpsimulation.dcp.node;
 
-import dcpv1.dcp.bp.BeaconingProtocol;
-import dcpv1.dcp.srp.StateReportingProtocol;
-import dcpv1.dcp.vardis.VardisProtocol;
+
 import inet.common.MessageDispatcher;
+import dcpsimulation.dcp.bp.BeaconingProtocol;
+import dcpsimulation.dcp.srp.StateReportingProtocol;
+import dcpsimulation.dcp.vardis.VardisProtocol;
 
 module DcpStack
 {
