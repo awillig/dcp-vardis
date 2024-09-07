@@ -16,7 +16,7 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-package dcpv1.dcp.common;
+package dcpsimulation.dcp.common;
 
 @namespace(dcp);
 

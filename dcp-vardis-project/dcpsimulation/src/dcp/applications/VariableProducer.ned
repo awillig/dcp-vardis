@@ -16,9 +16,9 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-package dcpv1.dcp.applications;
+package dcpsimulation.dcp.applications;
 
-import dcpv1.dcp.vardis.VardisClientProtocol;
+import dcpsimulation.dcp.vardis.VardisClientProtocol;
 
 @namespace(dcp);
 

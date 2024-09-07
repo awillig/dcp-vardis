@@ -1,3 +1,3 @@
-package dcpv1;
+package dcpsimulation;
 
 @license(LGPL);
