@@ -16,9 +16,9 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-package dcpv1.dcp.srp;
+package dcpsimulation.dcp.srp;
 
-import dcpv1.dcp.bp.BPClientProtocol;
+import dcpsimulation.dcp.bp.BPClientProtocol;
 
 @namespace(dcp);
 
