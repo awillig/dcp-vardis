@@ -36,7 +36,7 @@ Build process
 =============
 
 
-# Building on the command line
+## Building on the command line
 
 The following description assumes that you are running the `bash`
 shell under Linux. For other shells, you will need to modify some
@@ -79,7 +79,7 @@ the generated executable with the provided example simulation:
 ```
 
 
-# Setting up in the OMNeT++ IDE
+## Setting up in the OMNeT++ IDE
 This should be as simple as pointing the IDE at the project directories.
 Currently it is not setup to compile and run examples through the IDE.
 
