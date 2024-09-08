@@ -1,0 +1,1 @@
+This contains the specification (in Markdown / pandoc) of the Drone Coordination Protocols (DCP) including its component protocols, as well as code developed for simulating an early version of DCP under the OMNeT++ discrete-event simulation framework.
