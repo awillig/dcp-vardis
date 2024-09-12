@@ -19,7 +19,7 @@
 import inet.common.packet.chunk.Chunk;
 import inet.linklayer.common.MacAddress;
 
-class BPHeader extends inet::FieldsChunk
+class BPHeaderT extends inet::FieldsChunk
 {
     chunkLength = inet::B(14); // length of BPHeader
     

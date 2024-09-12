@@ -42,9 +42,9 @@ typedef struct BPBufferEntry {
 
 
 typedef struct BPClientProtocolData {
-    BPProtocolId                protocolId;        // unique identifier of the client protocol
+    BPProtocolIdT               protocolId;        // unique identifier of the client protocol
     std::string                 protocolName;      // human-readable name of the protocol
-    BPLength                    maxPayloadSizeB;   // maximum size of client protocol payload in bytes
+    BPLengthT                   maxPayloadSizeB;   // maximum size of client protocol payload in bytes
     BPQueueingMode              queueMode;         // queueing mode to be used for client protocol
     TimeStamp                   timeStamp;         // time at which client protocol was registered
     std::queue<BPBufferEntry>   queue;             // queue of all payloads when operating in mode BP_QMODE_QUEUE

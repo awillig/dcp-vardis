@@ -67,7 +67,7 @@ protected:
     // --------------------------------------------
 
     // Parameters
-    BPLength   maxPayloadSize;
+    BPLengthT  maxPayloadSize;
 
     // gate identifiers for communication with BP
     int gidFromBP = -1;
@@ -115,12 +115,12 @@ protected:
      * the protocol is specified through parameters. Derived classes
      * call this method in their overloaded version of 'registerAsBPClient'.
      */
-    void sendRegisterProtocolRequest (BPProtocolId protId, std::string protName, BPLength maxPayloadLen, BPQueueingMode queueingMode);
+    void sendRegisterProtocolRequest (BPProtocolIdT protId, std::string protName, BPLengthT maxPayloadLen, BPQueueingMode queueingMode);
 
     /**
      * Sends a request to deregister the client protocol to the BP.
      */
-    void sendDeregisterProtocolRequest (BPProtocolId protId);
+    void sendDeregisterProtocolRequest (BPProtocolIdT protId);
 
 
     /**

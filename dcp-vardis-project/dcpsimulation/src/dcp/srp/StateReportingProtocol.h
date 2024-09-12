@@ -70,7 +70,7 @@ public:
     // register as BP client protocol
     virtual void registerAsBPClient (void) override;
 
-    const BPLength maximumSRPPayloadLength = 100;
+    const BPLengthT maximumSRPPayloadLength = 100;
 
 private:
 

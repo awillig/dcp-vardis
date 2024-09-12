@@ -42,7 +42,7 @@ void BPClientProtocol::initialize (int stage)
     {
         dbg_enter("BPClientProtocol::initialize");
 
-        maxPayloadSize = (BPLength) par("maxPayloadSize");
+        maxPayloadSize = (BPLengthT) par("maxPayloadSize");
         assert(maxPayloadSize > 0);
 
         assert(_registerMsg == nullptr);
@@ -144,7 +144,7 @@ bool BPClientProtocol::hasHandledMessageBPClient(cMessage* msg)
 // ----------------------------------------------------
 
 
-void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolId protId, std::string protName, BPLength maxPayloadLenB, BPQueueingMode queueingMode)
+void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolIdT protId, std::string protName, BPLengthT maxPayloadLenB, BPQueueingMode queueingMode)
 {
     dbg_enter("sendRegisterProtocolRequest");
 
@@ -161,7 +161,7 @@ void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolId protId, std::st
 // ----------------------------------------------------
 
 
-void BPClientProtocol::sendDeregisterProtocolRequest (BPProtocolId protId)
+void BPClientProtocol::sendDeregisterProtocolRequest (BPProtocolIdT protId)
 {
     dbg_enter("sendDeregisterProtocolRequest");
 

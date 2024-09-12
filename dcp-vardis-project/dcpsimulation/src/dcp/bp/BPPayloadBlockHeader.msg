@@ -18,7 +18,7 @@
 
 import inet.common.packet.chunk.Chunk;
 
-class BPPayloadBlockHeader extends inet::FieldsChunk
+class BPPayloadBlockHeaderT extends inet::FieldsChunk
 {
     chunkLength = inet::B(4); // length of BPPayloadBlockHeader
     

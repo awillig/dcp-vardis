@@ -50,7 +50,7 @@ DcpSimGlobals::~DcpSimGlobals()
 
 
 
-Protocol *dcp::convertProtocolIdToProtocol(BPProtocolId protId)
+Protocol *dcp::convertProtocolIdToProtocol(BPProtocolIdT protId)
 {
     switch(protId)
     {

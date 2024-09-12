@@ -72,8 +72,8 @@ protected:
 
 
     // Module parameters
-    BPLength       vardisMaxValueLength;          // maximum length of a variable value in bytes
-    BPLength       vardisMaxDescriptionLength;    // maximum length of variable description text in bytes
+    BPLengthT      vardisMaxValueLength;          // maximum length of a variable value in bytes
+    BPLengthT      vardisMaxDescriptionLength;    // maximum length of variable description text in bytes
     unsigned int   vardisMaxRepetitions;          // maximum allowed repCnt for a variable
     unsigned int   vardisMaxSummaries;            // maximum number of summaries included in a payload
     double         vardisBufferCheckPeriod;       // how often is buffer occupancy of BP checked

@@ -43,7 +43,7 @@ using namespace inet;
 namespace dcp {
 
 struct RegisteredProtocol {
-    BPProtocolId            protId;
+    BPProtocolIdT           protId;
     BPClientProtocolData    protData;
     Protocol*               protProtocol;
 };
@@ -82,11 +82,11 @@ protected:
     const uint8_t  bpProtocolVersion = 1;
 
     // parameter for maximum beacon packet size
-    BPLength    bpParMaximumPacketSizeB;
+    BPLengthT   bpParMaximumPacketSizeB;
 
     // dynamically calculated 'constant' lengths of a BPHeader and a payload header
-    BPLength    payloadBlockHeaderSizeB;
-    BPLength    beaconProtocolHeaderSizeB;
+    BPLengthT   payloadBlockHeaderSizeB;
+    BPLengthT   beaconProtocolHeaderSizeB;
 
     // Beacons have sequence numbers
     uint32_t    _seqno = 0;
@@ -96,7 +96,7 @@ protected:
     int   gidFromClients, gidToClients;
 
     // internal data members
-    std::map<BPProtocolId, RegisteredProtocol>  registeredProtocols;  // contains all registered client protocols
+    std::map<BPProtocolIdT, RegisteredProtocol>  registeredProtocols;  // contains all registered client protocols
     cMessage*     generateBeaconMsg;   // timer self-message for beacon generations
 
 
@@ -175,17 +175,17 @@ protected:
     /**
      * Generates and sends BPQueryNumberBufferedPayloads.confirm message to client protocol
      */
-    void sendQueryNumberBufferedPayloadsConfirm (BPStatus status, unsigned int numPayloads, BPProtocolId protocolId, Protocol* theProtocol);
+    void sendQueryNumberBufferedPayloadsConfirm (BPStatus status, unsigned int numPayloads, BPProtocolIdT protocolId, Protocol* theProtocol);
 
     /**
      * Checks whether BPHeader of incoming beacon is well-formed
      */
-    bool bpHeaderWellFormed (Ptr<const BPHeader> bpHeader);
+    bool bpHeaderWellFormed (Ptr<const BPHeaderT> bpHeader);
 
     /**
      * Checks whether a protocol with given ProtocolId is registered as client protocol
      */
-    bool clientProtocolRegistered (BPProtocolId protocolId);
+    bool clientProtocolRegistered (BPProtocolIdT protocolId);
 
 
     /**
@@ -201,8 +201,8 @@ protected:
      */
     void addPayload (RegisteredProtocol& rp,                         // the registered protocol to consider
                      std::list< Ptr<const Chunk> >& beaconChunks,    // this collects the chunks for the packet
-                     BPLength& bytesUsed,                            // keeps track of # of bytes used
-                     BPLength maxBytes,                              // max bytes available in beacon
+                     BPLengthT& bytesUsed,                           // keeps track of # of bytes used
+                     BPLengthT maxBytes,                             // max bytes available in beacon
                      simtime_t nextBeaconGenerationEpoch             // time of next beacon generation
                      );
 
@@ -211,7 +211,7 @@ protected:
      * fit into the remaining beacon -- returns it (after removing it) or
      * returns nullptr if there is no such payload
      */
-    Ptr<const Chunk> extractFittingPayload (RegisteredProtocol& rp, BPLength bytesUsed, BPLength maxBytes);
+    Ptr<const Chunk> extractFittingPayload (RegisteredProtocol& rp, BPLengthT bytesUsed, BPLengthT maxBytes);
 
 };
 

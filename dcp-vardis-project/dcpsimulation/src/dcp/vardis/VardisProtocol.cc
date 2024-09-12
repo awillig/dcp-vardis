@@ -48,8 +48,8 @@ void VardisProtocol::initialize(int stage)
         dbg_enter("initialize");
 
         // read and check parameters
-        vardisMaxValueLength        = (BPLength) par("vardisMaxValueLength");
-        vardisMaxDescriptionLength  = (BPLength) par("vardisMaxDescriptionLength");
+        vardisMaxValueLength        = (BPLengthT) par("vardisMaxValueLength");
+        vardisMaxDescriptionLength  = (BPLengthT) par("vardisMaxDescriptionLength");
         vardisMaxRepetitions        = (unsigned int) par("vardisMaxRepetitions");
         vardisMaxSummaries          = (unsigned int) par("vardisMaxSummaries");
         vardisBufferCheckPeriod     = par("vardisBufferCheckPeriod");

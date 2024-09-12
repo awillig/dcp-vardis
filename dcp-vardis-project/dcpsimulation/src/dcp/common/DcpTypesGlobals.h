@@ -40,14 +40,14 @@ const NodeIdentifier       nullIdentifier = MacAddress::UNSPECIFIED_ADDRESS;
 // --------------------------------------------------------------------
 // Basic type definitions and constants
 
-typedef uint16_t      BPProtocolId;     // Identifier for client protocols
-typedef uint16_t      BPLength;         // length of a payload block
+typedef uint16_t      BPProtocolIdT;     // Identifier for client protocols
+typedef uint16_t      BPLengthT;         // length of a payload block
 
 
 
 // Pre-defined protocol id's
-const BPProtocolId BP_PROTID_SRP     =  0x0001;
-const BPProtocolId BP_PROTID_VARDIS  =  0x0002;
+const BPProtocolIdT BP_PROTID_SRP     =  0x0001;
+const BPProtocolIdT BP_PROTID_VARDIS  =  0x0002;
 
 
 
@@ -65,7 +65,7 @@ public:
 
 // returns for the given protId a pointer to the right protocol
 // object, but only for BP client protocols
-Protocol *convertProtocolIdToProtocol(BPProtocolId protId);
+Protocol *convertProtocolIdToProtocol(BPProtocolIdT protId);
 
 } // namespace
 
