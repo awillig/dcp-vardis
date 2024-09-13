@@ -43,10 +43,10 @@
 // -----------------------------------------
 
 
-typedef uint8_t  VarId;
-typedef uint8_t  VarLen;
-typedef uint8_t  VarRepCnt;
-typedef uint8_t  VarSeqno;
+typedef uint8_t  VarIdT;
+typedef uint8_t  VarLenT;
+typedef uint8_t  VarRepCntT;
+typedef uint8_t  VarSeqnoT;
 
 const int maxVarId     = 255;
 const int maxVarLen    = 255;
@@ -61,8 +61,8 @@ const size_t serializedSizeVarSeqno_B   = 1;
 // -----------------------------------------
 
 typedef struct VarSummT {
-    VarId     varId;
-    VarSeqno  seqno;
+    VarIdT     varId;
+    VarSeqnoT  seqno;
 } VarSummT;
 
 const size_t serializedSizeVarSummT_B = serializedSizeVarId_B + serializedSizeVarSeqno_B;
@@ -70,9 +70,9 @@ const size_t serializedSizeVarSummT_B = serializedSizeVarId_B + serializedSizeVa
 // -----------------------------------------
 
 typedef struct VarUpdateT {
-    VarId    varId;
-    VarSeqno seqno;
-    VarLen   length;
+    VarIdT    varId;
+    VarSeqnoT seqno;
+    VarLenT   length;
     uint8_t* value;
 } VarUpdHeaderT;
 
@@ -81,11 +81,11 @@ const size_t serializedSizeVarUpdateT_FixedPart_B = serializedSizeVarId_B + seri
 // -----------------------------------------
 
 typedef struct VarSpecT {
-    VarId      varId;
-    uint8_t    prodId [MAC_ADDRESS_SIZE];
-    VarRepCnt  repCnt;
-    VarLen     descrLen;   // must be length of C string descr plus one (for null terminator)
-    uint8_t   *descr;      // encoded as C string, includes null terminator at the end
+    VarIdT      varId;
+    uint8_t     prodId [MAC_ADDRESS_SIZE];
+    VarRepCntT  repCnt;
+    VarLenT     descrLen;   // must be length of C string descr plus one (for null terminator)
+    uint8_t    *descr;      // encoded as C string, includes null terminator at the end
 } VarSpecT;
 
 const size_t serializedSizeVarSpecT_FixedPart_B = serializedSizeVarId_B + MAC_ADDRESS_SIZE + serializedSizeVarRepCnt_B + serializedSizeVarLen_B;
@@ -102,7 +102,7 @@ const size_t serializedSizeVarCreateT_FixedPart_B = serializedSizeVarSpecT_Fixed
 // -----------------------------------------
 
 typedef struct VarDeleteT {
-    VarId varId;
+    VarIdT varId;
 } VarDeleteT;
 
 const size_t serializedSizeVarDeleteT_B = serializedSizeVarId_B;
@@ -118,7 +118,7 @@ const size_t serializedSizeVarReqUpdateT_B = serializedSizeVarSummT_B;
 // -----------------------------------------
 
 typedef struct VarReqCreateT {
-    VarId varId;
+    VarIdT varId;
 } VarReqCreateT;
 
 const size_t serializedSizeVarReqCreateT_B = serializedSizeVarId_B;

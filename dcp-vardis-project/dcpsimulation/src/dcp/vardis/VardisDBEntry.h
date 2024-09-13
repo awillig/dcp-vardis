@@ -35,13 +35,13 @@
 // structure for an entry in the real-time database
 typedef struct DBEntry {
     VarSpecT        spec;
-    VarSeqno        seqno;
+    VarSeqnoT       seqno;
     simtime_t       tStamp;
-    VarRepCnt       countUpdate = 0;
-    VarRepCnt       countCreate = 0;
-    VarRepCnt       countDelete = 0;
+    VarRepCntT      countUpdate = 0;
+    VarRepCntT      countCreate = 0;
+    VarRepCntT      countDelete = 0;
     bool            toBeDeleted = false;
-    VarLen          length      = 0;
+    VarLenT         length      = 0;
     uint8_t        *value       = nullptr;
 } DBEntry;
 

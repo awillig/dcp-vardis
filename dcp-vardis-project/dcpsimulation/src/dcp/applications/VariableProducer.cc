@@ -46,8 +46,8 @@ void VariableProducer::initialize(int stage)
         assert(getOwnNodeId() != nullIdentifier);
 
         // read parameters
-        varId         = (VarId) par("varId");
-        varRepCnt     = (VarRepCnt) par("varRepCnt");
+        varId         = (VarIdT) par("varId");
+        varRepCnt     = (VarRepCntT) par("varRepCnt");
         creationTime  = par("creationTime");
         deletionTime  = par("deletionTime");
 
@@ -272,7 +272,7 @@ void VariableProducer::handleRTDBCreateConfirm(RTDBCreate_Confirm* createConf)
     // extract information
     handleVardisConfirmation(createConf);
     VardisStatus status = createConf->getStatus();
-    VarId        varId  = createConf->getVarId();
+    VarIdT       varId  = createConf->getVarId();
     delete createConf;
 
     DBG_PVAR2("got confirm", (int) varId, status);
@@ -328,7 +328,7 @@ void VariableProducer::handleRTDBUpdateConfirm(RTDBUpdate_Confirm* updateConf)
     // extract information
     handleVardisConfirmation(updateConf);
     VardisStatus status  = updateConf->getStatus();
-    VarId        cVarId  = updateConf->getVarId();
+    VarIdT       cVarId  = updateConf->getVarId();
     delete updateConf;
 
     DBG_PVAR2("got confirm", (int) cVarId, status);

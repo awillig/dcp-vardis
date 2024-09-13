@@ -76,7 +76,7 @@ inline void bvPopByte  (bytevect& bv, uint8_t& byte, unsigned int& bytesUsed)
  * Adds a given byte array (pointer to bytes) to the output byte vector,
  * update counters accordingly
  */
-inline void bvPushByteArray (bytevect& bv, const uint8_t* value, const VarLen length, unsigned int& bytesUsed, unsigned int& bytesAvailable)
+inline void bvPushByteArray (bytevect& bv, const uint8_t* value, const VarLenT length, unsigned int& bytesUsed, unsigned int& bytesAvailable)
 {
     assert(length > 0);
     assert(bytesAvailable >= length);
@@ -92,7 +92,7 @@ inline void bvPushByteArray (bytevect& bv, const uint8_t* value, const VarLen le
  * Pops a byte array of given length from the byte vector (the memory for the
  * byte array is to be provided by the caller), update counters accordingly
  */
-inline void bvPopByteArray (bytevect& bv, uint8_t* value, const VarLen length, unsigned int& bytesUsed)
+inline void bvPopByteArray (bytevect& bv, uint8_t* value, const VarLenT length, unsigned int& bytesUsed)
 {
     assert(length > 0);
     assert(bytesUsed + length <= bv.size());
@@ -109,20 +109,20 @@ inline void bvPopByteArray (bytevect& bv, uint8_t* value, const VarLen length, u
 // ----------------------------------------------------------------
 
 
-void bvPushVarId (bytevect& bv, const VarId& varId, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-void bvPopVarId  (bytevect& bv, VarId& varId, unsigned int& bytesUsed);
+void bvPushVarId (bytevect& bv, const VarIdT& varId, unsigned int& bytesUsed, unsigned int& bytesAvailable);
+void bvPopVarId  (bytevect& bv, VarIdT& varId, unsigned int& bytesUsed);
 
 
-void bvPushVarSeqno (bytevect& bv, const VarSeqno& seqno, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-void bvPopVarSeqno  (bytevect& bv, VarSeqno& seqno, unsigned int& bytesUsed);
+void bvPushVarSeqno (bytevect& bv, const VarSeqnoT& seqno, unsigned int& bytesUsed, unsigned int& bytesAvailable);
+void bvPopVarSeqno  (bytevect& bv, VarSeqnoT& seqno, unsigned int& bytesUsed);
 
 
-void bvPushVarLen (bytevect& bv, const VarLen& length, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-void bvPopVarLen  (bytevect& bv, VarLen& length, unsigned int& bytesUsed);
+void bvPushVarLen (bytevect& bv, const VarLenT& length, unsigned int& bytesUsed, unsigned int& bytesAvailable);
+void bvPopVarLen  (bytevect& bv, VarLenT& length, unsigned int& bytesUsed);
 
 
-void bvPushVarRepCnt (bytevect& bv, const VarRepCnt& repCnt, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-void bvPopVarRepCnt  (bytevect& bv, VarRepCnt& repCnt, unsigned int& bytesUsed);
+void bvPushVarRepCnt (bytevect& bv, const VarRepCntT& repCnt, unsigned int& bytesUsed, unsigned int& bytesAvailable);
+void bvPopVarRepCnt  (bytevect& bv, VarRepCntT& repCnt, unsigned int& bytesUsed);
 
 
 void bvPushVarSumm (bytevect& bv, const VarSummT& summ, unsigned int& bytesUsed, unsigned int& bytesAvailable);

@@ -22,48 +22,48 @@
 
 // ----------------------------------------------------
 
-void bvPushVarId (bytevect& bv, const VarId& varId, unsigned int& bytesUsed, unsigned int& bytesAvailable)
+void bvPushVarId (bytevect& bv, const VarIdT& varId, unsigned int& bytesUsed, unsigned int& bytesAvailable)
 {
     bvPushByte(bv, varId, bytesUsed, bytesAvailable);
 }
 
-void bvPopVarId (bytevect& bv, VarId& varId, unsigned int& bytesUsed)
+void bvPopVarId (bytevect& bv, VarIdT& varId, unsigned int& bytesUsed)
 {
     bvPopByte(bv, varId, bytesUsed);
 }
 
 // ----------------------------------------------------
 
-void bvPushVarSeqno (bytevect& bv, const VarSeqno& seqno, unsigned int& bytesUsed, unsigned int& bytesAvailable)
+void bvPushVarSeqno (bytevect& bv, const VarSeqnoT& seqno, unsigned int& bytesUsed, unsigned int& bytesAvailable)
 {
     bvPushByte(bv, seqno, bytesUsed, bytesAvailable);
 }
 
-void bvPopVarSeqno  (bytevect& bv, VarSeqno& seqno, unsigned int& bytesUsed)
+void bvPopVarSeqno  (bytevect& bv, VarSeqnoT& seqno, unsigned int& bytesUsed)
 {
     bvPopByte(bv, seqno, bytesUsed);
 }
 
 // ----------------------------------------------------
 
-void bvPushVarLen (bytevect& bv, const VarLen& length, unsigned int& bytesUsed, unsigned int& bytesAvailable)
+void bvPushVarLen (bytevect& bv, const VarLenT& length, unsigned int& bytesUsed, unsigned int& bytesAvailable)
 {
     bvPushByte(bv, length, bytesUsed, bytesAvailable);
 }
 
-void bvPopVarLen  (bytevect& bv, VarLen& length, unsigned int& bytesUsed)
+void bvPopVarLen  (bytevect& bv, VarLenT& length, unsigned int& bytesUsed)
 {
     bvPopByte(bv, length, bytesUsed);
 }
 
 // ----------------------------------------------------
 
-void bvPushVarRepCnt (bytevect& bv, const VarRepCnt& repCnt, unsigned int& bytesUsed, unsigned int& bytesAvailable)
+void bvPushVarRepCnt (bytevect& bv, const VarRepCntT& repCnt, unsigned int& bytesUsed, unsigned int& bytesAvailable)
 {
     bvPushByte(bv, repCnt, bytesUsed, bytesAvailable);
 }
 
-void bvPopVarRepCnt  (bytevect& bv, VarRepCnt& repCnt, unsigned int& bytesUsed)
+void bvPopVarRepCnt  (bytevect& bv, VarRepCntT& repCnt, unsigned int& bytesUsed)
 {
     bvPopByte(bv, repCnt, bytesUsed);
 }

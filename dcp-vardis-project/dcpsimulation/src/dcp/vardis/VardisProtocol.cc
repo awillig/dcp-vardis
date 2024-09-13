@@ -614,8 +614,8 @@ void VardisProtocol::handleRTDBUpdateRequest(RTDBUpdate_Request* updateReq)
     // sending a confirmation message back to the client protocol
     Protocol* theProtocol = fetchSenderProtocol(updateReq);
 
-    VarId  varId  = updateReq->getVarId();
-    VarLen varLen = updateReq->getUpdlen();
+    VarIdT  varId  = updateReq->getVarId();
+    VarLenT varLen = updateReq->getUpdlen();
 
     // perform various checks
 
@@ -718,7 +718,7 @@ void VardisProtocol::handleRTDBReadRequest (RTDBRead_Request* readReq)
     // sending a confirmation message back to the client protocol
     Protocol* theProtocol = fetchSenderProtocol(readReq);
 
-    VarId varId = readReq->getVarId();
+    VarIdT varId = readReq->getVarId();
     delete readReq;
 
     // generate and initialize confirmation
@@ -832,7 +832,7 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
     // sending a confirmation message back to the client protocol
     Protocol* theProtocol = fetchSenderProtocol(descrVarReq);
 
-    VarId     varId       = descrVarReq->getVarId();
+    VarIdT    varId       = descrVarReq->getVarId();
     delete descrVarReq;
     auto varDescr = new RTDBDescribeVariable_Confirm;
 
@@ -900,7 +900,7 @@ void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* delReq)
     // sending a confirmation message back to the client protocol
     Protocol* theProtocol = fetchSenderProtocol(delReq);
 
-    VarId varId = delReq->getVarId();
+    VarIdT varId = delReq->getVarId();
     delete delReq;
 
     // generate and initialize confirmation
@@ -975,7 +975,7 @@ void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* delReq)
  * numbers here reflect a 'packed' realization of these types.
  */
 
-unsigned int VardisProtocol::elementSizeVarCreate(VarId varId)
+unsigned int VardisProtocol::elementSizeVarCreate(VarIdT varId)
 {
     DBEntry& theEntry = theVariableDatabase.at(varId);
     return serializedSizeVarCreateT_FixedPart_B + theEntry.spec.descrLen + theEntry.length;
@@ -983,14 +983,14 @@ unsigned int VardisProtocol::elementSizeVarCreate(VarId varId)
 
 // ----------------------------------------------------
 
-unsigned int VardisProtocol::elementSizeVarSummary(VarId varId)
+unsigned int VardisProtocol::elementSizeVarSummary(VarIdT varId)
 {
     return serializedSizeVarSummT_B;
 }
 
 // ----------------------------------------------------
 
-unsigned int VardisProtocol::elementSizeVarUpdate(VarId varId)
+unsigned int VardisProtocol::elementSizeVarUpdate(VarIdT varId)
 {
     DBEntry& theEntry = theVariableDatabase.at(varId);
     return serializedSizeVarUpdateT_FixedPart_B + theEntry.length;
@@ -998,21 +998,21 @@ unsigned int VardisProtocol::elementSizeVarUpdate(VarId varId)
 
 // ----------------------------------------------------
 
-unsigned int VardisProtocol::elementSizeVarDelete(VarId varId)
+unsigned int VardisProtocol::elementSizeVarDelete(VarIdT varId)
 {
     return serializedSizeVarDeleteT_B;
 }
 
 // ----------------------------------------------------
 
-unsigned int VardisProtocol::elementSizeReqCreate(VarId varId)
+unsigned int VardisProtocol::elementSizeReqCreate(VarIdT varId)
 {
     return serializedSizeVarReqCreateT_B;
 }
 
 // ----------------------------------------------------
 
-unsigned int VardisProtocol::elementSizeReqUpdate(VarId varId)
+unsigned int VardisProtocol::elementSizeReqUpdate(VarIdT varId)
 {
     return serializedSizeVarReqUpdateT_B;
 }
@@ -1024,7 +1024,7 @@ unsigned int VardisProtocol::elementSizeReqUpdate(VarId varId)
  */
 
 
-void VardisProtocol::addVarCreate (VarId varId,
+void VardisProtocol::addVarCreate (VarIdT varId,
                                    DBEntry& theEntry,
                                    bytevect& bv,
                                    unsigned int& bytesUsed,
@@ -1047,7 +1047,7 @@ void VardisProtocol::addVarCreate (VarId varId,
 // ----------------------------------------------------
 
 
-void VardisProtocol::addVarSummary (VarId varId,
+void VardisProtocol::addVarSummary (VarIdT varId,
                                     DBEntry& theEntry,
                                     bytevect& bv,
                                     unsigned int& bytesUsed,
@@ -1066,7 +1066,7 @@ void VardisProtocol::addVarSummary (VarId varId,
 
 // ----------------------------------------------------
 
-void VardisProtocol::addVarUpdate (VarId varId,
+void VardisProtocol::addVarUpdate (VarIdT varId,
                                    DBEntry& theEntry,
                                    bytevect& bv,
                                    unsigned int& bytesUsed,
@@ -1087,7 +1087,7 @@ void VardisProtocol::addVarUpdate (VarId varId,
 
 // ----------------------------------------------------
 
-void VardisProtocol::addVarDelete (VarId varId,
+void VardisProtocol::addVarDelete (VarIdT varId,
                                    bytevect& bv,
                                    unsigned int& bytesUsed,
                                    unsigned int& bytesAvailable)
@@ -1105,7 +1105,7 @@ void VardisProtocol::addVarDelete (VarId varId,
 
 // ----------------------------------------------------
 
-void VardisProtocol::addVarReqCreate (VarId varId,
+void VardisProtocol::addVarReqCreate (VarIdT varId,
                                       bytevect& bv,
                                       unsigned int& bytesUsed,
                                       unsigned int& bytesAvailable)
@@ -1123,7 +1123,7 @@ void VardisProtocol::addVarReqCreate (VarId varId,
 
 // ----------------------------------------------------
 
-void VardisProtocol::addVarReqUpdate (VarId varId,
+void VardisProtocol::addVarReqUpdate (VarIdT varId,
                                       DBEntry& theEntry,
                                       bytevect& bv,
                                       unsigned int& bytesUsed,
@@ -1165,9 +1165,9 @@ void VardisProtocol::addIEHeader (const IEHeaderT& ieHdr,
  * fit into the number of bytes still available in the VarDis payload
  */
 unsigned int VardisProtocol::numberFittingRecords(
-                  const std::deque<VarId>& queue,
+                  const std::deque<VarIdT>& queue,
                   unsigned int bytesAvailable,
-                  std::function<unsigned int (VarId)> elementSizeFunction
+                  std::function<unsigned int (VarIdT)> elementSizeFunction
                   )
 {
     // first work out how many elements we will add
@@ -1209,7 +1209,7 @@ void VardisProtocol::makeIETypeCreateVariables (bytevect& bv, unsigned int& byte
     }
 
     // first work out how many elements we will add
-    std::function<unsigned int(VarId)> eltSizeFn = [&] (VarId varId) { return elementSizeVarCreate(varId); };
+    std::function<unsigned int(VarIdT)> eltSizeFn = [&] (VarIdT varId) { return elementSizeVarCreate(varId); };
     auto numberRecordsToAdd = numberFittingRecords(createQ, bytesAvailable, eltSizeFn);
     assert(numberRecordsToAdd > 0);
     DBG_VAR1(numberRecordsToAdd);
@@ -1223,7 +1223,7 @@ void VardisProtocol::makeIETypeCreateVariables (bytevect& bv, unsigned int& byte
     // serialize the entries
     for (unsigned int i=0; i<numberRecordsToAdd; i++)
     {
-        VarId nextVarId = createQ.front();
+        VarIdT nextVarId = createQ.front();
         createQ.pop_front();
         DBEntry& nextVar = theVariableDatabase.at(nextVarId);
 
@@ -1270,7 +1270,7 @@ void VardisProtocol::makeIETypeSummaries (bytevect& bv, unsigned int& bytesUsed,
     }
 
     // first work out how many elements we will add, cap at vardisMaxSummaries
-    std::function<unsigned int(VarId)> eltSizeFn = [&] (VarId varId) { return elementSizeVarSummary(varId); };
+    std::function<unsigned int(VarIdT)> eltSizeFn = [&] (VarIdT varId) { return elementSizeVarSummary(varId); };
     auto numberRecordsToAdd = numberFittingRecords(summaryQ, bytesAvailable, eltSizeFn);
     assert(numberRecordsToAdd > 0);
     numberRecordsToAdd = std::min(numberRecordsToAdd, vardisMaxSummaries);
@@ -1285,7 +1285,7 @@ void VardisProtocol::makeIETypeSummaries (bytevect& bv, unsigned int& bytesUsed,
     // serialize the VarSumm entries
     for (unsigned int i=0; i<numberRecordsToAdd; i++)
     {
-        VarId nextVarId  = summaryQ.front();
+        VarIdT nextVarId  = summaryQ.front();
 
         DBG_PVAR5("adding", (int) nextVarId, elementSizeVarSummary(nextVarId), (int) theVariableDatabase.at(nextVarId).seqno, bytesUsed, bytesAvailable);
 
@@ -1323,7 +1323,7 @@ void VardisProtocol::makeIETypeUpdates (bytevect& bv, unsigned int& bytesUsed, u
     }
 
     // first work out how many elements we will add
-    std::function<unsigned int(VarId)> eltSizeFn = [&] (VarId varId) { return elementSizeVarUpdate(varId); };
+    std::function<unsigned int(VarIdT)> eltSizeFn = [&] (VarIdT varId) { return elementSizeVarUpdate(varId); };
     auto numberRecordsToAdd = numberFittingRecords(updateQ, bytesAvailable, eltSizeFn);
     assert(numberRecordsToAdd > 0);
     DBG_VAR1(numberRecordsToAdd);
@@ -1337,7 +1337,7 @@ void VardisProtocol::makeIETypeUpdates (bytevect& bv, unsigned int& bytesUsed, u
     // serialize required entries
     for (unsigned int i=0; i<numberRecordsToAdd; i++)
     {
-        VarId nextVarId = updateQ.front();
+        VarIdT nextVarId = updateQ.front();
         updateQ.pop_front();
         DBEntry& nextVar = theVariableDatabase.at(nextVarId);
 
@@ -1382,7 +1382,7 @@ void VardisProtocol::makeIETypeDeleteVariables (bytevect& bv, unsigned int& byte
     }
 
     // first work out how many elements we will add
-    std::function<unsigned int(VarId)> eltSizeFn = [&] (VarId varId) { return elementSizeVarDelete(varId); };
+    std::function<unsigned int(VarIdT)> eltSizeFn = [&] (VarIdT varId) { return elementSizeVarDelete(varId); };
     auto numberRecordsToAdd = numberFittingRecords(deleteQ, bytesAvailable, eltSizeFn);
     assert(numberRecordsToAdd > 0);
     DBG_VAR1(numberRecordsToAdd);
@@ -1396,7 +1396,7 @@ void VardisProtocol::makeIETypeDeleteVariables (bytevect& bv, unsigned int& byte
     // serialize required entries
     for (unsigned int i=0; i<numberRecordsToAdd; i++)
     {
-        VarId nextVarId = deleteQ.front();
+        VarIdT nextVarId = deleteQ.front();
         deleteQ.pop_front();
         assert(variableExists(nextVarId));
         DBEntry& nextVar = theVariableDatabase.at(nextVarId);
@@ -1451,7 +1451,7 @@ void VardisProtocol::makeIETypeRequestVarUpdates (bytevect& bv, unsigned int& by
     }
 
     // first work out how many elements we will add
-    std::function<unsigned int(VarId)> eltSizeFn = [&] (VarId varId) { return elementSizeReqUpdate(varId); };
+    std::function<unsigned int(VarIdT)> eltSizeFn = [&] (VarIdT varId) { return elementSizeReqUpdate(varId); };
     auto numberRecordsToAdd = numberFittingRecords(reqUpdQ, bytesAvailable, eltSizeFn);
     assert(numberRecordsToAdd > 0);
     DBG_VAR1(numberRecordsToAdd);
@@ -1465,7 +1465,7 @@ void VardisProtocol::makeIETypeRequestVarUpdates (bytevect& bv, unsigned int& by
     // serialize required entries
     for (unsigned int i=0; i<numberRecordsToAdd; i++)
     {
-        VarId nextVarId = reqUpdQ.front();
+        VarIdT nextVarId = reqUpdQ.front();
         reqUpdQ.pop_front();
         DBEntry& nextVar = theVariableDatabase.at(nextVarId);
 
@@ -1503,7 +1503,7 @@ void VardisProtocol::makeIETypeRequestVarCreates (bytevect& bv, unsigned int& by
     }
 
     // first work out how many elements we will add
-    std::function<unsigned int(VarId)> eltSizeFn = [&] (VarId varId) { return elementSizeReqCreate(varId); };
+    std::function<unsigned int(VarIdT)> eltSizeFn = [&] (VarIdT varId) { return elementSizeReqCreate(varId); };
     auto numberRecordsToAdd = numberFittingRecords(reqCreateQ, bytesAvailable, eltSizeFn);
     assert(numberRecordsToAdd > 0);
     DBG_VAR1(numberRecordsToAdd);
@@ -1517,7 +1517,7 @@ void VardisProtocol::makeIETypeRequestVarCreates (bytevect& bv, unsigned int& by
     // serialize required entries
     for (unsigned int i=0; i<numberRecordsToAdd; i++)
     {
-        VarId nextVarId = reqCreateQ.front();
+        VarIdT nextVarId = reqCreateQ.front();
         reqCreateQ.pop_front();
 
         DBG_PVAR4("adding", (int) nextVarId, elementSizeReqCreate(nextVarId), bytesUsed, bytesAvailable);
@@ -1615,7 +1615,7 @@ void VardisProtocol::processVarCreate(const VarCreateT& create)
 
     const VarSpecT&    spec   = create.spec;
     const VarUpdateT&  update = create.update;
-    VarId        varId  = spec.varId;
+    VarIdT       varId  = spec.varId;
     MacAddress   prodId = getProducerId(spec);
 
     assert(update.length > 0);
@@ -1662,7 +1662,7 @@ void VardisProtocol::processVarDelete(const VarDeleteT& del)
 {
     dbg_enter("processVarDelete");
 
-    VarId       varId   = del.varId;
+    VarIdT   varId   = del.varId;
 
     DBG_PVAR1("considering", (int) varId);
 
@@ -1713,7 +1713,7 @@ void VardisProtocol::processVarUpdate(const VarUpdateT& update)
     assert(update.value);
     assert(update.length > 0);
 
-    VarId  varId   = update.varId;
+    VarIdT  varId   = update.varId;
 
     DBG_PVAR3("considering", (int) varId, (int) update.seqno, (int) update.length);
 
@@ -1798,8 +1798,8 @@ void VardisProtocol::processVarSummary(const VarSummT& summ)
 {
     dbg_enter("processVarSummary");
 
-    VarId     varId = summ.varId;
-    VarSeqno  seqno = summ.seqno;
+    VarIdT     varId = summ.varId;
+    VarSeqnoT  seqno = summ.seqno;
 
     DBG_PVAR2("considering", (int) varId, (int) seqno);
 
@@ -1874,8 +1874,8 @@ void VardisProtocol::processVarReqUpdate(const VarReqUpdateT& requpd)
 {
     dbg_enter("processVarReqUpdate");
 
-    VarId     varId = requpd.updSpec.varId;
-    VarSeqno  seqno = requpd.updSpec.seqno;
+    VarIdT     varId = requpd.updSpec.varId;
+    VarSeqnoT  seqno = requpd.updSpec.seqno;
 
     DBG_PVAR2("considering", (int) varId, (int) seqno);
 
@@ -1924,7 +1924,7 @@ void VardisProtocol::processVarReqCreate(const VarReqCreateT& reqcreate)
 {
     dbg_enter("processVarReqCreate");
 
-    VarId varId = reqcreate.varId;
+    VarIdT varId = reqcreate.varId;
 
     DBG_PVAR1("considering", (int) varId);
 
@@ -2231,7 +2231,7 @@ void VardisProtocol::sendConfirmation(VardisConfirmation *confMsg, VardisStatus 
 
 // ----------------------------------------------------
 
-void VardisProtocol::sendRTDBCreateConfirm(VardisStatus status, VarId varId, Protocol* theProtocol)
+void VardisProtocol::sendRTDBCreateConfirm(VardisStatus status, VarIdT varId, Protocol* theProtocol)
 {
     dbg_enter("sendRTDBCreateConfirm");
 
@@ -2244,7 +2244,7 @@ void VardisProtocol::sendRTDBCreateConfirm(VardisStatus status, VarId varId, Pro
 
 // ----------------------------------------------------
 
-void VardisProtocol::sendRTDBUpdateConfirm(VardisStatus status, VarId varId, Protocol* theProtocol)
+void VardisProtocol::sendRTDBUpdateConfirm(VardisStatus status, VarIdT varId, Protocol* theProtocol)
 {
     dbg_enter("sendRTDBUpdateConfirm");
 
@@ -2282,14 +2282,14 @@ Protocol* VardisProtocol::fetchSenderProtocol(Message* message)
 
 // ----------------------------------------------------
 
-bool VardisProtocol::variableExists(VarId varId)
+bool VardisProtocol::variableExists(VarIdT varId)
 {
     return (theVariableDatabase.find(varId) != theVariableDatabase.end());
 }
 
 // ----------------------------------------------------
 
-bool VardisProtocol::producerIsMe(VarId varId)
+bool VardisProtocol::producerIsMe(VarIdT varId)
 {
     DBEntry& theEntry = theVariableDatabase.at(varId);
 
@@ -2314,14 +2314,14 @@ MacAddress VardisProtocol::getProducerId(const VarSpecT& spec)
 // ========================================================================================
 
 
-bool VardisProtocol::isVarIdInQueue(const std::deque<VarId>& q, VarId varId)
+bool VardisProtocol::isVarIdInQueue(const std::deque<VarIdT>& q, VarIdT varId)
 {
     return (std::find(q.begin(), q.end(), varId) != q.end());
 }
 
 // ----------------------------------------------------
 
-void VardisProtocol::removeVarIdFromQueue(std::deque<VarId>& q, VarId varId)
+void VardisProtocol::removeVarIdFromQueue(std::deque<VarIdT>& q, VarIdT varId)
 {
     auto rems = std::remove(q.begin(), q.end(), varId);
     q.erase(rems, q.end());
@@ -2329,35 +2329,35 @@ void VardisProtocol::removeVarIdFromQueue(std::deque<VarId>& q, VarId varId)
 
 // ----------------------------------------------------
 
-void VardisProtocol::dropNonexistingDeleted(std::deque<VarId>& q)
+void VardisProtocol::dropNonexistingDeleted(std::deque<VarIdT>& q)
 {
     auto rems = std::remove_if(q.begin(),
                                q.end(),
-                               [&](VarId varId){ return (    (theVariableDatabase.find(varId) == theVariableDatabase.end())
-                                                          || (theVariableDatabase.at(varId).toBeDeleted));}
+                               [&](VarIdT varId){ return (    (theVariableDatabase.find(varId) == theVariableDatabase.end())
+                                                           || (theVariableDatabase.at(varId).toBeDeleted));}
                               );
     q.erase(rems, q.end());
 }
 
 // ----------------------------------------------------
 
-void VardisProtocol::dropNonexisting(std::deque<VarId>& q)
+void VardisProtocol::dropNonexisting(std::deque<VarIdT>& q)
 {
     auto rems = std::remove_if(q.begin(),
                                q.end(),
-                               [&](VarId varId){ return (theVariableDatabase.find(varId) == theVariableDatabase.end());}
+                               [&](VarIdT varId){ return (theVariableDatabase.find(varId) == theVariableDatabase.end());}
                               );
     q.erase(rems, q.end());
 }
 
 // ----------------------------------------------------
 
-void VardisProtocol::dropDeleted(std::deque<VarId>& q)
+void VardisProtocol::dropDeleted(std::deque<VarIdT>& q)
 {
     auto rems = std::remove_if(q.begin(),
                                q.end(),
-                               [&](VarId varId){ return (    (theVariableDatabase.find(varId) != theVariableDatabase.end())
-                                                          && (theVariableDatabase.at(varId).toBeDeleted));}
+                               [&](VarIdT varId){ return (    (theVariableDatabase.find(varId) != theVariableDatabase.end())
+                                                           && (theVariableDatabase.at(varId).toBeDeleted));}
                               );
     q.erase(rems, q.end());
 }
@@ -2538,7 +2538,7 @@ void VardisProtocol::assert_createQ()
     if (createQ.empty()) return;
     for (auto it : createQ)
     {
-        VarId       varId = it;
+        VarIdT      varId = it;
         MacAddress  ownId = getOwnNodeId();
         std::stringstream addrss;
         addrss << "address = " << ownId;
@@ -2564,7 +2564,7 @@ void VardisProtocol::assert_updateQ()
     if (updateQ.empty()) return;
     for (auto it : updateQ)
     {
-        VarId varId = it;
+        VarIdT varId = it;
         if (theVariableDatabase.find(varId) == theVariableDatabase.end())
         {
             DBG_PVAR1("no database entry for variable", (int) varId);

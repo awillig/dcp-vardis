@@ -48,8 +48,8 @@ class VariableProducer : public VardisClientProtocol
   protected:
 
     // Parameters
-    VarId          varId;
-    VarRepCnt      varRepCnt;
+    VarIdT         varId;
+    VarRepCntT     varRepCnt;
     simtime_t      deletionTime;
     simtime_t      creationTime;
 

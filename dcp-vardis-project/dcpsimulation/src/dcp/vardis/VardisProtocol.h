@@ -86,15 +86,15 @@ protected:
     cMessage*     sendPayloadMsg;
 
     // the queues
-    std::deque<VarId>    createQ;
-    std::deque<VarId>    deleteQ;
-    std::deque<VarId>    updateQ;
-    std::deque<VarId>    summaryQ;
-    std::deque<VarId>    reqUpdQ;
-    std::deque<VarId>    reqCreateQ;
+    std::deque<VarIdT>    createQ;
+    std::deque<VarIdT>    deleteQ;
+    std::deque<VarIdT>    updateQ;
+    std::deque<VarIdT>    summaryQ;
+    std::deque<VarIdT>    reqUpdQ;
+    std::deque<VarIdT>    reqCreateQ;
 
     // the current variable database
-    std::map<VarId, DBEntry>  theVariableDatabase;
+    std::map<VarIdT, DBEntry>  theVariableDatabase;
 
     // other data members
     bool   payloadSent = false;
@@ -214,12 +214,12 @@ protected:
      * The following helpers return the size of the various transmissible
      * elements being included in information elements
      */
-    unsigned int elementSizeVarCreate (VarId varId);
-    unsigned int elementSizeVarSummary (VarId varId);
-    unsigned int elementSizeVarUpdate (VarId varId);
-    unsigned int elementSizeVarDelete (VarId varId);
-    unsigned int elementSizeReqCreate (VarId varId);
-    unsigned int elementSizeReqUpdate (VarId varId);
+    unsigned int elementSizeVarCreate (VarIdT varId);
+    unsigned int elementSizeVarSummary (VarIdT varId);
+    unsigned int elementSizeVarUpdate (VarIdT varId);
+    unsigned int elementSizeVarDelete (VarIdT varId);
+    unsigned int elementSizeReqCreate (VarIdT varId);
+    unsigned int elementSizeReqUpdate (VarIdT varId);
 
     /**
      * Calculates how many records from the given queue can be
@@ -229,9 +229,9 @@ protected:
      * There is also an assumption that there are no duplicates.
      * The result is capped to maxInformationElementEntries
      * */
-    unsigned int numberFittingRecords(const std::deque<VarId>& queue,
+    unsigned int numberFittingRecords(const std::deque<VarIdT>& queue,
                                       unsigned int bytesAvailable,
-                                      std::function<unsigned int (VarId)> elementSizeFunction);
+                                      std::function<unsigned int (VarIdT)> elementSizeFunction);
 
 
     /**
@@ -240,12 +240,12 @@ protected:
      * a variable and the current byte counters as input. They build up the
      * byte vector sequentially
      */
-    void addVarCreate(VarId varId, DBEntry& theEntry, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void addVarSummary(VarId varId, DBEntry& theEntry, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void addVarUpdate(VarId varId, DBEntry& theEntry, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void addVarReqUpdate(VarId varId, DBEntry& theEntry, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void addVarDelete(VarId varId, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void addVarReqCreate(VarId varId, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
+    void addVarCreate(VarIdT varId, DBEntry& theEntry, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
+    void addVarSummary(VarIdT varId, DBEntry& theEntry, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
+    void addVarUpdate(VarIdT varId, DBEntry& theEntry, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
+    void addVarReqUpdate(VarIdT varId, DBEntry& theEntry, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
+    void addVarDelete(VarIdT varId, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
+    void addVarReqCreate(VarIdT varId, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
     void addIEHeader(const IEHeaderT& ieHdr, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
 
 
@@ -333,12 +333,12 @@ protected:
      * Creates RTDBCreate.confirm message with given status and hands it over
      * to 'sendConfirmation' for sending to given protocol
      */
-    void sendRTDBCreateConfirm (VardisStatus status, VarId varId, Protocol* theProtocol);
+    void sendRTDBCreateConfirm (VardisStatus status, VarIdT varId, Protocol* theProtocol);
 
     /**
      * Creates RTDBUpdate.confirm message
      */
-    void sendRTDBUpdateConfirm (VardisStatus status, VarId varId, Protocol* theProtocol);
+    void sendRTDBUpdateConfirm (VardisStatus status, VarIdT varId, Protocol* theProtocol);
 
 
     // ---------------------------------------------------------------------
@@ -348,31 +348,31 @@ protected:
     /**
      * Checks whether the given varId is in the given queue
      */
-    bool isVarIdInQueue(const std::deque<VarId>& q, VarId varId);
+    bool isVarIdInQueue(const std::deque<VarIdT>& q, VarIdT varId);
 
     /**
      * Erases varId from the given queue, and raises an error if the
      * varId can then still be found
      */
-    void removeVarIdFromQueue(std::deque<VarId>& q, VarId varId);
+    void removeVarIdFromQueue(std::deque<VarIdT>& q, VarIdT varId);
 
     /**
      * Drops from the given queue all varId's which do not exist in the
      * local RTDB or which exist but have been set to be deleted
      */
-    void dropNonexistingDeleted(std::deque<VarId>& q);
+    void dropNonexistingDeleted(std::deque<VarIdT>& q);
 
     /**
      * Drops from the given queue all varId's which do not exist in the
      * local RTDB
      */
-    void dropNonexisting(std::deque<VarId>& q);
+    void dropNonexisting(std::deque<VarIdT>& q);
 
     /**
      * Drops from the given queue all varId's which do exist in the RTDB
      * and which have been set to be deleted
      */
-    void dropDeleted(std::deque<VarId>& q);
+    void dropDeleted(std::deque<VarIdT>& q);
 
     // ---------------------------------------------------------------------
     // Miscellaneous helpers
@@ -387,12 +387,12 @@ protected:
     /**
      * Checks if the given variable exists in the RTDB
      */
-    bool variableExists(VarId varId);
+    bool variableExists(VarIdT varId);
 
     /**
      * Checks if this node is itself the producer of the given variable
      */
-    bool producerIsMe(VarId varId);
+    bool producerIsMe(VarIdT varId);
 
     /**
      * Returns node id (MAC address) of producer for given variable specification

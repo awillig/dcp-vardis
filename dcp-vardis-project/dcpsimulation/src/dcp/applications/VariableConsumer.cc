@@ -209,7 +209,7 @@ void VariableConsumer::handleRTDBReadConfirm(RTDBRead_Confirm* readConf)
 
     // if variable is new or has updated value print debug output and record statistics
     // (for one selected variable)
-    VarId varId = readConf->getVarId();
+    VarIdT varId = readConf->getVarId();
     if (    (lastReceived.find(varId) == lastReceived.end())
          || (theValue.seqno != lastReceived[varId].seqno))
     {
