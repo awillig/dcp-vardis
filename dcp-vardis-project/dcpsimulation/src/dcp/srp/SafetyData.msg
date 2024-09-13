@@ -17,7 +17,7 @@
 //
 
 
-struct SafetyData {
+struct SafetyDataT {
 	double  position_x;
 	double  position_y;
 	double  position_z;

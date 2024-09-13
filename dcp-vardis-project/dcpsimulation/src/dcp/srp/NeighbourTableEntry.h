@@ -33,7 +33,7 @@ namespace dcp {
 
 typedef struct NeighbourTableEntry {
     NodeIdentifierT      nodeId;
-    ExtendedSafetyData   extSD;
+    ExtendedSafetyDataT  extSD;
     simtime_t            receptionTime;
 } NeighbourTableEntry;
 

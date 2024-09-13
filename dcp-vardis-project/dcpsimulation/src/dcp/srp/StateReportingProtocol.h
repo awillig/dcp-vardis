@@ -41,7 +41,7 @@ using namespace inet;
 namespace dcp {
 
 
-typedef uint32_t   SRPSequenceNumber;
+typedef uint32_t   SRPSequenceNumberT;
 
 
 /**
@@ -85,9 +85,9 @@ private:
     double        _srpNeighbourTablePrintPeriod;    // Period for logging the neighbor table contents
 
     // other data members
-    SafetyData          _currentSafetyData;       // current safety data (position etc) of this node
-    IMobility          *_mobility = nullptr;      // pointer to mobility model, needed to query position
-    SRPSequenceNumber   _seqno    = 0;            // seqno to be used in SRP messages
+    SafetyDataT          _currentSafetyData;       // current safety data (position etc) of this node
+    IMobility           *_mobility = nullptr;      // pointer to mobility model, needed to query position
+    SRPSequenceNumberT   _seqno    = 0;            // seqno to be used in SRP messages
 
     // Timer self message
     cMessage*     _generatePayloadMsg      = nullptr;

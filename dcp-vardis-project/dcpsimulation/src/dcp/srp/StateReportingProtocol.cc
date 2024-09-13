@@ -189,7 +189,7 @@ void StateReportingProtocol::handleGeneratePayloadMsg ()
         dbg_string("handleGeneratePayloadMsg: generating the payload");
 
         // create the actual SRP message content
-        auto esd = makeShared<ExtendedSafetyData>();
+        auto esd = makeShared<ExtendedSafetyDataT>();
         assert(esd);
         esd->setSafetyData(_currentSafetyData);
         esd->setNodeId(getOwnNodeId());
@@ -297,7 +297,7 @@ void StateReportingProtocol::handleReceivedPayload(BPReceivePayload_Indication* 
     assert(payload);
     assert(payload->getProtId() == BP_PROTID_SRP);
 
-    auto esd = payload->popAtFront<ExtendedSafetyData>();
+    auto esd = payload->popAtFront<ExtendedSafetyDataT>();
     delete payload;
 
     NodeIdentifierT senderId = esd->getNodeId();

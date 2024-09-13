@@ -22,11 +22,11 @@ import inet.common.packet.chunk.Chunk;
 import inet.linklayer.common.MacAddress;
 import dcp.srp.SafetyData;
 
-class ExtendedSafetyData extends inet::FieldsChunk
+class ExtendedSafetyDataT extends inet::FieldsChunk
 {
     chunkLength = inet::B(62); // length of ExtendedSafetyData
     
-    SafetyData          safetyData;
+    SafetyDataT         safetyData;
     inet::MacAddress    nodeId;
     simtime_t           timeStamp;
     uint32_t            seqno;
