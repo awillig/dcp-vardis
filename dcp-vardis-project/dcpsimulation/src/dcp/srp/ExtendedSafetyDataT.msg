@@ -20,7 +20,7 @@
 
 import inet.common.packet.chunk.Chunk;
 import inet.linklayer.common.MacAddress;
-import dcp.srp.SafetyData;
+import dcp.srp.SafetyDataT;
 
 class ExtendedSafetyDataT extends inet::FieldsChunk
 {

@@ -16,7 +16,7 @@
 
 #include <inet/common/IProtocolRegistrationListener.h>
 #include <dcp/srp/StateReportingProtocol.h>
-#include <dcp/srp/ExtendedSafetyData_m.h>
+#include <dcp/srp/ExtendedSafetyDataT_m.h>
 #include <dcp/common/DcpTypesGlobals.h>
 #include <dcp/bp/BPQueueingMode_m.h>
 #include <dcp/bp/BPTransmitPayload_m.h>

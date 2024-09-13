@@ -21,7 +21,7 @@
 
 #include <omnetpp.h>
 #include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/srp/ExtendedSafetyData_m.h>
+#include <dcp/srp/ExtendedSafetyDataT_m.h>
 
 // --------------------------------------------------------------------------
 
