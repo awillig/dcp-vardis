@@ -47,13 +47,13 @@ system- and programming-language dependent.
 ## Basic Transmissible Data Types
 
 The following basic data types can be used inside an implementation
-but are also included as fields in packets. Where relevant, we
-generally assume that these data types are transmitted in network byte
-order.
+but are particularly included as fields in packets. The type names of
+transmissible data types end with `T`. Where relevant, we generally
+assume that these data types are transmitted in network byte order.
 
 - Stations have unique identifiers, which we refer to as **node
   identifiers**, and these are of fixed-length data type
-  `NodeIdentifier` that is not specified here in detail. Such an
+  `NodeIdentifierT` that is not specified here in detail. Such an
   identifier can be administratively assigned or the implementer
   chooses to use a data type already provided by the underlying
   wireless technology, like for example a 48-bit WiFi MAC address. A
@@ -64,12 +64,12 @@ order.
 
 - Nodes have access to a precise source of physical time
   (e.g. GPS). Timestamps are represented using a fixed-length data
-  type `TimeStamp` that is not specified here in detail, but which we
+  type `TimeStampT` that is not specified here in detail, but which we
   assume to allow to have a resolution of 1ms or better, small enough
   to differentiate between two update operations to the same variable.
 
 - When a human-readable string is to be transmitted, then the data
-  type `TString` is used, which refers to a zero-terminated string.
+  type `StringT` is used, which refers to a zero-terminated string.
 
 When implementations choose representations for any of the
 transmissible data types that are longer than eight bit, these will

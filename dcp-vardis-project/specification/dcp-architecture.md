@@ -26,7 +26,7 @@ applications or other protocols, and they use BP / SRP / VarDis
 services through their respective interfaces.
 
 
-## The Underlying Wireless Bearer (UWB)
+## The Underlying Wireless Bearer (UWB) {#sec-architecture-uwb}
 
 The UWB includes as a minimum a physical and a MAC layer. We do not
 prescribe any specific technology or protocol stack for the UWB but
@@ -52,7 +52,8 @@ capabilities and behaviour:
 - The UWB has a known maximum packet size, which is available to the
   BP. At the discretion of DCP the actual size of beacon packets can
   be varied dynamically, e.g. to strike a balance between maintaining
-  a small overhead ratio and avoiding channel congestion.
+  a small overhead ratio and avoiding channel congestion. This maximum
+  packet size of the UWB shall be no smaller than 256 bytes.
 
 - The UWB protects packets with an error-detecting or error-correcting
   code. We assume that the error-detection capability is practically
@@ -102,7 +103,7 @@ document, but it has a fixed and well-known length. When the SRP
 prepares a block for transmission by the BP, it always only includes
 the information from the most recent `SafetyData` record it has
 received. Furthermore, the SRP adjoins meta information like a
-timestamp (of type `TimeStamp`) and a SRP sequence number to the
+timestamp (of type `TimeStampT`) and a SRP sequence number to the
 `SafetyData` record, which allows a receiving node to assess how old
 the last SRP information received from the sender is.
 
