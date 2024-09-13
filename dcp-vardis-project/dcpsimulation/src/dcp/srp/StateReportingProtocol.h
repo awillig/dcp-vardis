@@ -102,7 +102,7 @@ protected:
     // -------------------------------------------
 
     // neighbor table
-    std::map<NodeIdentifier, NeighbourTableEntry>  neighbourTable;
+    std::map<NodeIdentifierT, NeighbourTableEntry>  neighbourTable;
 
 
     // -------------------------------------------

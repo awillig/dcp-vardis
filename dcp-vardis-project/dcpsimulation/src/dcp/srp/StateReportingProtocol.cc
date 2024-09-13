@@ -227,7 +227,7 @@ void StateReportingProtocol::handleScrubNeighbourTableMsg ()
 {
     dbg_enter("handleScrubNeighbourTableMsg");
 
-    std::list<NodeIdentifier>  toBeDeleted;
+    std::list<NodeIdentifierT>  toBeDeleted;
 
     // traverse neighbor table and mark all too old entries for deletion
     for (auto nte : neighbourTable)
@@ -300,7 +300,7 @@ void StateReportingProtocol::handleReceivedPayload(BPReceivePayload_Indication* 
     auto esd = payload->popAtFront<ExtendedSafetyData>();
     delete payload;
 
-    NodeIdentifier senderId = esd->getNodeId();
+    NodeIdentifierT senderId = esd->getNodeId();
 
     dbg_prefix();
     EV << "received payload from sender " << senderId

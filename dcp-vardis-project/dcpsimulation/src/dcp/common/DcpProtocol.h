@@ -47,7 +47,7 @@ public:
     virtual void initialize(int stage) override;
 
     // return the node identifier (MAC address) of this node
-    NodeIdentifier getOwnNodeId () const { return _ownNodeId; };
+    NodeIdentifierT getOwnNodeId () const { return _ownNodeId; };
 
 private:
 
@@ -56,7 +56,7 @@ private:
     // --------------------------------------------
 
     // Node id of this node
-    NodeIdentifier           _ownNodeId      = nullIdentifier;
+    NodeIdentifierT          _ownNodeId      = nullIdentifier;
 
     // Identifying the network interface to be used, needed for packet transmission
     inet::NetworkInterface  *_wlanInterface  = nullptr;

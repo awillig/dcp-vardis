@@ -31,10 +31,10 @@ namespace dcp {
 
 
 typedef inet::MacAddress   MacAddress;
-typedef inet::MacAddress   NodeIdentifier;
+typedef inet::MacAddress   NodeIdentifierT;
 typedef omnetpp::SimTime   TimeStamp;
 
-const NodeIdentifier       nullIdentifier = MacAddress::UNSPECIFIED_ADDRESS;
+const NodeIdentifierT      nullIdentifier = MacAddress::UNSPECIFIED_ADDRESS;
 
 
 // --------------------------------------------------------------------
