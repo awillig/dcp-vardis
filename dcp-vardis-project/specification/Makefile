@@ -5,10 +5,15 @@ MDFILES = frontmatter.md dcp-version-contributors.md dcp-context.md dcp-datatype
 
 TOCOPTS = --toc --toc-depth=3
 
+PDOPTS = -V colorlinks=true \
+	 -V linkcolor=blue \
+	 -V urlcolor=red \
+	 -V toccolor=gray
+
 dcpvardis-spec.html : $(MDFILES)
 	@-rm $@
-	pandoc $(MDFILES) $(TOCOPTS) --number-sections -s -t html -o $@
+	pandoc $(MDFILES) $(PDOPTS) $(TOCOPTS) --number-sections -s -t html -o $@
 
 dcpvardis-spec.pdf : $(MDFILES)
 	@-rm $@
-	pandoc $(MDFILES) $(TOCOPTS) --number-sections -s -t pdf -o $@
+	pandoc $(MDFILES) $(PDOPTS) $(TOCOPTS) --number-sections -s -t pdf -o $@
