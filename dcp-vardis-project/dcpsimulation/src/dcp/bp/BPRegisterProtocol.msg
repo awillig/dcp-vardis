@@ -29,5 +29,6 @@ class BPRegisterProtocol_Request extends inet::Request
     string            protName;
     int               maxPayloadSizeB;
     BPQueueingMode    queueingMode;
+    int               maxEntries;
 };
 

@@ -19,7 +19,8 @@
 
 enum BPQueueingMode
 {
-    BP_QMODE_QUEUE   =  0;
-    BP_QMODE_ONCE    =  1;
-    BP_QMODE_REPEAT  =  2;
+    BP_QMODE_QUEUE           =  0;
+    BP_QMODE_QUEUE_DROPTAIL  =  1;
+    BP_QMODE_ONCE            =  2;
+    BP_QMODE_REPEAT          =  3;
 };

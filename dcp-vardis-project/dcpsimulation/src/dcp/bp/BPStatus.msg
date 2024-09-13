@@ -25,4 +25,6 @@ enum BPStatus
     BP_STATUS_UNKNOWN_PROTOCOL              =  3;
     BP_STATUS_PAYLOAD_TOO_LARGE             =  4;
     BP_STATUS_EMPTY_PAYLOAD                 =  5;
+    BP_STATUS_ILLEGAL_DROPTAIL_QUEUE_SIZE   =  6;
+    BP_STATUS_DROPTAIL_QUEUE_FULL           =  7;
 };
