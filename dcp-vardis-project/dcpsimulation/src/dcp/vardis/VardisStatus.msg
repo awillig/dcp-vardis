@@ -23,7 +23,7 @@ enum VardisStatus
     VARDIS_STATUS_VARIABLE_EXISTS                 =  1;
     VARDIS_STATUS_VARIABLE_DESCRIPTION_TOO_LONG   =  2;
     VARDIS_STATUS_VALUE_TOO_LONG                  =  3;
-    VARDIS_STATUS_INVALID_VALUE                   =  4;
+    VARDIS_STATUS_EMPTY_VALUE                     =  4;
     VARDIS_STATUS_ILLEGAL_REPCOUNT                =  5;
 	VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST         =  6;
 	VARDIS_STATUS_NOT_PRODUCER                    =  7;

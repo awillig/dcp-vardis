@@ -53,14 +53,22 @@ void VardisProtocol::initialize(int stage)
         vardisMaxRepetitions        = (unsigned int) par("vardisMaxRepetitions");
         vardisMaxSummaries          = (unsigned int) par("vardisMaxSummaries");
         vardisBufferCheckPeriod     = par("vardisBufferCheckPeriod");
+
+        // sanity-check parameters
+        assert(maxPayloadSize > 0);
+        assert(maxPayloadSize <= 1400);   // this deviates from specification (would require config data from BP)
         assert(vardisMaxValueLength > 0);
+        assert(vardisMaxValueLength <= std::min(maxVarLen, maxPayloadSize - serializedSizeIEHeaderT_B));
         assert(vardisMaxDescriptionLength > 0);
+        assert(vardisMaxDescriptionLength <=   maxPayloadSize
+                                             - (   serializedSizeIEHeaderT_B
+                                                 + serializedSizeVarSpecT_FixedPart_B
+                                                 + serializedSizeVarUpdateT_FixedPart_B
+                                                 + vardisMaxValueLength
+                                                 ));
         assert(vardisMaxRepetitions > 0);
         assert(vardisMaxRepetitions <= 15);
-        assert(maxPayloadSize >   vardisMaxValueLength
-                                + vardisMaxDescriptionLength
-                                + serializedSizeVarCreateT_FixedPart_B
-                                + serializedSizeIEHeaderT_B);
+        assert(vardisMaxSummaries <= (maxPayloadSize-serializedSizeIEHeaderT_B)/serializedSizeVarSummT_B);
         assert(vardisBufferCheckPeriod > 0);
 
         // find gate identifiers
@@ -149,7 +157,7 @@ void VardisProtocol::registerAsBPClient()
 
     DBG_VAR1(maxPayloadSize);
 
-    sendRegisterProtocolRequest(BP_PROTID_VARDIS, "Variable Dissemination Protocol (VarDis)", maxPayloadSize, BP_QMODE_ONCE);
+    sendRegisterProtocolRequest(BP_PROTID_VARDIS, "Variable Dissemination Protocol (VarDis)", maxPayloadSize, BP_QMODE_QUEUE, 0);
 
     dbg_leave();
 }
@@ -548,7 +556,7 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
     if (length == 0)
     {
         dbg_string("value length is zero, dropping request");
-        sendRTDBCreateConfirm(VARDIS_STATUS_INVALID_VALUE, spec.varId, theProtocol);
+        sendRTDBCreateConfirm(VARDIS_STATUS_EMPTY_VALUE, spec.varId, theProtocol);
         delete createReq;
         delete [] descr_cstr;
         dbg_leave();
@@ -582,6 +590,14 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
     for (int i=0; i<length; i++)
         newent.value[i] = createReq->getUpddata(i);
     theVariableDatabase[spec.varId] = newent;
+
+    // clean out varId from all queues, just to be safe
+    removeVarIdFromQueue(createQ, spec.varId);
+    removeVarIdFromQueue(updateQ, spec.varId);
+    removeVarIdFromQueue(summaryQ, spec.varId);
+    removeVarIdFromQueue(deleteQ, spec.varId);
+    removeVarIdFromQueue(reqUpdQ, spec.varId);
+    removeVarIdFromQueue(reqCreateQ, spec.varId);
 
     // add new variable to relevant queues
     createQ.push_back(spec.varId);
@@ -669,7 +685,7 @@ void VardisProtocol::handleRTDBUpdateRequest(RTDBUpdate_Request* updateReq)
     if (varLen == 0)
     {
         dbg_string("value length is zero, dropping request");
-        sendRTDBUpdateConfirm(VARDIS_STATUS_INVALID_VALUE, varId, theProtocol);
+        sendRTDBUpdateConfirm(VARDIS_STATUS_EMPTY_VALUE, varId, theProtocol);
         delete updateReq;
         dbg_leave();
         return;
@@ -1175,7 +1191,8 @@ unsigned int VardisProtocol::numberFittingRecords(
     unsigned int   bytesToBeAdded = sizeof(IEHeaderT);
     auto           it = queue.begin();
     while(    (it != queue.end())
-           && (bytesToBeAdded + elementSizeFunction(*it) <= bytesAvailable))
+           && (bytesToBeAdded + elementSizeFunction(*it) <= bytesAvailable)
+           && (numberRecordsToAdd < maxRecordsInInformationElement))
     {
         numberRecordsToAdd++;
         bytesToBeAdded += elementSizeFunction(*it);
@@ -1547,8 +1564,8 @@ void VardisProtocol::constructPayload(bytevect& bv)
 
     makeIETypeCreateVariables (bv, bytesUsed, bytesAvailable);
     makeIETypeDeleteVariables (bv, bytesUsed, bytesAvailable);
-    makeIETypeUpdates (bv, bytesUsed, bytesAvailable);
     makeIETypeSummaries (bv, bytesUsed, bytesAvailable);
+    makeIETypeUpdates (bv, bytesUsed, bytesAvailable);
     makeIETypeRequestVarCreates (bv, bytesUsed, bytesAvailable);
     makeIETypeRequestVarUpdates (bv, bytesUsed, bytesAvailable);
 
@@ -1622,7 +1639,10 @@ void VardisProtocol::processVarCreate(const VarCreateT& create)
     DBG_PVAR2("considering", (int) varId, prodId);
 
     if (    (not variableExists(varId))
-         && (prodId != getOwnNodeId()))
+         && (prodId != getOwnNodeId())
+         && (spec.descrLen <= vardisMaxDescriptionLength)
+         && (update.length <= vardisMaxValueLength)
+       )
     {
         DBG_PVAR4("ADDING new variable to database", (int) varId, prodId, (int) spec.descrLen, spec.descr);
 
@@ -1746,6 +1766,13 @@ void VardisProtocol::processVarUpdate(const VarUpdateT& update)
         return;
     }
 
+    if (update.length > vardisMaxValueLength)
+    {
+        dbg_string("variable value is too long");
+        dbg_leave();
+        return;
+    }
+
     if (theEntry.seqno == update.seqno)
     {
         dbg_string("variable has same sequence number");
@@ -1806,7 +1833,7 @@ void VardisProtocol::processVarSummary(const VarSummT& summ)
     // if variable does not exist in local RTDB, request a VarCreate
     if (not variableExists(varId))
     {
-        dbg_string("processVarSummary: variable does not exist in my database");
+        dbg_string("variable does not exist in my database");
         if (not isVarIdInQueue(reqCreateQ, varId))
         {
             reqCreateQ.push_back(varId);
@@ -1884,6 +1911,10 @@ void VardisProtocol::processVarReqUpdate(const VarReqUpdateT& requpd)
     if (not variableExists(varId))
     {
         dbg_string("variable does not exist in my database");
+        if (not isVarIdInQueue(reqCreateQ, varId))
+        {
+            reqCreateQ.push_back(varId);
+        }
         dbg_leave();
         return;
     }
@@ -1931,6 +1962,10 @@ void VardisProtocol::processVarReqCreate(const VarReqCreateT& reqcreate)
     if (not variableExists(varId))
     {
         dbg_string("variable does not exist in my database");
+        if (not isVarIdInQueue(reqCreateQ, varId))
+        {
+            reqCreateQ.push_back(varId);
+        }
         dbg_leave();
         return;
     }

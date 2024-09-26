@@ -141,6 +141,7 @@ typedef struct IEHeaderT {
 } IEHeaderT;
 
 const size_t serializedSizeIEHeaderT_B = 2;
+const int maxRecordsInInformationElement = 255;
 
 // -----------------------------------------
 
