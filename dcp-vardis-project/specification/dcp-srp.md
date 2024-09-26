@@ -191,7 +191,7 @@ the following parameters:
 - `maxPayloadSize` is set to
   `sizeof(ExtendedSafetyDataT)`. Implementations may opt to add an
   additional safety margin.
-- `queueingMode` is set to `BP_QUEUEING_MODE_REPEAT`, meaning that the
+- `queueingMode` is set to `BP_QMODE_REPEAT`, meaning that the
   BP will always transmit the last `ExtendedSafetyDataT` record that the
   SRP has handed over.
 

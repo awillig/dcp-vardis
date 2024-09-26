@@ -41,7 +41,7 @@ at least for some client protocols.
   assumed to be a contiguous block of bytes without any further
   internal structure of relevance to BP.
 
-- The non-transmissible data type `BPQueueingMode` has three
+- The non-transmissible data type `BPQueueingMode` has five
   distinguishable values, indicating how payloads handed over by
   client protocols for transmission are being buffered in the BP:
 
@@ -51,11 +51,15 @@ at least for some client protocols.
       contain only one payload from the queue. Organising the queue in
       FIFO mode means that head-of-line blocking can happen.
 
-    - `BP_QMODE_QUEUE_DROPTAIL` means that payloads enter a FIFO queue
+    - In the `BP_QMODE_QUEUE_DROPTAIL` and `BP_QMODE_QUEUE_DROPHEAD`
+      queueing modes the payload enters a FIFO queue
       of finite positive length. If a new payload is submitted to a
-      full queue, the new payload is discarded. Any non-discarded payload is
-      transmitted in a beacon only once, then dropped from the
-      queue. A beacon contain only one payload from the
+      full queue, the new payload is discarded when
+      `BP_QMODE_QUEUE_DROPTAIL` is chosen, or the head-of-queue
+      payload is discarded and the new payload is stored at the end of
+      the queue when `BP_QMODE_QUEUE_DROPHEAD` is chosen. Any
+      non-discarded payload is transmitted in a beacon only once, then
+      dropped from the queue. A beacon contains only one payload from the
       queue. Organising the queue in FIFO mode means that head-of-line
       blocking can happen.
 
@@ -95,12 +99,12 @@ at least for some client protocols.
 	- `timeStamp` of type `TimeStamp` contains the local time at which
 	  the client protocol has been registered.
 	- `queue` of type `Queue<BPBufferEntry>` is the queue holding
-	  payloads needed when `queueMode` equals `BP_QMODE_QUEUE` or
-	  `BP_QMODE_QUEUE_DROPTAIL`.
+	  payloads needed when `queueMode` equals `BP_QMODE_QUEUE`, 
+	  `BP_QMODE_QUEUE_DROPTAIL`, or `BP_QMODE_QUEUE_DROPHEAD`.
 	- `maxEntries` of type integer is a positive value containing the
 	  maximum number of elements in a queue of type
-	  `BP_QMODE_QUEUE_DROPTAIL`. Undefined for other queue / buffer
-	  types.
+	  `BP_QMODE_QUEUE_DROPTAIL` or
+	  `BP_QMODE_QUEUE_DROPHEAD`. Undefined for other queue / buffer types.
 	- `bufferOccupied` of type `Bool` is needed for `queueMode` being
 	  either `BP_QMODE_ONCE` or `BP_QMODE_REPEAT`.
 	- `bufferEntry` of type `BPBufferEntry` is needed for `queueMode`
@@ -206,7 +210,8 @@ parameters:
 - `queueingMode` of type `BPQueueingMode` specifies the queueing mode
   to be applied for this client protocol.
 - `maxEntries` of type integer specifies the maximum number of
-  payloads when `queueingMode` equals `BP_QMODE_QUEUE_DROPTAIL`
+  payloads when `queueingMode` equals `BP_QMODE_QUEUE_DROPTAIL` or
+  `BP_QMODE_QUEUE_DROPHEAD`.
 
 The BP entity responds with a `BP-RegisterProtocol.confirm`
 primitive. This primitive is generated immediately upon processing the
@@ -223,8 +228,10 @@ the BP performs at least the following actions:
           stop processing, return status code BP-STATUS-ILLEGAL-MAX-PAYLOAD-SIZE
 3.     If (maxPayloadSize > (BPPAR_MAXIMUM_PACKET_SIZE - (sizeof(BPPayloadBlockHeaderT) + 4)))
 	      stop processing, return status code BP-STATUS-ILLEGAL-MAX-PAYLOAD-SIZE
-4.     if ((queueingMode == BP_QMODE_QUEUE_DROPTAIL) && (maxEntries <= 0))
-	      stop processing, return status code BP-STATUS-ILLEGAL-DROPTAIL-QUEUE-SIZE
+4.     if (    (    (queueingMode == BP_QMODE_QUEUE_DROPTAIL)
+                 || (queueingMode == BP_QMODE_QUEUE_DROPHEAD))
+            && (maxEntries <= 0))
+	      stop processing, return status code BP-STATUS-ILLEGAL-DROPPING-QUEUE-SIZE
 5.     Let newent : BPClientProtocol with
            newent.protocolId      =  protId
 		         .protocolName    =  name
@@ -362,12 +369,17 @@ performs at least the following actions:
 3.     If (length > protEntry.maxPayloadSize) then
           stop processing, return status code BP-STATUS-PAYLOAD-TOO-LARGE
 4.     If (    (protEntry.queueMode == BP_QMODE_QUEUE) 
-            || (protEntry.queueMode == BP_QMODE_QUEUE_DROPTAIL)) then
+            || (protEntry.queueMode == BP_QMODE_QUEUE_DROPTAIL)
+			|| (protEntry.queueMode == BP_QMODE_QUEUE_DROPHEAD)) then
           If (length > 0) then
 		     If (    (protEntry.queueMode == BP_QMODE_QUEUE_DROPTAIL)
 			      && (protEntry.queue.length() >= protEntry.maxEntries)) then
-			    return status code BP_STATUS_DROPTAIL_QUEUE_FULL
+			    return status code BP_STATUS_OK
 		     else
+                If (    (protEntry.queueMode == BP_QMODE_QUEUE_DROPHEAD)
+			         && (protEntry.queue.length() >= protEntry.maxEntries)) then
+				   protEntry.queue.qTake()
+				
                 Let newent : BPBufferEntry with
        	            newent.length  =  length
  		                  .payload =  payload
@@ -389,6 +401,12 @@ performs at least the following actions:
 			 protEntry.bufferEntry.payload  = null
   		  stop processing, return status code BP-STATUS-OK
 ~~~
+
+Note that when the queueing mode is either `BP_QMODE_QUEUE_DROPHEAD`
+or `BP_QMODE_QUEUE_DROPTAIL` and a payload gets dropped in response to
+invoking the `BP-TransmitPayload.request` primitive, the BP instance
+will nonetheless return status code `BP-STATUS-OK`, as the condition
+of a full queue is not a genuine error.
 
 
 ### Payload Transmission Indication
@@ -478,10 +496,11 @@ needs to support. These are:
   
 -  `BPPAR_MAXIMUM_PACKET_SIZE`: specifies the maximum packet size of
   beacons (which can include several payloads). This parameter must be
-  larger than zero and it must never be larger than the value of the
-  `UWB-MaxPacketSize` variable, which is initialized at startup and
-  contains the maximum packet size allowed by the UWB. The default
-  value is `UWB-MaxPacketSize`.
+  at least as large as
+  `sizeof(BPHeaderT)+sizeof(BPPayloadBlockHeaderT)` and it must never
+  be larger than the value of the `UWB-MaxPacketSize` variable, which
+  is initialized at startup and contains the maximum packet size
+  allowed by the UWB. The default value is `UWB-MaxPacketSize`.
 
 If a user-supplied value for one of these parameters does not match
 its conditions for validity (e.g. the value handed over for the

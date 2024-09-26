@@ -139,3 +139,13 @@ The `List` data type generally supports the following operations:
   primitive stops and that a `S.confirm` primitive carrying the
   indicated status code shall be returned to the entity generating the
   `S.request` primitive.
+
+
+## Versioning
+
+There is a concept of a DCP/VarDis version, which will at least
+distinguish between a major version (which will be included in beacon
+frames, see [BP Data Types](#subsubsec-beaconing-protocol-data-types))
+and a minor version. A key requirement is that within the same major
+version the transmissible data types are structurally equivalent,
+i.e. no fields are added or removed from such a data type.
