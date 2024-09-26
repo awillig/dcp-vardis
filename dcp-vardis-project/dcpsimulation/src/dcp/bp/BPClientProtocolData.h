@@ -46,7 +46,7 @@ typedef struct BPClientProtocolData {
     std::string                 protocolName;      // human-readable name of the protocol
     BPLengthT                   maxPayloadSizeB;   // maximum size of client protocol payload in bytes
     BPQueueingMode              queueMode;         // queueing mode to be used for client protocol
-    int                         maxEntries;        // maximum number of entries in a droptail queue
+    unsigned int                maxEntries;        // maximum number of entries in a droptail queue
     TimeStamp                   timeStamp;         // time at which client protocol was registered
     std::queue<BPBufferEntry>   queue;             // queue of all payloads when operating in mode BP_QMODE_QUEUE
     bool                        bufferOccupied;    // tells whether buffer is occupied or not

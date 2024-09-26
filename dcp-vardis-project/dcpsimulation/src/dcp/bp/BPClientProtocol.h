@@ -115,7 +115,11 @@ protected:
      * the protocol is specified through parameters. Derived classes
      * call this method in their overloaded version of 'registerAsBPClient'.
      */
-    void sendRegisterProtocolRequest (BPProtocolIdT protId, std::string protName, BPLengthT maxPayloadLen, BPQueueingMode queueingMode);
+    void sendRegisterProtocolRequest (BPProtocolIdT protId,
+                                      std::string protName,
+                                      BPLengthT maxPayloadLen,
+                                      BPQueueingMode queueingMode,
+                                      unsigned int maxEntries);
 
     /**
      * Sends a request to deregister the client protocol to the BP.

@@ -173,11 +173,12 @@ Ptr<const Chunk> BeaconingProtocol::extractFittingPayload(RegisteredProtocol& rp
     // If client protocol uses queue mode and has a fitting payload at the head of
     // the queue, extract it
     if (    (    (rp.protData.queueMode == BP_QMODE_QUEUE)
-              || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL))
+              || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
+              || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPHEAD))
          && (not (rp.protData.queue.empty()))
          && (((rp.protData.queue.front().theChunk->getChunkLength().get() / 8) + payloadBlockHeaderSizeB) <= remainingBytes))
     {
-        dbg_string("found payload for protocol with BP_QMODE_QUEUE or BP_QMODE_QUEUE_DROPTAIL");
+        dbg_string("found payload for protocol with BP_QMODE_QUEUE, BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
         auto qe = rp.protData.queue.front();
         rp.protData.queue.pop();
         dbg_leave();
@@ -534,10 +535,12 @@ void BeaconingProtocol::handleRegisterProtocolRequestMsg (BPRegisterProtocol_Req
         return;
     }
 
-    if ((clientProtData.queueMode == BP_QMODE_QUEUE_DROPTAIL) && (clientProtData.maxEntries <= 0))
+    if (    (    (clientProtData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
+              || (clientProtData.queueMode == BP_QMODE_QUEUE_DROPHEAD))
+         && (clientProtData.maxEntries <= 0))
     {
-        dbg_string ("illegal maxEntries value for droptail queue");
-        sendRegisterProtocolConfirm(BP_STATUS_ILLEGAL_DROPTAIL_QUEUE_SIZE, theProtocol);
+        dbg_string ("illegal maxEntries value for dropping queue");
+        sendRegisterProtocolConfirm(BP_STATUS_ILLEGAL_DROPPING_QUEUE_SIZE, theProtocol);
         dbg_leave();
         return;
     }
@@ -631,7 +634,8 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
     // check length of payload
     uint32_t  maxSize = (uint32_t) rp.protData.maxPayloadSizeB;
     DBG_VAR3(dataChunkLengthB, maxSize, dataChunk);
-    if (dataChunkLengthB > maxSize)
+    if (    (dataChunkLengthB > maxSize)
+         || (dataChunkLengthB > (bpParMaximumPacketSizeB - (payloadBlockHeaderSizeB + beaconProtocolHeaderSizeB))))
     {
         dbg_string ("payload too large");
         sendTransmitPayloadConfirm(BP_STATUS_PAYLOAD_TOO_LARGE, theProtocol);
@@ -666,9 +670,10 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
 
     // handle queueing mode
     if (    (rp.protData.queueMode == BP_QMODE_QUEUE)
-         || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL))
+         || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
+         || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPHEAD))
     {
-        dbg_string ("handling the case of QMODE_QUEUE or QMODE_QUEUE_DROPTAIL");
+        dbg_string ("handling the case of QMODE_QUEUE, QMODE_QUEUE_DROPTAIL or QMODE_QUEUE_DROPHEAD");
 
         if (dataChunkLengthB > 0)
         {
@@ -676,10 +681,17 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
                  && (rp.protData.queue.size() >= rp.protData.maxEntries))
             {
                 dbg_string ("dropping payload at droptail queue");
-                sendTransmitPayloadConfirm(BP_STATUS_DROPTAIL_QUEUE_FULL, theProtocol);
+                sendTransmitPayloadConfirm(BP_STATUS_OK, theProtocol);
             }
             else
             {
+                if (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPHEAD)
+                     && (rp.protData.queue.size() >= rp.protData.maxEntries))
+                {
+                    dbg_string ("QMODE_DROPHEAD: dropping head-of-line element");
+                    rp.protData.queue.pop();
+                }
+
                 BPBufferEntry newEntry;
                 newEntry.theChunk = dataChunk;
                 rp.protData.queue.push(newEntry);

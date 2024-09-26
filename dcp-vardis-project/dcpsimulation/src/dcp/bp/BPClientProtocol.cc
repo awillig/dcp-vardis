@@ -144,7 +144,11 @@ bool BPClientProtocol::hasHandledMessageBPClient(cMessage* msg)
 // ----------------------------------------------------
 
 
-void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolIdT protId, std::string protName, BPLengthT maxPayloadLenB, BPQueueingMode queueingMode)
+void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolIdT protId,
+                                                    std::string protName,
+                                                    BPLengthT maxPayloadLenB,
+                                                    BPQueueingMode queueingMode,
+                                                    unsigned int maxEntries)
 {
     dbg_enter("sendRegisterProtocolRequest");
 
@@ -153,6 +157,7 @@ void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolIdT protId, std::s
     reqMsg->setProtName(protName.c_str());
     reqMsg->setMaxPayloadSizeB(maxPayloadLenB);
     reqMsg->setQueueingMode(queueingMode);
+    reqMsg->setMaxEntries(maxEntries);
     sendToBP(reqMsg);
 
     dbg_leave();
