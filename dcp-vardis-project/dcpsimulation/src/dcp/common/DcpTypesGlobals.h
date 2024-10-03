@@ -16,12 +16,16 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#ifndef DCP_COMMON_DCPTYPESGLOBALS_H_
-#define DCP_COMMON_DCPTYPESGLOBALS_H_
+#pragma once
+
 
 #include <omnetpp.h>
 #include <inet/linklayer/common/MacAddress.h>
 #include <inet/common/Protocol.h>
+#include <dcp/common/MemBlockT.h>
+#include <dcp/common/FoundationTypes.h>
+#include <dcp/common/TransmissibleType.h>
+#include <dcp/bp/BPTypesConstants.h>
 
 using namespace omnetpp;
 using namespace inet;
@@ -32,23 +36,60 @@ namespace dcp {
 
 typedef inet::MacAddress   MacAddress;
 typedef inet::MacAddress   NodeIdentifierT;
-typedef omnetpp::SimTime   TimeStamp;
+typedef omnetpp::SimTime   TimeStampT;
 
 const NodeIdentifierT      nullIdentifier = MacAddress::UNSPECIFIED_ADDRESS;
 
 
+class StringT : public MemBlockT<byte>, public TransmissibleType<sizeof(byte)> {
+public:
+    StringT () : MemBlockT<byte>() {};
+    StringT (const char* str) : MemBlockT<byte>((byte) std::strlen(str), (byte*) str) {};
+    StringT (const std::string& str) : MemBlockT<byte>((byte) str.size(), (byte*) str.c_str()) {};
+
+    std::string to_str() const
+    {
+        return std::string((char*) data, (size_t) length);
+    };
+
+    char* to_cstr() const
+    {
+        if (length > 0 && data)
+        {
+            char* rv = new char [length+1];
+            std::memcpy(rv, data, length);
+            rv[length] = 0;
+            return rv;
+        }
+    };
+
+    virtual size_t total_size () const { return fixed_size() + length; };
+
+    virtual void serialize (AssemblyArea& area)
+    {
+        area.serialize_byte(length);
+        if (length > 0)
+            area.serialize_byte_block(length, data);
+    };
+
+    virtual void deserialize (DisassemblyArea& area)
+    {
+        length = area.deserialize_byte ();
+        if (length > 0)
+        {
+            if (data) throw SerializationException ("StringT::deserialize: already contains data");
+            data = new byte [length];
+            area.deserialize_byte_block (length, data);
+        }
+    };
+};
+
+
+
+
+
 // --------------------------------------------------------------------
 // Basic type definitions and constants
-
-typedef uint16_t      BPProtocolIdT;     // Identifier for client protocols
-typedef uint16_t      BPLengthT;         // length of a payload block
-
-
-
-// Pre-defined protocol id's
-const BPProtocolIdT BP_PROTID_SRP     =  0x0001;
-const BPProtocolIdT BP_PROTID_VARDIS  =  0x0002;
-
 
 
 
@@ -69,5 +110,3 @@ Protocol *convertProtocolIdToProtocol(BPProtocolIdT protId);
 
 } // namespace
 
-
-#endif /* DCP_COMMON_DCPTYPESGLOBALS_H_ */
