@@ -5,18 +5,19 @@
 
 When operating a (connected) swarm or formation of unmanned aerial
 vehicles (UAVs) or drones, the swarm members will have to communicate
-wirelessly with each other for purposes of coordination (e.g. to
-decide where the formation should move), or avoidance of physical
-drone collisions. To address the requirement of collision avoidance we
-assume that each drone frequently transmits messages carrying its own
-position, speed, heading and possibly other operational information to
-its local neighbourhood, typically using a local
-broadcast. Neighboured drones can use this information to estimate the
-trajectory of the sender and predict impending collisions. This mode
-of operation is very similar to the case of vehicular networks, where
-each vehicle frequently transmits basic safety messages to its
-neighbourhood, often at a rate of 10 Hz, to reduce uncertainty about
-the position of neighbours to a tolerable level.
+wirelessly with each other for purposes of coordination and control
+(e.g. to decide where the formation should move), or avoidance of
+physical drone collisions. To address the requirement of collision
+avoidance we assume that each drone frequently transmits messages
+carrying its own position, speed, heading and possibly other
+operational information to its local neighbourhood, typically using a
+local broadcast. Neighboured drones can use this information to
+estimate the trajectory of the sender and predict impending
+collisions. This mode of operation is very similar to the case of
+vehicular networks, where each vehicle frequently transmits basic
+safety messages to its neighbourhood, often at a rate of 10 Hz, to
+reduce uncertainty about the position of neighbours to a tolerable
+level.
 
 Under this arrangement, the network carries a constant background load
 of periodically transmitted packets, which from hereon we refer to as
@@ -37,7 +38,8 @@ piggybacked information a configurable number of times leads, together
 with the inherently available spatial diversity, to a high degree of
 redundancy and therefore high reliability. This overall functionality
 of information replication throughout the entire network is very
-useful for global coordination and task allocation purposes.
+useful for global coordination and task allocation purposes, if it is
+fast enough.
 
 The VarDis (Variable Dissemination) protocol, which is a key part of
 DCP, provides this beacon-based flooding mechanism and offers to
@@ -58,16 +60,18 @@ most recent variable value received through an update, but not to the
 history of all updates that have happened in the past.
 
 The DCP and in particular the VarDis protocol can operate over a
-general wireless multi-hop network. Its design is largely independent
-of the underlying wireless technology, as long as it provides a local
-broadcast facility and each station can be allocated a unique
-identifier like for example its MAC address. For better reading flow,
-we will often use WiFi as the underlying technology, which clearly
-fulfills these two foundational requirements.
+general wireless multi-hop network. The protocols do not use any state
+related to routing or network topology and are therefore robust
+against any changes in topology resulting from mobility or node
+arrivals and departures. Furthermore, its design is largely
+independent of the underlying wireless technology, as long as it
+provides a local broadcast facility and each station can be allocated
+a unique identifier like for example its MAC address. The ubiquitous
+WiFi technology clearly fulfills these two foundational requirements.
 
-This document describes the DCP and VarDis in a way that is largely
-ignorant of implementation matters, like for example the allocation of
-activities to processes, interprocess communication and management of
-race conditions / mutual exclusion, memory management, or the precise
-way in which service primitives are being exchanged between different
-protocol entities.
+This document describes the DCP and VarDis stack in a way that is
+largely ignorant of implementation matters, like for example the
+allocation of activities to processes or threads, interprocess
+communication and management of race conditions / mutual exclusion,
+memory management, or the precise way in which service primitives are
+being exchanged between different protocol entities.
