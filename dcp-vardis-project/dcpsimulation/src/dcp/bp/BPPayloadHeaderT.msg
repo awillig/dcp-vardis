@@ -23,4 +23,5 @@ class BPPayloadHeaderT extends inet::FieldsChunk
     chunkLength = inet::B(4); // length of BPPayloadBlockHeader
     
     uint16_t     protocolId;    // id of protocol generating the payload -- should be the same type as BPProtocolId
+    uint16_t     length;        // length of the payload in bytes
 }
