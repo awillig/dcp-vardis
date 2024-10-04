@@ -22,10 +22,10 @@ import inet.linklayer.common.MacAddress;
 class BPHeaderT extends inet::FieldsChunk
 {
     chunkLength = inet::B(14); // length of BPHeader
-    
+
+    uint8_t             version;    
     uint16_t            magicNo;
     inet::MacAddress    senderId;
-    uint8_t             version;
     uint8_t             numPayloads;
     uint32_t            seqno;   
 }
