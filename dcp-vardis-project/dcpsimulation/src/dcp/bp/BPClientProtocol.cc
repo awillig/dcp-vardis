@@ -148,6 +148,7 @@ void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolIdT protId,
                                                     std::string protName,
                                                     BPLengthT maxPayloadLenB,
                                                     BPQueueingMode queueingMode,
+                                                    bool allowMultiplePayloads,
                                                     unsigned int maxEntries)
 {
     dbg_enter("sendRegisterProtocolRequest");
@@ -157,6 +158,7 @@ void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolIdT protId,
     reqMsg->setProtName(protName.c_str());
     reqMsg->setMaxPayloadSizeB(maxPayloadLenB);
     reqMsg->setQueueingMode(queueingMode);
+    reqMsg->setAllowMultiplePayloads(allowMultiplePayloads);
     reqMsg->setMaxEntries(maxEntries);
     sendToBP(reqMsg);
 

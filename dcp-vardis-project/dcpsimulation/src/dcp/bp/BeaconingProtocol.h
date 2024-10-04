@@ -28,6 +28,7 @@
 #include <dcp/bp/BPDeregisterProtocol_m.h>
 #include <dcp/bp/BPRegisterProtocol_m.h>
 #include <dcp/bp/BPTransmitPayload_m.h>
+#include <dcp/bp/BPClearBuffer_m.h>
 #include <dcp/bp/BPConfirmation_m.h>
 #include <dcp/bp/BPQueryNumberBufferedPayloads_m.h>
 #include <dcp/bp/BPClientProtocolData.h>
@@ -85,7 +86,7 @@ protected:
     BPLengthT   bpParMaximumPacketSizeB;
 
     // dynamically calculated 'constant' lengths of a BPHeader and a payload header
-    BPLengthT   payloadBlockHeaderSizeB;
+    BPLengthT   payloadHeaderSizeB;
     BPLengthT   beaconProtocolHeaderSizeB;
 
     // Beacons have sequence numbers
@@ -135,6 +136,12 @@ protected:
     void handleTransmitPayloadRequestMsg (BPTransmitPayload_Request* txplReq);
 
     /**
+     * Processes BPClearBuffer.request message. The buffer / queue associated
+     * the client protocol is cleared.
+     */
+    void handleClearBufferRequestMsg (BPClearBuffer_Request* clearReq);
+
+    /**
      * Processes BPQueryNumberBufferedPayloads.request. Allows a client protocol
      * to query how many yet-to-be transmitted messages it has buffered in the BP
      */
@@ -173,6 +180,12 @@ protected:
     void sendTransmitPayloadConfirm (BPStatus status, Protocol* theProtocol);
 
     /**
+     * Generates and sends BPClearBuffer.confirm message to client protocol
+     */
+    void sendClearBufferConfirm (BPStatus status, Protocol* theProtocol);
+
+
+    /**
      * Generates and sends BPQueryNumberBufferedPayloads.confirm message to client protocol
      */
     void sendQueryNumberBufferedPayloadsConfirm (BPStatus status, unsigned int numPayloads, BPProtocolIdT protocolId, Protocol* theProtocol);
@@ -202,6 +215,7 @@ protected:
     void addPayload (RegisteredProtocol& rp,                         // the registered protocol to consider
                      std::list< Ptr<const Chunk> >& beaconChunks,    // this collects the chunks for the packet
                      BPLengthT& bytesUsed,                           // keeps track of # of bytes used
+                     size_t& numberPayloadsAdded,                    // keeps track of # payloads added to beacon
                      BPLengthT maxBytes,                             // max bytes available in beacon
                      simtime_t nextBeaconGenerationEpoch             // time of next beacon generation
                      );

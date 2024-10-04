@@ -119,6 +119,7 @@ protected:
                                       std::string protName,
                                       BPLengthT maxPayloadLen,
                                       BPQueueingMode queueingMode,
+                                      bool allowMultiplePayloads,
                                       unsigned int maxEntries);
 
     /**

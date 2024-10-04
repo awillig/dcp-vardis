@@ -28,7 +28,7 @@
 #include <dcp/bp/BPConfirmation_m.h>
 #include <dcp/bp/BPClientProtocolData.h>
 #include <dcp/bp/BPHeader_m.h>
-#include <dcp/bp/BPPayloadBlockHeader_m.h>
+#include <dcp/bp/BPPayloadHeaderT_m.h>
 #include <dcp/bp/BPPayloadTransmitted_m.h>
 #include <dcp/bp/BPReceivePayload_m.h>
 
@@ -70,12 +70,12 @@ void BeaconingProtocol::initialize (int stage)
         assert(bpParMaximumPacketSizeB > 0);
 
         // determine sizes of BPHeader and BPPayloadBlock header
-        auto dummyPayloadBlockHeader = makeShared<BPPayloadBlockHeaderT>();
-        payloadBlockHeaderSizeB      = (BPLengthT) (dummyPayloadBlockHeader->getChunkLength().get() / 8);
+        auto dummyPayloadHeader    = makeShared<BPPayloadHeaderT>();
+        payloadHeaderSizeB         = (BPLengthT) (dummyPayloadHeader->getChunkLength().get() / 8);
         auto dummyBPHeader         = makeShared<BPHeaderT>();
         beaconProtocolHeaderSizeB  = dummyBPHeader->getChunkLength().get() / 8;
 
-        DBG_VAR2(payloadBlockHeaderSizeB, beaconProtocolHeaderSizeB);
+        DBG_VAR2(payloadHeaderSizeB, beaconProtocolHeaderSizeB);
 
         // find gate identifiers
         gidFromUWB      =  findGate("fromUWB");
@@ -172,13 +172,12 @@ Ptr<const Chunk> BeaconingProtocol::extractFittingPayload(RegisteredProtocol& rp
 
     // If client protocol uses queue mode and has a fitting payload at the head of
     // the queue, extract it
-    if (    (    (rp.protData.queueMode == BP_QMODE_QUEUE)
-              || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
+    if (    (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
               || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPHEAD))
          && (not (rp.protData.queue.empty()))
-         && (((rp.protData.queue.front().theChunk->getChunkLength().get() / 8) + payloadBlockHeaderSizeB) <= remainingBytes))
+         && (((rp.protData.queue.front().theChunk->getChunkLength().get() / 8) + payloadHeaderSizeB) <= remainingBytes))
     {
-        dbg_string("found payload for protocol with BP_QMODE_QUEUE, BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
+        dbg_string("found payload for protocol with BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
         auto qe = rp.protData.queue.front();
         rp.protData.queue.pop();
         dbg_leave();
@@ -196,7 +195,7 @@ Ptr<const Chunk> BeaconingProtocol::extractFittingPayload(RegisteredProtocol& rp
     DBG_PVAR1("inspecting buffer with non-empty element of length(B) = ", (rp.protData.bufferEntry.theChunk->getChunkLength().get() / 8))
 
     //  leave if buffere element does not fit into remaining beacon
-    if (((rp.protData.bufferEntry.theChunk->getChunkLength().get() / 8) + payloadBlockHeaderSizeB) > remainingBytes)
+    if (((rp.protData.bufferEntry.theChunk->getChunkLength().get() / 8) + payloadHeaderSizeB) > remainingBytes)
     {
         dbg_string("buffer payload is too large, returning nothing");
         dbg_leave();
@@ -240,6 +239,7 @@ Ptr<const Chunk> BeaconingProtocol::extractFittingPayload(RegisteredProtocol& rp
 void BeaconingProtocol::addPayload(RegisteredProtocol& rp,
                                    std::list< Ptr<const Chunk> >& beaconChunks,
                                    BPLengthT& bytesUsed,
+                                   size_t& numberPayloadsAdded,
                                    BPLengthT maxBytes,
                                    simtime_t nextBeaconGenerationEpoch
                                    )
@@ -262,12 +262,14 @@ void BeaconingProtocol::addPayload(RegisteredProtocol& rp,
         DBG_PVAR4("adding payload", payloadSizeB, rp.protData.protocolName, bytesUsed, maxBytes);
 
         // we can add this chunk to the packet, preceded by a payload header
-        auto payloadHeader = makeShared<BPPayloadBlockHeaderT>();
+        auto payloadHeader = makeShared<BPPayloadHeaderT>();
         payloadHeader->setProtocolId(protId);
+        payloadHeader->setLength(payloadSizeB);
         beaconChunks.push_back(payloadHeader);
         beaconChunks.push_back(thePayload);
-        bytesUsed += payloadBlockHeaderSizeB;
+        bytesUsed += payloadHeaderSizeB;
         bytesUsed += payloadSizeB;
+        numberPayloadsAdded += 1;
 
         DBG_PVAR2("added payload", payloadSizeB, bytesUsed);
 
@@ -358,20 +360,25 @@ void BeaconingProtocol::handleGenerateBeaconMsg ()
     }
 
     std::list< Ptr<const Chunk> >  beaconChunks;
-    BPLengthT  bytesUsed     = beaconProtocolHeaderSizeB;
-    BPLengthT  maxBytes      = bpParMaximumPacketSizeB;
-    auto       rpiter        = registeredProtocols.begin();
+    BPLengthT  bytesUsed         = beaconProtocolHeaderSizeB;
+    BPLengthT  maxBytes          = bpParMaximumPacketSizeB;
+    size_t     numPayloadsAdded  = 0;
+    auto       rpiter            = registeredProtocols.begin();
 
     // iterate over all registered client protocols, add payload when possible
     while (rpiter != registeredProtocols.end())
     {
         RegisteredProtocol& rp     = rpiter->second;
-        addPayload(rp, beaconChunks, bytesUsed, maxBytes, nextBeaconGenerationEpoch);
+        addPayload(rp, beaconChunks, bytesUsed, numPayloadsAdded, maxBytes, nextBeaconGenerationEpoch);
         rpiter++;
     }
     assert(beaconChunks.size() % 2 == 0);
 
-    constructAndTransmitBeacon(beaconChunks);
+    if (numPayloadsAdded > 0)
+    {
+        dbg_string("found payloads, generating beacon");
+        constructAndTransmitBeacon(beaconChunks);
+    }
 
     dbg_leave();
 }
@@ -440,7 +447,7 @@ void BeaconingProtocol::handleReceivedPacket (Packet* packet)
     // now extract the payloads and send them to the respective client protocols
     for (int cntPayload = 0; cntPayload < numberPayloads; cntPayload++)
     {
-        const auto& payloadHeader = packet->popAtFront<BPPayloadBlockHeaderT>();
+        const auto& payloadHeader = packet->popAtFront<BPPayloadHeaderT>();
         const auto& payloadChunk  = packet->popAtFront<Chunk>();
 
         assert(payloadHeader);
@@ -495,12 +502,13 @@ void BeaconingProtocol::handleRegisterProtocolRequestMsg (BPRegisterProtocol_Req
     // first retrieve parameters and delete message
     BPProtocolIdT        protocolId = regReq->getProtId();
     BPClientProtocolData clientProtData;
-    clientProtData.protocolId       =  protocolId;
-    clientProtData.protocolName     =  regReq->getProtName();
-    clientProtData.maxPayloadSizeB  =  regReq->getMaxPayloadSizeB();
-    clientProtData.queueMode        =  regReq->getQueueingMode();
-    clientProtData.timeStamp        =  simTime();
-    clientProtData.bufferOccupied   =  false;
+    clientProtData.protocolId             =  protocolId;
+    clientProtData.protocolName           =  regReq->getProtName();
+    clientProtData.maxPayloadSizeB        =  regReq->getMaxPayloadSizeB();
+    clientProtData.queueMode              =  regReq->getQueueingMode();
+    clientProtData.allowMultiplePayloads  =  regReq->getAllowMultiplePayloads();
+    clientProtData.timeStampRegistration  =  simTime();
+    clientProtData.bufferOccupied         =  false;
     delete regReq;
 
     // look up the referenced protocol object
@@ -527,7 +535,7 @@ void BeaconingProtocol::handleRegisterProtocolRequestMsg (BPRegisterProtocol_Req
     }
 
     // check if maximum payload size is too large
-    if (clientProtData.maxPayloadSizeB > (bpParMaximumPacketSizeB - (beaconProtocolHeaderSizeB + payloadBlockHeaderSizeB)))
+    if (clientProtData.maxPayloadSizeB > (bpParMaximumPacketSizeB - (beaconProtocolHeaderSizeB + payloadHeaderSizeB)))
     {
         dbg_string ("illegal maximum payload size -- payload too large");
         sendRegisterProtocolConfirm(BP_STATUS_ILLEGAL_MAX_PAYLOAD_SIZE, theProtocol);
@@ -635,7 +643,7 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
     uint32_t  maxSize = (uint32_t) rp.protData.maxPayloadSizeB;
     DBG_VAR3(dataChunkLengthB, maxSize, dataChunk);
     if (    (dataChunkLengthB > maxSize)
-         || (dataChunkLengthB > (bpParMaximumPacketSizeB - (payloadBlockHeaderSizeB + beaconProtocolHeaderSizeB))))
+         || (dataChunkLengthB > (bpParMaximumPacketSizeB - (payloadHeaderSizeB + beaconProtocolHeaderSizeB))))
     {
         dbg_string ("payload too large");
         sendTransmitPayloadConfirm(BP_STATUS_PAYLOAD_TOO_LARGE, theProtocol);
@@ -643,24 +651,23 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
         return;
     }
 
+    if (dataChunkLengthB == 0)
+    {
+        dbg_string ("payload is empty");
+        sendTransmitPayloadConfirm(BP_STATUS_EMPTY_PAYLOAD, theProtocol);
+        dbg_leave();
+        return;
+    }
+
+
     // handle buffering modes -- it is allowed to clear buffer with a chunk of
     // length zero
     if ((rp.protData.queueMode == BP_QMODE_ONCE) || (rp.protData.queueMode == BP_QMODE_REPEAT))
     {
         dbg_string ("handling the case of QMODE_ONCE or QMODE_REPEAT");
 
-        if (dataChunkLengthB == 0)
-        {
-            dbg_string ("chunkLength = 0, invalidating buffer");
-            rp.protData.bufferOccupied       = false;
-            rp.protData.bufferEntry.theChunk = nullptr;
-        }
-        else
-        {
-            dbg_string ("chunkLength > 0, replacing buffer");
-            rp.protData.bufferOccupied        = true;
-            rp.protData.bufferEntry.theChunk  = dataChunk;
-        }
+        rp.protData.bufferOccupied        = true;
+        rp.protData.bufferEntry.theChunk  = dataChunk;
 
         sendTransmitPayloadConfirm(BP_STATUS_OK, theProtocol);
 
@@ -669,39 +676,30 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
     }
 
     // handle queueing mode
-    if (    (rp.protData.queueMode == BP_QMODE_QUEUE)
-         || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
+    if (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
          || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPHEAD))
     {
-        dbg_string ("handling the case of QMODE_QUEUE, QMODE_QUEUE_DROPTAIL or QMODE_QUEUE_DROPHEAD");
+        dbg_string ("handling the case of BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
 
-        if (dataChunkLengthB > 0)
+        if (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
+             && (rp.protData.queue.size() >= rp.protData.maxEntries))
         {
-            if (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
-                 && (rp.protData.queue.size() >= rp.protData.maxEntries))
-            {
-                dbg_string ("dropping payload at droptail queue");
-                sendTransmitPayloadConfirm(BP_STATUS_OK, theProtocol);
-            }
-            else
-            {
-                if (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPHEAD)
-                     && (rp.protData.queue.size() >= rp.protData.maxEntries))
-                {
-                    dbg_string ("QMODE_DROPHEAD: dropping head-of-line element");
-                    rp.protData.queue.pop();
-                }
-
-                BPBufferEntry newEntry;
-                newEntry.theChunk = dataChunk;
-                rp.protData.queue.push(newEntry);
-                sendTransmitPayloadConfirm(BP_STATUS_OK, theProtocol);
-            }
+            dbg_string ("dropping payload at droptail queue");
+            sendTransmitPayloadConfirm(BP_STATUS_OK, theProtocol);
         }
         else
         {
-            dbg_string ("got empty payload for QMODE_QUEUE");
-            sendTransmitPayloadConfirm(BP_STATUS_EMPTY_PAYLOAD, theProtocol);
+            if (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPHEAD)
+                 && (rp.protData.queue.size() >= rp.protData.maxEntries))
+            {
+                dbg_string ("QMODE_DROPHEAD: dropping head-of-line element");
+                rp.protData.queue.pop();
+            }
+
+            BPBufferEntry newEntry;
+            newEntry.theChunk = dataChunk;
+            rp.protData.queue.push(newEntry);
+            sendTransmitPayloadConfirm(BP_STATUS_OK, theProtocol);
         }
 
         dbg_leave();
@@ -713,6 +711,78 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
     dbg_leave();
 
 }
+
+
+// ----------------------------------------------------
+
+/**
+ * Process BPClearBuffer.request message. Check if protocol is known,
+ * then empty the associated buffer / queue. Generate confirmation for
+ * client protocol.
+ */
+
+void BeaconingProtocol::handleClearBufferRequestMsg (BPClearBuffer_Request *clearReq)
+{
+    dbg_enter("handleClearBufferRequestMsg");
+    assert(clearReq);
+
+    BPProtocolIdT protocolId    = clearReq->getProtId();
+    delete clearReq;
+
+    // look up the referenced protocol object
+    Protocol *theProtocol = convertProtocolIdToProtocol(protocolId);
+    assert(theProtocol);
+
+    // check if protocol exists, and stop with error status if not
+    if (not clientProtocolRegistered(protocolId))
+    {
+        dbg_string ("attempting to send payload for non-registered protocol");
+        sendTransmitPayloadConfirm(BP_STATUS_UNKNOWN_PROTOCOL, theProtocol);
+        dbg_leave();
+        return;
+    }
+
+    RegisteredProtocol& rp = registeredProtocols[protocolId];
+
+    if ((rp.protData.queueMode == BP_QMODE_ONCE) || (rp.protData.queueMode == BP_QMODE_REPEAT))
+    {
+        dbg_string ("handling the case of QMODE_ONCE or QMODE_REPEAT");
+
+        rp.protData.bufferOccupied        = false;
+        rp.protData.bufferEntry.theChunk  = nullptr;
+
+        sendClearBufferConfirm(BP_STATUS_OK, theProtocol);
+
+        dbg_leave();
+        return;
+    }
+
+    // handle queueing mode
+    if (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
+         || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPHEAD))
+    {
+        dbg_string ("handling the case of BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
+
+        while (not rp.protData.queue.empty())
+        {
+            rp.protData.queue.pop();
+        }
+
+        sendClearBufferConfirm(BP_STATUS_OK, theProtocol);
+
+        dbg_leave();
+        return;
+    }
+
+    sendClearBufferConfirm(BP_STATUS_UNKNOWN_QUEUEING_MODE, theProtocol);
+
+    error("handleClearBufferRequestMsg: unknown queueing mode");
+
+    dbg_leave();
+
+}
+
+
 
 // ----------------------------------------------------
 
@@ -757,9 +827,10 @@ void BeaconingProtocol::handleQueryNumberBufferedPayloadsRequestMsg(BPQueryNumbe
     }
 
     // handling queueing mode
-    if (rp.protData.queueMode == BP_QMODE_QUEUE)
+    if (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
+         || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPHEAD))
     {
-        dbg_string ("handling the case of QMODE_QUEUE");
+        dbg_string ("handling the case of BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
         numberBuffered = rp.protData.queue.size();
         sendQueryNumberBufferedPayloadsConfirm(BP_STATUS_OK, numberBuffered, protocolId, theProtocol);
         dbg_leave();
@@ -894,6 +965,19 @@ void BeaconingProtocol::sendTransmitPayloadConfirm(BPStatus status, Protocol* th
     sendConfirmation(new BPTransmitPayload_Confirm, status, theProtocol);
     dbg_leave();
 }
+
+// ----------------------------------------------------
+
+/**
+ * Prepares and sends a BPClearBuffer.confirm message
+ */
+void BeaconingProtocol::sendClearBufferConfirm(BPStatus status, Protocol* theProtocol)
+{
+    dbg_enter("sendClearBufferConfirm");
+    sendConfirmation(new BPClearBuffer_Confirm, status, theProtocol);
+    dbg_leave();
+}
+
 
 // ----------------------------------------------------
 
