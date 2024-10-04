@@ -38,3 +38,7 @@ class BPRegisterProtocol_Confirm extends BPConfirmation
 class BPDeregisterProtocol_Confirm extends BPConfirmation
 {
 }
+
+class BPClearBuffer_Confirm extends BPConfirmation
+{
+}
