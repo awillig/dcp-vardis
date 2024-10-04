@@ -26,4 +26,5 @@ enum BPStatus
     BP_STATUS_PAYLOAD_TOO_LARGE             =  4;
     BP_STATUS_EMPTY_PAYLOAD                 =  5;
     BP_STATUS_ILLEGAL_DROPPING_QUEUE_SIZE   =  6;
+    BP_STATUS_UNKNOWN_QUEUEING_MODE         =  7;
 };
