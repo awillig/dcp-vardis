@@ -22,11 +22,12 @@
 #include <omnetpp.h>
 
 
+#pragma pack(push, 1)
 typedef struct ExampleVariable {
     uint32_t     seqno;
     double       value;
     simtime_t    tstamp;
 } ExampleVariable;
-
+#pragma pack(pop)
 
 #endif /* DCP_APPLICATIONS_VARIABLEEXAMPLE_H_ */
