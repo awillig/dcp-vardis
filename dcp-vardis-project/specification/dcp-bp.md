@@ -792,3 +792,17 @@ payloads extracted out of a beacon is equal to
 `numPayloads`. Implementations may choose to perform such a check and
 react in an appropriate way.
 
+
+## Recommended behaviour of client protocols
+
+Before a client protocol instance can transmit and receive payloads,
+it needs to register itself with BP. However, it is possible that a
+client protocol is re-started after a previous instance of the client
+protocol has crashed. Since the BP currently does not have a mechanism
+for checking liveness of client protocol instances, it might still
+hold the `BPClientProtocol` record for the crashed instance, including
+any buffered payloads. It is therefore recommended for the new
+instance of the client protocol to first submit a
+`BP-DeregisterProtocol.request` primitive to remove any stale information
+about the previous client protocol instance before submitting a new
+`BP-RegisterProtocol.request` primitive.
