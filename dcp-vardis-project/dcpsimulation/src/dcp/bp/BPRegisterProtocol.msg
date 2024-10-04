@@ -30,5 +30,6 @@ class BPRegisterProtocol_Request extends inet::Request
     int               maxPayloadSizeB;
     BPQueueingMode    queueingMode;
     int               maxEntries;
+    bool              allowMultiplePayloads;
 };
 
