@@ -2,7 +2,7 @@
 
 # Basic Data Types and Conventions {#chap-datatypes}
 
-In this section we describe our assumptions and conventions regarding
+In this chapter we describe our assumptions and conventions regarding
 the use of data types, variables and packet field names in DCP,
 insofar as they are relevant beyond the scope of just one of the
 component protocols. In addition, each of the constituent protocols of
@@ -27,7 +27,10 @@ DCP introduces its own data types, variables and field names.
   their width (as a number of bits) and, where relevant, their precise
   representation. In other cases, the width of a transmissible data
   type can be chosen by implementers as an integral multiple of one
-  byte.  For data types not to be included in packets
+  byte. In this specififaction, when we apply the 'function'
+  `sizeof()` to a transmissible data type, we refer to the serialized
+  size of that data type, not to the size of its in-memory
+  representation. For data types not to be included in packets
   (**non-transmissible data types**) we will not provide any details
   about their representation and leave it to the implementation.
 
@@ -113,7 +116,8 @@ generally supports the following operations:
   the parameter, and `false` otherwise.
 - `qLength()` takes no parameters and returns the number of elements
   currently stored in the queue.
-
+- `qClear()` takes no parameters and drops all entries from the queue,
+  so that it is empty after this operation.
 
 The `List` data type generally supports the following operations:
 
@@ -144,10 +148,11 @@ The `List` data type generally supports the following operations:
   service primitives are being exchanged, this is
   implementation-dependent. However, when describing the processing of
   a `S.request` primitive for a service `S`, we will frequently use
-  the keyword `return`, followed by some status code. This indicates
-  that processing of the `S.request` primitive stops and that a
-  `S.confirm` primitive carrying the indicated status code shall be
-  returned to the entity generating the `S.request` primitive.
+  the phrase `return status code`, followed by some status code. This
+  indicates that processing of the `S.request` primitive stops and
+  that a `S.confirm` primitive carrying the indicated status code
+  shall be returned to the entity generating the `S.request`
+  primitive.
 
 - We use pseudo-code to describe parts of the behaviour of DCP/VarDis
   protocols. Syntactically, in this pseudo-code we borrow some
