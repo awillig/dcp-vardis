@@ -938,7 +938,10 @@ void BeaconingProtocol::sendConfirmation(BPConfirmation *confMsg, BPStatus statu
 void BeaconingProtocol::sendRegisterProtocolConfirm(BPStatus status, Protocol* theProtocol)
 {
     dbg_enter("sendRegisterProtocolConfirm");
-    sendConfirmation(new BPRegisterProtocol_Confirm, status, theProtocol);
+    BPRegisterProtocol_Confirm*  conf = new BPRegisterProtocol_Confirm;
+    conf->setStatus (status);
+    conf->setOwnNodeIdentifier (getOwnNodeId());
+    sendConfirmation(conf, status, theProtocol);
     dbg_leave();
 }
 
