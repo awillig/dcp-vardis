@@ -231,7 +231,10 @@ parameters:
 
 The BP entity responds with a `BP-RegisterProtocol.confirm`
 primitive. This primitive is generated immediately upon processing the
-`BP-RegisterProtocol.request` primitive and carries a status code.
+`BP-RegisterProtocol.request` primitive and carries a status code and
+the value of the `ownNodeIdentifier` variable of type
+`NodeIdentifierT`. This allows client protocols to learn the node
+identifier of the present node.
   
 To process the `BP-RegisterProtocol.request` service primitive,
 the BP entity performs at least the following actions:
