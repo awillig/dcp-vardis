@@ -37,7 +37,7 @@ simple VariableProducer extends VardisClientProtocol
 		int  varRepCnt;
 
         // time of variable creation
-        volatile double creationTime @unit(s)          = default (50ms);  
+        volatile double creationTime @unit(s)          = default (exponential(50ms));  
 
 		// time between variable updates
 		volatile double interUpdateTimeDistr @unit(s)  = default (exponential(50ms));
