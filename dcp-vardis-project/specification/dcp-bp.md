@@ -796,7 +796,7 @@ payloads extracted out of a beacon is equal to
 react in an appropriate way.
 
 
-## Recommended behaviour of client protocols
+## Recommended behaviour of client protocols {#bp-recommended-behaviour-client-protocols}
 
 Before a client protocol instance can transmit and receive payloads,
 it needs to register itself with BP. However, it is possible that a
