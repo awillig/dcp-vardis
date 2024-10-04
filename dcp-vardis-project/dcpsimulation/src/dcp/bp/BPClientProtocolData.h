@@ -42,16 +42,17 @@ typedef struct BPBufferEntry {
 
 
 typedef struct BPClientProtocolData {
-    BPProtocolIdT               protocolId;        // unique identifier of the client protocol
-    std::string                 protocolName;      // human-readable name of the protocol
-    BPLengthT                   maxPayloadSizeB;   // maximum size of client protocol payload in bytes
-    BPQueueingMode              queueMode;         // queueing mode to be used for client protocol
-    unsigned int                maxEntries;        // maximum number of entries in a droptail queue
-    TimeStamp                   timeStamp;         // time at which client protocol was registered
-    std::queue<BPBufferEntry>   queue;             // queue of all payloads when operating in mode BP_QMODE_QUEUE
-    bool                        bufferOccupied;    // tells whether buffer is occupied or not
-                                                   // (in modes BP_QMODE_ONCE and BP_QMODE_REPEAT)
-    BPBufferEntry               bufferEntry;       // the single buffer used in modes BP_QMODE_ONCE and BP_QMODE_REPEAT
+    BPProtocolIdT               protocolId;              // unique identifier of the client protocol
+    std::string                 protocolName;            // human-readable name of the protocol
+    BPLengthT                   maxPayloadSizeB;         // maximum size of client protocol payload in bytes
+    BPQueueingMode              queueMode;               // queueing mode to be used for client protocol
+    unsigned int                maxEntries;              // maximum number of entries in a droptail queue
+    TimeStampT                  timeStampRegistration;   // time at which client protocol was registered
+    std::queue<BPBufferEntry>   queue;                   // queue of all payloads when operating in mode BP_QMODE_QUEUE
+    bool                        bufferOccupied;          // tells whether buffer is occupied or not
+                                                         // (in modes BP_QMODE_ONCE and BP_QMODE_REPEAT)
+    BPBufferEntry               bufferEntry;             // the single buffer used in modes BP_QMODE_ONCE and BP_QMODE_REPEAT
+    bool                        allowMultiplePayloads;   // allow multiple client payloads in the same beacon? IGNORED
 } BPClientProtocolData;
 
 
