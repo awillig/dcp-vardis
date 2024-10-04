@@ -213,7 +213,7 @@ void VariableConsumer::handleRTDBReadConfirm(RTDBRead_Confirm* readConf)
     if (    (lastReceived.find(varId) == lastReceived.end())
          || (theValue.seqno != lastReceived[varId].seqno))
     {
-        DBG_VAR5((int) readConf->getVarId(), theValue.value, theValue.seqno, theValue.tstamp, (simTime() - theValue.tstamp));
+        DBG_PVAR5("UPDATING VARIABLE VALUE", (int) readConf->getVarId(), theValue.value, theValue.seqno, theValue.tstamp, (simTime() - theValue.tstamp));
 
         if (varIdToObserve == (int) varId)
         {
