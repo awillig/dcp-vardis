@@ -197,12 +197,12 @@ void VardisVariableConsumer::handleRTDBReadConfirm(RTDBRead_Confirm* readConf)
     assert(state == cState_WaitForReadResponses);
     assert(readConf->getStatus() == VARDIS_STATUS_OK);
     assert(readsRequested > 0);
-    assert(readConf->getDataLen() == sizeof(ExampleVariable));
+    assert(readConf->getDataLen() == sizeof(VardisExampleVariable));
 
     // copy received data into local variable
-    ExampleVariable theValue;
+    VardisExampleVariable theValue;
     uint8_t *thePtr = (uint8_t*) &theValue;
-    for (size_t i=0; i<sizeof(ExampleVariable); i++)
+    for (size_t i=0; i<sizeof(VardisExampleVariable); i++)
     {
         *thePtr = readConf->getData(i);
         thePtr++;

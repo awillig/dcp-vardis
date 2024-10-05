@@ -62,7 +62,7 @@ class VardisVariableConsumer : public VardisClientProtocol
     } ConsumerState;
 
     // contains last read values for all variables
-    std::map<VarIdT, ExampleVariable>   lastReceived;
+    std::map<VarIdT, VardisExampleVariable>   lastReceived;
 
   protected:
 

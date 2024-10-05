@@ -179,7 +179,7 @@ void VardisVariableProducer::handleCreateMsg()
     auto              createReq = new RTDBCreate_Request;
 
     // Create initial value for variable
-    ExampleVariable   varExmpl;
+    VardisExampleVariable   varExmpl;
     varExmpl.seqno   = seqno++;
     varExmpl.value   = par("variableValue");
     varExmpl.tstamp  = simTime();
@@ -190,9 +190,9 @@ void VardisVariableProducer::handleCreateMsg()
     createReq->setProdId(getOwnNodeId());
     createReq->setRepCnt(varRepCnt);
     createReq->setDescr(ssdescr.str().c_str());
-    createReq->setUpdlen(sizeof(ExampleVariable));
-    createReq->setUpddataArraySize(sizeof(ExampleVariable));
-    for (size_t i = 0; i < sizeof(ExampleVariable); i++)
+    createReq->setUpdlen(sizeof(VardisExampleVariable));
+    createReq->setUpddataArraySize(sizeof(VardisExampleVariable));
+    for (size_t i = 0; i < sizeof(VardisExampleVariable); i++)
         createReq->setUpddata(i, *(valPtr++));
 
     // hand over to VarDis
@@ -215,7 +215,7 @@ void VardisVariableProducer::handleUpdateMsg()
         DBG_PVAR2("Generating update", (int) varId, seqno);
 
         // construct the updated value
-        ExampleVariable newVal;
+        VardisExampleVariable newVal;
         newVal.seqno  =  seqno++;
         newVal.value  =  par("variableValue");
         newVal.tstamp =  simTime();
@@ -224,9 +224,9 @@ void VardisVariableProducer::handleUpdateMsg()
         uint8_t *valPtr  = (uint8_t*) &newVal;
         auto   updReq    = new RTDBUpdate_Request;
         updReq->setVarId(varId);
-        updReq->setUpdlen(sizeof(ExampleVariable));
-        updReq->setUpddataArraySize(sizeof(ExampleVariable));
-        for (size_t i = 0; i < sizeof(ExampleVariable); i++)
+        updReq->setUpdlen(sizeof(VardisExampleVariable));
+        updReq->setUpddataArraySize(sizeof(VardisExampleVariable));
+        for (size_t i = 0; i < sizeof(VardisExampleVariable); i++)
             updReq->setUpddata(i, *(valPtr++));
 
         // hand over to VarDis
