@@ -38,7 +38,7 @@ Define_Module(VardisVariableProducer);
 
 void VardisVariableProducer::initialize(int stage)
 {
-    VardisClientProtocol::initialize(stage);
+    VardisApplication::initialize(stage);
 
     if (stage == INITSTAGE_LAST)
     {
@@ -115,7 +115,7 @@ void VardisVariableProducer::handleMessage(cMessage *msg)
         return;
     }
 
-    if ((msg->arrivedOn(gidFromVardis)) && dynamic_cast<RTDBCreate_Confirm*>(msg))
+    if ((msg->arrivedOn(gidFromDcpProtocol)) && dynamic_cast<RTDBCreate_Confirm*>(msg))
      {
          RTDBCreate_Confirm* createConf = (RTDBCreate_Confirm*) msg;
          handleRTDBCreateConfirm(createConf);
@@ -123,7 +123,7 @@ void VardisVariableProducer::handleMessage(cMessage *msg)
          return;
      }
 
-    if ((msg->arrivedOn(gidFromVardis)) && dynamic_cast<RTDBDelete_Confirm*>(msg))
+    if ((msg->arrivedOn(gidFromDcpProtocol)) && dynamic_cast<RTDBDelete_Confirm*>(msg))
      {
          RTDBDelete_Confirm* deleteConf = (RTDBDelete_Confirm*) msg;
          handleRTDBDeleteConfirm(deleteConf);
@@ -131,7 +131,7 @@ void VardisVariableProducer::handleMessage(cMessage *msg)
          return;
      }
 
-    if ((msg->arrivedOn(gidFromVardis)) && dynamic_cast<RTDBUpdate_Confirm*>(msg))
+    if ((msg->arrivedOn(gidFromDcpProtocol)) && dynamic_cast<RTDBUpdate_Confirm*>(msg))
      {
          RTDBUpdate_Confirm* createConf = (RTDBUpdate_Confirm*) msg;
          handleRTDBUpdateConfirm(createConf);
@@ -152,8 +152,6 @@ VardisVariableProducer::~VardisVariableProducer ()
     if (createMsg) cancelAndDelete(createMsg);
     if (updateMsg) cancelAndDelete(updateMsg);
     if (deleteMsg) cancelAndDelete(deleteMsg);
-
-    if (theProtocol) delete theProtocol;
 }
 
 

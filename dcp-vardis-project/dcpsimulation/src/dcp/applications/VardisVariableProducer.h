@@ -20,9 +20,9 @@
 
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
-#include <dcp/vardis/VardisClientProtocol.h>
 #include <dcp/vardis/VardisDatatypes.h>
 #include <dcp/vardis/VardisRTDBConfirmation_m.h>
+#include <dcp/vardis/VardisApplication.h>
 
 using namespace omnetpp;
 
@@ -37,7 +37,7 @@ namespace dcp {
  * (possibly random) and in between it generates variable updates with (possibly
  * random) inter-update times and (possibly random) values.
  */
-class VardisVariableProducer : public VardisClientProtocol
+class VardisVariableProducer : public VardisApplication
 {
   public:
     virtual ~VardisVariableProducer();
@@ -55,9 +55,6 @@ class VardisVariableProducer : public VardisClientProtocol
     // internal state
     bool           isActivelyGenerating;
     uint32_t       seqno = 0;
-
-    // auxiliary members
-    Protocol* theProtocol = nullptr;
 
     // self-messages for variable creation, updates and deletion
     cMessage* createMsg = nullptr;
