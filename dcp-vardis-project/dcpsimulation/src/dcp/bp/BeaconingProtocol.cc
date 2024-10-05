@@ -507,6 +507,7 @@ void BeaconingProtocol::handleRegisterProtocolRequestMsg (BPRegisterProtocol_Req
     clientProtData.maxPayloadSizeB        =  regReq->getMaxPayloadSizeB();
     clientProtData.queueMode              =  regReq->getQueueingMode();
     clientProtData.allowMultiplePayloads  =  regReq->getAllowMultiplePayloads();
+    clientProtData.maxEntries             =  regReq->getMaxEntries();
     clientProtData.timeStampRegistration  =  simTime();
     clientProtData.bufferOccupied         =  false;
     delete regReq;
