@@ -41,8 +41,7 @@ typedef struct DBEntry {
     VarRepCntT      countCreate = 0;
     VarRepCntT      countDelete = 0;
     bool            toBeDeleted = false;
-    VarLenT         length      = 0;
-    uint8_t        *value       = nullptr;
+    VarValueT       value;
 } DBEntry;
 
 
