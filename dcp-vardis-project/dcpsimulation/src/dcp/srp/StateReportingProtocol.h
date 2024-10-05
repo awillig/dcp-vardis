@@ -16,8 +16,7 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#ifndef DCP_SRP_STATEREPORTINGPROTOCOL_H_
-#define DCP_SRP_STATEREPORTINGPROTOCOL_H_
+#pragma once
 
 
 #include <map>
@@ -30,6 +29,7 @@
 #include <dcp/bp/BPReceivePayload_m.h>
 #include <dcp/srp/SafetyDataT_m.h>
 #include <dcp/srp/NeighbourTableEntry.h>
+#include <dcp/srp/SRPUpdateSafetyData_m.h>
 #include <dcp/bp/BPClientProtocol.h>
 
 
@@ -79,19 +79,18 @@ private:
     // -------------------------------------------
 
     // module parameters
-    double        _srpPositionSamplingPeriod;       // positions are sampled and sent to BP at this period
     double        _srpNeighbourTableTimeout;        // timeout for aging out entries in neighbor table
     double        _srpNeighbourTableScrubPeriod;    // Period between two invocations of scrubbing process
     double        _srpNeighbourTablePrintPeriod;    // Period for logging the neighbor table contents
 
     // other data members
-    SafetyDataT          _currentSafetyData;       // current safety data (position etc) of this node
-    IMobility           *_mobility = nullptr;      // pointer to mobility model, needed to query position
     SRPSequenceNumberT   _seqno    = 0;            // seqno to be used in SRP messages
 
+    // gate identifiers
+    int   gidFromApplication;
+    int   gidToApplication;
+
     // Timer self message
-    cMessage*     _generatePayloadMsg      = nullptr;
-    cMessage*     _sampleSafetyDataMsg     = nullptr;
     cMessage*     _scrubNeighbourTableMsg  = nullptr;
     cMessage*     _printNeighbourTableMsg  = nullptr;
 
@@ -113,7 +112,7 @@ protected:
      * retrieves current safety data (position etc), generates an SRP payload
      * and hands it over to BP for transmission
      */
-    virtual void handleGeneratePayloadMsg ();
+    virtual void handleUpdateSafetyDataRequestMsg (SRPUpdateSafetyData_Request* srpReq);
 
     /**
      * Processes received SPR message from a neighbor, adds it to neighbor table
@@ -132,22 +131,7 @@ protected:
      */
     virtual void handlePrintNeighbourTableMsg ();
 
-    // -------------------------------------------
-    // Helpers
-    // -------------------------------------------
-
-    /**
-     * Queries current position etc from INET mobility model, and schedules next
-     * sampling operation
-     */
-    void sampleSafetyData (void);
-
-    /**
-     * Finds the pointer to the mobility model
-     */
-    void findModulePointers (void);
 };
 
 } // namespace
 
-#endif /* DCP_SRP_STATEREPORTINGPROTOCOL_H_ */

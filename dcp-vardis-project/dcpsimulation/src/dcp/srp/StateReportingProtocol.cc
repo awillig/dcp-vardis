@@ -52,28 +52,22 @@ void StateReportingProtocol::initialize(int stage)
         dbg_enter("initialize");
 
         // read and check module parameters
-        _srpPositionSamplingPeriod     = par("srpPositionSamplingPeriod");
         _srpNeighbourTableTimeout      = par("srpNeighbourTableTimeout");
         _srpNeighbourTableScrubPeriod  = par("srpNeighbourTableScrubPeriod");
         _srpNeighbourTablePrintPeriod  = par("srpNeighbourTablePrintPeriod");
-        assert(_srpPositionSamplingPeriod > 0);
         assert(_srpNeighbourTableTimeout > 0);
         assert(_srpNeighbourTableScrubPeriod > 0);
         assert(_srpNeighbourTableTimeout > 4*_srpNeighbourTableScrubPeriod);
 
+        // find gate identifiers
+        gidFromApplication  = findGate ("fromApplication");
+        gidToApplication    = findGate ("toApplication");
 
         // register ourselves as BP client protocol with dispatcher
         registerProtocol(*DcpSimGlobals::protocolDcpSRP, gate("toBP"), gate("fromBP"));
 
-
-        // get generation timer ticks going
-        _generatePayloadMsg  = new cMessage("srpGeneratePayloadMsg");
-        scheduleAt(simTime() + par("srpGenerationPeriodDistr"), _generatePayloadMsg);
-
-        // find mobility model and get first sample of safety data
-        _sampleSafetyDataMsg = new cMessage("srpSampleSafetyDataMsg");
-        findModulePointers();
-        sampleSafetyData();
+        // and register ourselves as a service for SRP applications
+        registerService(*DcpSimGlobals::protocolDcpSRP, gate("fromApplication"), gate("toApplication"));
 
         // get periodic scrubbing going
         _scrubNeighbourTableMsg = new cMessage("srpScrubNeighbourTableMsg");
@@ -105,22 +99,6 @@ void StateReportingProtocol::handleMessage(cMessage *msg)
         return;
     }
 
-    if (msg == _generatePayloadMsg)
-    {
-        dbg_string("handling _generatePayloadMsg");
-        handleGeneratePayloadMsg();
-        dbg_leave();
-        return;
-    }
-
-    if (msg == _sampleSafetyDataMsg)
-    {
-        dbg_string("handling _sampleSafetyDataMsg");
-        sampleSafetyData();
-        dbg_leave();
-        return;
-    }
-
     if (msg == _scrubNeighbourTableMsg)
     {
         dbg_string("handling _scrubNeighbourTableMsg");
@@ -137,6 +115,14 @@ void StateReportingProtocol::handleMessage(cMessage *msg)
         return;
     }
 
+    if ((msg->arrivedOn(gidFromApplication)) && dynamic_cast<SRPUpdateSafetyData_Request*>(msg))
+    {
+        dbg_string("handling _generatePayloadMsg");
+        SRPUpdateSafetyData_Request*  srpReq = (SRPUpdateSafetyData_Request*) msg;
+        handleUpdateSafetyDataRequestMsg(srpReq);
+        dbg_leave();
+        return;
+    }
 
     if ((msg->arrivedOn(gidFromBP)) && dynamic_cast<BPPayloadTransmitted_Indication*>(msg))
      {
@@ -164,8 +150,6 @@ void StateReportingProtocol::handleMessage(cMessage *msg)
 
 StateReportingProtocol::~StateReportingProtocol()
 {
-    if (_generatePayloadMsg)      cancelAndDelete(_generatePayloadMsg);
-    if (_sampleSafetyDataMsg)     cancelAndDelete(_sampleSafetyDataMsg);
     if (_scrubNeighbourTableMsg)  cancelAndDelete(_scrubNeighbourTableMsg);
     if (_printNeighbourTableMsg)  cancelAndDelete(_printNeighbourTableMsg);
 }
@@ -178,20 +162,22 @@ StateReportingProtocol::~StateReportingProtocol()
 /**
  * Generates and sends an SRP payload, schedules next generation of payload
  */
-void StateReportingProtocol::handleGeneratePayloadMsg ()
+void StateReportingProtocol::handleUpdateSafetyDataRequestMsg (SRPUpdateSafetyData_Request* srpReq)
 {
-    dbg_enter("handleGeneratePayloadMsg");
+    dbg_enter("handleUpdateSafetyDataRequestMsg");
+    assert(srpReq);
+
 
     // check if we are registered with BP
     if (isSuccessfullyRegisteredWithBP())
     {
-        dbg_string("handleGeneratePayloadMsg: we are successfully registered");
-        dbg_string("handleGeneratePayloadMsg: generating the payload");
+        dbg_string("handleUpdateSafetyDataRequestMsg: we are successfully registered");
+        dbg_string("handleUpdateSafetyDataRequestMsg: generating the payload");
 
         // create the actual SRP message content
         auto esd = makeShared<ExtendedSafetyDataT>();
         assert(esd);
-        esd->setSafetyData(_currentSafetyData);
+        esd->setSafetyData(srpReq->getSafetyData());
         esd->setNodeId(getOwnNodeId());
         esd->setTimeStamp(simTime());
         esd->setSeqno(_seqno++);
@@ -209,9 +195,7 @@ void StateReportingProtocol::handleGeneratePayloadMsg ()
 
     }
 
-    // Schedule next generation of beacon packet
-    dbg_string("scheduling next generation");
-    scheduleAt(simTime() + par("srpGenerationPeriodDistr"), _generatePayloadMsg);
+    delete srpReq;
 
     dbg_leave();
 }
@@ -336,57 +320,3 @@ void StateReportingProtocol::registerAsBPClient(void)
 
     dbg_leave();
 }
-
-// -------------------------------------------
-
-/**
- * Finds a pointer to the mobility model, so we can query it for our own
- * position
- */
-void StateReportingProtocol::findModulePointers (void)
-{
-  dbg_enter("findModulePointers");
-
-  cModule *host = getContainingNode (this);
-  assert(host);
-  _mobility     = check_and_cast<IMobility *>(host->getSubmodule("mobility"));
-  assert(_mobility);
-
-  dbg_leave();
-}
-
-// -------------------------------------------
-
-/**
- * Samples current safety data (position, velocities) from mobility model
- * and stores them in member variable. Schedules next sampling operation.
- */
-void StateReportingProtocol::sampleSafetyData(void)
-{
-    dbg_enter("samplePositions");
-
-    assert (_mobility);
-    auto currPosition  = _mobility->getCurrentPosition();
-    auto currVelocity  = _mobility->getCurrentVelocity();
-
-    _currentSafetyData.position_x = currPosition.getX();
-    _currentSafetyData.position_y = currPosition.getY();
-    _currentSafetyData.position_z = currPosition.getZ();
-    _currentSafetyData.velocity_x = currVelocity.getX();
-    _currentSafetyData.velocity_y = currVelocity.getY();
-    _currentSafetyData.velocity_z = currVelocity.getZ();
-
-    dbg_prefix();
-    EV << "Position = (" << _currentSafetyData.position_x
-       << ", " << _currentSafetyData.position_y
-       << ", " << _currentSafetyData.position_z
-       << ")" << endl;
-
-    scheduleAt(simTime() + _srpPositionSamplingPeriod, _sampleSafetyDataMsg);
-
-    dbg_leave();
-
-}
-
-// -------------------------------------------
-
