@@ -40,7 +40,7 @@ Define_Module(VardisVariableConsumer);
 
 void VardisVariableConsumer::initialize(int stage)
 {
-    VardisClientProtocol::initialize(stage);
+    VardisApplication::initialize(stage);
 
     if (stage == INITSTAGE_LAST)
     {
@@ -98,7 +98,7 @@ void VardisVariableConsumer::handleMessage(cMessage *msg)
         return;
     }
 
-    if ((msg->arrivedOn(gidFromVardis)) && dynamic_cast<RTDBDescribeDatabase_Confirm*>(msg))
+    if ((msg->arrivedOn(gidFromDcpProtocol)) && dynamic_cast<RTDBDescribeDatabase_Confirm*>(msg))
      {
          RTDBDescribeDatabase_Confirm* dbConf = (RTDBDescribeDatabase_Confirm*) msg;
          handleRTDBDescribeDatabaseConfirm(dbConf);
@@ -106,7 +106,7 @@ void VardisVariableConsumer::handleMessage(cMessage *msg)
          return;
      }
 
-    if ((msg->arrivedOn(gidFromVardis)) && dynamic_cast<RTDBRead_Confirm*>(msg))
+    if ((msg->arrivedOn(gidFromDcpProtocol)) && dynamic_cast<RTDBRead_Confirm*>(msg))
      {
          RTDBRead_Confirm* readConf = (RTDBRead_Confirm*) msg;
          handleRTDBReadConfirm(readConf);

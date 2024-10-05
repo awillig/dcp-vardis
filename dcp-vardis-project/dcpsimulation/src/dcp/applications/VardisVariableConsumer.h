@@ -20,12 +20,12 @@
 
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
-#include <dcp/vardis/VardisClientProtocol.h>
 #include <dcp/vardis/VardisDatatypes.h>
 #include <dcp/vardis/VardisRTDBConfirmation_m.h>
 #include <dcp/vardis/VardisRTDBDescribeDatabase_m.h>
 #include <dcp/vardis/VardisRTDBRead_m.h>
-#include "VardisVariableExample.h"
+#include <dcp/vardis/VardisApplication.h>
+#include <dcp/applications/VardisVariableExample.h>
 
 using namespace omnetpp;
 
@@ -44,7 +44,7 @@ namespace dcp {
  * and output the current values of all registered variables listed in that
  * description. The variables have fixed type ExampleVariable.
  */
-class VardisVariableConsumer : public VardisClientProtocol
+class VardisVariableConsumer : public VardisApplication
 {
   public:
     virtual ~VardisVariableConsumer();
