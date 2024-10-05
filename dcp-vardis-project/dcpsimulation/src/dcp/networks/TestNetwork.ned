@@ -37,8 +37,8 @@ network TestNetwork
         nodes[*].wlan[0].radio.displayInterferenceRange = false;
         nodes[*].mobility.numHosts = numNodes;
         
-        nodes[0].cons.consumerActive = true;
-        nodes[0].cons.varIdToObserve = numNodes;
+        nodes[0].vardiscons.consumerActive = true;
+        nodes[0].vardiscons.varIdToObserve = numNodes;
         // nodes[0].prod.deletionTime   = 5s;
                 
     submodules:
@@ -69,11 +69,11 @@ network TestNetwork
         nodes[numNodes]  :  DcpNode {
             parameters:
                 //@display("r=,,#707070;p=300,200");
-                prod.varId                 =  1 + index;
-        		prod.varRepCnt             =  2;
-           		prod.variableValue         =  normal(1000*(index+1), 10);
-        		prod.interUpdateTimeDistr  =  exponential(parent.avgInterUpdateTime);
-                cons.samplingPeriod        =  50ms;          
+                vardisprod.varId                 =  1 + index;
+        		vardisprod.varRepCnt             =  2;
+           		vardisprod.variableValue         =  normal(1000*(index+1), 10);
+        		vardisprod.interUpdateTimeDistr  =  exponential(parent.avgInterUpdateTime);
+                vardiscons.samplingPeriod        =  50ms;          
         }
 }
 
