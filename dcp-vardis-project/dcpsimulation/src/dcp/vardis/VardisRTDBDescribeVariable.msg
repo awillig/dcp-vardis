@@ -30,8 +30,7 @@ class RTDBDescribeVariable_Confirm extends VardisConfirmation
     uint8_t             varId;
     inet::MacAddress    prodId;
     uint8_t             repCnt;
-    uint8_t             descrLen;
-    uint8_t             descr [];
+    string              descr;
     uint8_t             length;
     uint8_t             value [];
     uint8_t             seqno;
