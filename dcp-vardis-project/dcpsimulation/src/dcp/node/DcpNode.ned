@@ -26,7 +26,7 @@ import inet.node.inet.AdhocHost;
 import dcpsimulation.dcp.node.DcpStack;
 import dcpsimulation.dcp.applications.VardisVariableProducer;
 import dcpsimulation.dcp.applications.VardisVariableConsumer;
-import dcpsimulation.dcp.applications.SRPApplication;
+import dcpsimulation.dcp.applications.SRPSimpleApp;
 
 module DcpNode extends AdhocHost
 {
@@ -64,7 +64,7 @@ module DcpNode extends AdhocHost
         vmd:           MessageDispatcher;
         vardisprod:    VardisVariableProducer;
         vardiscons:    VardisVariableConsumer;
-        srpapp:        SRPApplication;
+        srpapp:        SRPSimpleApp;
 
     connections:
         dcp.toUWB   --> nl.in++;
@@ -76,12 +76,12 @@ module DcpNode extends AdhocHost
     	dcp.toSRPApp     --> vmd.in++;
     	dcp.fromSRPApp   <-- vmd.out++;
     	
-    	vardisprod.toVardis      --> vmd.in++;
-    	vardiscons.toVardis      --> vmd.in++;
+    	vardisprod.toDcpProtocol   --> vmd.in++;
+    	vardiscons.toDcpProtocol   --> vmd.in++;
     	
-    	vardisprod.fromVardis    <-- vmd.out++;
-    	vardiscons.fromVardis    <-- vmd.out++;
+    	vardisprod.fromDcpProtocol   <-- vmd.out++;
+    	vardiscons.fromDcpProtocol   <-- vmd.out++;
     	
-    	srpapp.toSRP    --> vmd.in++;
-    	srpapp.fromSRP  <-- vmd.out++;
+    	srpapp.toDcpProtocol    --> vmd.in++;
+    	srpapp.fromDcpProtocol  <-- vmd.out++;
 }
