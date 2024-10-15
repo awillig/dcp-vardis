@@ -233,34 +233,34 @@ public:
 
 // -----------------------------------------
 
-typedef enum IEType
+typedef enum ICType
 {
-    IETYPE_SUMMARIES           =  1,
-    IETYPE_UPDATES             =  2,
-    IETYPE_REQUEST_VARUPDATES  =  3,
-    IETYPE_REQUEST_VARCREATES  =  4,
-    IETYPE_CREATE_VARIABLES    =  5,
-    IETYPE_DELETE_VARIABLES    =  6
-} IEType;
+    ICTYPE_SUMMARIES           =  1,
+    ICTYPE_UPDATES             =  2,
+    ICTYPE_REQUEST_VARUPDATES  =  3,
+    ICTYPE_REQUEST_VARCREATES  =  4,
+    ICTYPE_CREATE_VARIABLES    =  5,
+    ICTYPE_DELETE_VARIABLES    =  6
+} ICType;
 
 
-class IEHeaderT : public TransmissibleType<sizeof(byte)+sizeof(byte)> {
+class ICHeaderT : public TransmissibleType<sizeof(byte)+sizeof(byte)> {
 public:
-    byte ieType;
-    byte ieNumRecords;
+    byte icType;
+    byte icNumRecords;
     virtual void serialize (AssemblyArea& area)
     {
-        area.serialize_byte (ieType);
-        area.serialize_byte (ieNumRecords);
+        area.serialize_byte (icType);
+        area.serialize_byte (icNumRecords);
     };
     virtual void deserialize (DisassemblyArea& area)
     {
-        ieType        = area.deserialize_byte();
-        ieNumRecords  = area.deserialize_byte();
+        icType        = area.deserialize_byte();
+        icNumRecords  = area.deserialize_byte();
     };
 };
 
-const unsigned int maxInformationElementRecords = 255;
+const unsigned int maxInstructionContainerRecords = 255;
 
 
 // -----------------------------------------

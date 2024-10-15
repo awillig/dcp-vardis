@@ -216,33 +216,33 @@ protected:
 
     ///**
     // * The following helpers return the size of the various transmissible
-    // * elements being included in information elements
+    // * instruction records being included in instruction containers
     // */
-    unsigned int elementSizeVarCreate (VarIdT varId);
-    unsigned int elementSizeVarSummary (VarIdT varId);
-    unsigned int elementSizeVarUpdate (VarIdT varId);
-    unsigned int elementSizeVarDelete (VarIdT varId);
-    unsigned int elementSizeReqCreate (VarIdT varId);
-    unsigned int elementSizeReqUpdate (VarIdT varId);
+    unsigned int instructionSizeVarCreate (VarIdT varId);
+    unsigned int instructionSizeVarSummary (VarIdT varId);
+    unsigned int instructionSizeVarUpdate (VarIdT varId);
+    unsigned int instructionSizeVarDelete (VarIdT varId);
+    unsigned int instructionSizeReqCreate (VarIdT varId);
+    unsigned int instructionSizeReqUpdate (VarIdT varId);
 
     /**
      * Calculates how many records from the given queue can be
      * added to the remaining packet. This traverses the queue
      * at most once, without repetitions of records.
-     * In this calculation the addition of an IEHeaderT is included.
+     * In this calculation the addition of an ICHeaderT is included.
      * There is also an assumption that there are no duplicates.
-     * The result is capped to maxInformationElementEntries
+     * The result is capped to maxInstructionContainerRecords
      * */
     unsigned int numberFittingRecords(const std::deque<VarIdT>& queue,
                                       AssemblyArea& area,
-                                      std::function<unsigned int (VarIdT)> elementSizeFunction);
+                                      std::function<unsigned int (VarIdT)> instructionSizeFunction);
 
 
     /**
-     * These helpers all add the various types of information elements and
-     * to the outgoing byte vector (serialization), taking the DBEntry for
-     * a variable and the current byte counters as input. They build up the
-     * byte vector sequentially
+     * These helpers all add the various types of instruction records
+     * to the outgoing byte vector (serialization), taking the DBEntry
+     * for a variable and the current byte counters as input. They build
+     * up the serialized output sequentially
      */
     void addVarCreate(VarIdT varId, DBEntry& theEntry, AssemblyArea& area);
     void addVarSummary(VarIdT varId, DBEntry& theEntry, AssemblyArea& area);
@@ -250,26 +250,26 @@ protected:
     void addVarReqUpdate(VarIdT varId, DBEntry& theEntry, AssemblyArea& area);
     void addVarDelete(VarIdT varId, AssemblyArea& area);
     void addVarReqCreate(VarIdT varId, AssemblyArea& area);
-    void addIEHeader(IEHeaderT ieHdr, AssemblyArea& area);
+    void addICHeader(ICHeaderT icHdr, AssemblyArea& area);
 
 
     /**
-     * These helpers construct complete information elements (IEHeader and a
-     * list of individual entries of the right type), subject to remaining
-     * space in payload and availability
+     * These helpers construct complete instruction containers (ICHeader and a
+     * list of individual instruction records of the right type), subject to
+     * remaining space in payload and availability
      */
-    void makeIETypeCreateVariables (AssemblyArea& area);
-    void makeIETypeSummaries (AssemblyArea& area);
-    void makeIETypeUpdates (AssemblyArea& area);
-    void makeIETypeDeleteVariables (AssemblyArea& area);
-    void makeIETypeRequestVarUpdates (AssemblyArea& area);
-    void makeIETypeRequestVarCreates (AssemblyArea& area);
+    void makeICTypeCreateVariables (AssemblyArea& area);
+    void makeICTypeSummaries (AssemblyArea& area);
+    void makeICTypeUpdates (AssemblyArea& area);
+    void makeICTypeDeleteVariables (AssemblyArea& area);
+    void makeICTypeRequestVarUpdates (AssemblyArea& area);
+    void makeICTypeRequestVarCreates (AssemblyArea& area);
 
 
     /**
      * Almost top-level method to construct the overall Vardis payload
      * as a byte vector (called from 'generatePayload'). Inserts the
-     * full information elements in the order given in the protocol
+     * full instruction containers in the order given in the protocol
      * specification
      */
     void constructPayload (bytevect& bv);
@@ -287,9 +287,8 @@ protected:
     // ---------------------------------------------------------------------
 
     /**
-     * These methods process individual entries of information elements,
-     * e.g. processVarCreate processes an individual VarCreate element
-     * according to the protocol specification
+     * These methods process individual instruction records extracted
+     * from instruction containers.
      */
     void processVarCreate(const VarCreateT& create);
     void processVarDelete(const VarDeleteT& del);
@@ -299,9 +298,9 @@ protected:
     void processVarReqCreate(const VarReqCreateT& reqcreate);
 
     /**
-     * These methods iterate over the entries of a received information
-     * element (given as a list) and call the 'processX' methods to
-     * process individual elements
+     * These methods iterate over the records of a received instruction
+     * container (given as a list) and call the 'processX' methods to
+     * process individual records
      */
     void processVarCreateList(const std::deque<VarCreateT>& creates);
     void processVarDeleteList(const std::deque<VarDeleteT>& deletes);
@@ -311,8 +310,8 @@ protected:
     void processVarReqCreateList(const std::deque<VarReqCreateT>& reqcreates);
 
     /**
-     * These methods parse information elements from a received payload, perform
-     * sanity checks, store the entries of an information element in a list and
+     * These methods parse instruction containers from a received payload, perform
+     * sanity checks, store the entries of an instruction container in a list and
      * call 'processXXList' to process the entries on that list
      */
     void extractVarCreateList(DisassemblyArea& area, std::deque<VarCreateT>& creates);
