@@ -28,9 +28,13 @@ DCP introduces its own data types, variables and field names.
   representation. In other cases, the width of a transmissible data
   type can be chosen by implementers as an integral multiple of one
   byte. In this specififaction, when we apply the 'function'
-  `sizeof()` to a transmissible data type, we refer to the serialized
+  `ssizeof()` to a transmissible data type, we refer to the serialized
   size of that data type, not to the size of its in-memory
-  representation. For data types not to be included in packets
+  representation. When a transmissible data type is a record type
+  containing fields of transmissible data type, then a packed
+  representation is assumed, i.e. the `ssizeof()` value of the record
+  type is the sum of the `ssizeof()` values of the types of its
+  individual fields.  For data types not to be included in packets
   (**non-transmissible data types**) we will not provide any details
   about their representation and leave it to the implementation.
 
@@ -47,7 +51,7 @@ system- and programming-language dependent.
 - `Bool` is the Boolean data type with values `true` and `false`.
 
 
-## Basic Transmissible Data Types
+## Basic Transmissible Data Types {#chap-datatypes-basic-transmissible}
 
 The following basic data types can be used inside an implementation
 but are particularly included as fields in packets. The type names of
@@ -74,11 +78,17 @@ is transmitted in network byte order.
   within a few milliseconds will be sufficient, applications might
   require greater accuracy.
 
+  In a number of places we want to transmit variable-length contiguous
+  blocks of bytes. For this purpose we use the transmissible data type
+  `MemBlockT`, which contains two fields:
+    - `length` is an eight-bit unsigned integer representing how many
+      bytes are contained in the data block.
+	- `data` is an array of bytes of exactly the length given by the
+	  `length` field.
+
 - When a human-readable string is to be transmitted, then the data
-  type `StringT` is used. In this type, a string starts with one
-  single byte indicating the length of the string (hence having a
-  maximum length of 255), followed by as many bytes as indicated by
-  the length field. When variable-length encodings such as UTF-8 are
+  type `StringT` is used, which is simply represented as a
+  `MemBlockT`. When variable-length string encodings such as UTF-8 are
   used for strings, then the length of the string may be larger than
   the number of characters displayed to human users.
 

@@ -170,7 +170,7 @@ supports the following operations:
   its `protocolId` field is equal to the parameter (if it exists).
 
 
-## Interface
+## Service Interface
 
 In the following we describe the services that BP offers to higher
 layers (client protocols or applications). Generally, for any service
@@ -246,7 +246,7 @@ the BP entity performs at least the following actions:
 2.     If (maxPayloadSize <= 0)
           stop processing, return status code BP-STATUS-ILLEGAL-MAX-PAYLOAD-SIZE
 3.     If (maxPayloadSize > (BPPAR_MAXIMUM_PACKET_SIZE - 
-                             (sizeof(BPPayloadHeaderT) + sizeof(BPHeaderT)))) then
+                             (ssizeof(BPPayloadHeaderT) + ssizeof(BPHeaderT)))) then
 	      stop processing, return status code BP-STATUS-ILLEGAL-MAX-PAYLOAD-SIZE
 4.     if (    (    (queueingMode == BP_QMODE_QUEUE_DROPTAIL)
                  || (queueingMode == BP_QMODE_QUEUE_DROPHEAD))
@@ -570,7 +570,7 @@ needs to support. These are:
 - `BPPAR_MAXIMUM_PACKET_SIZE`: specifies the maximum packet size of
   beacons (which can include several payloads). This parameter must be
   at least as large as
-  `sizeof(BPHeaderT)+sizeof(BPPayloadHeaderT)` and it must never
+  `ssizeof(BPHeaderT)+ssizeof(BPPayloadHeaderT)` and it must never
   be larger than the value of the `UWB-MaxPacketSize` variable, which
   is initialized at startup (see Section
   [Initialization](#bp-initialization-runtime-shutdown)) and contains
@@ -761,7 +761,7 @@ Recall that each payload block consists of a header of type
 `BPPayloadHeaderT` followed by the actual payload as a sequence of
 bytes, without any gap (see Section [Packet
 Format](#bp-packet-format)). We initialize a variable `index` to
-`sizeof(BPHeaderT)`, where generally `index` refers to the byte
+`ssizeof(BPHeaderT)`, where generally `index` refers to the byte
 position in the bearer payload at which the next payload block starts.
 
 In the following, we refer to the payload block starting at index
@@ -771,16 +771,16 @@ In the following, we refer to the payload block starting at index
 steps:
 
 ~~~
-1.     let index      =  sizeof(BPHeaderT)
-           bearerlen  =  length of overall bearer payload - sizeof(BPHeaderT)
+1.     let index      =  ssizeof(BPHeaderT)
+           bearerlen  =  length of overall bearer payload - ssizeof(BPHeaderT)
 		   transId    =  node identifier of node sending the beacon
 2.     If (transId == ownNodeIdentifier) then
           stop processing, drop beacon
-3.     While (index < bearerlen - sizeof(BPPayloadHeaderT))
+3.     While (index < bearerlen - ssizeof(BPPayloadHeaderT))
 3.a.      let pblock be the block of bytes starting at index
 3.b.      let protId        = pblock.header.protocolId
               plength       = pblock.header.length
-		      blocklength   = plength + sizeof(BPPayloadHeaderT)
+		      blocklength   = plength + ssizeof(BPPayloadHeaderT)
 3.c.      index = index + blocklength
 3.d.      If (    (currentClientProtocols.lProtocolExists(protId) == true) 
                && (index < bearlen)) then

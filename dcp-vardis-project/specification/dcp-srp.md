@@ -39,7 +39,7 @@ protocol.
   short-term trajectory. The precise details of this data type are
   implemention-dependent and therefore the generation of values is
   left to applications, but `SafetyDataT` records have a fixed size
-  (given by `sizeof(SafetyDataT)`).
+  (given by `ssizeof(SafetyDataT)`).
 
 - The transmissible data type `ExtendedSafetyDataT` acts as a wrapper
   around the type `SafetyDataT`. It contains additional fields, and the
@@ -158,7 +158,7 @@ instance performs at least the following actions:
 2.     increment currentSequenceNumber modulo (MAXVAL(SRPSequenceNumberT)+1)
 3.     Prepare BP-TransmitPayload.request primitive req with
           req.protId  = BP_PROTID_SRP
-		     .length  = sizeof(ExtendedSafetyDataT)
+		     .length  = ssizeof(ExtendedSafetyDataT)
 			 .payload = extsd
 4.     Submit req to BP.
 5.     stop processing, return SRP-STATUS-OK
@@ -222,17 +222,17 @@ the following parameters:
   'x' and 'y' refer to the present version of SRP. Currently, the
   version number is "V1.1".
 - `maxPayloadSize` is set to
-  `sizeof(ExtendedSafetyDataT)`. Implementations may opt to add an
+  `ssizeof(ExtendedSafetyDataT)`. Implementations may opt to add an
   additional safety margin.
 - `queueingMode` is set to `BP_QMODE_REPEAT`, meaning that the
   BP will always transmit the last `ExtendedSafetyDataT` record that the
   SRP has handed over.
 
-Optionally, the SRP entity can choose to first submit a
-`BP-DeregisterProtocol.request` primitive with `protId` field set to
-`BP_PROTID_SRP`, to cover the case that a previously running SRP
-instance has crashed and the current instance is re-started, see
-Section [Recommended behaviour of client
+Optionally, before registering with the BP, the SRP entity can choose
+to first submit a `BP-DeregisterProtocol.request` primitive with
+`protId` field set to `BP_PROTID_SRP`, to cover the case that a
+previously running SRP instance has crashed and the current instance
+is re-started, see Section [Recommended behaviour of client
 protocols](#bp-recommended-behaviour-client-protocols).
 
 The variable `neighbourTable` of type `NeighbourTable` is  initialized
@@ -283,8 +283,8 @@ referring to the received primitive as `payloadIndication`, the SRP
 performs at least the following actions:
 
 ~~~
-1.     If (    (payloadIndication.protId =/= BP_PROTID_SRP)
-            || (payloadIndication.length =/= sizeof(ExtendedSafetyDataT)) then
+1.     If (    (payloadIndication.protId != BP_PROTID_SRP)
+            || (payloadIndication.length != ssizeof(ExtendedSafetyDataT)) then
           stop processing.
 2.     Let ext : ExtendedSafetyDataT = payloadIndication.payload
 3.     If (ext.nodeId == own node identifier) then
