@@ -400,7 +400,7 @@ performs at least the following actions:
 			|| (protEntry.queueMode == BP_QMODE_QUEUE_DROPHEAD)) then
  	      If (    (protEntry.queueMode == BP_QMODE_QUEUE_DROPTAIL)
 		       && (protEntry.queue.qLength() >= protEntry.maxEntries)) then
-		     return status code BP_STATUS_OK
+		     return status code BP-STATUS-OK
 		  else
              If (    (protEntry.queueMode == BP_QMODE_QUEUE_DROPHEAD)
 		          && (protEntry.queue.length() >= protEntry.maxEntries)) then

@@ -506,7 +506,7 @@ Whenever an application submits a service request primitive, VarDis
 must check whether it is currently registered as a client protocol
 with BP. If not, then VarDis must reject the service request
 primitive, i.e. send back a confirm primitive with status code
-`VARDIS_STATUS_INACTIVE` to the application.
+`VARDIS-STATUS-INACTIVE` to the application.
 
 Furthermore, the implementation of the VarDis application service
 interface must support application multiplexing, i.e. it must be
@@ -530,8 +530,8 @@ records for all variables currently in the RTDB.
 The VarDis entity responds with a `RTDB-DescribeDatabase.confirm`
 primitive. If the global variable `vardisActive` has value `false`,
 then this confirm primitive contains status code
-`VARDIS_STATUS_INACTIVE`. Otherwise, the confirm primitive will carry
-status code `VARDIS_STATUS_OK`, and will carry as further data a list
+`VARDIS-STATUS-INACTIVE`. Otherwise, the confirm primitive will carry
+status code `VARDIS-STATUS-OK`, and will carry as further data a list
 of the `VarSpecT` records of all variables currently in the real-time
 database, including those that have their `toBeDeleted` flag set in
 their respective `DBEntry` records. Implementations can choose to add
@@ -550,12 +550,12 @@ variable does not exist.
 The VarDis entity responds with a `RTDB-DescribeDatabase.confirm`
 primitive. If the global variable `vardisActive` has value `false`,
 then this confirm primitive contains status code
-`VARDIS_STATUS_INACTIVE`. If the requested variable does not exist in
+`VARDIS-STATUS-INACTIVE`. If the requested variable does not exist in
 the real-time database, then the VarDis entity responds with a
 `RTDB-DescribeVariable.confirm` primitive carrying the status code
-`VARDIS_STATUS_VARIABLE-DOES-NOT-EXIST`. If the variable does exist,
+`VARDIS-STATUS-VARIABLE-DOES-NOT-EXIST`. If the variable does exist,
 the VarDis entity responds with the same primitive, but now carrying
-the status code `VARDIS_STATUS_OK` and the `DBEntry` record for this
+the status code `VARDIS-STATUS-OK` and the `DBEntry` record for this
 variable as parameters.
 
 
@@ -585,18 +585,18 @@ steps:
 
 ~~~
 1.     If (vardisActive == false) then
-          stop processing, return status code VARDIS_STATUS_INACTIVE
+          stop processing, return status code VARDIS-STATUS-INACTIVE
 2.     If (RTDB.lookup(spec.varId) == true) then
-          stop processing, return status code VARDIS_STATUS_VARIABLE_EXISTS
+          stop processing, return status code VARDIS-STATUS-VARIABLE-EXISTS
 3.     If (spec.descr.length > (VARDISPAR_MAX_DESCRIPTION_LENGTH)) then
-          stop processing, return status code VARDIS_STATUS_VARIABLE_DESCRIPTION_TOO_LONG
+          stop processing, return status code VARDIS-STATUS-VARIABLE-DESCRIPTION-TOO-LONG
 4.     If (value.length > VARDISPAR_MAX_VALUE_LENGTH) then
-          stop processing, return status code VARDIS_STATUS_VALUE_TOO_LONG
+          stop processing, return status code VARDIS-STATUS-VALUE-TOO-LONG
 5.     If (value.length == 0) then
-          stop processing, return status code VARDIS_STATUS_EMPTY_VALUE
+          stop processing, return status code VARDIS-STATUS-EMPTY-VALUE
 6.     If (    (spec.repCnt <= 0)
             || (spec.repCnt > VARDISPAR_MAX_REPETITIONS)) then
-		  stop processing, return status code VARDIS_STATUS_ILLEGAL_REPCOUNT
+		  stop processing, return status code VARDIS-STATUS-ILLEGAL-REPCOUNT
 
 7.     Let newent : DBEntry with
            newent.spec         =  spec
@@ -618,7 +618,7 @@ steps:
 14.    RTDB.update(newent)
 15.    createQ.qAppend (spec.varId)
 16.    summaryQ.qAppend (spec.varId)
-17.    return status code VARDIS_STATUS_OK
+17.    return status code VARDIS-STATUS-OK
 ~~~
 
 
@@ -661,14 +661,14 @@ steps:
 
 ~~~
 1.     If (vardisActive == false) then
-          stop processing, return status code VARDIS_STATUS_INACTIVE
+          stop processing, return status code VARDIS-STATUS-INACTIVE
 2.     If (RTDB.lookup(varId) == false) then
-           stop processing, return status code VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST
+           stop processing, return status code VARDIS-STATUS-VARIABLE-DOES-NOT-EXIST
 3.     Let ent = RTDB.lookup(varId)
 4.     If (ent.spec.prodId != ownNodeIdentifier) then
-           stop processing, return status code VARDIS_STATUS_NOT_PRODUCER
+           stop processing, return status code VARDIS-STATUS-NOT-PRODUCER
 5.     If (ent.toBeDeleted == true) then
-           stop processing, return status code VARDIS_STATUS_VARIABLE_BEING_DELETED
+           stop processing, return status code VARDIS-STATUS-VARIABLE-BEING-DELETED
 6.     deleteQ.qAppend(varId)
 7.     createQ.qRemove(varId)
 8.     summaryQ.qRemove(varId)
@@ -680,7 +680,7 @@ steps:
 14.    ent.countCreate   =  0
 15.    ent.countUpdate   =  0
 16     RTDB.update(ent)
-17.    return status code VARDIS_STATUS_OK
+17.    return status code VARDIS-STATUS-OK
 ~~~
 
 A successful completion of this primitive only means that now the
@@ -716,18 +716,18 @@ steps:
 
 ~~~
 1.     If (vardisActive == false) then
-          stop processing, return status code VARDIS_STATUS_INACTIVE
+          stop processing, return status code VARDIS-STATUS-INACTIVE
 2.     If (RTDB.lookup(varId) == false) then
-           stop processing, return status code VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST
+           stop processing, return status code VARDIS-STATUS-VARIABLE-DOES-NOT-EXIST
 3.     Let ent = RTDB.lookup(varId)
 4.     If (ent.spec.prodId != ownNodeIdentifier) then
-           stop processing, return status code VARDIS_STATUS_NOT_PRODUCER
+           stop processing, return status code VARDIS-STATUS-NOT-PRODUCER
 5.     If (ent.toBeDeleted == True) then
-           stop processing, return status code VARDIS_STATUS_VARIABLE_BEING_DELETED
+           stop processing, return status code VARDIS-STATUS-VARIABLE-BEING-DELETED
 6.     If (value.length > VARDISPAR_MAX_VALUE_LENGTH) then
-          stop processing, return status code VARDIS_STATUS_VALUE_TOO_LONG
+          stop processing, return status code VARDIS-STATUS-VALUE-TOO-LONG
 7.     If (value.length == 0) then
-          stop processing, return status code VARDIS_STATUS_EMPTY_VALUE
+          stop processing, return status code VARDIS-STATUS-EMPTY-VALUE
 8.     Increment ent.seqno modulo SEQNO-MODULUS
 9.     Set ent.value        = value
 		   ent.countUpdate  = ent.spec.repCnt
@@ -735,7 +735,7 @@ steps:
 10.    RTDB.update(ent)
 11.    if (not updateQ.contains(varId))
         updateQ.qAppend(varId)
-12.    return status code VARDIS_STATUS_OK
+12.    return status code VARDIS-STATUS-OK
 ~~~
 
 
@@ -763,7 +763,7 @@ carries the `VarIdT` value of the variable as its only parameter.
 
 The `RTDB-Read.confirm` primitive is returned after the VarDis entity
 has finished processing the request. As a parameter it carries a
-status code and, if the status code is `VARDIS_STATUS_OK`, also the
+status code and, if the status code is `VARDIS-STATUS-OK`, also the
 value of the variable (of type `VarValueT`) and the time stamp of
 the last update of the variable.
 
@@ -772,13 +772,13 @@ steps:
 
 ~~~
 1.     If (vardisActive == false) then
-          stop processing, return status code VARDIS_STATUS_INACTIVE
+          stop processing, return status code VARDIS-STATUS-INACTIVE
 2.     If (RTDB.lookup(varId) == false) then
-           stop processing, return status code VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST
+           stop processing, return status code VARDIS-STATUS-VARIABLE-DOES-NOT-EXIST
 3.     Let ent = RTDB.lookup(varId)
 4.     If (ent.toBeDeleted == True) then
-           stop processing, return status code VARDIS_STATUS_VARIABLE_BEING_DELETED
-5.     return status code VARDIS_STATUS_OK, ent.value, ent.tStamp
+           stop processing, return status code VARDIS-STATUS-VARIABLE-BEING-DELETED
+5.     return status code VARDIS-STATUS-OK, ent.value, ent.tStamp
 ~~~
 
 
@@ -1217,7 +1217,7 @@ that the BP currently holds for VarDis. It does so by invoking the
 `BP-QueryNumberBufferedPayloads.request` service primitive with the
 `protId` parameter set to `BP_PROTID_VARDIS`. If the value received in
 the `BP-QueryNumberBufferedPayloads.confirm` primitive is valid (the
-primitive has status code `BP_STATUS_OK`) and equal to zero, then
+primitive has status code `BP-STATUS-OK`) and equal to zero, then
 VarDis attempts to generate a beacon payload and, if there is any,
 hands it over to the BP by submitting a `BP-TransmitPayload.request`
 primitive as above.

@@ -119,7 +119,7 @@ zero during initialization, and incremented after each time a new
 `ExtendedSafetyDataT` record is submitted to the beaconing protocol.
 
 
-## Interface
+## Service Interface
 
 SRP offers its services to the applications through the service
 interface described in the following.
@@ -128,7 +128,7 @@ Whenever an application submits a service request primitive, SRP must
 check whether it is currently registered as a client protocol with
 BP. If not, then SRP must reject the service request primitive,
 i.e. send back a confirm primitive with status code
-`SRP-STATUS-INACTIVE' to the application.
+`SRP-STATUS-INACTIVE` to the application.
 
 ### Service SRP-UpdateSafetyData
 
