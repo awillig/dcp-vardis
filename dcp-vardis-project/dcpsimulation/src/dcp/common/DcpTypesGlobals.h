@@ -19,13 +19,16 @@
 #pragma once
 
 
+#include <iostream>
+#include <iomanip>
+#include <string>
 #include <omnetpp.h>
 #include <inet/linklayer/common/MacAddress.h>
 #include <inet/common/Protocol.h>
 #include <dcp/common/MemBlockT.h>
 #include <dcp/common/FoundationTypes.h>
 #include <dcp/common/TransmissibleType.h>
-#include <dcp/bp/BPTypesConstants.h>
+// #include <dcp/bp/BPDataTypes.h>
 
 using namespace omnetpp;
 using namespace inet;
@@ -33,12 +36,67 @@ using namespace inet;
 // --------------------------------------------------------------------
 namespace dcp {
 
+/*
+class NodeIdentifierT : public TransmissibleType<MAC_ADDRESS_SIZE> {
+public:
+      byte nodeId[MAC_ADDRESS_SIZE] = {0, 0, 0, 0, 0, 0};
+
+      NodeIdentifierT () { std::memset(nodeId, 0, MAC_ADDRESS_SIZE); };
+      NodeIdentifierT (const inet::MacAddress addr)
+      {
+          for (int i=0; i<MAC_ADDRESS_SIZE; i++)
+              nodeId[i] = addr.getAddressByte(i);
+      };
+
+      bool operator== (const NodeIdentifierT& other) const { return (0 == std::memcmp(nodeId, other.nodeId, MAC_ADDRESS_SIZE)); };
+      bool operator!= (const NodeIdentifierT& other) const { return (0 != std::memcmp(nodeId, other.nodeId, MAC_ADDRESS_SIZE)); };
+      std::string to_str () const
+      {
+          std::stringstream ss;
+          ss << std::hex;
+
+          for (int i=0; i<MAC_ADDRESS_SIZE-1; i++)
+              ss << std::setw(2) << std::setfill('0') << (int) nodeId[i] << ":";
+          ss << std::setw(2) << std::setfill('0') << (int) nodeId[MAC_ADDRESS_SIZE-1];
+
+          return ss.str();
+      };
+      inet::MacAddress to_macaddr () const
+      {
+          inet::MacAddress rv;
+          for (int i=0; i<MAC_ADDRESS_SIZE; i++)
+              rv.setAddressByte(i, nodeId[i]);
+          return rv;
+      };
+
+      virtual size_t total_size () const { return fixed_size(); };
+      virtual void serialize (AssemblyArea& area) { area.serialize_byte_block(MAC_ADDRESS_SIZE, nodeId); };
+      virtual void deserialize (DisassemblyArea& area) { area.deserialize_byte_block(MAC_ADDRESS_SIZE, nodeId); };
+};
+
+const NodeIdentifierT nullIdentifier;
+*/
 
 typedef inet::MacAddress   MacAddress;
 typedef inet::MacAddress   NodeIdentifierT;
-typedef omnetpp::SimTime   TimeStampT;
 
 const NodeIdentifierT      nullIdentifier = MacAddress::UNSPECIFIED_ADDRESS;
+
+
+// --------------------------------------------------------------------
+
+typedef omnetpp::SimTime   TimeStampT;
+
+// --------------------------------------------------------------------
+
+
+typedef uint16_t      BPProtocolIdT;     // Identifier for BP client protocols
+
+// Pre-defined BP client protocol id's
+const BPProtocolIdT BP_PROTID_SRP     =  0x0001;
+const BPProtocolIdT BP_PROTID_VARDIS  =  0x0002;
+
+// --------------------------------------------------------------------
 
 
 class StringT : public MemBlockT<byte>, public TransmissibleType<sizeof(byte)> {
@@ -89,7 +147,7 @@ public:
 
 
 // --------------------------------------------------------------------
-// Basic type definitions and constants
+// Stuff relevant for OMNeT++
 
 
 

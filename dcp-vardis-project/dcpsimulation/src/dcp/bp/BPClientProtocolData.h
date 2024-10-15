@@ -25,6 +25,7 @@
 #include <inet/common/packet/chunk/Chunk.h>
 #include <inet/common/Ptr.h>
 #include <dcp/common/DcpTypesGlobals.h>
+#include <dcp/bp/BPDataTypes.h>
 #include <dcp/bp/BPQueueingMode_m.h>
 #include <dcp/common/DcpTypesGlobals.h>
 

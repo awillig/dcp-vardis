@@ -23,6 +23,7 @@
 #include <inet/common/packet/Packet.h>
 #include <dcp/common/DcpProtocol.h>
 #include <dcp/common/DcpTypesGlobals.h>
+#include <dcp/bp/BPDataTypes.h>
 #include <dcp/bp/BPQueueingMode_m.h>
 #include <dcp/bp/BPRegisterProtocol_m.h>
 #include <dcp/bp/BPDeregisterProtocol_m.h>

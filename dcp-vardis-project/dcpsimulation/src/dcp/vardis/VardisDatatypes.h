@@ -16,11 +16,13 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#ifndef DCP_VARDIS_VARDISDATATYPES_H_
-#define DCP_VARDIS_VARDISDATATYPES_H_
+#pragma once
+
 
 #include <inet/linklayer/common/MacAddress.h>
 #include <dcp/common/DcpTypesGlobals.h>
+#include <dcp/common/MemBlockT.h>
+#include <dcp/common/TransmissibleType.h>
 
 // -----------------------------------------
 
@@ -42,86 +44,192 @@
 
 // -----------------------------------------
 
+using namespace dcp;
+
+namespace dcp {
+
+// -----------------------------------------
 
 typedef uint8_t  VarIdT;
 typedef uint8_t  VarLenT;
 typedef uint8_t  VarRepCntT;
 typedef uint8_t  VarSeqnoT;
 
-const int maxVarId     = 255;
-const int maxVarLen    = 255;
-const int maxVarRepCnt = 15;
-const int maxVarSeqno  = 256;
+const size_t maxVarId     = 255;
+const size_t maxVarLen    = 255;
+const size_t maxVarRepCnt = 15;
+const size_t maxVarSeqno  = 256;
 
-const size_t serializedSizeVarId_B      = 1;
-const size_t serializedSizeVarLen_B     = 1;
-const size_t serializedSizeVarRepCnt_B  = 1;
-const size_t serializedSizeVarSeqno_B   = 1;
+// checks if the first seqno is more recent than the second one
+#define MORE_RECENT_SEQNO(a,b)  ((((a) > (b)) && (((a)-(b)) < ((int)(maxVarSeqno/2)))) || (((a) < (b)) && (((b)-(a)) > ((int)(maxVarSeqno/2)))))
+
 
 // -----------------------------------------
 
-typedef struct VarSummT {
+/*
+ * Type representing a VarDis value, made up of one field indicating the
+ * length, and a byte array of that exact length
+ */
+class VarValueT : public MemBlockT<VarLenT>, public TransmissibleType<sizeof(VarLenT)> {
+ public:
+
+    VarValueT () : MemBlockT<VarLenT>() {};
+    VarValueT (VarLenT size, byte* data) : MemBlockT<VarLenT>(size, data) {};
+
+    virtual size_t total_size () const { return fixed_size() + length; };
+
+    virtual void serialize (AssemblyArea& area)
+    {
+        area.serialize_byte(length);
+        if (length > 0)
+            area.serialize_byte_block(length, data);
+    };
+
+    virtual void deserialize (DisassemblyArea& area)
+    {
+        length = area.deserialize_byte ();
+        if (length > 0)
+        {
+            if (data) throw SerializationException ("VarValueT::deserialize: already contains data");
+
+            data = new byte [length];
+            area.deserialize_byte_block (length, data);
+        }
+    }
+};
+
+
+
+
+// -----------------------------------------
+
+
+class VarSummT : public TransmissibleType<sizeof(VarIdT)+sizeof(VarSeqnoT)> {
+public:
     VarIdT     varId;
     VarSeqnoT  seqno;
-} VarSummT;
 
-const size_t serializedSizeVarSummT_B = serializedSizeVarId_B + serializedSizeVarSeqno_B;
+    virtual void serialize (AssemblyArea& area)
+    {
+        area.serialize_byte(varId);
+        area.serialize_byte(seqno);
+    };
+    virtual void deserialize (DisassemblyArea& area)
+    {
+        varId = area.deserialize_byte();
+        seqno = area.deserialize_byte();
+    };
+};
+
+
 
 // -----------------------------------------
 
-typedef struct VarUpdateT {
-    VarIdT    varId;
-    VarSeqnoT seqno;
-    VarLenT   length;
-    uint8_t* value;
-} VarUpdHeaderT;
+class VarUpdateT : public TransmissibleType<sizeof(VarIdT)+sizeof(VarSeqnoT)+sizeof(VarLenT)> {
+public:
+    VarIdT     varId;
+    VarSeqnoT  seqno;
+    VarValueT  value;
 
-const size_t serializedSizeVarUpdateT_FixedPart_B = serializedSizeVarId_B + serializedSizeVarSeqno_B + serializedSizeVarLen_B ;
+    virtual size_t total_size () const { return fixed_size() + value.length; };
+    virtual void serialize (AssemblyArea& area)
+    {
+        area.serialize_byte (varId);
+        area.serialize_byte (seqno);
+        value.serialize (area);
+    };
+    virtual void deserialize (DisassemblyArea& area)
+    {
+        varId = area.deserialize_byte ();
+        seqno = area.deserialize_byte ();
+        value.deserialize (area);
+    };
+};
+
+
 
 // -----------------------------------------
 
-typedef struct VarSpecT {
+
+class VarSpecT : public TransmissibleType<sizeof(VarIdT)+MAC_ADDRESS_SIZE+sizeof(VarRepCntT)+sizeof(VarLenT)> {
+public:
     VarIdT      varId;
-    uint8_t     prodId [MAC_ADDRESS_SIZE];
+    byte        prodId [MAC_ADDRESS_SIZE];
     VarRepCntT  repCnt;
-    VarLenT     descrLen;   // must be length of C string descr plus one (for null terminator)
-    uint8_t    *descr;      // encoded as C string, includes null terminator at the end
-} VarSpecT;
+    StringT     descr;
 
-const size_t serializedSizeVarSpecT_FixedPart_B = serializedSizeVarId_B + MAC_ADDRESS_SIZE + serializedSizeVarRepCnt_B + serializedSizeVarLen_B;
+    virtual size_t total_size () const { return fixed_size() + descr.length; };
+    virtual void serialize (AssemblyArea& area)
+    {
+        area.serialize_byte (varId);
+        area.serialize_byte_block (MAC_ADDRESS_SIZE, prodId);
+        area.serialize_byte (repCnt);
+        descr.serialize (area);
+    };
+    virtual void deserialize (DisassemblyArea& area)
+    {
+        varId  = area.deserialize_byte ();
+        area.deserialize_byte_block(MAC_ADDRESS_SIZE, prodId);
+        repCnt = area.deserialize_byte ();
+        descr.deserialize (area);
+    };
+};
 
-// -----------------------------------------
 
-typedef struct VarCreateT {
-    VarSpecT       spec;
-    VarUpdateT     update;
-} VarCreateT;
-
-const size_t serializedSizeVarCreateT_FixedPart_B = serializedSizeVarSpecT_FixedPart_B + serializedSizeVarUpdateT_FixedPart_B;
-
-// -----------------------------------------
-
-typedef struct VarDeleteT {
-    VarIdT varId;
-} VarDeleteT;
-
-const size_t serializedSizeVarDeleteT_B = serializedSizeVarId_B;
 
 // -----------------------------------------
 
-typedef struct VarReqUpdateT {
+
+class VarCreateT : public TransmissibleType<sizeof(VarIdT)+MAC_ADDRESS_SIZE+sizeof(VarRepCntT)+sizeof(VarLenT)+sizeof(VarIdT)+sizeof(VarSeqnoT)+sizeof(VarLenT)> {
+public:
+    VarSpecT    spec;
+    VarUpdateT  update;
+
+    virtual size_t total_size () const { return fixed_size() + spec.descr.length + update.value.length; };
+    virtual void serialize (AssemblyArea& area)
+    {
+        spec.serialize (area);
+        update.serialize (area);
+    };
+    virtual void deserialize (DisassemblyArea& area)
+    {
+        spec.deserialize (area);
+        update.deserialize (area);
+    };
+};
+
+
+// -----------------------------------------
+
+
+class VarDeleteT : public TransmissibleType<sizeof(VarIdT)> {
+public:
+    VarIdT  varId;
+    virtual void serialize (AssemblyArea& area) { area.serialize_byte(varId); };
+    virtual void deserialize (DisassemblyArea& area) { varId = area.deserialize_byte (); };
+};
+
+// -----------------------------------------
+
+
+class VarReqUpdateT : public TransmissibleType<sizeof(VarIdT)+sizeof(VarSeqnoT)> {
+public:
     VarSummT updSpec;
-} VarReqUpdateT;
+    virtual void serialize (AssemblyArea& area) { updSpec.serialize (area); };
+    virtual void deserialize (DisassemblyArea& area) { updSpec.deserialize (area); };
+};
 
-const size_t serializedSizeVarReqUpdateT_B = serializedSizeVarSummT_B;
 
 // -----------------------------------------
 
-typedef struct VarReqCreateT {
-    VarIdT varId;
-} VarReqCreateT;
 
-const size_t serializedSizeVarReqCreateT_B = serializedSizeVarId_B;
+class VarReqCreateT : public TransmissibleType<sizeof(VarIdT)> {
+public:
+    VarIdT  varId;
+    virtual void serialize (AssemblyArea& area) { area.serialize_byte(varId); };
+    virtual void deserialize (DisassemblyArea& area) { varId = area.deserialize_byte(); };
+};
+
 
 // -----------------------------------------
 
@@ -135,21 +243,30 @@ typedef enum IEType
     IETYPE_DELETE_VARIABLES    =  6
 } IEType;
 
-typedef struct IEHeaderT {
-    uint8_t ieType;
-    uint8_t ieNumRecords;
-} IEHeaderT;
 
-const size_t serializedSizeIEHeaderT_B = 2;
-const int maxRecordsInInformationElement = 255;
-
-// -----------------------------------------
-
+class IEHeaderT : public TransmissibleType<sizeof(byte)+sizeof(byte)> {
+public:
+    byte ieType;
+    byte ieNumRecords;
+    virtual void serialize (AssemblyArea& area)
+    {
+        area.serialize_byte (ieType);
+        area.serialize_byte (ieNumRecords);
+    };
+    virtual void deserialize (DisassemblyArea& area)
+    {
+        ieType        = area.deserialize_byte();
+        ieNumRecords  = area.deserialize_byte();
+    };
+};
 
 const unsigned int maxInformationElementRecords = 255;
 
 
-// checks if the first seqno is more recent than the second one
-#define MORE_RECENT_SEQNO(a,b)  ((((a) > (b)) && (((a)-(b)) < (maxVarSeqno/2))) || (((a) < (b)) && (((b)-(a)) > (maxVarSeqno/2))))
+// -----------------------------------------
 
-#endif /* DCP_VARDIS_VARDISDATATYPES_H_ */
+
+
+
+
+};  // namespace dcp

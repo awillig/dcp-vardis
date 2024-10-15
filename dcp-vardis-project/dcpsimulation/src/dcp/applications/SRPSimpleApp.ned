@@ -27,7 +27,7 @@ import dcpsimulation.dcp.srp.SRPApplication;
 simple SRPSimpleApp extends SRPApplication
 {
    parameters:
-       bool              isActive = true;
+       bool              isActive = default(true);
        volatile double   srpGenerationPeriodDistr @unit(s)  = default (uniform(90ms, 110ms));
        @class(SRPSimpleApp);
 };

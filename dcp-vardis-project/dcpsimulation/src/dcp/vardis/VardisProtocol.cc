@@ -47,6 +47,8 @@ void VardisProtocol::initialize(int stage)
         dbg_setModuleName("VarDis");
         dbg_enter("initialize");
 
+        vardisActive = false;
+
         // read and check parameters
         vardisMaxValueLength        = (BPLengthT) par("vardisMaxValueLength");
         vardisMaxDescriptionLength  = (BPLengthT) par("vardisMaxDescriptionLength");
@@ -58,17 +60,17 @@ void VardisProtocol::initialize(int stage)
         assert(maxPayloadSize > 0);
         assert(maxPayloadSize <= 1400);   // this deviates from specification (would require config data from BP)
         assert(vardisMaxValueLength > 0);
-        assert(vardisMaxValueLength <= std::min(maxVarLen, maxPayloadSize - serializedSizeIEHeaderT_B));
+        assert(vardisMaxValueLength <= std::min(maxVarLen, maxPayloadSize - dcp::IEHeaderT::fixed_size()));
         assert(vardisMaxDescriptionLength > 0);
         assert(vardisMaxDescriptionLength <=   maxPayloadSize
-                                             - (   serializedSizeIEHeaderT_B
-                                                 + serializedSizeVarSpecT_FixedPart_B
-                                                 + serializedSizeVarUpdateT_FixedPart_B
+                                             - (   dcp::IEHeaderT::fixed_size()
+                                                 + dcp::VarSpecT::fixed_size()
+                                                 + dcp::VarUpdateT::fixed_size()
                                                  + vardisMaxValueLength
                                                  ));
         assert(vardisMaxRepetitions > 0);
         assert(vardisMaxRepetitions <= 15);
-        assert(vardisMaxSummaries <= (maxPayloadSize-serializedSizeIEHeaderT_B)/serializedSizeVarSummT_B);
+        assert(vardisMaxSummaries <= (maxPayloadSize - dcp::IEHeaderT::fixed_size())/dcp::VarSummT::fixed_size());
         assert(vardisBufferCheckPeriod > 0);
 
         // find gate identifiers
@@ -137,7 +139,7 @@ void VardisProtocol::handleMessage(cMessage *msg)
 
     if (msg == sendPayloadMsg)
     {
-        dbg_string("handling bufferCheckMsg");
+        dbg_string("handling sendPayloadMsg");
         handleSendPayloadMsg();
         dbg_leave();
         return;
@@ -157,10 +159,33 @@ void VardisProtocol::registerAsBPClient()
 
     DBG_VAR1(maxPayloadSize);
 
-    sendRegisterProtocolRequest(BP_PROTID_VARDIS, "Variable Dissemination Protocol (VarDis)", maxPayloadSize, BP_QMODE_QUEUE, 0);
+    sendRegisterProtocolRequest(BP_PROTID_VARDIS, "Variable Dissemination Protocol (VarDis)", maxPayloadSize, BP_QMODE_QUEUE_DROPTAIL, false, 10);
 
     dbg_leave();
 }
+
+// ----------------------------------------------------
+
+
+bool VardisProtocol::handleBPRegisterProtocol_Confirm (BPRegisterProtocol_Confirm* pConf)
+{
+    dbg_enter("handleBPRegisterProtocol_Confirm");
+
+    assert (pConf);
+
+    if (pConf->getStatus() == BP_STATUS_OK)
+    {
+        vardisActive = true;
+    }
+    else
+    {
+        error("VardisProtocol::handleBPRegisterProtocol_Confirm: unexpected BP_STATUS value");
+    }
+
+    dbg_leave();
+    return BPClientProtocol::handleBPRegisterProtocol_Confirm (pConf);
+}
+
 
 
 // ----------------------------------------------------
@@ -170,14 +195,6 @@ VardisProtocol::~VardisProtocol()
 {
     cancelAndDelete(bufferCheckMsg);
     cancelAndDelete(sendPayloadMsg);
-
-    // Delete (dynamically allocated) values and descriptions from the variable database
-    // The database itself is deleted upon deletion of this object
-    for (auto ent : theVariableDatabase)
-    {
-        delete [] ent.second.value;
-        delete [] ent.second.spec.descr;
-    }
 }
 
 
@@ -422,39 +439,37 @@ void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indicati
     std::deque<VarCreateT>     ieCreateVariables;
     std::deque<VarDeleteT>     ieDeleteVariables;
 
-    bytevect bv                  = theBytesChunk->getBytes();
-    unsigned int bytesAvailable  = theBytesChunk->getByteArraySize();
-    unsigned int bytesUsed       = 0;
+    ByteVectorDisassemblyArea area (theBytesChunk->getBytes());
 
     // Dispatch on IEType
-    // The byte pointed to by bytesUsed is always the IEType
-    while (bytesUsed < bytesAvailable)
+    while (area.used() < area.available())
     {
-        switch((IEType) bv[bytesUsed])
+        DBG_PVAR2 ("Deserializing: considering IEType", (int) area.used(), (int) ((IEType) area.peek_byte()));
+        switch((IEType) area.peek_byte())
         {
         case IETYPE_SUMMARIES:
             dbg_string("considering IETYPE_SUMMARIES");
-            extractVarSummaryList(bv, ieSummaries, bytesUsed);
+            extractVarSummaryList(area, ieSummaries);
             break;
         case IETYPE_UPDATES:
             dbg_string("considering IETYPE_UPDATES");
-            extractVarUpdateList(bv, ieUpdates, bytesUsed);
+            extractVarUpdateList(area, ieUpdates);
             break;
         case IETYPE_REQUEST_VARUPDATES:
             dbg_string("considering IETYPE_REQUEST_VARUPDATES");
-            extractVarReqUpdateList(bv, ieRequestVarUpdates, bytesUsed);
+            extractVarReqUpdateList(area, ieRequestVarUpdates);
             break;
         case IETYPE_REQUEST_VARCREATES:
             dbg_string("considering IETYPE_REQUEST_VARCREATES");
-            extractVarReqCreateList(bv, ieRequestVarCreates, bytesUsed);
+            extractVarReqCreateList(area, ieRequestVarCreates);
             break;
         case IETYPE_CREATE_VARIABLES:
             dbg_string("considering IETYPE_CREATE_VARIABLES");
-            extractVarCreateList(bv, ieCreateVariables, bytesUsed);
+            extractVarCreateList(area, ieCreateVariables);
             break;
         case IETYPE_DELETE_VARIABLES:
             dbg_string("considering IETYPE_DELETE_VARIABLES");
-            extractVarDeleteList(bv, ieDeleteVariables, bytesUsed);
+            extractVarDeleteList(area, ieDeleteVariables);
             break;
         default:
             error("VardisProtocol::handleReceivedPayload: unknown IEType");
@@ -496,16 +511,16 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
 
     // copy description string (including terminating zero) to newly allocated memory
     std::string descr      = createReq->getDescr();
-    auto        descrLen   = descr.length()+1;
+    auto        descrLen   = descr.length();
     uint8_t*    descr_cstr = new uint8_t [descrLen];
-    std::strcpy ((char*) descr_cstr, (char*) descr.c_str());
+    std::memcpy ((char*) descr_cstr, (char*) descr.c_str(), descrLen);
 
     // Fill in the VarSpecT information element entry
     VarSpecT    spec;
-    spec.varId     =  createReq->getVarId();
-    spec.repCnt    =  createReq->getRepCnt();
-    spec.descrLen  =  descrLen;
-    spec.descr     =  descr_cstr;
+    spec.varId         =  createReq->getVarId();
+    spec.repCnt        =  createReq->getRepCnt();
+    spec.descr.length  =  descrLen;
+    spec.descr.data    =  descr_cstr;
     createReq->getProdId().getAddressBytes(spec.prodId);
 
     auto length  = createReq->getUpdlen();
@@ -518,7 +533,6 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
         dbg_string("Vardis is not registered with BP, dropping request");
         sendRTDBCreateConfirm(VARDIS_STATUS_INACTIVE, spec.varId, theProtocol);
         delete createReq;
-        delete [] descr_cstr;
         dbg_leave();
         return;
     }
@@ -528,7 +542,6 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
         dbg_string("variable exists, dropping request");
         sendRTDBCreateConfirm(VARDIS_STATUS_VARIABLE_EXISTS, spec.varId, theProtocol);
         delete createReq;
-        delete [] descr_cstr;
         dbg_leave();
         return;
     }
@@ -538,7 +551,6 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
         DBG_PVAR4("description is too long", descrLen, vardisMaxDescriptionLength, descr, descr.length());
         sendRTDBCreateConfirm(VARDIS_STATUS_VARIABLE_DESCRIPTION_TOO_LONG, spec.varId, theProtocol);
         delete createReq;
-        delete [] descr_cstr;
         dbg_leave();
         return;
     }
@@ -548,7 +560,6 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
         dbg_string("value length is too long, dropping request");
         sendRTDBCreateConfirm(VARDIS_STATUS_VALUE_TOO_LONG, spec.varId, theProtocol);
         delete createReq;
-        delete [] descr_cstr;
         dbg_leave();
         return;
     }
@@ -558,7 +569,6 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
         dbg_string("value length is zero, dropping request");
         sendRTDBCreateConfirm(VARDIS_STATUS_EMPTY_VALUE, spec.varId, theProtocol);
         delete createReq;
-        delete [] descr_cstr;
         dbg_leave();
         return;
     }
@@ -568,7 +578,6 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
         dbg_string("illegal repCnt value, dropping request");
         sendRTDBCreateConfirm(VARDIS_STATUS_ILLEGAL_REPCOUNT, spec.varId, theProtocol);
         delete createReq;
-        delete [] descr_cstr;
         dbg_leave();
         return;
     }
@@ -585,10 +594,10 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
     newent.countCreate   =  spec.repCnt;
     newent.countDelete   =  0;
     newent.toBeDeleted   =  false;
-    newent.length        =  length;
-    newent.value         =  new uint8_t [length];
+    newent.value.length  =  length;
+    newent.value.data    =  new uint8_t [length];
     for (int i=0; i<length; i++)
-        newent.value[i] = createReq->getUpddata(i);
+        newent.value.data[i] = createReq->getUpddata(i);
     theVariableDatabase[spec.varId] = newent;
 
     // clean out varId from all queues, just to be safe
@@ -697,12 +706,11 @@ void VardisProtocol::handleRTDBUpdateRequest(RTDBUpdate_Request* updateReq)
     theEntry.seqno        = (theEntry.seqno + 1) % maxVarSeqno;
     theEntry.countUpdate  = theEntry.spec.repCnt;
     theEntry.tStamp       = simTime();
-    assert(theEntry.value);
-    delete [] theEntry.value;
-    theEntry.length       = varLen;
-    theEntry.value        =  new uint8_t [varLen];
+    delete [] theEntry.value.data;
+    theEntry.value.length = varLen;
+    theEntry.value.data   =  new uint8_t [varLen];
     for (int i=0; i<varLen; i++)
-        theEntry.value[i] = updateReq->getUpddata(i);
+        theEntry.value.data[i] = updateReq->getUpddata(i);
 
     // add varId to updateQ if necessary
     if (not isVarIdInQueue(updateQ, varId))
@@ -763,11 +771,11 @@ void VardisProtocol::handleRTDBReadRequest (RTDBRead_Request* readReq)
 
     // retrieve and copy variable value into confirmation
     DBEntry& theEntry = theVariableDatabase.at(varId);
-    assert(theEntry.value);
-    readConf->setDataLen(theEntry.length);
-    readConf->setDataArraySize(theEntry.length);
-    for (int i=0; i<theEntry.length; i++)
-        readConf->setData(i,theEntry.value[i]);
+    assert(theEntry.value.data);
+    readConf->setDataLen(theEntry.value.length);
+    readConf->setDataArraySize(theEntry.value.length);
+    for (int i=0; i<theEntry.value.length; i++)
+        readConf->setData(i,theEntry.value.data[i]);
 
     sendConfirmation(readConf, VARDIS_STATUS_OK, theProtocol);
 
@@ -814,14 +822,14 @@ void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Req
         MacAddress prodId;
         prodId.setAddressBytes(theVar.spec.prodId);
 
-        DBG_PVAR3("adding description", (int) theVar.spec.varId, prodId, theVar.spec.descr);
+        DBG_PVAR3("adding description", (int) theVar.spec.varId, prodId, theVar.spec.descr.to_str());
 
         VarSpecEntry vse;
 
-        vse.varId  = theVar.spec.varId;
-        vse.prodId = prodId;
-        vse.repCnt = theVar.spec.repCnt;
-        vse.descr  = std::string((char*)theVar.spec.descr);
+        vse.varId   = theVar.spec.varId;
+        vse.prodId  = prodId;
+        vse.repCnt  = theVar.spec.repCnt;
+        vse.descr   = std::string(theVar.spec.descr.to_str());
         dbConf->setSpec(i,vse);
         i++;
     }
@@ -877,19 +885,17 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
     varDescr->setVarId(varId);
     varDescr->setProdId(getProducerId(theEntry.spec));
     varDescr->setRepCnt(theEntry.spec.repCnt);
-    varDescr->setLength(theEntry.length);
-    varDescr->setDescrLen(theEntry.spec.descrLen);
+    varDescr->setLength(theEntry.value.length);
+    varDescr->setDescr(theEntry.spec.descr.to_str().c_str());
     varDescr->setSeqno(theEntry.seqno);
     varDescr->setTstamp(theEntry.tStamp);
     varDescr->setCountUpdate(theEntry.countUpdate);
     varDescr->setCountCreate(theEntry.countCreate);
     varDescr->setCountDelete(theEntry.countDelete);
     varDescr->setToBeDeleted(theEntry.toBeDeleted);
-    varDescr->setValueArraySize(theEntry.length);
-    for (int i=0; i<theEntry.length; i++)
-        varDescr->setValue(i,theEntry.value[i]);
-    for (int i=0; i<theEntry.spec.descrLen; i++)
-        varDescr->setDescr(i,theEntry.spec.descr[i]);
+    varDescr->setValueArraySize(theEntry.value.length);
+    for (int i=0; i<theEntry.value.length; i++)
+        varDescr->setValue(i,theEntry.value.data[i]);
 
 
     sendConfirmation(varDescr, VARDIS_STATUS_OK, theProtocol);
@@ -986,22 +992,24 @@ void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* delReq)
 // Construction of information elements for outgoing packets
 // ========================================================================================
 
-/* the following 'elementSizeXX' functions shall return the number of bytes that
- * the respective information element entries will need in their serialization.The
- * numbers here reflect a 'packed' realization of these types.
- */
+///* the following 'elementSizeXX' functions shall return the number of bytes that
+// * the respective information element entries will need in their serialization.The
+// * numbers here reflect a 'packed' realization of these types.
+// */
 
 unsigned int VardisProtocol::elementSizeVarCreate(VarIdT varId)
 {
     DBEntry& theEntry = theVariableDatabase.at(varId);
-    return serializedSizeVarCreateT_FixedPart_B + theEntry.spec.descrLen + theEntry.length;
+    return    theEntry.spec.total_size()
+            + dcp::VarUpdateT::fixed_size()
+            + theEntry.value.length;
 }
 
 // ----------------------------------------------------
 
 unsigned int VardisProtocol::elementSizeVarSummary(VarIdT varId)
 {
-    return serializedSizeVarSummT_B;
+    return dcp::VarSummT::fixed_size();
 }
 
 // ----------------------------------------------------
@@ -1009,28 +1017,28 @@ unsigned int VardisProtocol::elementSizeVarSummary(VarIdT varId)
 unsigned int VardisProtocol::elementSizeVarUpdate(VarIdT varId)
 {
     DBEntry& theEntry = theVariableDatabase.at(varId);
-    return serializedSizeVarUpdateT_FixedPart_B + theEntry.length;
+    return dcp::VarUpdateT::fixed_size() + theEntry.value.length;
 }
 
 // ----------------------------------------------------
 
 unsigned int VardisProtocol::elementSizeVarDelete(VarIdT varId)
 {
-    return serializedSizeVarDeleteT_B;
+    return dcp::VarDeleteT::fixed_size();
 }
 
 // ----------------------------------------------------
 
 unsigned int VardisProtocol::elementSizeReqCreate(VarIdT varId)
 {
-    return serializedSizeVarReqCreateT_B;
+    return dcp::VarReqCreateT::fixed_size();
 }
 
 // ----------------------------------------------------
 
 unsigned int VardisProtocol::elementSizeReqUpdate(VarIdT varId)
 {
-    return serializedSizeVarReqUpdateT_B;
+    return dcp::VarReqUpdateT::fixed_size();
 }
 
 // ----------------------------------------------------
@@ -1042,9 +1050,7 @@ unsigned int VardisProtocol::elementSizeReqUpdate(VarIdT varId)
 
 void VardisProtocol::addVarCreate (VarIdT varId,
                                    DBEntry& theEntry,
-                                   bytevect& bv,
-                                   unsigned int& bytesUsed,
-                                   unsigned int& bytesAvailable)
+                                   AssemblyArea& area)
 {
     dbg_enter("addVarCreate");
 
@@ -1052,10 +1058,9 @@ void VardisProtocol::addVarCreate (VarIdT varId,
     create.spec = theEntry.spec;
     create.update.varId   =  theEntry.spec.varId;
     create.update.seqno   =  theEntry.seqno;
-    create.update.length  =  theEntry.length;
     create.update.value   =  theEntry.value;
 
-    bvPushVarCreate(bv, create, bytesUsed, bytesAvailable);
+    create.serialize (area);
 
     dbg_leave();
 }
@@ -1065,9 +1070,7 @@ void VardisProtocol::addVarCreate (VarIdT varId,
 
 void VardisProtocol::addVarSummary (VarIdT varId,
                                     DBEntry& theEntry,
-                                    bytevect& bv,
-                                    unsigned int& bytesUsed,
-                                    unsigned int& bytesAvailable)
+                                    AssemblyArea& area)
 {
     dbg_enter("addVarSummary");
 
@@ -1075,7 +1078,7 @@ void VardisProtocol::addVarSummary (VarIdT varId,
     summ.varId  = varId;
     summ.seqno  = theEntry.seqno;
 
-    bvPushVarSumm(bv, summ, bytesUsed, bytesAvailable);
+    summ.serialize (area);
 
     dbg_leave();
 }
@@ -1084,19 +1087,16 @@ void VardisProtocol::addVarSummary (VarIdT varId,
 
 void VardisProtocol::addVarUpdate (VarIdT varId,
                                    DBEntry& theEntry,
-                                   bytevect& bv,
-                                   unsigned int& bytesUsed,
-                                   unsigned int& bytesAvailable)
+                                   AssemblyArea& area)
 {
     dbg_enter("addVarUpdate");
 
     VarUpdateT update;
     update.varId   =  theEntry.spec.varId;
     update.seqno   =  theEntry.seqno;
-    update.length  =  theEntry.length;
     update.value   =  theEntry.value;
 
-    bvPushVarUpdate(bv, update, bytesUsed, bytesAvailable);
+    update.serialize (area);
 
     dbg_leave();
 }
@@ -1104,16 +1104,14 @@ void VardisProtocol::addVarUpdate (VarIdT varId,
 // ----------------------------------------------------
 
 void VardisProtocol::addVarDelete (VarIdT varId,
-                                   bytevect& bv,
-                                   unsigned int& bytesUsed,
-                                   unsigned int& bytesAvailable)
+                                   AssemblyArea& area)
 {
     dbg_enter("addVarDelete");
 
     VarDeleteT del;
     del.varId = varId;
 
-    bvPushVarDelete(bv, del, bytesUsed, bytesAvailable);
+    del.serialize (area);
 
     dbg_leave();
 }
@@ -1122,17 +1120,14 @@ void VardisProtocol::addVarDelete (VarIdT varId,
 // ----------------------------------------------------
 
 void VardisProtocol::addVarReqCreate (VarIdT varId,
-                                      bytevect& bv,
-                                      unsigned int& bytesUsed,
-                                      unsigned int& bytesAvailable)
+                                      AssemblyArea& area)
 {
     dbg_enter("addVarReqCreate");
-    // we now add one chunk to the resultChunk:
-    //   - a VarReqCreate
 
     VarReqCreateT cr;
     cr.varId = varId;
-    bvPushVarReqCreate(bv, cr, bytesUsed, bytesAvailable);
+
+    cr.serialize (area);
 
     dbg_leave();
 }
@@ -1141,18 +1136,15 @@ void VardisProtocol::addVarReqCreate (VarIdT varId,
 
 void VardisProtocol::addVarReqUpdate (VarIdT varId,
                                       DBEntry& theEntry,
-                                      bytevect& bv,
-                                      unsigned int& bytesUsed,
-                                      unsigned int& bytesAvailable)
+                                      AssemblyArea& area)
 {
     dbg_enter("addVarReqUpdate");
-    // we now add one chunk to the resultChunk:
-    //   - a VarReqCreate
 
     VarReqUpdateT upd;
     upd.updSpec.varId = varId;
     upd.updSpec.seqno = theEntry.seqno;
-    bvPushVarReqUpdate(bv, upd, bytesUsed, bytesAvailable);
+
+    upd.serialize (area);
 
     dbg_leave();
 }
@@ -1160,14 +1152,12 @@ void VardisProtocol::addVarReqUpdate (VarIdT varId,
 
 // ----------------------------------------------------
 
-void VardisProtocol::addIEHeader (const IEHeaderT& ieHdr,
-                                  bytevect& bv,
-                                  unsigned int& bytesUsed,
-                                  unsigned int& bytesAvailable)
+void VardisProtocol::addIEHeader (IEHeaderT ieHdr,
+                                  AssemblyArea& area)
 {
     dbg_enter("addIEHeader");
 
-    bvPushIEHeader(bv, ieHdr, bytesUsed, bytesAvailable);
+    ieHdr.serialize (area);
 
     dbg_leave();
 }
@@ -1182,7 +1172,7 @@ void VardisProtocol::addIEHeader (const IEHeaderT& ieHdr,
  */
 unsigned int VardisProtocol::numberFittingRecords(
                   const std::deque<VarIdT>& queue,
-                  unsigned int bytesAvailable,
+                  AssemblyArea& area,
                   std::function<unsigned int (VarIdT)> elementSizeFunction
                   )
 {
@@ -1191,8 +1181,8 @@ unsigned int VardisProtocol::numberFittingRecords(
     unsigned int   bytesToBeAdded = sizeof(IEHeaderT);
     auto           it = queue.begin();
     while(    (it != queue.end())
-           && (bytesToBeAdded + elementSizeFunction(*it) <= bytesAvailable)
-           && (numberRecordsToAdd < maxRecordsInInformationElement))
+           && (bytesToBeAdded + elementSizeFunction(*it) <= area.available())
+           && (numberRecordsToAdd < maxInformationElementRecords))
     {
         numberRecordsToAdd++;
         bytesToBeAdded += elementSizeFunction(*it);
@@ -1209,16 +1199,16 @@ unsigned int VardisProtocol::numberFittingRecords(
  * This serializes an information element for VarCreate's, it generates
  * an IEHeader and a as many VarCreate elements as possible / available.
  */
-void VardisProtocol::makeIETypeCreateVariables (bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable)
+void VardisProtocol::makeIETypeCreateVariables (AssemblyArea& area)
 {
     dbg_enter("makeIETypeCreateVariables");
-    DBG_VAR3(createQ.size(), bytesUsed, bytesAvailable);
+    DBG_VAR3(createQ.size(), area.used(), area.available());
 
     dropNonexistingDeleted(createQ);
 
     // check for empty createQ or insufficient size to add at least the first element
     if (    createQ.empty()
-         || (elementSizeVarCreate(createQ.front()) + sizeof(IEHeaderT) > bytesAvailable))
+         || (elementSizeVarCreate(createQ.front()) + sizeof(IEHeaderT) > area.available()))
     {
         dbg_string("queue empty or insufficient space available");
         dbg_leave();
@@ -1227,7 +1217,7 @@ void VardisProtocol::makeIETypeCreateVariables (bytevect& bv, unsigned int& byte
 
     // first work out how many elements we will add
     std::function<unsigned int(VarIdT)> eltSizeFn = [&] (VarIdT varId) { return elementSizeVarCreate(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(createQ, bytesAvailable, eltSizeFn);
+    auto numberRecordsToAdd = numberFittingRecords(createQ, area, eltSizeFn);
     assert(numberRecordsToAdd > 0);
     DBG_VAR1(numberRecordsToAdd);
 
@@ -1235,7 +1225,7 @@ void VardisProtocol::makeIETypeCreateVariables (bytevect& bv, unsigned int& byte
     IEHeaderT   ieHeader;
     ieHeader.ieType       = IETYPE_CREATE_VARIABLES;
     ieHeader.ieNumRecords = numberRecordsToAdd;
-    addIEHeader(ieHeader, bv, bytesUsed, bytesAvailable);
+    addIEHeader(ieHeader, area);
 
     // serialize the entries
     for (unsigned int i=0; i<numberRecordsToAdd; i++)
@@ -1244,12 +1234,12 @@ void VardisProtocol::makeIETypeCreateVariables (bytevect& bv, unsigned int& byte
         createQ.pop_front();
         DBEntry& nextVar = theVariableDatabase.at(nextVarId);
 
-        DBG_PVAR5("adding", (int) nextVarId, elementSizeVarCreate(nextVarId), (int) nextVar.countCreate, bytesUsed, bytesAvailable);
+        DBG_PVAR5("adding", (int) nextVarId, elementSizeVarCreate(nextVarId), (int) nextVar.countCreate, area.used(), area.available());
         assert(nextVar.countCreate > 0);
 
         nextVar.countCreate--;
 
-        addVarCreate(nextVarId, nextVar, bv, bytesUsed, bytesAvailable);
+        addVarCreate(nextVarId, nextVar, area);
 
         if (nextVar.countCreate > 0)
         {
@@ -1268,17 +1258,17 @@ void VardisProtocol::makeIETypeCreateVariables (bytevect& bv, unsigned int& byte
  * This serializes an information element for VarSumm's, it generates
  * an IEHeader and a as many VarSumm elements as possible / available.
  */
-void VardisProtocol::makeIETypeSummaries (bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable)
+void VardisProtocol::makeIETypeSummaries (AssemblyArea& area)
 {
     dbg_enter("makeIETypeSummaries");
-    DBG_VAR3(summaryQ.size(), bytesUsed, bytesAvailable);
+    DBG_VAR3(summaryQ.size(), area.used(), area.available());
 
     dropNonexistingDeleted(summaryQ);
 
     // check for empty summaryQ, insufficient size to add at least the first element,
     // or whether summaries function is enabled
     if (    summaryQ.empty()
-         || (elementSizeVarSummary(summaryQ.front()) + sizeof(IEHeaderT) > bytesAvailable)
+         || (elementSizeVarSummary(summaryQ.front()) + sizeof(IEHeaderT) > area.available())
          || (vardisMaxSummaries == 0))
     {
         dbg_string("queue empty, insufficient space available or no summaries to be created");
@@ -1288,7 +1278,7 @@ void VardisProtocol::makeIETypeSummaries (bytevect& bv, unsigned int& bytesUsed,
 
     // first work out how many elements we will add, cap at vardisMaxSummaries
     std::function<unsigned int(VarIdT)> eltSizeFn = [&] (VarIdT varId) { return elementSizeVarSummary(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(summaryQ, bytesAvailable, eltSizeFn);
+    auto numberRecordsToAdd = numberFittingRecords(summaryQ, area, eltSizeFn);
     assert(numberRecordsToAdd > 0);
     numberRecordsToAdd = std::min(numberRecordsToAdd, vardisMaxSummaries);
     DBG_VAR1(numberRecordsToAdd);
@@ -1297,19 +1287,19 @@ void VardisProtocol::makeIETypeSummaries (bytevect& bv, unsigned int& bytesUsed,
     IEHeaderT   ieHeader;
     ieHeader.ieType       = IETYPE_SUMMARIES;
     ieHeader.ieNumRecords = numberRecordsToAdd;
-    addIEHeader(ieHeader, bv, bytesUsed, bytesAvailable);
+    addIEHeader(ieHeader, area);
 
     // serialize the VarSumm entries
     for (unsigned int i=0; i<numberRecordsToAdd; i++)
     {
         VarIdT nextVarId  = summaryQ.front();
 
-        DBG_PVAR5("adding", (int) nextVarId, elementSizeVarSummary(nextVarId), (int) theVariableDatabase.at(nextVarId).seqno, bytesUsed, bytesAvailable);
+        DBG_PVAR5("adding", (int) nextVarId, elementSizeVarSummary(nextVarId), (int) theVariableDatabase.at(nextVarId).seqno, area.used(), area.available());
 
         summaryQ.pop_front();
         summaryQ.push_back(nextVarId);
         DBEntry&   theNextEntry  = theVariableDatabase.at(nextVarId);
-        addVarSummary(nextVarId, theNextEntry, bv, bytesUsed, bytesAvailable);
+        addVarSummary(nextVarId, theNextEntry, area);
     }
 
     dbg_comprehensive("makeIETypeSummaries");
@@ -1323,16 +1313,16 @@ void VardisProtocol::makeIETypeSummaries (bytevect& bv, unsigned int& bytesUsed,
  * This serializes an information element for VarCreate's, it generates
  * an IEHeader and a as many VarCreate elements as possible / available.
  */
-void VardisProtocol::makeIETypeUpdates (bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable)
+void VardisProtocol::makeIETypeUpdates (AssemblyArea& area)
 {
     dbg_enter("makeIETypeUpdates");
-    DBG_VAR3(updateQ.size(), bytesUsed, bytesAvailable);
+    DBG_VAR3(updateQ.size(), area.used(), area.available());
 
     dropNonexistingDeleted(updateQ);
 
     // check for empty updateQ or insufficient size to add at least the first element
     if (    updateQ.empty()
-         || (elementSizeVarUpdate(updateQ.front()) + sizeof(IEHeaderT) > bytesAvailable))
+         || (elementSizeVarUpdate(updateQ.front()) + sizeof(IEHeaderT) > area.available()))
     {
         dbg_string("queue empty or insufficient space available");
         dbg_leave();
@@ -1341,7 +1331,7 @@ void VardisProtocol::makeIETypeUpdates (bytevect& bv, unsigned int& bytesUsed, u
 
     // first work out how many elements we will add
     std::function<unsigned int(VarIdT)> eltSizeFn = [&] (VarIdT varId) { return elementSizeVarUpdate(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(updateQ, bytesAvailable, eltSizeFn);
+    auto numberRecordsToAdd = numberFittingRecords(updateQ, area, eltSizeFn);
     assert(numberRecordsToAdd > 0);
     DBG_VAR1(numberRecordsToAdd);
 
@@ -1349,7 +1339,7 @@ void VardisProtocol::makeIETypeUpdates (bytevect& bv, unsigned int& bytesUsed, u
     IEHeaderT   ieHeader;
     ieHeader.ieType       = IETYPE_UPDATES;
     ieHeader.ieNumRecords = numberRecordsToAdd;
-    addIEHeader(ieHeader, bv, bytesUsed, bytesAvailable);
+    addIEHeader(ieHeader, area);
 
     // serialize required entries
     for (unsigned int i=0; i<numberRecordsToAdd; i++)
@@ -1358,12 +1348,12 @@ void VardisProtocol::makeIETypeUpdates (bytevect& bv, unsigned int& bytesUsed, u
         updateQ.pop_front();
         DBEntry& nextVar = theVariableDatabase.at(nextVarId);
 
-        DBG_PVAR6("adding", (int) nextVarId, elementSizeVarUpdate(nextVarId), nextVar.countUpdate, (int) nextVar.seqno, bytesUsed, bytesAvailable);
+        DBG_PVAR6("adding", (int) nextVarId, elementSizeVarUpdate(nextVarId), nextVar.countUpdate, (int) nextVar.seqno, area.used(), area.available());
         assert(nextVar.countUpdate > 0);
 
         nextVar.countUpdate--;
 
-        addVarUpdate(nextVarId, nextVar, bv, bytesUsed, bytesAvailable);
+        addVarUpdate(nextVarId, nextVar, area);
 
         if (nextVar.countUpdate > 0)
         {
@@ -1382,16 +1372,16 @@ void VardisProtocol::makeIETypeUpdates (bytevect& bv, unsigned int& bytesUsed, u
  * This serializes an information element for VarDelete's, it generates
  * an IEHeader and a as many VarDelete elements as possible / available.
  */
-void VardisProtocol::makeIETypeDeleteVariables (bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable)
+void VardisProtocol::makeIETypeDeleteVariables (AssemblyArea& area)
 {
     dbg_enter("makeIETypeDeleteVariables");
-    DBG_VAR3(deleteQ.size(), bytesUsed, bytesAvailable);
+    DBG_VAR3(deleteQ.size(), area.used(), area.available());
 
     dropNonexisting(deleteQ);
 
     // check for empty deleteQ or insufficient size to add at least the first element
     if (    deleteQ.empty()
-         || (elementSizeVarDelete(deleteQ.front()) + sizeof(IEHeaderT) > bytesAvailable))
+         || (elementSizeVarDelete(deleteQ.front()) + sizeof(IEHeaderT) > area.available()))
     {
         dbg_string("queue empty or insufficient space available");
         dbg_leave();
@@ -1400,7 +1390,7 @@ void VardisProtocol::makeIETypeDeleteVariables (bytevect& bv, unsigned int& byte
 
     // first work out how many elements we will add
     std::function<unsigned int(VarIdT)> eltSizeFn = [&] (VarIdT varId) { return elementSizeVarDelete(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(deleteQ, bytesAvailable, eltSizeFn);
+    auto numberRecordsToAdd = numberFittingRecords(deleteQ, area, eltSizeFn);
     assert(numberRecordsToAdd > 0);
     DBG_VAR1(numberRecordsToAdd);
 
@@ -1408,7 +1398,7 @@ void VardisProtocol::makeIETypeDeleteVariables (bytevect& bv, unsigned int& byte
     IEHeaderT   ieHeader;
     ieHeader.ieType       = IETYPE_DELETE_VARIABLES;
     ieHeader.ieNumRecords = numberRecordsToAdd;
-    addIEHeader(ieHeader, bv, bytesUsed, bytesAvailable);
+    addIEHeader(ieHeader, area);
 
     // serialize required entries
     for (unsigned int i=0; i<numberRecordsToAdd; i++)
@@ -1418,12 +1408,12 @@ void VardisProtocol::makeIETypeDeleteVariables (bytevect& bv, unsigned int& byte
         assert(variableExists(nextVarId));
         DBEntry& nextVar = theVariableDatabase.at(nextVarId);
 
-        DBG_PVAR5("adding", (int) nextVarId, elementSizeVarDelete(nextVarId), (int) nextVar.countDelete, bytesUsed, bytesAvailable);
+        DBG_PVAR5("adding", (int) nextVarId, elementSizeVarDelete(nextVarId), (int) nextVar.countDelete, area.used(), area.available());
         assert(nextVar.countDelete > 0);
 
         nextVar.countDelete--;
 
-        addVarDelete(nextVarId, bv, bytesUsed, bytesAvailable);
+        addVarDelete(nextVarId, area);
 
         if (nextVar.countDelete > 0)
         {
@@ -1431,10 +1421,7 @@ void VardisProtocol::makeIETypeDeleteVariables (bytevect& bv, unsigned int& byte
         }
         else
         {
-            DBG_PVAR2("now we actually DELETE variable", (int) nextVarId, nextVar.spec.descr);
-
-            delete [] theVariableDatabase.at(nextVarId).spec.descr;
-            delete [] theVariableDatabase.at(nextVarId).value;
+            DBG_PVAR2("now we actually DELETE variable", (int) nextVarId, nextVar.spec.descr.to_str());
             theVariableDatabase.erase(nextVarId);
         }
     }
@@ -1451,16 +1438,16 @@ void VardisProtocol::makeIETypeDeleteVariables (bytevect& bv, unsigned int& byte
  * generates an IEHeader and a as many VarReqUpdate elements as
  * possible / available.
  */
-void VardisProtocol::makeIETypeRequestVarUpdates (bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable)
+void VardisProtocol::makeIETypeRequestVarUpdates (AssemblyArea& area)
 {
     dbg_enter("makeIETypeRequestVarUpdates");
-    DBG_VAR3(reqUpdQ.size(), bytesUsed, bytesAvailable);
+    DBG_VAR3(reqUpdQ.size(), area.used(), area.available());
 
     dropNonexistingDeleted(reqUpdQ);
 
     // check for empty reqUpdQ or insufficient size to add at least the first element
     if (    reqUpdQ.empty()
-         || (elementSizeReqUpdate(reqUpdQ.front()) + sizeof(IEHeaderT) > bytesAvailable))
+         || (elementSizeReqUpdate(reqUpdQ.front()) + sizeof(IEHeaderT) > area.available()))
     {
         dbg_string("queue empty or insufficient space available");
         dbg_leave();
@@ -1469,7 +1456,7 @@ void VardisProtocol::makeIETypeRequestVarUpdates (bytevect& bv, unsigned int& by
 
     // first work out how many elements we will add
     std::function<unsigned int(VarIdT)> eltSizeFn = [&] (VarIdT varId) { return elementSizeReqUpdate(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(reqUpdQ, bytesAvailable, eltSizeFn);
+    auto numberRecordsToAdd = numberFittingRecords(reqUpdQ, area, eltSizeFn);
     assert(numberRecordsToAdd > 0);
     DBG_VAR1(numberRecordsToAdd);
 
@@ -1477,7 +1464,7 @@ void VardisProtocol::makeIETypeRequestVarUpdates (bytevect& bv, unsigned int& by
     IEHeaderT   ieHeader;
     ieHeader.ieType       = IETYPE_REQUEST_VARUPDATES;
     ieHeader.ieNumRecords = numberRecordsToAdd;
-    addIEHeader(ieHeader, bv, bytesUsed, bytesAvailable);
+    addIEHeader(ieHeader, area);
 
     // serialize required entries
     for (unsigned int i=0; i<numberRecordsToAdd; i++)
@@ -1486,9 +1473,9 @@ void VardisProtocol::makeIETypeRequestVarUpdates (bytevect& bv, unsigned int& by
         reqUpdQ.pop_front();
         DBEntry& nextVar = theVariableDatabase.at(nextVarId);
 
-        DBG_PVAR4("adding", (int) nextVarId, elementSizeReqUpdate(nextVarId), bytesUsed, bytesAvailable);
+        DBG_PVAR4("adding", (int) nextVarId, elementSizeReqUpdate(nextVarId), area.used(), area.available());
 
-        addVarReqUpdate(nextVarId, nextVar, bv, bytesUsed, bytesAvailable);
+        addVarReqUpdate(nextVarId, nextVar, area);
     }
 
     dbg_comprehensive("makeIETypeRequestVarUpdates");
@@ -1503,16 +1490,16 @@ void VardisProtocol::makeIETypeRequestVarUpdates (bytevect& bv, unsigned int& by
  * generates an IEHeader and a as many VarReqCreate elements as
  * possible / available.
  */
-void VardisProtocol::makeIETypeRequestVarCreates (bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable)
+void VardisProtocol::makeIETypeRequestVarCreates (AssemblyArea& area)
 {
     dbg_enter("makeIETypeRequestVarCreates");
-    DBG_VAR3(reqCreateQ.size(), bytesUsed, bytesAvailable);
+    DBG_VAR3(reqCreateQ.size(), area.used(), area.available());
 
     dropDeleted(reqCreateQ);
 
     // check for empty reqCreateQ or insufficient size to add at least the first element
     if (    reqCreateQ.empty()
-         || (elementSizeReqCreate(reqCreateQ.front()) + sizeof(IEHeaderT) > bytesAvailable))
+         || (elementSizeReqCreate(reqCreateQ.front()) + sizeof(IEHeaderT) > area.available()))
     {
         dbg_string("queue empty or insufficient space available");
         dbg_leave();
@@ -1521,7 +1508,7 @@ void VardisProtocol::makeIETypeRequestVarCreates (bytevect& bv, unsigned int& by
 
     // first work out how many elements we will add
     std::function<unsigned int(VarIdT)> eltSizeFn = [&] (VarIdT varId) { return elementSizeReqCreate(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(reqCreateQ, bytesAvailable, eltSizeFn);
+    auto numberRecordsToAdd = numberFittingRecords(reqCreateQ, area, eltSizeFn);
     assert(numberRecordsToAdd > 0);
     DBG_VAR1(numberRecordsToAdd);
 
@@ -1529,7 +1516,7 @@ void VardisProtocol::makeIETypeRequestVarCreates (bytevect& bv, unsigned int& by
     IEHeaderT   ieHeader;
     ieHeader.ieType       = IETYPE_REQUEST_VARCREATES;
     ieHeader.ieNumRecords = numberRecordsToAdd;
-    addIEHeader(ieHeader, bv, bytesUsed, bytesAvailable);
+    addIEHeader(ieHeader, area);
 
     // serialize required entries
     for (unsigned int i=0; i<numberRecordsToAdd; i++)
@@ -1537,9 +1524,9 @@ void VardisProtocol::makeIETypeRequestVarCreates (bytevect& bv, unsigned int& by
         VarIdT nextVarId = reqCreateQ.front();
         reqCreateQ.pop_front();
 
-        DBG_PVAR4("adding", (int) nextVarId, elementSizeReqCreate(nextVarId), bytesUsed, bytesAvailable);
+        DBG_PVAR4("adding VarReqCreate", (int) nextVarId, elementSizeReqCreate(nextVarId), area.used(), area.available());
 
-        addVarReqCreate(nextVarId, bv, bytesUsed, bytesAvailable);
+        addVarReqCreate(nextVarId, area);
     }
 
     dbg_comprehensive("makeIETypeRequestVarCreates");
@@ -1559,15 +1546,16 @@ void VardisProtocol::constructPayload(bytevect& bv)
 
     dbg_comprehensive("constructPayload/enter");
 
-    unsigned int bytesUsed       = 0;
-    unsigned int bytesAvailable  = maxPayloadSize;
+    ByteVectorAssemblyArea area (maxPayloadSize, bv);
 
-    makeIETypeCreateVariables (bv, bytesUsed, bytesAvailable);
-    makeIETypeDeleteVariables (bv, bytesUsed, bytesAvailable);
-    makeIETypeSummaries (bv, bytesUsed, bytesAvailable);
-    makeIETypeUpdates (bv, bytesUsed, bytesAvailable);
-    makeIETypeRequestVarCreates (bv, bytesUsed, bytesAvailable);
-    makeIETypeRequestVarUpdates (bv, bytesUsed, bytesAvailable);
+    makeIETypeCreateVariables (area);
+    makeIETypeDeleteVariables (area);
+    makeIETypeRequestVarCreates (area);
+    makeIETypeSummaries (area);
+    makeIETypeUpdates (area);
+    makeIETypeRequestVarUpdates (area);
+
+    bv.resize (area.used());
 
     dbg_comprehensive("constructPayload/leave");
 
@@ -1589,7 +1577,7 @@ void VardisProtocol::generatePayload ()
     {
         dbg_string("we are successfully registered");
 
-        bytevect  bv;
+        bytevect  bv (maxPayloadSize);
         bv.reserve(2*maxPayloadSize);
 
         constructPayload(bv);
@@ -1630,42 +1618,47 @@ void VardisProtocol::processVarCreate(const VarCreateT& create)
 {
     dbg_enter("processVarCreate");
 
-    const VarSpecT&    spec   = create.spec;
-    const VarUpdateT&  update = create.update;
-    VarIdT       varId  = spec.varId;
-    MacAddress   prodId = getProducerId(spec);
+    // const VarSpecT&    spec   = create.spec;
+    // const VarUpdateT&  update = create.update;
+    VarIdT       varId  = create.spec.varId;
+    MacAddress   prodId = getProducerId(create.spec);
 
-    assert(update.length > 0);
+    assert(create.update.value.length > 0);
     DBG_PVAR2("considering", (int) varId, prodId);
 
     if (    (not variableExists(varId))
          && (prodId != getOwnNodeId())
-         && (spec.descrLen <= vardisMaxDescriptionLength)
-         && (update.length <= vardisMaxValueLength)
+         && (create.spec.descr.length <= vardisMaxDescriptionLength)
+         && (create.update.value.length <= vardisMaxValueLength)
        )
     {
-        DBG_PVAR4("ADDING new variable to database", (int) varId, prodId, (int) spec.descrLen, spec.descr);
+        DBG_PVAR3("ADDING new variable to database", (int) varId, prodId, create.spec.descr.to_str());
 
         // create and initialize new DBEntry
         DBEntry newEntry;
-        newEntry.spec         =  spec;
-        newEntry.seqno        =  update.seqno;
+        newEntry.spec         =  create.spec;
+        newEntry.seqno        =  create.update.seqno;
         newEntry.tStamp       =  simTime();
         newEntry.countUpdate  =  0;
-        newEntry.countCreate  =  spec.repCnt;
+        newEntry.countCreate  =  create.spec.repCnt;
         newEntry.countDelete  =  0;
         newEntry.toBeDeleted  =  false;
-        newEntry.length       =  update.length;
-        newEntry.value        =  new uint8_t [update.length];
-        std::memcpy(newEntry.value, update.value, update.length);
-        newEntry.spec.descr   =  new uint8_t [spec.descrLen];
-        std::memcpy(newEntry.spec.descr, spec.descr, spec.descrLen);
+        newEntry.value        =  create.update.value;
         theVariableDatabase[varId] = newEntry;
 
+        // just to be safe, delete varId from all queues before inserting it
+        // into the right ones
+        removeVarIdFromQueue (createQ, varId);
+        removeVarIdFromQueue (deleteQ, varId);
+        removeVarIdFromQueue (updateQ, varId);
+        removeVarIdFromQueue (summaryQ, varId);
+        removeVarIdFromQueue (reqUpdQ, varId);
+        removeVarIdFromQueue (reqCreateQ, varId);
+
         // add varId to relevant queues
-        createQ.push_back(varId);
-        summaryQ.push_back(varId);
-        removeVarIdFromQueue(reqCreateQ, varId);
+        createQ.push_back (varId);
+        summaryQ.push_back (varId);
+        removeVarIdFromQueue (reqCreateQ, varId);
     }
 
     dbg_leave();
@@ -1730,17 +1723,16 @@ void VardisProtocol::processVarDelete(const VarDeleteT& del)
 void VardisProtocol::processVarUpdate(const VarUpdateT& update)
 {
     dbg_enter("processVarUpdate");
-    assert(update.value);
-    assert(update.length > 0);
+    assert(update.value.length > 0);
 
     VarIdT  varId   = update.varId;
 
-    DBG_PVAR3("considering", (int) varId, (int) update.seqno, (int) update.length);
+    DBG_PVAR3("considering", (int) varId, (int) update.seqno, (int) update.value.length);
 
     // check if variable exists -- if not, add it to queue to generate ReqVarCreate
     if (not variableExists(varId))
     {
-        dbg_string("variable does not exist in my database");
+        DBG_PVAR1("variable does not exist in my database", (int) varId);
         if (not isVarIdInQueue(reqCreateQ, varId))
             reqCreateQ.push_back(varId);
 
@@ -1766,7 +1758,7 @@ void VardisProtocol::processVarUpdate(const VarUpdateT& update)
         return;
     }
 
-    if (update.length > vardisMaxValueLength)
+    if (update.value.length > vardisMaxValueLength)
     {
         dbg_string("variable value is too long");
         dbg_leave();
@@ -1782,7 +1774,7 @@ void VardisProtocol::processVarUpdate(const VarUpdateT& update)
 
     // If received update is older than what I have, schedule transmissions of
     // VarUpdate's for this variable to educate the sender
-    if (MORE_RECENT_SEQNO(theEntry.seqno, update.seqno))
+    if (MORE_RECENT_SEQNO((int) theEntry.seqno, (int) update.seqno))
     {
         dbg_string("received variable has strictly older sequence number than I have");
         // I have a more recent sequence number
@@ -1801,10 +1793,7 @@ void VardisProtocol::processVarUpdate(const VarUpdateT& update)
     theEntry.seqno        =  update.seqno;
     theEntry.tStamp       =  simTime();
     theEntry.countUpdate  =  theEntry.spec.repCnt;
-    delete [] theEntry.value;
-    theEntry.length       =  update.length;
-    theEntry.value        =  new uint8_t [update.length];
-    std::memcpy(theEntry.value, update.value, update.length);
+    theEntry.value        =  update.value;
 
     if (not isVarIdInQueue(updateQ, varId))
     {
@@ -1833,7 +1822,7 @@ void VardisProtocol::processVarSummary(const VarSummT& summ)
     // if variable does not exist in local RTDB, request a VarCreate
     if (not variableExists(varId))
     {
-        dbg_string("variable does not exist in my database");
+        DBG_PVAR1("variable does not exist in my database", (int) varId);
         if (not isVarIdInQueue(reqCreateQ, varId))
         {
             reqCreateQ.push_back(varId);
@@ -1910,7 +1899,7 @@ void VardisProtocol::processVarReqUpdate(const VarReqUpdateT& requpd)
 
     if (not variableExists(varId))
     {
-        dbg_string("variable does not exist in my database");
+        DBG_PVAR1("variable does not exist in my database", (int) varId);
         if (not isVarIdInQueue(reqCreateQ, varId))
         {
             reqCreateQ.push_back(varId);
@@ -1979,12 +1968,11 @@ void VardisProtocol::processVarReqCreate(const VarReqCreateT& reqcreate)
         return;
     }
 
-    DBG_PVAR1("scheduling future VarCreate transmissions", (int) varId);
-
     theEntry.countCreate = theEntry.spec.repCnt;
 
     if (not isVarIdInQueue(createQ, varId))
     {
+        DBG_PVAR1("scheduling future VarCreate transmissions", (int) varId);
         createQ.push_back(varId);
     }
 
@@ -2008,8 +1996,6 @@ void VardisProtocol::processVarCreateList(const std::deque<VarCreateT>& creates)
     for (auto it = creates.begin(); it != creates.end(); it++)
     {
         processVarCreate(*it);
-        delete [] ((*it).spec.descr);
-        delete [] ((*it).update.value);
     }
 
     dbg_leave();
@@ -2040,7 +2026,6 @@ void VardisProtocol::processVarUpdateList(const std::deque<VarUpdateT>& updates)
     for (auto it = updates.begin(); it != updates.end(); it++)
     {
         processVarUpdate(*it);
-        delete [] ((*it).value);    // ##### I believe this is necessary, as right now there is a memory leak
     }
 
     dbg_leave();
@@ -2098,21 +2083,21 @@ void VardisProtocol::processVarReqCreateList(const std::deque<VarReqCreateT>& re
  * both the IEHeader and the entries, which are stored in a list
  */
 
-void VardisProtocol::extractVarCreateList(bytevect& bv, std::deque<VarCreateT>& creates, unsigned int& bytesUsed)
+void VardisProtocol::extractVarCreateList(DisassemblyArea& area, std::deque<VarCreateT>& creates)
 {
     dbg_enter("extractVarCreateList");
 
     IEHeaderT ieHeader;
-    bvPopIEHeader(bv, ieHeader, bytesUsed);
+    ieHeader.deserialize (area);
     assert(ieHeader.ieType == IETYPE_CREATE_VARIABLES);
     assert(ieHeader.ieNumRecords > 0);
 
     for (int i=0; i<ieHeader.ieNumRecords; i++)
     {
         VarCreateT create;
-        bvPopVarCreate(bv, create, bytesUsed);
+        create.deserialize (area);
 
-        DBG_VAR4((int) create.spec.varId, (int) create.spec.repCnt, getProducerId(create.spec), create.spec.descr);
+        DBG_VAR4((int) create.spec.varId, (int) create.spec.repCnt, getProducerId(create.spec), create.spec.descr.to_str());
 
         creates.push_back(create);
     }
@@ -2123,19 +2108,19 @@ void VardisProtocol::extractVarCreateList(bytevect& bv, std::deque<VarCreateT>& 
 
 // ----------------------------------------------------
 
-void VardisProtocol::extractVarDeleteList(bytevect& bv, std::deque<VarDeleteT>& deletes, unsigned int& bytesUsed)
+void VardisProtocol::extractVarDeleteList(DisassemblyArea& area, std::deque<VarDeleteT>& deletes)
 {
     dbg_enter("extractVarDeleteList");
 
     IEHeaderT ieHeader;
-    bvPopIEHeader(bv, ieHeader, bytesUsed);
+    ieHeader.deserialize (area);
     assert(ieHeader.ieType == IETYPE_DELETE_VARIABLES);
     assert(ieHeader.ieNumRecords > 0);
 
     for (int i=0; i<ieHeader.ieNumRecords; i++)
     {
         VarDeleteT del;
-        bvPopVarDelete(bv, del, bytesUsed);
+        del.deserialize(area);
 
         DBG_VAR1((int) del.varId);
 
@@ -2147,19 +2132,19 @@ void VardisProtocol::extractVarDeleteList(bytevect& bv, std::deque<VarDeleteT>& 
 
 // ----------------------------------------------------
 
-void VardisProtocol::extractVarUpdateList(bytevect& bv, std::deque<VarUpdateT>& updates, unsigned int& bytesUsed)
+void VardisProtocol::extractVarUpdateList(DisassemblyArea& area, std::deque<VarUpdateT>& updates)
 {
     dbg_enter("extractVarUpdateList");
 
     IEHeaderT ieHeader;
-    bvPopIEHeader(bv, ieHeader, bytesUsed);
+    ieHeader.deserialize (area);
     assert(ieHeader.ieType == IETYPE_UPDATES);
     assert(ieHeader.ieNumRecords > 0);
 
     for (int i=0; i<ieHeader.ieNumRecords; i++)
     {
         VarUpdateT upd;
-        bvPopVarUpdate(bv, upd, bytesUsed);
+        upd.deserialize (area);
 
         DBG_VAR2((int) upd.varId, (int) upd.seqno);
 
@@ -2171,19 +2156,19 @@ void VardisProtocol::extractVarUpdateList(bytevect& bv, std::deque<VarUpdateT>& 
 
 // ----------------------------------------------------
 
-void VardisProtocol::extractVarSummaryList(bytevect& bv, std::deque<VarSummT>& summs, unsigned int& bytesUsed)
+void VardisProtocol::extractVarSummaryList(DisassemblyArea& area, std::deque<VarSummT>& summs)
 {
     dbg_enter("extractVarSummaryList");
 
     IEHeaderT ieHeader;
-    bvPopIEHeader(bv, ieHeader, bytesUsed);
+    ieHeader.deserialize (area);
     assert(ieHeader.ieType == IETYPE_SUMMARIES);
     assert(ieHeader.ieNumRecords > 0);
 
     for (int i=0; i<ieHeader.ieNumRecords; i++)
     {
         VarSummT summ;
-        bvPopVarSumm(bv, summ, bytesUsed);
+        summ.deserialize (area);
 
         DBG_VAR2((int) summ.varId, (int) summ.seqno);
 
@@ -2196,19 +2181,19 @@ void VardisProtocol::extractVarSummaryList(bytevect& bv, std::deque<VarSummT>& s
 
 // ----------------------------------------------------
 
-void VardisProtocol::extractVarReqUpdateList(bytevect& bv, std::deque<VarReqUpdateT>& requpdates, unsigned int& bytesUsed)
+void VardisProtocol::extractVarReqUpdateList (DisassemblyArea& area, std::deque<VarReqUpdateT>& requpdates)
 {
     dbg_enter("extractVarReqUpdateList");
 
     IEHeaderT ieHeader;
-    bvPopIEHeader(bv, ieHeader, bytesUsed);
+    ieHeader.deserialize (area);
     assert(ieHeader.ieType == IETYPE_REQUEST_VARUPDATES);
     assert(ieHeader.ieNumRecords > 0);
 
     for (int i=0; i<ieHeader.ieNumRecords; i++)
     {
         VarReqUpdateT requpd;
-        bvPopVarReqUpdate(bv, requpd, bytesUsed);
+        requpd.deserialize (area);
 
         DBG_VAR2((int) requpd.updSpec.varId, (int) requpd.updSpec.seqno);
 
@@ -2220,19 +2205,19 @@ void VardisProtocol::extractVarReqUpdateList(bytevect& bv, std::deque<VarReqUpda
 
 // ----------------------------------------------------
 
-void VardisProtocol::extractVarReqCreateList(bytevect& bv, std::deque<VarReqCreateT>& reqcreates, unsigned int& bytesUsed)
+void VardisProtocol::extractVarReqCreateList(DisassemblyArea& area, std::deque<VarReqCreateT>& reqcreates)
 {
     dbg_enter("extractVarReqCreateList");
 
     IEHeaderT ieHeader;
-    bvPopIEHeader(bv, ieHeader, bytesUsed);
+    ieHeader.deserialize (area);
     assert(ieHeader.ieType == IETYPE_REQUEST_VARCREATES);
     assert(ieHeader.ieNumRecords > 0);
 
     for (int i=0; i<ieHeader.ieNumRecords; i++)
     {
         VarReqCreateT reqcr;
-        bvPopVarReqCreate(bv, reqcr, bytesUsed);
+        reqcr.deserialize (area);
 
         DBG_VAR1((int) reqcr.varId);
 
@@ -2539,8 +2524,8 @@ void VardisProtocol::dbg_database_complete()
            << ", cc:" << (int) (theEntry.countCreate)
            << ", cu:" << (int) (theEntry.countUpdate)
            << ", cd:" << (int) (theEntry.countDelete)
-           << " , descrLen = " << (int) (theEntry.spec.descrLen)
-           << " , descr = " << (theEntry.spec.descr)
+           << " , descrLen = " << (int) (theEntry.spec.descr.length)
+           << " , descr = " << (theEntry.spec.descr.to_str())
            << (theEntry.toBeDeleted ? " TO-BE-DELETED" : "")
            << ")" << endl;
     }

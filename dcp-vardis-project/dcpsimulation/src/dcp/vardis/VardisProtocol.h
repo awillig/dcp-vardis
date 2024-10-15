@@ -16,17 +16,16 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#ifndef __DCPV1_VARDISPROTOCOL_H_
-#define __DCPV1_VARDISPROTOCOL_H_
+#pragma once
 
 #include <queue>
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
+#include <dcp/common/AssemblyArea.h>
 #include <dcp/bp/BPClientProtocol.h>
 #include <dcp/bp/BPReceivePayload_m.h>
 #include <dcp/bp/BPQueryNumberBufferedPayloads_m.h>
 #include <dcp/vardis/VardisDatatypes.h>
-#include <dcp/vardis/VardisPacket.h>
 #include <dcp/vardis/VardisDBEntry.h>
 #include <dcp/vardis/VardisRTDBCreate_m.h>
 #include <dcp/vardis/VardisRTDBUpdate_m.h>
@@ -51,6 +50,7 @@ namespace dcp {
  * and processes incoming Vardis payloads.
  */
 
+typedef std::vector<byte>  bytevect;
 
 class VardisProtocol : public BPClientProtocol
 {
@@ -63,6 +63,7 @@ public:
     virtual void handleMessage (cMessage* msg) override;
 
     virtual void registerAsBPClient(void) override;
+    virtual bool handleBPRegisterProtocol_Confirm (BPRegisterProtocol_Confirm* pConf);
 
 protected:
 
@@ -95,6 +96,9 @@ protected:
 
     // the current variable database
     std::map<VarIdT, DBEntry>  theVariableDatabase;
+
+    // indicates whether Vardis is active or not
+    bool   vardisActive = false;
 
     // other data members
     bool   payloadSent = false;
@@ -210,10 +214,10 @@ protected:
      */
 
 
-    /**
-     * The following helpers return the size of the various transmissible
-     * elements being included in information elements
-     */
+    ///**
+    // * The following helpers return the size of the various transmissible
+    // * elements being included in information elements
+    // */
     unsigned int elementSizeVarCreate (VarIdT varId);
     unsigned int elementSizeVarSummary (VarIdT varId);
     unsigned int elementSizeVarUpdate (VarIdT varId);
@@ -230,7 +234,7 @@ protected:
      * The result is capped to maxInformationElementEntries
      * */
     unsigned int numberFittingRecords(const std::deque<VarIdT>& queue,
-                                      unsigned int bytesAvailable,
+                                      AssemblyArea& area,
                                       std::function<unsigned int (VarIdT)> elementSizeFunction);
 
 
@@ -240,13 +244,13 @@ protected:
      * a variable and the current byte counters as input. They build up the
      * byte vector sequentially
      */
-    void addVarCreate(VarIdT varId, DBEntry& theEntry, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void addVarSummary(VarIdT varId, DBEntry& theEntry, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void addVarUpdate(VarIdT varId, DBEntry& theEntry, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void addVarReqUpdate(VarIdT varId, DBEntry& theEntry, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void addVarDelete(VarIdT varId, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void addVarReqCreate(VarIdT varId, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void addIEHeader(const IEHeaderT& ieHdr, bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
+    void addVarCreate(VarIdT varId, DBEntry& theEntry, AssemblyArea& area);
+    void addVarSummary(VarIdT varId, DBEntry& theEntry, AssemblyArea& area);
+    void addVarUpdate(VarIdT varId, DBEntry& theEntry, AssemblyArea& area);
+    void addVarReqUpdate(VarIdT varId, DBEntry& theEntry, AssemblyArea& area);
+    void addVarDelete(VarIdT varId, AssemblyArea& area);
+    void addVarReqCreate(VarIdT varId, AssemblyArea& area);
+    void addIEHeader(IEHeaderT ieHdr, AssemblyArea& area);
 
 
     /**
@@ -254,12 +258,12 @@ protected:
      * list of individual entries of the right type), subject to remaining
      * space in payload and availability
      */
-    void makeIETypeCreateVariables (bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void makeIETypeSummaries (bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void makeIETypeUpdates (bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void makeIETypeDeleteVariables (bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void makeIETypeRequestVarUpdates (bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
-    void makeIETypeRequestVarCreates (bytevect& bv, unsigned int& bytesUsed, unsigned int& bytesAvailable);
+    void makeIETypeCreateVariables (AssemblyArea& area);
+    void makeIETypeSummaries (AssemblyArea& area);
+    void makeIETypeUpdates (AssemblyArea& area);
+    void makeIETypeDeleteVariables (AssemblyArea& area);
+    void makeIETypeRequestVarUpdates (AssemblyArea& area);
+    void makeIETypeRequestVarCreates (AssemblyArea& area);
 
 
     /**
@@ -311,12 +315,12 @@ protected:
      * sanity checks, store the entries of an information element in a list and
      * call 'processXXList' to process the entries on that list
      */
-    void extractVarCreateList(bytevect& bv, std::deque<VarCreateT>& creates, unsigned int& bytesUsed);
-    void extractVarDeleteList(bytevect& bv, std::deque<VarDeleteT>& deletes, unsigned int& bytesUsed);
-    void extractVarUpdateList(bytevect& bv, std::deque<VarUpdateT>& updates, unsigned int& bytesUsed);
-    void extractVarSummaryList(bytevect& bv, std::deque<VarSummT>& summs, unsigned int& bytesUsed);
-    void extractVarReqUpdateList(bytevect& bv, std::deque<VarReqUpdateT>& requpdates, unsigned int& bytesUsed);
-    void extractVarReqCreateList(bytevect& bv, std::deque<VarReqCreateT>& reqcreates, unsigned int& bytesUsed);
+    void extractVarCreateList(DisassemblyArea& area, std::deque<VarCreateT>& creates);
+    void extractVarDeleteList(DisassemblyArea& area, std::deque<VarDeleteT>& deletes);
+    void extractVarUpdateList(DisassemblyArea& area, std::deque<VarUpdateT>& updates);
+    void extractVarSummaryList(DisassemblyArea& area, std::deque<VarSummT>& summs);
+    void extractVarReqUpdateList(DisassemblyArea& area, std::deque<VarReqUpdateT>& requpdates);
+    void extractVarReqCreateList(DisassemblyArea& area, std::deque<VarReqCreateT>& reqcreates);
 
 
     // ---------------------------------------------------------------------
@@ -434,4 +438,3 @@ protected:
 
 } // namespace
 
-#endif

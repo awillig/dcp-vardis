@@ -182,7 +182,7 @@ void StateReportingProtocol::handleUpdateSafetyDataRequestMsg (SRPUpdateSafetyDa
         esd->setTimeStamp(simTime());
         esd->setSeqno(_seqno++);
 
-        DBG_PVAR1("generated payload size is ", esd->getChunkLength().get());
+        DBG_PVAR1("generated payload size is ", esd->getChunkLength().get() / 8);
 
         // construct and send payload to BP
         dbg_string("constructing the packet");

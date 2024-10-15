@@ -211,10 +211,13 @@ void VardisVariableConsumer::handleRTDBReadConfirm(RTDBRead_Confirm* readConf)
     // if variable is new or has updated value print debug output and record statistics
     // (for one selected variable)
     VarIdT varId = readConf->getVarId();
+
+    DBG_PVAR3("CONSIDERING", (int) varId, readsRequested, (lastReceived.find(varId) == lastReceived.end()));
+
     if (    (lastReceived.find(varId) == lastReceived.end())
          || (theValue.seqno != lastReceived[varId].seqno))
     {
-        DBG_PVAR5("UPDATING VARIABLE VALUE", (int) readConf->getVarId(), theValue.value, theValue.seqno, theValue.tstamp, (simTime() - theValue.tstamp));
+        DBG_PVAR5("UPDATING VARIABLE VALUE", (int) varId, theValue.value, theValue.seqno, theValue.tstamp, (simTime() - theValue.tstamp));
 
         if (varIdToObserve == (int) varId)
         {

@@ -70,7 +70,6 @@ network TestNetwork
             parameters:
                 //@display("r=,,#707070;p=300,200");
                 vardisprod.varId                 =  1 + index;
-        		vardisprod.varRepCnt             =  2;
            		vardisprod.variableValue         =  normal(1000*(index+1), 10);
         		vardisprod.interUpdateTimeDistr  =  exponential(parent.avgInterUpdateTime);
                 vardiscons.samplingPeriod        =  50ms;          

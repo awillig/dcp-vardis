@@ -24,7 +24,7 @@ import dcp.srp.SafetyDataT;
 
 class ExtendedSafetyDataT extends inet::FieldsChunk
 {
-    chunkLength = inet::B(62); // length of ExtendedSafetyData
+    chunkLength = inet::B(66); // length of ExtendedSafetyData
     
     SafetyDataT         safetyData;
     inet::MacAddress    nodeId;
