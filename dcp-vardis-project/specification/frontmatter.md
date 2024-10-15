@@ -2,7 +2,7 @@
 ---
 title: Drone Coordination Protocol (DCP) and VarDis Protocol Specification
 author: Andreas Willig, University of Canterbury
-date: September 8, 2024
+date: October 15, 2024
 numbersections: true
 ---
 
