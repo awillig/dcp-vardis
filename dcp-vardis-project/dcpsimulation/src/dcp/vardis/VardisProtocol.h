@@ -50,7 +50,6 @@ namespace dcp {
  * and processes incoming Vardis payloads.
  */
 
-typedef std::vector<byte>  bytevect;
 
 class VardisProtocol : public BPClientProtocol
 {
@@ -207,11 +206,6 @@ protected:
     // ---------------------------------------------------------------------
     // Construction of outgoing Vardis payloads
     // ---------------------------------------------------------------------
-
-    /**
-     * The payload is constructed as a single ByteChunk, to be built from
-     * a byte vector
-     */
 
 
     ///**

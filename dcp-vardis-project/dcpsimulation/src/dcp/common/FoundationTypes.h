@@ -18,8 +18,7 @@
 
 #pragma once
 
-namespace dcp {
 
-typedef uint8_t byte;
+typedef uint8_t            byte;
+typedef std::vector<byte>  bytevect;
 
-}; // namespace dcp
