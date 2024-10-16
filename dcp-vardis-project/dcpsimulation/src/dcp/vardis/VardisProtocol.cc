@@ -1183,14 +1183,14 @@ unsigned int VardisProtocol::numberFittingRecords(
     auto           it = queue.begin();
     while(    (it != queue.end())
            && (bytesToBeAdded + instructionSizeFunction(*it) <= area.available())
-           && (numberRecordsToAdd < maxInstructionContainerRecords))
+           && (numberRecordsToAdd < dcp::ICHeaderT::max_records()))
     {
         numberRecordsToAdd++;
         bytesToBeAdded += instructionSizeFunction(*it);
         it++;
     }
 
-    return (std::min(numberRecordsToAdd, maxInstructionContainerRecords));
+    return (std::min(numberRecordsToAdd, (unsigned int) dcp::ICHeaderT::max_records()));
 }
 
 

@@ -21,9 +21,18 @@ import inet.common.packet.Message;
 import inet.common.packet.Packet;
 import BPStatus;
 
+
+cplusplus {{
+#include <dcp/common/DcpTypesGlobals.h>
+}}
+
+class bytevect {
+    @existingClass;
+}
+
 class BPTransmitPayload_Request extends inet::Packet
 {
     // this just needs a protId, the payload is carried as a sequence
     // of chunks
-    int               protId;    
+    int               protId;
 };
