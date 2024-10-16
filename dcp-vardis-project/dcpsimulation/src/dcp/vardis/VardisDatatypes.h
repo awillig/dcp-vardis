@@ -18,7 +18,7 @@
 
 #pragma once
 
-
+#include <limits>
 #include <inet/linklayer/common/MacAddress.h>
 #include <dcp/common/DcpTypesGlobals.h>
 #include <dcp/common/MemBlockT.h>
@@ -248,6 +248,9 @@ class ICHeaderT : public TransmissibleType<sizeof(byte)+sizeof(byte)> {
 public:
     byte icType;
     byte icNumRecords;
+
+    static byte max_records() { return std::numeric_limits<byte>::max(); };
+
     virtual void serialize (AssemblyArea& area)
     {
         area.serialize_byte (icType);
@@ -259,8 +262,6 @@ public:
         icNumRecords  = area.deserialize_byte();
     };
 };
-
-const unsigned int maxInstructionContainerRecords = 255;
 
 
 // -----------------------------------------
