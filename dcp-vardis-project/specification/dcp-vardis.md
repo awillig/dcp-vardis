@@ -136,15 +136,15 @@ it must be an integer multiple of one byte.
   delete operations, updates).
 
 - The transmissible data type `VarSeqnoT` is an unsigned integer
-  representing sequence numbers. Sequence numbers are used in a
-  circular fashion. The sequence number space ranges from 0 to
-  `SEQNO-MODULUS` minus one, where `SEQNO-MODULUS` equals $2^{8n}$.
-  Each producer of a variable maintains a separate local sequence
-  number for that variable. This sequence number is initialized upon
-  creation of a variable and incremented upon every new update
-  operation and included in the disseminated update. Sequence numbers
-  are used by nodes to check whether they have the most recent value
-  of a variable.
+  representing sequence numbers, with a width of $n$ bytes. Sequence
+  numbers are used in a circular fashion. The sequence number space
+  ranges from 0 to `SEQNO-MODULUS` minus one, where `SEQNO-MODULUS`
+  equals $2^{8n}$. Each producer of a variable maintains a separate
+  local sequence number for that variable. This sequence number is
+  initialized upon creation of a variable and incremented upon every
+  new update operation and included in the disseminated
+  update. Sequence numbers are used by nodes to check whether they
+  have the most recent value of a variable.
 
 - The transmissible data type `VarValueT` is represented as a
   `MemBlockT` (see Section [Basic transmissible data
