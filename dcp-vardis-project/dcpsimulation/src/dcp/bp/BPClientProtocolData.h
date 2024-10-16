@@ -16,8 +16,7 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#ifndef DCP_BP_BPCLIENTPROTOCOLDATA_H_
-#define DCP_BP_BPCLIENTPROTOCOLDATA_H_
+#pragma once
 
 #include <queue>
 #include <list>
@@ -71,5 +70,3 @@ public:
 
 } // namespace
 
-
-#endif /* DCP_BP_BPCLIENTPROTOCOLDATA_H_ */

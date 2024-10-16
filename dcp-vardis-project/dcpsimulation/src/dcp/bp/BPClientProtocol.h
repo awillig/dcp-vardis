@@ -16,8 +16,7 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#ifndef DCP_BP_BPCLIENTPROTOCOL_H_
-#define DCP_BP_BPCLIENTPROTOCOL_H_
+#pragma once
 
 #include <inet/common/packet/Message.h>
 #include <inet/common/packet/Packet.h>
@@ -145,4 +144,3 @@ protected:
 
 } // namespace
 
-#endif /* DCP_BP_BPCLIENTPROTOCOL_H_ */

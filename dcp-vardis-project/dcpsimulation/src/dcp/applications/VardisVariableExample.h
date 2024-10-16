@@ -16,8 +16,7 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#ifndef DCP_APPLICATIONS_VARDISVARIABLEEXAMPLE_H_
-#define DCP_APPLICATIONS_VARDISVARIABLEEXAMPLE_H_
+#pragma once
 
 #include <omnetpp.h>
 
@@ -29,5 +28,3 @@ typedef struct VardisExampleVariable {
     simtime_t    tstamp;
 } VardisExampleVariable;
 #pragma pack(pop)
-
-#endif /* DCP_APPLICATIONS_VARDISVARIABLEEXAMPLE_H_ */

@@ -16,8 +16,7 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#ifndef DCP_COMMON_DCPPROTOCOL_H_
-#define DCP_COMMON_DCPPROTOCOL_H_
+#pragma once
 
 #include <stack>
 #include <omnetpp.h>
@@ -243,4 +242,3 @@ protected:
 
 } // namespace
 
-#endif /* DCP_COMMON_DCPPROTOCOL_H_ */
