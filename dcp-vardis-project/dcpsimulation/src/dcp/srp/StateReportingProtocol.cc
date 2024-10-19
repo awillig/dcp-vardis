@@ -16,7 +16,6 @@
 
 #include <inet/common/IProtocolRegistrationListener.h>
 #include <dcp/srp/StateReportingProtocol.h>
-#include <dcp/srp/ExtendedSafetyDataT_m.h>
 #include <dcp/common/DcpTypesGlobals.h>
 #include <dcp/bp/BPQueueingMode_m.h>
 #include <dcp/bp/BPTransmitPayload_m.h>
@@ -175,21 +174,23 @@ void StateReportingProtocol::handleUpdateSafetyDataRequestMsg (SRPUpdateSafetyDa
         dbg_string("handleUpdateSafetyDataRequestMsg: generating the payload");
 
         // create the actual SRP message content
-        auto esd = makeShared<ExtendedSafetyDataT>();
-        assert(esd);
-        esd->setSafetyData(srpReq->getSafetyData());
-        esd->setNodeId(getOwnNodeId());
-        esd->setTimeStamp(simTime());
-        esd->setSeqno(_seqno++);
+        ExtendedSafetyDataT  extSD;
+        extSD.safetyData = srpReq->getSafetyData();
+        extSD.nodeId     = getOwnNodeId();
+        extSD.timeStamp  = simTime();
+        extSD.seqno      = _seqno++;
 
-        DBG_PVAR1("generated payload size is ", esd->getChunkLength().get() / 8);
+        BPTransmitPayload_Request  *pldReq = new BPTransmitPayload_Request ("SRPPayload");
+        pldReq->setProtId(BP_PROTID_SRP);
+        bytevect& bv = pldReq->getBvdataForUpdate();
+        bv.reserve(2*extSD.total_size());
+        ByteVectorAssemblyArea area (extSD.total_size(), bv);
+        extSD.serialize(area);
+        bv.resize (area.used ());
+
+        DBG_PVAR1("generated payload size is ", bv.size());
 
         // construct and send payload to BP
-        dbg_string("constructing the packet");
-        BPTransmitPayload_Request  *pldReq = new BPTransmitPayload_Request ("SRPPayload");
-        assert(pldReq);
-        pldReq->setProtId(BP_PROTID_SRP);
-        pldReq->insertAtFront(esd);
         dbg_string("sending the packet/payload to BP");
         sendToBP(pldReq);
 
@@ -250,15 +251,15 @@ void StateReportingProtocol::handlePrintNeighbourTableMsg ()
 
         dbg_prefix();
         EV << "neighbour-Id " << theEntry.nodeId
-           << " with generation timestamp = " << theEntry.extSD.getTimeStamp()
-           << " , age = " << simTime() - theEntry.extSD.getTimeStamp()
-           << " , seqno = " << theEntry.extSD.getSeqno()
+           << " with generation timestamp = " << theEntry.extSD.timeStamp
+           << " , age = " << simTime() - theEntry.extSD.timeStamp
+           << " , seqno = " << theEntry.extSD.seqno
            << " , from position ("
-           << theEntry.extSD.getSafetyData().position_x
-           << ", " << theEntry.extSD.getSafetyData().position_y
-           << ", " << theEntry.extSD.getSafetyData().position_z
+           << theEntry.extSD.safetyData.position_x
+           << ", " << theEntry.extSD.safetyData.position_y
+           << ", " << theEntry.extSD.safetyData.position_z
            << ") and with age "
-           << (simTime() - theEntry.extSD.getTimeStamp())
+           << (simTime() - theEntry.extSD.timeStamp)
            << endl;
     }
 
@@ -281,26 +282,28 @@ void StateReportingProtocol::handleReceivedPayload(BPReceivePayload_Indication* 
     assert(payload);
     assert(payload->getProtId() == BP_PROTID_SRP);
 
-    auto esd = payload->popAtFront<ExtendedSafetyDataT>();
+    ByteVectorDisassemblyArea area (payload->getPayload());
+    ExtendedSafetyDataT esd;
+    esd.deserialize(area);
     delete payload;
 
-    NodeIdentifierT senderId = esd->getNodeId();
+    NodeIdentifierT senderId = esd.nodeId;
 
     dbg_prefix();
     EV << "received payload from sender " << senderId
-       << " with generation timestamp = " << esd->getTimeStamp()
-       << " , seqno = " << esd->getSeqno()
+       << " with generation timestamp = " << esd.timeStamp
+       << " , seqno = " << esd.seqno
        << " , from position ("
-       << esd->getSafetyData().position_x
-       << ", " << esd->getSafetyData().position_y
-       << ", " << esd->getSafetyData().position_z
+       << esd.safetyData.position_x
+       << ", " << esd.safetyData.position_y
+       << ", " << esd.safetyData.position_z
        << ") and with delay "
-       << (simTime() - esd->getTimeStamp())
+       << (simTime() - esd.timeStamp)
        << endl;
 
     NeighbourTableEntry entry;
     entry.nodeId         = senderId;
-    entry.extSD          = *esd;
+    entry.extSD          = esd;
     entry.receptionTime  = simTime();
     neighbourTable[senderId] = entry;
 
