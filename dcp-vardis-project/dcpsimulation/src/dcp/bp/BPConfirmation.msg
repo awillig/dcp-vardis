@@ -18,8 +18,9 @@
 
 
 import inet.common.packet.Message;
-import inet.linklayer.common.MacAddress;
+import dcp.common.NodeIdentifierT;
 import BPStatus;
+
 
 
 class BPConfirmation extends inet::Message
@@ -34,7 +35,7 @@ class BPTransmitPayload_Confirm extends BPConfirmation
 
 class BPRegisterProtocol_Confirm extends BPConfirmation
 {
-    inet::MacAddress  ownNodeIdentifier;
+    NodeIdentifierT  ownNodeIdentifier;
 }
 
 class BPDeregisterProtocol_Confirm extends BPConfirmation
