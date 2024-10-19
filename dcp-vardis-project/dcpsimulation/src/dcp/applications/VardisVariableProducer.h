@@ -20,9 +20,10 @@
 
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
-#include <dcp/vardis/VardisDatatypes.h>
+
 #include <dcp/vardis/VardisRTDBConfirmation_m.h>
 #include <dcp/vardis/VardisApplication.h>
+#include <dcp/vardis/VardisDatatypes.h>
 
 using namespace omnetpp;
 

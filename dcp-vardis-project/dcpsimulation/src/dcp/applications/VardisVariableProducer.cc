@@ -16,14 +16,15 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#include "VardisVariableProducer.h"
 
 #include <inet/common/IProtocolRegistrationListener.h>
 #include <inet/common/Protocol.h>
+
+#include <dcp/applications/VardisVariableProducer.h>
 #include <dcp/vardis/VardisRTDBCreate_m.h>
 #include <dcp/vardis/VardisRTDBDelete_m.h>
 #include <dcp/vardis/VardisRTDBUpdate_m.h>
-#include "VardisVariableExample.h"
+#include <dcp/applications/VardisVariableExample.h>
 
 
 using namespace dcp;

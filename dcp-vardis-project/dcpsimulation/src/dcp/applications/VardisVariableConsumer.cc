@@ -16,9 +16,8 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#include "VardisVariableConsumer.h"
-
-#include "VardisVariableExample.h"
+#include <dcp/applications/VardisVariableConsumer.h>
+#include <dcp/applications/VardisVariableExample.h>
 
 /*
  * This is a simple consumer module, pairing with the 'VariableProducer' module.

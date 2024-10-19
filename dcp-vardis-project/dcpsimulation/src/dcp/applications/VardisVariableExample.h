@@ -20,6 +20,7 @@
 
 #include <omnetpp.h>
 
+using namespace omnetpp;
 
 #pragma pack(push, 1)
 typedef struct VardisExampleVariable {
