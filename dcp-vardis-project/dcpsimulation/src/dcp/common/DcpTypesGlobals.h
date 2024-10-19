@@ -36,7 +36,14 @@ using namespace inet;
 // --------------------------------------------------------------------
 namespace dcp {
 
-/*
+// --------------------------------------------------------------------
+
+
+std::string bv_to_str (const bytevect& bv, size_t numbytes);
+
+// --------------------------------------------------------------------
+
+
 class NodeIdentifierT : public TransmissibleType<MAC_ADDRESS_SIZE> {
 public:
       byte nodeId[MAC_ADDRESS_SIZE] = {0, 0, 0, 0, 0, 0};
@@ -69,18 +76,16 @@ public:
           return rv;
       };
 
+      friend std::ostream& operator<<(std::ostream& os, const NodeIdentifierT& nodeid);
+      friend bool operator< (const dcp::NodeIdentifierT& left, const dcp::NodeIdentifierT& right);
+
       virtual size_t total_size () const { return fixed_size(); };
       virtual void serialize (AssemblyArea& area) { area.serialize_byte_block(MAC_ADDRESS_SIZE, nodeId); };
       virtual void deserialize (DisassemblyArea& area) { area.deserialize_byte_block(MAC_ADDRESS_SIZE, nodeId); };
 };
 
 const NodeIdentifierT nullIdentifier;
-*/
 
-typedef inet::MacAddress   MacAddress;
-typedef inet::MacAddress   NodeIdentifierT;
-
-const NodeIdentifierT      nullIdentifier = MacAddress::UNSPECIFIED_ADDRESS;
 
 
 // --------------------------------------------------------------------
