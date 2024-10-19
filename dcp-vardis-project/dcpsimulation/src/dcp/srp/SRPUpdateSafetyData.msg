@@ -18,7 +18,15 @@
 
 
 import inet.common.packet.Message;
-import dcp.srp.SafetyDataT;
+
+cplusplus {{
+#include <dcp/srp/SafetyDataT.h>
+typedef dcp::SafetyDataT SafetyDataT;
+}}
+
+class SafetyDataT {
+    @existingClass;
+}
 
 
 class SRPUpdateSafetyData_Request extends inet::Message
