@@ -16,12 +16,12 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-import inet.common.packet.Packet;
+import inet.common.packet.Message;
+import dcp.common.ByteVect;
 import BPStatus;
 
-class BPReceivePayload_Indication extends inet::Packet
+class BPReceivePayload_Indication extends inet::Message
 {
-    // this just needs a protId, the payload is carried as a single chunk
-    // (the front chunk)
-    int               protId;    
+    int         protId;
+    bytevect    payload;
 };
