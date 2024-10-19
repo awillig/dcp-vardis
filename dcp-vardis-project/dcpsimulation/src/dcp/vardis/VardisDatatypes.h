@@ -95,7 +95,7 @@ class VarValueT : public MemBlockT<VarLenT>, public TransmissibleType<sizeof(Var
             data = new byte [length];
             area.deserialize_byte_block (length, data);
         }
-    }
+    };
 };
 
 
@@ -153,23 +153,23 @@ public:
 
 class VarSpecT : public TransmissibleType<sizeof(VarIdT)+MAC_ADDRESS_SIZE+sizeof(VarRepCntT)+sizeof(VarLenT)> {
 public:
-    VarIdT      varId;
-    byte        prodId [MAC_ADDRESS_SIZE];
-    VarRepCntT  repCnt;
-    StringT     descr;
+    VarIdT            varId;
+    NodeIdentifierT   prodId;
+    VarRepCntT        repCnt;
+    StringT           descr;
 
     virtual size_t total_size () const { return fixed_size() + descr.length; };
     virtual void serialize (AssemblyArea& area)
     {
         area.serialize_byte (varId);
-        area.serialize_byte_block (MAC_ADDRESS_SIZE, prodId);
+        prodId.serialize (area);
         area.serialize_byte (repCnt);
         descr.serialize (area);
     };
     virtual void deserialize (DisassemblyArea& area)
     {
         varId  = area.deserialize_byte ();
-        area.deserialize_byte_block(MAC_ADDRESS_SIZE, prodId);
+        prodId.deserialize (area);
         repCnt = area.deserialize_byte ();
         descr.deserialize (area);
     };
