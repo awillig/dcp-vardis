@@ -27,8 +27,6 @@
 #include <dcp/bp/BeaconingProtocol.h>
 #include <dcp/bp/BPConfirmation_m.h>
 #include <dcp/bp/BPClientProtocolData.h>
-#include <dcp/bp/BPHeader_m.h>
-#include <dcp/bp/BPPayloadHeaderT_m.h>
 #include <dcp/bp/BPPayloadTransmitted_m.h>
 #include <dcp/bp/BPReceivePayload_m.h>
 
@@ -69,13 +67,7 @@ void BeaconingProtocol::initialize (int stage)
         bpParMaximumPacketSizeB  =  (BPLengthT) par("bpParMaximumPacketSize");
         assert(bpParMaximumPacketSizeB > 0);
 
-        // determine sizes of BPHeader and BPPayloadBlock header
-        auto dummyPayloadHeader    = makeShared<BPPayloadHeaderT>();
-        payloadHeaderSizeB         = (BPLengthT) (dummyPayloadHeader->getChunkLength().get() / 8);
-        auto dummyBPHeader         = makeShared<BPHeaderT>();
-        beaconProtocolHeaderSizeB  = dummyBPHeader->getChunkLength().get() / 8;
-
-        DBG_VAR2(payloadHeaderSizeB, beaconProtocolHeaderSizeB);
+        DBG_VAR2(dcp::BPPayloadHeaderT::fixed_size(), dcp::BPHeaderT::fixed_size());
 
         // find gate identifiers
         gidFromUWB      =  findGate("fromUWB");
@@ -175,7 +167,7 @@ Ptr<const Chunk> BeaconingProtocol::extractFittingPayload(RegisteredProtocol& rp
     if (    (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
               || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPHEAD))
          && (not (rp.protData.queue.empty()))
-         && (((rp.protData.queue.front().theChunk->getChunkLength().get() / 8) + payloadHeaderSizeB) <= remainingBytes))
+         && (((rp.protData.queue.front().theChunk->getChunkLength().get() / 8) + dcp::BPPayloadHeaderT::fixed_size()) <= remainingBytes))
     {
         dbg_string("found payload for protocol with BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
         auto qe = rp.protData.queue.front();
@@ -195,7 +187,7 @@ Ptr<const Chunk> BeaconingProtocol::extractFittingPayload(RegisteredProtocol& rp
     DBG_PVAR1("inspecting buffer with non-empty element of length(B) = ", (rp.protData.bufferEntry.theChunk->getChunkLength().get() / 8))
 
     //  leave if buffere element does not fit into remaining beacon
-    if (((rp.protData.bufferEntry.theChunk->getChunkLength().get() / 8) + payloadHeaderSizeB) > remainingBytes)
+    if (((rp.protData.bufferEntry.theChunk->getChunkLength().get() / 8) + dcp::BPPayloadHeaderT::fixed_size()) > remainingBytes)
     {
         dbg_string("buffer payload is too large, returning nothing");
         dbg_leave();
@@ -262,12 +254,21 @@ void BeaconingProtocol::addPayload(RegisteredProtocol& rp,
         DBG_PVAR4("adding payload", payloadSizeB, rp.protData.protocolName, bytesUsed, maxBytes);
 
         // we can add this chunk to the packet, preceded by a payload header
-        auto payloadHeader = makeShared<BPPayloadHeaderT>();
-        payloadHeader->setProtocolId(protId);
-        payloadHeader->setLength(payloadSizeB);
+
+        // construct payload header
+        bytevect bv (dcp::BPPayloadHeaderT::fixed_size());
+        bv.reserve(2*dcp::BPPayloadHeaderT::fixed_size());
+        ByteVectorAssemblyArea area (dcp::BPPayloadHeaderT::fixed_size(), bv);
+        BPPayloadHeaderT pldHeader;
+        pldHeader.protocolId = protId;
+        pldHeader.length     = payloadSizeB;
+        pldHeader.serialize (area);
+        bv.resize (area.used());
+        auto payloadHeader = makeShared<BytesChunk>(bv);
+
         beaconChunks.push_back(payloadHeader);
         beaconChunks.push_back(thePayload);
-        bytesUsed += payloadHeaderSizeB;
+        bytesUsed += dcp::BPPayloadHeaderT::fixed_size();
         bytesUsed += payloadSizeB;
         numberPayloadsAdded += 1;
 
@@ -309,12 +310,22 @@ void BeaconingProtocol::constructAndTransmitBeacon (std::list< Ptr<const Chunk> 
 
     // now we construct the actual packet for transmission
     auto theBeaconPacket = new Packet;
-    auto theBPHeader     = makeShared<BPHeaderT>();
-    theBPHeader->setMagicNo(bpMagicNo);
-    theBPHeader->setSenderId(getOwnNodeId());
-    theBPHeader->setVersion(bpProtocolVersion);
-    theBPHeader->setNumPayloads(beaconChunks.size() / 2);
-    theBPHeader->setSeqno(_seqno++);
+
+    // construct BPHeader
+    bytevect bv (dcp::BPHeaderT::fixed_size());
+    bv.reserve (2*dcp::BPHeaderT::fixed_size());
+    ByteVectorAssemblyArea area (dcp::BPHeaderT::fixed_size(), bv);
+    BPHeaderT bpHdr;
+    bpHdr.version     =  bpProtocolVersion;
+    bpHdr.magicNo     =  bpMagicNo;
+    bpHdr.senderId    =  getOwnNodeId();
+    bpHdr.numPayloads =  beaconChunks.size() / 2;
+    bpHdr.seqno       =  _seqno++;
+    bpHdr.serialize (area);
+    bv.resize (area.used());
+    auto theBPHeader     = makeShared<BytesChunk>(bv);
+
+    // now insert BPHeader and all the payload header / data chunks
     theBeaconPacket->insertAtBack(theBPHeader);
     for (auto ch : beaconChunks)
     {
@@ -360,7 +371,7 @@ void BeaconingProtocol::handleGenerateBeaconMsg ()
     }
 
     std::list< Ptr<const Chunk> >  beaconChunks;
-    BPLengthT  bytesUsed         = beaconProtocolHeaderSizeB;
+    BPLengthT  bytesUsed         = dcp::BPHeaderT::fixed_size();
     BPLengthT  maxBytes          = bpParMaximumPacketSizeB;
     size_t     numPayloadsAdded  = 0;
     auto       rpiter            = registeredProtocols.begin();
@@ -389,31 +400,32 @@ void BeaconingProtocol::handleGenerateBeaconMsg ()
 // ========================================================================================
 
 /**
- * Sanity checks for incoming BPHeader: right magicno, making sure I don't get my
+ * Sanity checks for incoming BPHeaderT: right magicno, making sure I don't get my
  * own packet, checking protocol version
  */
-bool BeaconingProtocol::bpHeaderWellFormed (Ptr<const BPHeaderT> bpHeader)
+bool BeaconingProtocol::bpHeaderWellFormed (DisassemblyArea& area, BPHeaderT& bpHdr)
 {
     dbg_enter("bpHeaderWellFormed");
-    assert(bpHeader);
 
-    if (bpHeader->getMagicNo() != bpMagicNo)
+    bpHdr.deserialize (area);
+
+    if (bpHdr.magicNo != bpMagicNo)
     {
-        dbg_string("did not find magicno");
+        DBG_PVAR1("did not find magicno", bpHdr.magicNo);
         dbg_leave();
         return false;
     }
 
-    if (bpHeader->getSenderId() == getOwnNodeId())
+    if (bpHdr.senderId == getOwnNodeId())
     {
         dbg_string("got my own packet");
         dbg_leave();
         return false;
     }
 
-    if (bpHeader->getVersion() != bpProtocolVersion)
+    if (bpHdr.version != bpProtocolVersion)
     {
-        dbg_string("wrong protocol version");
+        DBG_PVAR1("wrong protocol version", bpHdr.version);
         dbg_leave();
         return false;
     }
@@ -424,47 +436,76 @@ bool BeaconingProtocol::bpHeaderWellFormed (Ptr<const BPHeaderT> bpHeader)
 
 // ----------------------------------------------------
 
+/**
+ * Sanity checks for incoming BPHeaderT: right magicno, making sure I don't get my
+ * own packet, checking protocol version
+ */
+bool BeaconingProtocol::bpPayloadHeaderWellFormed (DisassemblyArea& area, BPPayloadHeaderT& bpPHdr)
+{
+    dbg_enter("bpPayloadHeaderWellFormed");
+
+    bpPHdr.deserialize (area);
+
+    dbg_leave();
+    return true;
+}
+
+
+// ----------------------------------------------------
+
 void BeaconingProtocol::handleReceivedPacket (Packet* packet)
 {
     dbg_enter("handleReceivedPacket");
 
     assert(packet);
 
+    // Note: when constructing a beacon, it happens by appending a number of BytesChunk
+    // payloads into a packet handed to the WiFi MAC. The INET framework merges all the
+    // previously separate BytesChunks into a single one/
+
     // first extract BP header and check its validity
-    const auto& bpHeader = packet->popAtFront<BPHeaderT>();
-    if (not bpHeaderWellFormed(bpHeader))
+    const auto& tmpBC = packet->popAtFront<BytesChunk>();
+    assert(tmpBC);
+
+    const bytevect& bvPacket = tmpBC->getBytes();
+    ByteVectorDisassemblyArea area (bvPacket);
+
+    DBG_PVAR1("got packet with size", bvPacket.size());
+
+    BPHeaderT bpHdr;
+    if (not bpHeaderWellFormed(area, bpHdr))
     {
-        dbg_string("header is not well-formed, stop processing");
-        delete packet;
-        dbg_leave();
-        return;
+        error ("BPHeader is not well-formed, stop processing");
     }
 
-    uint8_t numberPayloads = bpHeader->getNumPayloads();
+    uint8_t numberPayloads = bpHdr.numPayloads;
 
-    DBG_PVAR4("got packet from sender", bpHeader->getSenderId(), (int) numberPayloads, bpHeader->getSeqno(), (int) packet->getTotalLength().get() / 8);
+    DBG_PVAR3("got packet from sender", bpHdr.senderId, (int) numberPayloads, bpHdr.seqno);
 
     // now extract the payloads and send them to the respective client protocols
     for (int cntPayload = 0; cntPayload < numberPayloads; cntPayload++)
     {
-        const auto& payloadHeader = packet->popAtFront<BPPayloadHeaderT>();
-        const auto& payloadChunk  = packet->popAtFront<Chunk>();
-
-        assert(payloadHeader);
-        assert(payloadChunk);
-
-        BPProtocolIdT protId    = payloadHeader->getProtocolId();
-        Protocol *theProtocol   = convertProtocolIdToProtocol(protId);
-        if (not theProtocol)
+        BPPayloadHeaderT bpPHdr;
+        if (not bpPayloadHeaderWellFormed(area, bpPHdr))
         {
-            error("BeaconingProtocol::handleReceivedPacket: unknown protocol id");
+            error ("BPPayloadHeader is not well-formed, stop processing");
         }
 
-        DBG_VAR3(cntPayload, protId, theProtocol->getName());
+        Protocol *theProtocol        = convertProtocolIdToProtocol(bpPHdr.protocolId);
+        if (not theProtocol)
+        {
+            DBG_VAR1(bpPHdr.protocolId);
+            error("BeaconingProtocol::handleReceivedPacket: unknown protocol id");
+        }
+        DBG_VAR3(cntPayload, bpPHdr.protocolId, theProtocol->getName());
 
         BPReceivePayload_Indication *pldInd = new BPReceivePayload_Indication;
-        pldInd->setProtId(protId);
-        pldInd->insertAtFront(payloadChunk);
+        pldInd->setProtId(bpPHdr.protocolId);
+        bytevect& bvPld = pldInd->getPayloadForUpdate();
+        bvPld.resize(bpPHdr.length);
+
+        area.deserialize_byte_block (bpPHdr.length, (byte*) &(bvPld[0]));
+
         auto req = pldInd->addTagIfAbsent<DispatchProtocolReq>();
         req->setProtocol(theProtocol);
         req->setServicePrimitive(SP_INDICATION);
@@ -536,7 +577,7 @@ void BeaconingProtocol::handleRegisterProtocolRequestMsg (BPRegisterProtocol_Req
     }
 
     // check if maximum payload size is too large
-    if (clientProtData.maxPayloadSizeB > (bpParMaximumPacketSizeB - (beaconProtocolHeaderSizeB + payloadHeaderSizeB)))
+    if (clientProtData.maxPayloadSizeB > (bpParMaximumPacketSizeB - (dcp::BPHeaderT::fixed_size() + dcp::BPPayloadHeaderT::fixed_size())))
     {
         dbg_string ("illegal maximum payload size -- payload too large");
         sendRegisterProtocolConfirm(BP_STATUS_ILLEGAL_MAX_PAYLOAD_SIZE, theProtocol);
@@ -621,7 +662,7 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
     assert(txplReq);
 
     BPProtocolIdT protocolId    = txplReq->getProtId();
-    auto dataChunk              = txplReq->popAtFront();
+    auto dataChunk              = makeShared<BytesChunk>(txplReq->getBvdata());
     BPLengthT dataChunkLengthB  = (BPLengthT) (dataChunk->getChunkLength().get() / 8);
     delete txplReq;
 
@@ -644,7 +685,7 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
     uint32_t  maxSize = (uint32_t) rp.protData.maxPayloadSizeB;
     DBG_VAR3(dataChunkLengthB, maxSize, dataChunk);
     if (    (dataChunkLengthB > maxSize)
-         || (dataChunkLengthB > (bpParMaximumPacketSizeB - (payloadHeaderSizeB + beaconProtocolHeaderSizeB))))
+         || (dataChunkLengthB > (bpParMaximumPacketSizeB - (dcp::BPPayloadHeaderT::fixed_size() + dcp::BPHeaderT::fixed_size()))))
     {
         dbg_string ("payload too large");
         sendTransmitPayloadConfirm(BP_STATUS_PAYLOAD_TOO_LARGE, theProtocol);

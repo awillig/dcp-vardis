@@ -24,6 +24,7 @@
 #include <inet/common/Protocol.h>
 #include <inet/networklayer/common/InterfaceTable.h>
 #include <dcp/common/DcpTypesGlobals.h>
+#include <dcp/bp/BPDataTypes.h>
 #include <dcp/bp/BPDeregisterProtocol_m.h>
 #include <dcp/bp/BPRegisterProtocol_m.h>
 #include <dcp/bp/BPTransmitPayload_m.h>
@@ -31,7 +32,6 @@
 #include <dcp/bp/BPConfirmation_m.h>
 #include <dcp/bp/BPQueryNumberBufferedPayloads_m.h>
 #include <dcp/bp/BPClientProtocolData.h>
-#include <dcp/bp/BPHeader_m.h>
 #include <dcp/common/DcpProtocol.h>
 
 
@@ -83,10 +83,6 @@ protected:
 
     // parameter for maximum beacon packet size
     BPLengthT   bpParMaximumPacketSizeB;
-
-    // dynamically calculated 'constant' lengths of a BPHeader and a payload header
-    BPLengthT   payloadHeaderSizeB;
-    BPLengthT   beaconProtocolHeaderSizeB;
 
     // Beacons have sequence numbers
     uint32_t    _seqno = 0;
@@ -190,9 +186,16 @@ protected:
     void sendQueryNumberBufferedPayloadsConfirm (BPStatus status, unsigned int numPayloads, BPProtocolIdT protocolId, Protocol* theProtocol);
 
     /**
-     * Checks whether BPHeader of incoming beacon is well-formed
+     * Checks whether BPHeaderT of incoming beacon is well-formed
      */
-    bool bpHeaderWellFormed (Ptr<const BPHeaderT> bpHeader);
+    bool bpHeaderWellFormed (DisassemblyArea& area, BPHeaderT& bpHdr);
+
+
+    /**
+     * Checks whether BPPayloadHeaderT of incoming beacon is well-formed
+     */
+    bool bpPayloadHeaderWellFormed (DisassemblyArea& area, BPPayloadHeaderT& bpPHdr);
+
 
     /**
      * Checks whether a protocol with given ProtocolId is registered as client protocol
