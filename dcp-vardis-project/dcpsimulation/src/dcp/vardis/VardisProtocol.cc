@@ -16,12 +16,13 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
+#include <dcp/vardis/VardisProtocol.h>
+
 #include <algorithm>
 #include <inet/common/IProtocolRegistrationListener.h>
 #include <dcp/bp/BPQueueingMode_m.h>
 #include <dcp/bp/BPTransmitPayload_m.h>
 #include <dcp/bp/BPPayloadTransmitted_m.h>
-#include <dcp/vardis/VardisProtocol.h>
 
 // ========================================================================================
 // ========================================================================================
@@ -411,6 +412,7 @@ void VardisProtocol::handleBPQueryNumberBufferedPayloadsConfirm (BPQueryNumberBu
 
 // ----------------------------------------------------
 
+
 /**
  * Process BPReceivedPayload.indication message. The received VarDis payload
  * is checked/parsed and deconstructed.
@@ -421,12 +423,17 @@ void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indicati
     assert(payload);
     assert(payload->getProtId() == BP_PROTID_VARDIS);
 
-    // the payload includes one BytesChunk
-    auto theBytesChunk = payload->popAtFront<BytesChunk>();
-    assert(theBytesChunk);
-    delete payload;
+    if (not vardisActive)
+    {
+        dbg_string ("vardis is not active");
+        delete payload;
+        dbg_leave();
+        return;
+    }
 
-    DBG_VAR1(theBytesChunk->getByteArraySize());
+    const bytevect& bvpayload = payload->getPayload();
+
+    DBG_VAR1(bvpayload.size());
 
     // In the first step we deconstruct the packet and put all the
     // instruction records into their own lists without yet processing
@@ -439,7 +446,7 @@ void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indicati
     std::deque<VarCreateT>     icCreateVariables;
     std::deque<VarDeleteT>     icDeleteVariables;
 
-    ByteVectorDisassemblyArea area (theBytesChunk->getBytes());
+    ByteVectorDisassemblyArea area (bvpayload);
 
     // Dispatch on ICType
     while (area.used() < area.available())
@@ -486,6 +493,8 @@ void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indicati
     processVarReqUpdateList(icRequestVarUpdates);
     processVarReqCreateList(icRequestVarCreates);
 
+    delete payload;
+
     dbg_leave();
 }
 
@@ -521,16 +530,16 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
     spec.repCnt        =  createReq->getRepCnt();
     spec.descr.length  =  descrLen;
     spec.descr.data    =  descr_cstr;
-    createReq->getProdId().getAddressBytes(spec.prodId);
+    spec.prodId        =  createReq->getProdId();
 
     auto length  = createReq->getUpdlen();
 
     // perform various checks
 
 
-    if (not isSuccessfullyRegisteredWithBP())
+    if (not vardisActive)
     {
-        dbg_string("Vardis is not registered with BP, dropping request");
+        dbg_string("Vardis is not active, dropping request");
         sendRTDBCreateConfirm(VARDIS_STATUS_INACTIVE, spec.varId, theProtocol);
         delete createReq;
         dbg_leave();
@@ -644,9 +653,9 @@ void VardisProtocol::handleRTDBUpdateRequest(RTDBUpdate_Request* updateReq)
 
     // perform various checks
 
-    if (not isSuccessfullyRegisteredWithBP())
+    if (not vardisActive)
     {
-        dbg_string("Vardis is not registered with BP, dropping request");
+        dbg_string("Vardis is active, dropping request");
         sendRTDBUpdateConfirm(VARDIS_STATUS_INACTIVE, varId, theProtocol);
         delete updateReq;
         dbg_leave();
@@ -753,9 +762,9 @@ void VardisProtocol::handleRTDBReadRequest (RTDBRead_Request* readReq)
 
     // perform various checks
 
-    if (not isSuccessfullyRegisteredWithBP())
+    if (not vardisActive)
     {
-        dbg_string("Vardis is not registered with BP, dropping request");
+        dbg_string("Vardis is not active, dropping request");
         sendConfirmation(readConf, VARDIS_STATUS_INACTIVE, theProtocol);
         dbg_leave();
         return;
@@ -803,9 +812,9 @@ void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Req
     dbConf->setSpecArraySize(theVariableDatabase.size());
 
     // check whether Vardis protocol is actually active
-    if (not isSuccessfullyRegisteredWithBP())
+    if (not vardisActive)
     {
-        dbg_string("Vardis is not registered with BP, dropping request");
+        dbg_string("Vardis is not active, dropping request");
         dbConf->setSpecArraySize(0);
         sendConfirmation(dbConf, VARDIS_STATUS_INACTIVE, theProtocol);
         dbg_leave();
@@ -819,15 +828,12 @@ void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Req
     {
         auto theVar = it->second;
 
-        MacAddress prodId;
-        prodId.setAddressBytes(theVar.spec.prodId);
-
-        DBG_PVAR3("adding description", (int) theVar.spec.varId, prodId, theVar.spec.descr.to_str());
+        DBG_PVAR3("adding description", (int) theVar.spec.varId, theVar.spec.prodId, theVar.spec.descr.to_str());
 
         VarSpecEntry vse;
 
         vse.varId   = theVar.spec.varId;
-        vse.prodId  = prodId;
+        vse.prodId  = theVar.spec.prodId;
         vse.repCnt  = theVar.spec.repCnt;
         vse.descr   = std::string(theVar.spec.descr.to_str());
         dbConf->setSpec(i,vse);
@@ -862,9 +868,9 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
 
     // perform some checks
 
-    if (not isSuccessfullyRegisteredWithBP())
+    if (not vardisActive)
     {
-        dbg_string("Vardis is not registered with BP, dropping request");
+        dbg_string("Vardis is not active, dropping request");
         sendConfirmation(varDescr, VARDIS_STATUS_INACTIVE, theProtocol);
         dbg_leave();
         return;
@@ -883,7 +889,7 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
     // retrieve variable and generate response data about it
     DBEntry& theEntry = theVariableDatabase.at(varId);
     varDescr->setVarId(varId);
-    varDescr->setProdId(getProducerId(theEntry.spec));
+    varDescr->setProdId(theEntry.spec.prodId);
     varDescr->setRepCnt(theEntry.spec.repCnt);
     varDescr->setLength(theEntry.value.length);
     varDescr->setDescr(theEntry.spec.descr.to_str().c_str());
@@ -931,9 +937,9 @@ void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* delReq)
 
     // perform some checks
 
-    if (not isSuccessfullyRegisteredWithBP())
+    if (not vardisActive)
     {
-        dbg_string("Vardis is not registered with BP, dropping request");
+        dbg_string("Vardis is not active, dropping request");
         sendConfirmation(deleteConf, VARDIS_STATUS_INACTIVE, theProtocol);
         dbg_leave();
         return;
@@ -1574,31 +1580,32 @@ void VardisProtocol::generatePayload ()
 {
     dbg_enter("generatePayload");
 
-    if (isSuccessfullyRegisteredWithBP())
+    if (vardisActive)
     {
-        dbg_string("we are successfully registered");
+        dbg_string("we are active");
 
-        bytevect  bv (maxPayloadSize);
-        bv.reserve(2*maxPayloadSize);
+        BPTransmitPayload_Request  *pldReq = new BPTransmitPayload_Request ("VardisPayload");
+        bytevect& bv = pldReq->getBvdataForUpdate();
+        bv.resize (maxPayloadSize);
+        bv.reserve (2*maxPayloadSize);
 
         constructPayload(bv);
-        auto bytesChunk = makeShared<BytesChunk>(bv);
 
-        DBG_PVAR2("generated payload size", bytesChunk->getByteArraySize(), bv.size());
-
-        if (bytesChunk->getByteArraySize() > 0)
+        if (bv.size() > 0)
         {
-            DBG_PVAR1("SENDING payload", bytesChunk->getByteArraySize());
+            DBG_PVAR1("SENDING payload", bv.size());
 
             dbg_string("constructing the packet");
-            BPTransmitPayload_Request  *pldReq = new BPTransmitPayload_Request ("VardisPayload");
             pldReq->setProtId(BP_PROTID_VARDIS);
-            pldReq->insertAtFront(bytesChunk);
 
             dbg_string("sending the packet/payload to BP");
             sendToBP(pldReq);
 
             payloadSent = true;
+        }
+        else
+        {
+            delete pldReq;
         }
     }
 
@@ -1621,8 +1628,8 @@ void VardisProtocol::processVarCreate(const VarCreateT& create)
 
     // const VarSpecT&    spec   = create.spec;
     // const VarUpdateT&  update = create.update;
-    VarIdT       varId  = create.spec.varId;
-    MacAddress   prodId = getProducerId(create.spec);
+    VarIdT            varId  = create.spec.varId;
+    NodeIdentifierT   prodId = create.spec.prodId;
 
     assert(create.update.value.length > 0);
     DBG_PVAR2("considering", (int) varId, prodId);
@@ -1682,8 +1689,8 @@ void VardisProtocol::processVarDelete(const VarDeleteT& del)
 
     if (variableExists(varId))
     {
-        DBEntry&   theEntry = theVariableDatabase.at(varId);
-        MacAddress prodId   = getProducerId(theEntry.spec);
+        DBEntry&        theEntry = theVariableDatabase.at(varId);
+        NodeIdentifierT prodId   = theEntry.spec.prodId;
 
         DBG_PVAR3("considering", (int) varId, prodId, theEntry.toBeDeleted);
 
@@ -2097,7 +2104,7 @@ void VardisProtocol::extractVarCreateList(DisassemblyArea& area, std::deque<VarC
         VarCreateT create;
         create.deserialize (area);
 
-        DBG_VAR4((int) create.spec.varId, (int) create.spec.repCnt, getProducerId(create.spec), create.spec.descr.to_str());
+        DBG_VAR4((int) create.spec.varId, (int) create.spec.repCnt, create.spec.prodId, create.spec.descr.to_str());
 
         creates.push_back(create);
     }
@@ -2313,19 +2320,7 @@ bool VardisProtocol::producerIsMe(VarIdT varId)
 {
     DBEntry& theEntry = theVariableDatabase.at(varId);
 
-    uint8_t ownmac [MAC_ADDRESS_SIZE];
-    getOwnNodeId().getAddressBytes(ownmac);
-
-    return (std::memcmp(ownmac, theEntry.spec.prodId, MAC_ADDRESS_SIZE) == 0);
-}
-
-// ----------------------------------------------------
-
-MacAddress VardisProtocol::getProducerId(const VarSpecT& spec)
-{
-    MacAddress res;
-    res.setAddressBytes((char*) spec.prodId);
-    return res;
+    return theEntry.spec.prodId == getOwnNodeId();
 }
 
 
@@ -2558,8 +2553,8 @@ void VardisProtocol::assert_createQ()
     if (createQ.empty()) return;
     for (auto it : createQ)
     {
-        VarIdT      varId = it;
-        MacAddress  ownId = getOwnNodeId();
+        VarIdT           varId = it;
+        NodeIdentifierT  ownId = getOwnNodeId();
         std::stringstream addrss;
         addrss << "address = " << ownId;
         std::string addrstring = addrss.str();
