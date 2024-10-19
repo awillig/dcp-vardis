@@ -24,16 +24,17 @@
 #include <dcp/common/AssemblyArea.h>
 #include <dcp/bp/BPClientProtocol.h>
 #include <dcp/bp/BPReceivePayload_m.h>
+#include <dcp/bp/BPPayloadTransmitted_m.h>
 #include <dcp/bp/BPQueryNumberBufferedPayloads_m.h>
 #include <dcp/vardis/VardisDatatypes.h>
 #include <dcp/vardis/VardisDBEntry.h>
-#include <dcp/vardis/VardisRTDBCreate_m.h>
-#include <dcp/vardis/VardisRTDBUpdate_m.h>
-#include <dcp/vardis/VardisRTDBRead_m.h>
-#include <dcp/vardis/VardisRTDBDelete_m.h>
 #include <dcp/vardis/VardisRTDBConfirmation_m.h>
+#include <dcp/vardis/VardisRTDBCreate_m.h>
+#include <dcp/vardis/VardisRTDBDelete_m.h>
 #include <dcp/vardis/VardisRTDBDescribeDatabase_m.h>
 #include <dcp/vardis/VardisRTDBDescribeVariable_m.h>
+#include <dcp/vardis/VardisRTDBRead_m.h>
+#include <dcp/vardis/VardisRTDBUpdate_m.h>
 #include <dcp/vardis/VardisStatus_m.h>
 
 using namespace omnetpp;
@@ -291,6 +292,7 @@ protected:
     void processVarReqUpdate(const VarReqUpdateT& requpd);
     void processVarReqCreate(const VarReqCreateT& reqcreate);
 
+
     /**
      * These methods iterate over the records of a received instruction
      * container (given as a list) and call the 'processX' methods to
@@ -391,10 +393,6 @@ protected:
      */
     bool producerIsMe(VarIdT varId);
 
-    /**
-     * Returns node id (MAC address) of producer for given variable specification
-     */
-    MacAddress getProducerId(const VarSpecT& spec);
 
     // ---------------------------------------------------------------------
     // Debug helpers
