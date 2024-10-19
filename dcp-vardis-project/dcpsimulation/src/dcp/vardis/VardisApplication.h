@@ -22,8 +22,8 @@
 #include <inet/common/packet/Packet.h>
 #include <dcp/common/DcpApplication.h>
 #include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/vardis/VardisStatus_m.h>
 #include <dcp/vardis/VardisRTDBConfirmation_m.h>
+#include <dcp/vardis/VardisStatus_m.h>
 
 // --------------------------------------------------------------------------
 
