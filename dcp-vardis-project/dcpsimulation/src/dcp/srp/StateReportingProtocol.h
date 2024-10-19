@@ -27,7 +27,7 @@
 #include <dcp/bp/BPRegisterProtocol_m.h>
 #include <dcp/bp/BPDeregisterProtocol_m.h>
 #include <dcp/bp/BPReceivePayload_m.h>
-#include <dcp/srp/SafetyDataT_m.h>
+#include <dcp/srp/SafetyDataT.h>
 #include <dcp/srp/NeighbourTableEntry.h>
 #include <dcp/srp/SRPUpdateSafetyData_m.h>
 #include <dcp/bp/BPClientProtocol.h>
