@@ -20,58 +20,59 @@
 
 #include <dcp/common/FoundationTypes.h>
 #include <dcp/common/DcpTypesGlobals.h>
+#include <dcp/common/TransmissibleType.h>
 
 
 namespace dcp {
 
 typedef uint16_t      BPLengthT;         // length of a payload block
 
-/*
-class BPHeaderT : public TransmissibleType<sizeof(byte)+sizeof(uint16_t)+MAC_ADDRESS_SIZE+sizeof(byte)+sizeof(uint32_t)> {
+class BPHeaderT : public TransmissibleType<sizeof(byte)+sizeof(uint16_t)+MAC_ADDRESS_SIZE+sizeof(byte)+sizeof(uint32_t)>
+{
 public:
-    byte             version;
+    uint8_t          version;
     uint16_t         magicNo;
     NodeIdentifierT  senderId;
-    byte             numPayloads;
+    uint8_t          numPayloads;
     uint32_t         seqno;
 
-    virtual size_t total_size () const { return fixed_size(); };
     virtual void serialize (AssemblyArea& area)
     {
-        area.serialize_byte (version);
-        area.serialize_byte_block (sizeof(uint16_t), (byte*) &magicNo);
-        senderId.serialize (area);
-        area.serialize_byte (numPayloads);
-        area.serialize_byte_block (sizeof(uint32_t), (byte*) &seqno);
+      area.serialize_byte (version);
+      area.serialize_byte_block (sizeof(uint16_t), (byte*) &magicNo);
+      senderId.serialize (area);
+      area.serialize_byte (numPayloads);
+      area.serialize_byte_block(sizeof(uint32_t), (byte*) &seqno);
     };
+
     virtual void deserialize (DisassemblyArea& area)
     {
-        version = area.deserialize_byte ();
-        area.deserialize_byte_block (sizeof(uint16_t), (byte*) &magicNo);
-        senderId.deserialize (area);
-        numPayloads = area.deserialize_byte ();
-        area.deserialize_byte_block (sizeof(uint32_t), (byte*) &seqno);
+      version = area.deserialize_byte ();
+      area.deserialize_byte_block (sizeof(uint16_t), (byte*) &magicNo);
+      senderId.deserialize (area);
+      numPayloads = area.deserialize_byte ();
+      area.deserialize_byte_block(sizeof(uint32_t), (byte*) &seqno);
     };
+
 };
 
 
-class BPPayloadHeaderT : public TransmissibleType<sizeof(BPProtocolIdT)+sizeof(BPLengthT)> {
+class BPPayloadHeaderT : public TransmissibleType<sizeof(uint16_t)+sizeof(uint16_t)> {
 public:
-    BPProtocolIdT   protocolId;
-    BPLengthT       length;
+    uint16_t  protocolId;
+    uint16_t  length;
 
-    virtual size_t total_size () const { return fixed_size(); };
     virtual void serialize (AssemblyArea& area)
     {
-        area.serialize_byte_block (sizeof(BPProtocolIdT), (byte*) &protocolId);
-        area.serialize_byte_block (sizeof(BPLengthT), (byte*) &length);
-    };
+        area.serialize_byte_block (sizeof(uint16_t), (byte*) &protocolId);
+        area.serialize_byte_block (sizeof(uint16_t), (byte*) &length);
+    }
     virtual void deserialize (DisassemblyArea& area)
     {
-        area.deserialize_byte_block (sizeof(BPProtocolIdT), (byte*) &protocolId);
-        area.deserialize_byte_block (sizeof(BPLengthT), (byte*) &length);
-    };
+        area.deserialize_byte_block (sizeof(uint16_t), (byte*) &protocolId);
+        area.deserialize_byte_block (sizeof(uint16_t), (byte*) &length);
+    }
 };
-*/
+
 
 }; // namespace dcp
