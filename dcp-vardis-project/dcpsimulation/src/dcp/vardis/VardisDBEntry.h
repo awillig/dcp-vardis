@@ -16,8 +16,7 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#ifndef DCP_VARDIS_VARDISDBENTRY_H_
-#define DCP_VARDIS_VARDISDBENTRY_H_
+#pragma once
 
 #include <dcp/vardis/VardisDatatypes.h>
 
@@ -45,5 +44,3 @@ typedef struct DBEntry {
 } DBEntry;
 
 
-
-#endif /* DCP_VARDIS_VARDISDBENTRY_H_ */
