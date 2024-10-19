@@ -16,9 +16,10 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
+#include <dcp/vardis/VardisApplication.h>
+
 #include <inet/common/IProtocolRegistrationListener.h>
 
-#include "VardisApplication.h"
 
 // ========================================================================================
 // ========================================================================================
