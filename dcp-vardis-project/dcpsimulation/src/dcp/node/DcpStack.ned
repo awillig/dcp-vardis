@@ -35,6 +35,9 @@ module DcpStack
         output toVardisApp;
         input  fromVardisApp;
 
+		output toSRPApp;
+		input  fromSRPApp;		
+
     submodules:
         bp:        BeaconingProtocol;
         srp:       StateReportingProtocol;
@@ -55,4 +58,7 @@ module DcpStack
         
         vardis.toApplication --> toVardisApp;
         fromVardisApp --> vardis.fromApplication;
+        
+        srp.toApplication --> toSRPApp;
+        fromSRPApp --> srp.fromApplication;
 }

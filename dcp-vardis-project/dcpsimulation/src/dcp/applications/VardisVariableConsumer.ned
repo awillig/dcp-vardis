@@ -18,7 +18,7 @@
 
 package dcpsimulation.dcp.applications;
 
-import dcpsimulation.dcp.vardis.VardisClientProtocol;
+import dcpsimulation.dcp.vardis.VardisApplication;
 
 @namespace(dcp);
 
@@ -27,7 +27,7 @@ import dcpsimulation.dcp.vardis.VardisClientProtocol;
 // with the local VarDis instance to obtain a database description and then query
 // and output the current values of all registered variables listed in that
 // description. The variables have fixed type.
-simple VariableConsumer extends VardisClientProtocol
+simple VardisVariableConsumer extends VardisApplication
 {
     parameters:
 		bool   consumerActive             = default(false);  // variables are only sampled when consumerActive=true
@@ -42,5 +42,5 @@ simple VariableConsumer extends VardisClientProtocol
 		@statistic[seqnoDeltaSignal](record=stats; title="Difference in received sequence numbers");
 		@statistic[receptionTimeSignal](record=vector; title="Reception times (s)");
 	
-		@class(VariableConsumer);		  
+		@class(VardisVariableConsumer);		  
 }

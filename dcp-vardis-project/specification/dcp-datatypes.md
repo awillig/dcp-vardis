@@ -2,14 +2,14 @@
 
 # Basic Data Types and Conventions {#chap-datatypes}
 
-In this section we describe our assumptions and conventions regarding
+In this chapter we describe our assumptions and conventions regarding
 the use of data types, variables and packet field names in DCP,
 insofar as they are relevant beyond the scope of just one of the
 component protocols. In addition, each of the constituent protocols of
 DCP introduces its own data types, variables and field names.
 
 
-## Naming and Typesetting Conventions
+## Naming and Typesetting Conventions {#chap-datatypes-conventions}
 
 
 - We are going to be explicit about variables, packet field names and
@@ -22,10 +22,19 @@ DCP introduces its own data types, variables and field names.
   `String`. For the remainder of the name we often adopt the camel
   case convention.
 
-- For data types that will be included in packets (referred to as
-  **transmissible data types**) we will usually indicate their width
-  (as a number of bits) and, where relevant, their precise
-  representation. For data types not to be included in packets
+  For data types that will be included in packets (referred to as
+  **transmissible data types**, see below) we will sometimes indicate
+  their width (as a number of bits) and, where relevant, their precise
+  representation. In other cases, the width of a transmissible data
+  type can be chosen by implementers as an integral multiple of one
+  byte. In this specififaction, when we apply the 'function'
+  `ssizeof()` to a transmissible data type, we refer to the serialized
+  size of that data type, not to the size of its in-memory
+  representation. When a transmissible data type is a record type
+  containing fields of transmissible data type, then a packed
+  representation is assumed, i.e. the `ssizeof()` value of the record
+  type is the sum of the `ssizeof()` values of the types of its
+  individual fields.  For data types not to be included in packets
   (**non-transmissible data types**) we will not provide any details
   about their representation and leave it to the implementation.
 
@@ -37,23 +46,23 @@ are not to be included in any packet transmission. They are generally
 system- and programming-language dependent.
 
 - `String` is a data type for human-readable strings.
-- `Int` is a data type for signed integer values, having a
-  system-dependent width.
 - `UInt` is a data type for unsigned integer values, having a
-  system-dependent width.
+  system-dependent width of at least 32 bits.
 - `Bool` is the Boolean data type with values `true` and `false`.
 
 
-## Basic Transmissible Data Types
+## Basic Transmissible Data Types {#chap-datatypes-basic-transmissible}
 
 The following basic data types can be used inside an implementation
-but are also included as fields in packets. Where relevant, we
-generally assume that these data types are transmitted in network byte
-order.
+but are particularly included as fields in packets. The type names of
+transmissible data types end with `T`, and their width, when not
+explicitly given, is always required to be an integral multiple of one
+byte. Where a transmissible data type requires two or more bytes, it
+is transmitted in network byte order.
 
 - Stations have unique identifiers, which we refer to as **node
   identifiers**, and these are of fixed-length data type
-  `NodeIdentifier` that is not specified here in detail. Such an
+  `NodeIdentifierT` that is not specified here in detail. Such an
   identifier can be administratively assigned or the implementer
   chooses to use a data type already provided by the underlying
   wireless technology, like for example a 48-bit WiFi MAC address. A
@@ -62,18 +71,27 @@ order.
   the sender. Furthermore, each of the DCP protocols is able to
   retrieve the own node identifier.
 
-- Nodes have access to a precise source of physical time
+- Nodes have access to a source of physical time
   (e.g. GPS). Timestamps are represented using a fixed-length data
-  type `TimeStamp` that is not specified here in detail, but which we
-  assume to allow to have a resolution of 1ms or better, small enough
-  to differentiate between two update operations to the same variable.
+  type `TimeStampT` that is not specified here in detail. We expect
+  that for the operations of the DCP/VarDis protocols an accuracy of
+  within a few milliseconds will be sufficient, applications might
+  require greater accuracy.
+
+  In a number of places we want to transmit variable-length contiguous
+  blocks of bytes. For this purpose we use the transmissible data type
+  `MemBlockT`, which contains two fields:
+    - `length` is an eight-bit unsigned integer representing how many
+      bytes are contained in the data block.
+	- `data` is an array of bytes of exactly the length given by the
+	  `length` field.
 
 - When a human-readable string is to be transmitted, then the data
-  type `TString` is used, which refers to a zero-terminated string.
+  type `StringT` is used, which is simply represented as a
+  `MemBlockT`. When variable-length string encodings such as UTF-8 are
+  used for strings, then the length of the string may be larger than
+  the number of characters displayed to human users.
 
-When implementations choose representations for any of the
-transmissible data types that are longer than eight bit, these will
-generally adopt network byte order (i.e. big endian).
 
 
 ## Queues and Lists {#sec-queues-lists}
@@ -81,12 +99,13 @@ generally adopt network byte order (i.e. big endian).
 In some places the DCP constituent protocols need to keep runtime data
 organized in (first-in-first-out) queues or lists. As is common in
 modern programming languages, we treat queues and lists as abstract
-parameterizable data types that can have elements of a paticular
+parameterizable data types that can have elements of a particular
 element type `T`. We refer to the type of a queue with element type
 `T` by the type name `Queue<T>`, and similarly we refer to the type of
 a list made up of elements of type `T` as `List<T>`.
 
-The `Queue` data type generally supports the following operations:
+For the purposes of this specification, the `Queue` data type
+generally supports the following operations:
 
 - `qTake()` removes the head-of-line element from the queue and
   returns it (or signals that the queue is empty). It does not 
@@ -107,7 +126,8 @@ The `Queue` data type generally supports the following operations:
   the parameter, and `false` otherwise.
 - `qLength()` takes no parameters and returns the number of elements
   currently stored in the queue.
-
+- `qClear()` takes no parameters and drops all entries from the queue,
+  so that it is empty after this operation.
 
 The `List` data type generally supports the following operations:
 
@@ -126,16 +146,26 @@ The `List` data type generally supports the following operations:
 
 ## Other Conventions
 
-- We will refer to drones, nodes and stations interchangeably.
+- We will interchangeably refer to drones, nodes and stations.
 
 - We will specify interfaces offered by protocols through generic
   service primitives, i.e. for a particular service `S` there might be
-  a `request`, a `confirm` or an `indication` primitive. We do not
-  prescribe the precise mechanism through which service primitives are
-  being exchanged, this is implementation-dependent. However, when
-  describing the processing of a `S.request` primitive for a service
-  `S`, we will frequently use the keyword `return`, followed by some
-  status code. This indicates that processing of the `S.request`
-  primitive stops and that a `S.confirm` primitive carrying the
-  indicated status code shall be returned to the entity generating the
-  `S.request` primitive.
+  a `request`, a `confirm` or an `indication` primitive.  For every
+  `S.request` primitive a matching `S.confirm` primitive shall be
+  returned, and at minimum the `S.confirm` primitive carries a status
+  parameter indicating the outcome of processing the `S.request`
+  primitive. We do not prescribe the precise mechanism through which
+  service primitives are being exchanged, this is
+  implementation-dependent. However, when describing the processing of
+  a `S.request` primitive for a service `S`, we will frequently use
+  the phrase `return status code`, followed by some status code. This
+  indicates that processing of the `S.request` primitive stops and
+  that a `S.confirm` primitive carrying the indicated status code
+  shall be returned to the entity generating the `S.request`
+  primitive.
+
+- We use pseudo-code to describe parts of the behaviour of DCP/VarDis
+  protocols. Syntactically, in this pseudo-code we borrow some
+  elements of the C++ programming language.
+
+

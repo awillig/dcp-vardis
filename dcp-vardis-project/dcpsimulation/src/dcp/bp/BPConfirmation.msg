@@ -18,7 +18,9 @@
 
 
 import inet.common.packet.Message;
+import dcp.common.NodeIdentifierT;
 import BPStatus;
+
 
 
 class BPConfirmation extends inet::Message
@@ -33,8 +35,13 @@ class BPTransmitPayload_Confirm extends BPConfirmation
 
 class BPRegisterProtocol_Confirm extends BPConfirmation
 {
+    NodeIdentifierT  ownNodeIdentifier;
 }
 
 class BPDeregisterProtocol_Confirm extends BPConfirmation
+{
+}
+
+class BPClearBuffer_Confirm extends BPConfirmation
 {
 }

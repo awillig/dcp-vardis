@@ -16,12 +16,11 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#ifndef DCP_SRP_NEIGHBOURTABLEENTRY_H_
-#define DCP_SRP_NEIGHBOURTABLEENTRY_H_
+#pragma once
 
 #include <omnetpp.h>
 #include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/srp/ExtendedSafetyData_m.h>
+#include <dcp/srp/SafetyDataT.h>
 
 // --------------------------------------------------------------------------
 
@@ -32,11 +31,10 @@ namespace dcp {
  */
 
 typedef struct NeighbourTableEntry {
-    NodeIdentifier       nodeId;
-    ExtendedSafetyData   extSD;
+    NodeIdentifierT      nodeId;
+    ExtendedSafetyDataT  extSD;
     simtime_t            receptionTime;
 } NeighbourTableEntry;
 
 } // namespace
 
-#endif /* DCP_SRP_NEIGHBOURTABLEENTRY_H_ */

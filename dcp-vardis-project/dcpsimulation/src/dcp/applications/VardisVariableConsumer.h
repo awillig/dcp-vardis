@@ -16,17 +16,16 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#ifndef __DCPV1_VARIABLECONSUMER_H_
-#define __DCPV1_VARIABLECONSUMER_H_
+#pragma once
 
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
-#include <dcp/vardis/VardisClientProtocol.h>
-#include <dcp/vardis/VardisDatatypes.h>
+#include <dcp/applications/VardisVariableExample.h>
 #include <dcp/vardis/VardisRTDBConfirmation_m.h>
+#include <dcp/vardis/VardisApplication.h>
+#include <dcp/vardis/VardisDatatypes.h>
 #include <dcp/vardis/VardisRTDBDescribeDatabase_m.h>
 #include <dcp/vardis/VardisRTDBRead_m.h>
-#include <dcp/applications/VariableExample.h>
 
 using namespace omnetpp;
 
@@ -45,10 +44,10 @@ namespace dcp {
  * and output the current values of all registered variables listed in that
  * description. The variables have fixed type ExampleVariable.
  */
-class VariableConsumer : public VardisClientProtocol
+class VardisVariableConsumer : public VardisApplication
 {
   public:
-    virtual ~VariableConsumer();
+    virtual ~VardisVariableConsumer();
     virtual void initialize(int stage) override;
     virtual void handleMessage(cMessage *msg) override;
 
@@ -63,7 +62,7 @@ class VariableConsumer : public VardisClientProtocol
     } ConsumerState;
 
     // contains last read values for all variables
-    std::map<VarId, ExampleVariable>   lastReceived;
+    std::map<VarIdT, VardisExampleVariable>   lastReceived;
 
   protected:
 
@@ -111,4 +110,3 @@ class VariableConsumer : public VardisClientProtocol
 
 } // namespace
 
-#endif

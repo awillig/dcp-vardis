@@ -16,38 +16,40 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
+
 #include <inet/common/IProtocolRegistrationListener.h>
 #include <inet/common/Protocol.h>
-#include <dcp/applications/VariableProducer.h>
-#include <dcp/applications/VariableExample.h>
+
+#include <dcp/applications/VardisVariableProducer.h>
 #include <dcp/vardis/VardisRTDBCreate_m.h>
 #include <dcp/vardis/VardisRTDBDelete_m.h>
 #include <dcp/vardis/VardisRTDBUpdate_m.h>
+#include <dcp/applications/VardisVariableExample.h>
 
 
 using namespace dcp;
 
 
-Define_Module(VariableProducer);
+Define_Module(VardisVariableProducer);
 
 // ========================================================================================
 // Standard OMNeT++ and class methods
 // ========================================================================================
 
 
-void VariableProducer::initialize(int stage)
+void VardisVariableProducer::initialize(int stage)
 {
-    VardisClientProtocol::initialize(stage);
+    VardisApplication::initialize(stage);
 
     if (stage == INITSTAGE_LAST)
     {
-        dbg_setModuleName("VardisAppProducer");
+        dbg_setModuleName("VardisVariableProducer");
         dbg_enter("initialize");
         assert(getOwnNodeId() != nullIdentifier);
 
         // read parameters
-        varId         = (VarId) par("varId");
-        varRepCnt     = (VarRepCnt) par("varRepCnt");
+        varId         = (VarIdT) par("varId");
+        varRepCnt     = (VarRepCntT) par("varRepCnt");
         creationTime  = par("creationTime");
         deletionTime  = par("deletionTime");
 
@@ -66,17 +68,17 @@ void VariableProducer::initialize(int stage)
         seqno                = 0;
 
         // create and schedule self-messages
-        createMsg =  new cMessage("VardisAppProducer:createMsg");
-        updateMsg =  new cMessage("VardisAppProducer:updateMsg");
-        deleteMsg =  new cMessage("VardisAppProducer:deleteMsg");
+        createMsg =  new cMessage("VardisVariableProducer:createMsg");
+        updateMsg =  new cMessage("VardisVariableProducer:updateMsg");
+        deleteMsg =  new cMessage("VardisVariableProducer:deleteMsg");
         scheduleAt(simTime() + creationTime, createMsg);
         scheduleAt(simTime() + deletionTime, deleteMsg);
 
         // register a separate protocol for this producer and register it
         // as Vardis client protocol with dispatcher
         std::stringstream ssLc, ssUc;
-        ssLc << "vardisapp-producer[" << getOwnNodeId() << "]-varId:" << (int) varId;
-        ssUc << "VARDISAPP-PRODUCER[" << getOwnNodeId() << "]-varId:" << (int) varId;
+        ssLc << "vardisvariableproducer[" << getOwnNodeId() << "]-varId:" << (int) varId;
+        ssUc << "VARDISVARIABLEPRODUCER[" << getOwnNodeId() << "]-varId:" << (int) varId;
         createProtocol(ssLc.str().c_str(), ssUc.str().c_str());
 
         dbg_leave();
@@ -86,7 +88,7 @@ void VariableProducer::initialize(int stage)
 
 // ----------------------------------------------------
 
-void VariableProducer::handleMessage(cMessage *msg)
+void VardisVariableProducer::handleMessage(cMessage *msg)
 {
     dbg_assertToplevel();
     dbg_enter("handleMessage");
@@ -114,7 +116,7 @@ void VariableProducer::handleMessage(cMessage *msg)
         return;
     }
 
-    if ((msg->arrivedOn(gidFromVardis)) && dynamic_cast<RTDBCreate_Confirm*>(msg))
+    if ((msg->arrivedOn(gidFromDcpProtocol)) && dynamic_cast<RTDBCreate_Confirm*>(msg))
      {
          RTDBCreate_Confirm* createConf = (RTDBCreate_Confirm*) msg;
          handleRTDBCreateConfirm(createConf);
@@ -122,7 +124,7 @@ void VariableProducer::handleMessage(cMessage *msg)
          return;
      }
 
-    if ((msg->arrivedOn(gidFromVardis)) && dynamic_cast<RTDBDelete_Confirm*>(msg))
+    if ((msg->arrivedOn(gidFromDcpProtocol)) && dynamic_cast<RTDBDelete_Confirm*>(msg))
      {
          RTDBDelete_Confirm* deleteConf = (RTDBDelete_Confirm*) msg;
          handleRTDBDeleteConfirm(deleteConf);
@@ -130,7 +132,7 @@ void VariableProducer::handleMessage(cMessage *msg)
          return;
      }
 
-    if ((msg->arrivedOn(gidFromVardis)) && dynamic_cast<RTDBUpdate_Confirm*>(msg))
+    if ((msg->arrivedOn(gidFromDcpProtocol)) && dynamic_cast<RTDBUpdate_Confirm*>(msg))
      {
          RTDBUpdate_Confirm* createConf = (RTDBUpdate_Confirm*) msg;
          handleRTDBUpdateConfirm(createConf);
@@ -139,20 +141,18 @@ void VariableProducer::handleMessage(cMessage *msg)
      }
 
 
-    error("VariableProducer::handleMessage: unknown message type");
+    error("VardisVariableProducer::handleMessage: unknown message type");
 
     dbg_leave();
 }
 
 // ----------------------------------------------------
 
-VariableProducer::~VariableProducer ()
+VardisVariableProducer::~VardisVariableProducer ()
 {
     if (createMsg) cancelAndDelete(createMsg);
     if (updateMsg) cancelAndDelete(updateMsg);
     if (deleteMsg) cancelAndDelete(deleteMsg);
-
-    if (theProtocol) delete theProtocol;
 }
 
 
@@ -164,7 +164,7 @@ VariableProducer::~VariableProducer ()
 /**
  * Generates a RTDBCreate_Request, fills it in and sends it to VarDis
  */
-void VariableProducer::handleCreateMsg()
+void VardisVariableProducer::handleCreateMsg()
 {
     dbg_enter("handleCreateMsg");
     assert(not isActivelyGenerating);
@@ -178,7 +178,7 @@ void VariableProducer::handleCreateMsg()
     auto              createReq = new RTDBCreate_Request;
 
     // Create initial value for variable
-    ExampleVariable   varExmpl;
+    VardisExampleVariable   varExmpl;
     varExmpl.seqno   = seqno++;
     varExmpl.value   = par("variableValue");
     varExmpl.tstamp  = simTime();
@@ -189,9 +189,9 @@ void VariableProducer::handleCreateMsg()
     createReq->setProdId(getOwnNodeId());
     createReq->setRepCnt(varRepCnt);
     createReq->setDescr(ssdescr.str().c_str());
-    createReq->setUpdlen(sizeof(ExampleVariable));
-    createReq->setUpddataArraySize(sizeof(ExampleVariable));
-    for (size_t i = 0; i < sizeof(ExampleVariable); i++)
+    createReq->setUpdlen(sizeof(VardisExampleVariable));
+    createReq->setUpddataArraySize(sizeof(VardisExampleVariable));
+    for (size_t i = 0; i < sizeof(VardisExampleVariable); i++)
         createReq->setUpddata(i, *(valPtr++));
 
     // hand over to VarDis
@@ -205,7 +205,7 @@ void VariableProducer::handleCreateMsg()
 /**
  * If producer is active, create and fill in a RTDBUpdate_Request and send to VarDis
  */
-void VariableProducer::handleUpdateMsg()
+void VardisVariableProducer::handleUpdateMsg()
 {
     dbg_enter("handleUpdateMsg");
 
@@ -214,7 +214,7 @@ void VariableProducer::handleUpdateMsg()
         DBG_PVAR2("Generating update", (int) varId, seqno);
 
         // construct the updated value
-        ExampleVariable newVal;
+        VardisExampleVariable newVal;
         newVal.seqno  =  seqno++;
         newVal.value  =  par("variableValue");
         newVal.tstamp =  simTime();
@@ -223,9 +223,9 @@ void VariableProducer::handleUpdateMsg()
         uint8_t *valPtr  = (uint8_t*) &newVal;
         auto   updReq    = new RTDBUpdate_Request;
         updReq->setVarId(varId);
-        updReq->setUpdlen(sizeof(ExampleVariable));
-        updReq->setUpddataArraySize(sizeof(ExampleVariable));
-        for (size_t i = 0; i < sizeof(ExampleVariable); i++)
+        updReq->setUpdlen(sizeof(VardisExampleVariable));
+        updReq->setUpddataArraySize(sizeof(VardisExampleVariable));
+        for (size_t i = 0; i < sizeof(VardisExampleVariable); i++)
             updReq->setUpddata(i, *(valPtr++));
 
         // hand over to VarDis
@@ -243,7 +243,7 @@ void VariableProducer::handleUpdateMsg()
 /**
  * Generate RTDBDelete_Request and send to VarDis
  */
-void VariableProducer::handleDeleteMsg()
+void VardisVariableProducer::handleDeleteMsg()
 {
     dbg_enter("handleDeleteMsg");
 
@@ -263,7 +263,7 @@ void VariableProducer::handleDeleteMsg()
 /**
  * Process RTDBCreate_Confirm message (check if ok, update internal state)
  */
-void VariableProducer::handleRTDBCreateConfirm(RTDBCreate_Confirm* createConf)
+void VardisVariableProducer::handleRTDBCreateConfirm(RTDBCreate_Confirm* createConf)
 {
     dbg_enter("handleRTDBCreateConfirm");
     assert(createConf);
@@ -272,7 +272,7 @@ void VariableProducer::handleRTDBCreateConfirm(RTDBCreate_Confirm* createConf)
     // extract information
     handleVardisConfirmation(createConf);
     VardisStatus status = createConf->getStatus();
-    VarId        varId  = createConf->getVarId();
+    VarIdT       varId  = createConf->getVarId();
     delete createConf;
 
     DBG_PVAR2("got confirm", (int) varId, status);
@@ -280,7 +280,7 @@ void VariableProducer::handleRTDBCreateConfirm(RTDBCreate_Confirm* createConf)
     // check outcome
     if (status != VARDIS_STATUS_OK)
     {
-        error("VariableProducer::handleRTDBCreateConfirm: variable creation failed, stopping with error");
+        error("VardisVariableProducer::handleRTDBCreateConfirm: variable creation failed, stopping with error");
     }
 
     // update status and schedule next update
@@ -295,7 +295,7 @@ void VariableProducer::handleRTDBCreateConfirm(RTDBCreate_Confirm* createConf)
 /**
  * Process RTDBDelete_Confirm (check if ok, update internal state)
  */
-void VariableProducer::handleRTDBDeleteConfirm(RTDBDelete_Confirm* deleteConf)
+void VardisVariableProducer::handleRTDBDeleteConfirm(RTDBDelete_Confirm* deleteConf)
 {
     dbg_enter("handleRTDBDeleteConfirm");
     assert(deleteConf);
@@ -309,7 +309,7 @@ void VariableProducer::handleRTDBDeleteConfirm(RTDBDelete_Confirm* deleteConf)
     // check outcome
     if (status != VARDIS_STATUS_OK)
     {
-        error("VariableProducer::handleRTDBDeleteConfirm: variable deletion failed, stopping with error");
+        error("VardisVariableProducer::handleRTDBDeleteConfirm: variable deletion failed, stopping with error");
     }
 
     dbg_leave();
@@ -320,7 +320,7 @@ void VariableProducer::handleRTDBDeleteConfirm(RTDBDelete_Confirm* deleteConf)
 /**
  * Process RTDBUpdate_Confirm (check if ok)
  */
-void VariableProducer::handleRTDBUpdateConfirm(RTDBUpdate_Confirm* updateConf)
+void VardisVariableProducer::handleRTDBUpdateConfirm(RTDBUpdate_Confirm* updateConf)
 {
     dbg_enter("handleRTDBUpdateConfirm");
     assert(updateConf);
@@ -328,7 +328,7 @@ void VariableProducer::handleRTDBUpdateConfirm(RTDBUpdate_Confirm* updateConf)
     // extract information
     handleVardisConfirmation(updateConf);
     VardisStatus status  = updateConf->getStatus();
-    VarId        cVarId  = updateConf->getVarId();
+    VarIdT       cVarId  = updateConf->getVarId();
     delete updateConf;
 
     DBG_PVAR2("got confirm", (int) cVarId, status);
@@ -337,7 +337,7 @@ void VariableProducer::handleRTDBUpdateConfirm(RTDBUpdate_Confirm* updateConf)
     assert(cVarId == varId);
     if (status != VARDIS_STATUS_OK)
     {
-        error("VariableProducer::handleRTDBUpdateConfirm: variable update failed, stopping with error");
+        error("VardisVariableProducer::handleRTDBUpdateConfirm: variable update failed, stopping with error");
     }
 
     dbg_leave();
@@ -354,7 +354,7 @@ void VariableProducer::handleRTDBUpdateConfirm(RTDBUpdate_Confirm* updateConf)
 /**
  * Schedule next update in the future
  */
-void VariableProducer::scheduleNextUpdate()
+void VardisVariableProducer::scheduleNextUpdate()
 {
     dbg_enter("scheduleNextUpdate");
 

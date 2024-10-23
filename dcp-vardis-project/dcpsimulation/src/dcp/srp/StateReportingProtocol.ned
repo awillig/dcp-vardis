@@ -27,11 +27,13 @@ simple StateReportingProtocol extends BPClientProtocol
     parameters:
         maxPayloadSize = 100B;
   
-        volatile double srpGenerationPeriodDistr @unit(s)        = default (uniform(90ms, 110ms));  // time between payload generations
-                 double srpPositionSamplingPeriod @unit(s)       = default (100ms);                 // period for sampling own position
-                 double srpNeighbourTableTimeout @unit(s)        = default (0.3s);                  // timeout for neighbor table entries
-                 double srpNeighbourTableScrubPeriod @unit(s)    = default (0.05s);                 // period for checking neigbor table for stale entries
-                 double srpNeighbourTablePrintPeriod @unit(s)    = default (0.1s);                  // period for printing neighbor table (no printing if < 0)
+        volatile double srpNeighbourTableTimeout @unit(s)        = default (0.3s);     // timeout for neighbor table entries
+                 double srpNeighbourTableScrubPeriod @unit(s)    = default (0.05s);    // period for checking neigbor table for stale entries
+                 double srpNeighbourTablePrintPeriod @unit(s)    = default (0.1s);     // period for printing neighbor table (no printing if < 0)
 	
 		@class(StateReportingProtocol);
+
+	gates:
+	    input   fromApplication;
+	    output  toApplication;
 }

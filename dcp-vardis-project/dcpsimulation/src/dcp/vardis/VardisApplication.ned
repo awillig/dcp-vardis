@@ -6,27 +6,24 @@
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+// 
 
-#ifndef DCP_APPLICATIONS_VARIABLEEXAMPLE_H_
-#define DCP_APPLICATIONS_VARIABLEEXAMPLE_H_
+package dcpsimulation.dcp.vardis;
 
-#include <omnetpp.h>
+import dcpsimulation.dcp.common.DcpApplication;
 
+@namespace(dcp);
 
-typedef struct ExampleVariable {
-    uint32_t     seqno;
-    double       value;
-    simtime_t    tstamp;
-} ExampleVariable;
-
-
-#endif /* DCP_APPLICATIONS_VARIABLEEXAMPLE_H_ */
+simple VardisApplication extends DcpApplication
+{    
+    parameters:
+ 	    @class(VardisApplication);
+};

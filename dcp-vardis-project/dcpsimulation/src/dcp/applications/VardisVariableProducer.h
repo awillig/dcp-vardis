@@ -16,14 +16,14 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#ifndef __DCPV1_VARIABLEPRODUCER_H_
-#define __DCPV1_VARIABLEPRODUCER_H_
+#pragma once
 
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
-#include <dcp/vardis/VardisClientProtocol.h>
-#include <dcp/vardis/VardisDatatypes.h>
+
 #include <dcp/vardis/VardisRTDBConfirmation_m.h>
+#include <dcp/vardis/VardisApplication.h>
+#include <dcp/vardis/VardisDatatypes.h>
 
 using namespace omnetpp;
 
@@ -38,27 +38,24 @@ namespace dcp {
  * (possibly random) and in between it generates variable updates with (possibly
  * random) inter-update times and (possibly random) values.
  */
-class VariableProducer : public VardisClientProtocol
+class VardisVariableProducer : public VardisApplication
 {
   public:
-    virtual ~VariableProducer();
+    virtual ~VardisVariableProducer();
     virtual void initialize(int stage) override;
     virtual void handleMessage(cMessage *msg) override;
 
   protected:
 
     // Parameters
-    VarId          varId;
-    VarRepCnt      varRepCnt;
+    VarIdT         varId;
+    VarRepCntT     varRepCnt;
     simtime_t      deletionTime;
     simtime_t      creationTime;
 
     // internal state
     bool           isActivelyGenerating;
     uint32_t       seqno = 0;
-
-    // auxiliary members
-    Protocol* theProtocol = nullptr;
 
     // self-messages for variable creation, updates and deletion
     cMessage* createMsg = nullptr;
@@ -86,4 +83,3 @@ class VariableProducer : public VardisClientProtocol
 
 } // namespace
 
-#endif

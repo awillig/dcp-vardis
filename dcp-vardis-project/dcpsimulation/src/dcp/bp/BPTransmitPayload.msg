@@ -19,11 +19,12 @@
 
 import inet.common.packet.Message;
 import inet.common.packet.Packet;
+import dcp.common.ByteVect;
 import BPStatus;
 
-class BPTransmitPayload_Request extends inet::Packet
+
+class BPTransmitPayload_Request extends inet::Message
 {
-    // this just needs a protId, the payload is carried as a sequence
-    // of chunks
-    int               protId;    
+    int         protId;
+    bytevect    bvdata;
 };

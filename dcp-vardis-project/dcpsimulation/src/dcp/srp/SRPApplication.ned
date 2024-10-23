@@ -14,22 +14,17 @@
 // 
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+// 
 
+package dcpsimulation.dcp.srp;
 
-import inet.common.packet.Message;
-import BPQueueingMode;
-import BPStatus;
+import dcpsimulation.dcp.common.DcpApplication;
 
+@namespace(dcp);
 
-
-class BPRegisterProtocol_Request extends inet::Request
-{
-    int               protId;
-    string            protName;
-    int               maxPayloadSizeB;
-    BPQueueingMode    queueingMode;
-    int               maxEntries;
-    bool              allowMultiplePayloads;
+simple SRPApplication extends DcpApplication
+{    
+    parameters:
+ 	    @class(SRPApplication);
+        
 };
-

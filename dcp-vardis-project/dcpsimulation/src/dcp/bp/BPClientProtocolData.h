@@ -16,8 +16,7 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#ifndef DCP_BP_BPCLIENTPROTOCOLDATA_H_
-#define DCP_BP_BPCLIENTPROTOCOLDATA_H_
+#pragma once
 
 #include <queue>
 #include <list>
@@ -25,6 +24,7 @@
 #include <inet/common/packet/chunk/Chunk.h>
 #include <inet/common/Ptr.h>
 #include <dcp/common/DcpTypesGlobals.h>
+#include <dcp/bp/BPDataTypes.h>
 #include <dcp/bp/BPQueueingMode_m.h>
 #include <dcp/common/DcpTypesGlobals.h>
 
@@ -42,15 +42,17 @@ typedef struct BPBufferEntry {
 
 
 typedef struct BPClientProtocolData {
-    BPProtocolId                protocolId;        // unique identifier of the client protocol
-    std::string                 protocolName;      // human-readable name of the protocol
-    BPLength                    maxPayloadSizeB;   // maximum size of client protocol payload in bytes
-    BPQueueingMode              queueMode;         // queueing mode to be used for client protocol
-    TimeStamp                   timeStamp;         // time at which client protocol was registered
-    std::queue<BPBufferEntry>   queue;             // queue of all payloads when operating in mode BP_QMODE_QUEUE
-    bool                        bufferOccupied;    // tells whether buffer is occupied or not
-                                                   // (in modes BP_QMODE_ONCE and BP_QMODE_REPEAT)
-    BPBufferEntry               bufferEntry;       // the single buffer used in modes BP_QMODE_ONCE and BP_QMODE_REPEAT
+    BPProtocolIdT               protocolId;              // unique identifier of the client protocol
+    std::string                 protocolName;            // human-readable name of the protocol
+    BPLengthT                   maxPayloadSizeB;         // maximum size of client protocol payload in bytes
+    BPQueueingMode              queueMode;               // queueing mode to be used for client protocol
+    unsigned int                maxEntries;              // maximum number of entries in a droptail queue
+    TimeStampT                  timeStampRegistration;   // time at which client protocol was registered
+    std::queue<BPBufferEntry>   queue;                   // queue of all payloads when operating in mode BP_QMODE_QUEUE
+    bool                        bufferOccupied;          // tells whether buffer is occupied or not
+                                                         // (in modes BP_QMODE_ONCE and BP_QMODE_REPEAT)
+    BPBufferEntry               bufferEntry;             // the single buffer used in modes BP_QMODE_ONCE and BP_QMODE_REPEAT
+    bool                        allowMultiplePayloads;   // allow multiple client payloads in the same beacon? IGNORED
 } BPClientProtocolData;
 
 
@@ -68,5 +70,3 @@ public:
 
 } // namespace
 
-
-#endif /* DCP_BP_BPCLIENTPROTOCOLDATA_H_ */

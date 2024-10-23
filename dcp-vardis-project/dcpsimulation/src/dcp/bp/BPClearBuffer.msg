@@ -14,20 +14,12 @@
 // 
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
-// 
+//
 
-package dcpsimulation.dcp.vardis;
 
-import dcpsimulation.dcp.common.DcpProtocol;
+import inet.common.packet.Message;
 
-@namespace(dcp);
-
-simple VardisClientProtocol extends DcpProtocol
-{    
-    parameters:
- 	    @class(VardisClientProtocol);
-        
-    gates:
-        input   fromVardis;
-        output  toVardis;
-}
+class BPClearBuffer_Request extends inet::Request
+{
+    int               protId;
+};

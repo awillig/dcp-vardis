@@ -16,13 +16,13 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#ifndef DCP_BP_BPCLIENTPROTOCOL_H_
-#define DCP_BP_BPCLIENTPROTOCOL_H_
+#pragma once
 
 #include <inet/common/packet/Message.h>
 #include <inet/common/packet/Packet.h>
 #include <dcp/common/DcpProtocol.h>
 #include <dcp/common/DcpTypesGlobals.h>
+#include <dcp/bp/BPDataTypes.h>
 #include <dcp/bp/BPQueueingMode_m.h>
 #include <dcp/bp/BPRegisterProtocol_m.h>
 #include <dcp/bp/BPDeregisterProtocol_m.h>
@@ -67,7 +67,7 @@ protected:
     // --------------------------------------------
 
     // Parameters
-    BPLength   maxPayloadSize;
+    BPLengthT  maxPayloadSize;
 
     // gate identifiers for communication with BP
     int gidFromBP = -1;
@@ -115,12 +115,17 @@ protected:
      * the protocol is specified through parameters. Derived classes
      * call this method in their overloaded version of 'registerAsBPClient'.
      */
-    void sendRegisterProtocolRequest (BPProtocolId protId, std::string protName, BPLength maxPayloadLen, BPQueueingMode queueingMode);
+    void sendRegisterProtocolRequest (BPProtocolIdT protId,
+                                      std::string protName,
+                                      BPLengthT maxPayloadLen,
+                                      BPQueueingMode queueingMode,
+                                      bool allowMultiplePayloads,
+                                      unsigned int maxEntries);
 
     /**
      * Sends a request to deregister the client protocol to the BP.
      */
-    void sendDeregisterProtocolRequest (BPProtocolId protId);
+    void sendDeregisterProtocolRequest (BPProtocolIdT protId);
 
 
     /**
@@ -139,4 +144,3 @@ protected:
 
 } // namespace
 
-#endif /* DCP_BP_BPCLIENTPROTOCOL_H_ */

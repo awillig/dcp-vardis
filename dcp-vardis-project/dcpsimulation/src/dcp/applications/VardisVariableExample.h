@@ -6,22 +6,26 @@
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
+#pragma once
 
-struct SafetyData {
-	double  position_x;
-	double  position_y;
-	double  position_z;
-	double  velocity_x;
-	double  velocity_y;
-	double  velocity_z;
-}
+#include <omnetpp.h>
+
+using namespace omnetpp;
+
+#pragma pack(push, 1)
+typedef struct VardisExampleVariable {
+    uint32_t     seqno;
+    double       value;
+    simtime_t    tstamp;
+} VardisExampleVariable;
+#pragma pack(pop)

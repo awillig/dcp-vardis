@@ -14,22 +14,20 @@
 // 
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+// 
+
+package dcpsimulation.dcp.applications;
+
+import dcpsimulation.dcp.srp.SRPApplication;
+
+@namespace(dcp);
 
 
-import inet.common.packet.Message;
-import BPQueueingMode;
-import BPStatus;
-
-
-
-class BPRegisterProtocol_Request extends inet::Request
+// Periodically sends new SafetyDataT records to SRP
+simple SRPSimpleApp extends SRPApplication
 {
-    int               protId;
-    string            protName;
-    int               maxPayloadSizeB;
-    BPQueueingMode    queueingMode;
-    int               maxEntries;
-    bool              allowMultiplePayloads;
+   parameters:
+       bool              isActive = default(true);
+       volatile double   srpGenerationPeriodDistr @unit(s)  = default (uniform(90ms, 110ms));
+       @class(SRPSimpleApp);
 };
-

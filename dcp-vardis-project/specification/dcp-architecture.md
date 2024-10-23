@@ -2,19 +2,20 @@
 
 # DCP Architecture and Protocol Overview {#chap-architecture}
 
-We break the DCP system down into a number of sub-protocols. Here we
+We break the DCP stack down into a number of sub-protocols. Here we
 introduce these sub-protocols and the environment they operate in.
 
 The **underlying wireless bearer** (UWB) is not part of the DCP stack
-proper, but refers to an underlying wireless technnology implementing
+proper, but refers to an underlying wireless technology implementing
 at least a physical (PHY) and medium access control (MAC) sublayer,
-and offering a local broadcast facility. 
+and offering a local broadcast facility. A key example of an UWB
+technology is WiFi.
 
 The DCP stack itself consists of three protocols. The **beaconing
-protocol** (BP) sits on top of the UWB, whereas the **State Reporting
-Protocol** (SRP) and the **Variable Dissemination Protocol** (VarDis)
-operate in parallel on top of BP. In this section we give a high-level
-overview over each of these four protocols, their detailed
+protocol** (BP) sits directly on top of the UWB, whereas the **State
+Reporting Protocol** (SRP) and the **Variable Dissemination Protocol**
+(VarDis) operate in parallel on top of BP. In this section we give a
+high-level overview over each of these four protocols, their detailed
 specifications are then given in Sections
 [BP](#chap-beaconing-protocol), [SRP](#chap-state-reporting-protocol)
 and [VarDis](#chap-vardis).
@@ -26,7 +27,7 @@ applications or other protocols, and they use BP / SRP / VarDis
 services through their respective interfaces.
 
 
-## The Underlying Wireless Bearer (UWB)
+## The Underlying Wireless Bearer (UWB) {#sec-architecture-uwb}
 
 The UWB includes as a minimum a physical and a MAC layer. We do not
 prescribe any specific technology or protocol stack for the UWB but
@@ -51,13 +52,16 @@ capabilities and behaviour:
 
 - The UWB has a known maximum packet size, which is available to the
   BP. At the discretion of DCP the actual size of beacon packets can
-  be varied dynamically, e.g. to strike a balance between maintaining
-  a small overhead ratio and avoiding channel congestion.
+  be varied dynamically (within the bounds permitted by the UWB),
+  e.g. to strike a balance between maintaining a small overhead ratio
+  and avoiding channel congestion. This maximum packet size of the UWB
+  shall be no smaller than 256 bytes.
 
 - The UWB protects packets with an error-detecting or error-correcting
   code. We assume that the error-detection capability is practically
-  perfect. As a result, none of the DCP protocols (BP, SRP, VarDis)
-  will need to include own checksum mechanisms. 
+  perfect.  Packets received with errors are silently dropped by the
+  UWB. As a result, none of the DCP protocols (BP, SRP, VarDis)
+  include their own checksum mechanisms.
 
 
 
@@ -68,25 +72,26 @@ At the lowest level of the DCP we have the **Beaconing Protocol**
 beacon packets through the UWB, and for exchanging **client payloads**
 (or simply payloads) as byte arrays with arbitrary BP client
 protocols. Such client protocols operate on top of BP and use its
-services, examples include the SRP and VarDis. The BP can include
-payloads from several client protocols, or multiple payloads for the
-same client protocol, in the same beacon.
+services, examples include the SRP and VarDis. The BP can, at the
+discretion of implementations, include payloads from several client
+protocols, or multiple payloads for the same client protocol, in the
+same beacon.
 
 The BP sits on top of the UWB and uses its ability to locally
 broadcast beacons and receiving such local broadcasts from neighboured
 nodes.
 
 The BP interface to client protocols allows client protocols to
-register and un-register a unique client protocol identifier with the
-BP, which the latter uses to identify and distinguish payloads in
-beacons. Once such a client protocol identifier has been registered, a
-client protocol entity will be able to generate variable-length
-payloads (which from the perspective of BP are just blocks of bytes
-without any internal structure) for transmission, such that
-neighboured nodes will receive these blocks under the same client
-protocol identifier. Furthermore, in the reverse direction BP delivers
-received payloads to their respective client protocols (as indicated
-by their client protocol identifier).
+dynamically register and un-register a unique client protocol
+identifier with the BP, which the latter uses to identify and
+distinguish payloads in beacons. While such a client protocol
+identifier has been registered, a client protocol entity will be able
+to generate variable-length payloads (which from the perspective of BP
+are just blocks of bytes without any internal structure) for
+transmission, such that neighboured nodes will receive these blocks
+under the same client protocol identifier. Furthermore, in the reverse
+direction BP delivers received payloads to their respective client
+protocols (as indicated by their client protocol identifier).
 
 
 
@@ -96,24 +101,25 @@ by their client protocol identifier).
 The **State Reporting Protocol** (SRP) is a client protocol of the
 BP. In the transmit direction, the application frequently retrieves
 safety-related information from the system (e.g. position, speed,
-heading) and hands them over as a record of type `SafetyData` to the
+heading) and hands them over as a record of type `SafetyDataT` to the
 SRP -- the specifics of this data type are outside the scope of this
 document, but it has a fixed and well-known length. When the SRP
-prepares a block for transmission by the BP, it always only includes
-the information from the most recent `SafetyData` record it has
-received. Furthermore, the SRP adjoins meta information like a
-timestamp (of type `TimeStamp`) and a SRP sequence number to the
-`SafetyData` record, which allows a receiving node to assess how old
-the last SRP information received from the sender is.
+prepares a block of type `ExtendedSafetyDataT` for transmission by the
+BP, it always only includes the information from the most recent
+`SafetyDataT` record it has received from the
+application. Furthermore, the SRP adjoins meta information like a
+timestamp (of type `TimeStampT`) and a SRP sequence number to the
+extended record, which allows a receiving node to assess how old the
+last SRP information received from the sender is.
 
-On the receiving side, the SRP receives extended SRP `SafetyData`
-records from neighboured nodes and uses these to build and maintain a
-**neighbour table**, which registers all neighboured nodes and their
-extended `SafetyData`. The information contained in the neighbour table
-can then be used by applications to predict trajectories of other
-drones, forecast collisions and so on. The neighbour table entries are
-furthermore subject to a soft-state mechanism with configurable
-timeout.
+On the receiving side, the SRP receives extended SRP
+`ExtendedSafetyDataT` records from neighboured nodes and uses these to
+build and maintain a **neighbour table**, which registers all
+neighboured nodes and their `ExtendedSafetyDataT` records. The
+information contained in the neighbour table can then be used by
+applications to predict trajectories of other drones, forecast
+collisions, and so on. The neighbour table entries are furthermore
+subject to a soft-state mechanism with configurable timeout.
 
   
 ## The Variable Dissemination Protocol (VarDis)  
@@ -127,8 +133,9 @@ key goal is to achieve a consistent view after any operation modifying
 a variable (create, update, delete) across the entire network as
 quickly and reliably as possible. To achieve this, the protocol
 leverages spatial diversity and also offers the option of having
-information about each modifying operation being repeated a
-configurable number of times by each node receiving it. 
+information about each modifying operation (create, update, delete)
+being repeated a configurable number of times by each node receiving
+it.
 
 In the current DCP version update and delete operations are restricted
 to the node that created the variable. The protocol also includes

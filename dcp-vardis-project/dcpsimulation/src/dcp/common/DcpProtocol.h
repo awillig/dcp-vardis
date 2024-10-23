@@ -16,8 +16,7 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#ifndef DCP_COMMON_DCPPROTOCOL_H_
-#define DCP_COMMON_DCPPROTOCOL_H_
+#pragma once
 
 #include <stack>
 #include <omnetpp.h>
@@ -47,7 +46,7 @@ public:
     virtual void initialize(int stage) override;
 
     // return the node identifier (MAC address) of this node
-    NodeIdentifier getOwnNodeId () const { return _ownNodeId; };
+    NodeIdentifierT getOwnNodeId () const { return _ownNodeId; };
 
 private:
 
@@ -56,7 +55,7 @@ private:
     // --------------------------------------------
 
     // Node id of this node
-    NodeIdentifier           _ownNodeId      = nullIdentifier;
+    NodeIdentifierT          _ownNodeId      = nullIdentifier;
 
     // Identifying the network interface to be used, needed for packet transmission
     inet::NetworkInterface  *_wlanInterface  = nullptr;
@@ -243,4 +242,3 @@ protected:
 
 } // namespace
 
-#endif /* DCP_COMMON_DCPPROTOCOL_H_ */

@@ -17,13 +17,13 @@
 //
 
 import inet.common.packet.Message;
-import inet.linklayer.common.MacAddress;
+import dcp.common.NodeIdentifierT;
 
 
 class RTDBCreate_Request extends inet::Message
 {
     uint8_t           varId;
-    inet::MacAddress  prodId;
+    NodeIdentifierT   prodId;
     uint8_t           repCnt;
     string            descr;
 

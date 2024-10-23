@@ -18,8 +18,8 @@
 
 
 import inet.common.packet.Message;
-import inet.linklayer.common.MacAddress;
 import VardisRTDBConfirmation;
+import dcp.common.NodeIdentifierT;
 
 class RTDBDescribeDatabase_Request extends inet::Message
 {
@@ -27,10 +27,10 @@ class RTDBDescribeDatabase_Request extends inet::Message
 
 struct VarSpecEntry
 {
-    uint8_t            varId;
-    inet::MacAddress   prodId;
-    uint8_t            repCnt;
-    string             descr;
+    uint8_t          varId;
+    NodeIdentifierT  prodId;
+    uint8_t          repCnt;
+    string           descr;
 };
 
 

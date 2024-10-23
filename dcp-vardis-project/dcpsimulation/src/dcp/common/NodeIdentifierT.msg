@@ -17,17 +17,11 @@
 //
 
 
+cplusplus {{
+#include <dcp/common/DcpTypesGlobals.h>
+typedef dcp::NodeIdentifierT  NodeIdentifierT;
+}}
 
-import inet.common.packet.chunk.Chunk;
-import inet.linklayer.common.MacAddress;
-import dcp.srp.SafetyData;
-
-class ExtendedSafetyData extends inet::FieldsChunk
-{
-    chunkLength = inet::B(62); // length of ExtendedSafetyData
-    
-    SafetyData          safetyData;
-    inet::MacAddress    nodeId;
-    simtime_t           timeStamp;
-    uint32_t            seqno;
+class NodeIdentifierT {
+    @existingClass;
 }

@@ -16,8 +16,10 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
+#include <dcp/vardis/VardisApplication.h>
+
 #include <inet/common/IProtocolRegistrationListener.h>
-#include <dcp/vardis/VardisClientProtocol.h>
+
 
 // ========================================================================================
 // ========================================================================================
@@ -29,47 +31,22 @@ using namespace dcp;
 // Standard OMNeT++ and class methods
 // ========================================================================================
 
-void VardisClientProtocol::initialize(int stage)
+void VardisApplication::initialize(int stage)
 {
-    DcpProtocol::initialize(stage);
+    DcpApplication::initialize(stage);
 
     if (stage == INITSTAGE_LAST)
     {
-        dbg_enter("VardisClientProtocol::initialize");
-
-        // find gate identifiers
-        gidFromVardis =  findGate("fromVardis");
-        gidToVardis   =  findGate("toVardis");
-
+        dbg_enter("VardisApplication::initialize");
         dbg_leave();
     }
 }
 
-// ----------------------------------------------------
-
-VardisClientProtocol::~VardisClientProtocol ()
-{
-    if (theProtocol) delete theProtocol;
-}
 
 // ========================================================================================
 // Helper methods
 // ========================================================================================
 
-/**
- * Creates and registers protocol object with INET runtime, to be used by
- * message dispatcher
- */
-void VardisClientProtocol::createProtocol(const char* descr1, const char* descr2)
-{
-    dbg_enter("VardisClientProtocol::createProtocol");
-    assert(!theProtocol);
-
-    theProtocol = new Protocol(descr1, descr2);
-    registerProtocol(*theProtocol, gate("toVardis"), gate("fromVardis"));
-
-    dbg_leave();
-}
 
 // ----------------------------------------------------
 
@@ -77,24 +54,10 @@ void VardisClientProtocol::createProtocol(const char* descr1, const char* descr2
  * Send given message to underlying VarDis protocol instance via message
  * dispatcher
  */
-void VardisClientProtocol::sendToVardis (Message* message)
+void VardisApplication::sendToVardis (Message* message)
 {
     dbg_enter("sendToVardis/Message");
-    assert(message);
-    assert(getProtocol());
-
-    // add required tags and parameters to message
-    message->removeTagIfPresent<DispatchProtocolReq>();
-    auto req = message->addTagIfAbsent<DispatchProtocolReq>();
-    req->setProtocol(DcpSimGlobals::protocolDcpVardis);
-    req->setServicePrimitive(SP_REQUEST);
-    message->removeTagIfPresent<DispatchProtocolInd>();
-    auto ind = message->addTagIfAbsent<DispatchProtocolInd>();
-    ind->setProtocol(getProtocol());
-
-    // send it to VarDis
-    send(message, gidToVardis);
-
+    sendToDcpProtocol(DcpSimGlobals::protocolDcpVardis, message);
     dbg_leave();
 }
 
@@ -104,24 +67,10 @@ void VardisClientProtocol::sendToVardis (Message* message)
  * Send given packet to underlying VarDis protocol instance via message
  * dispatcher
  */
-void VardisClientProtocol::sendToVardis (Packet* packet)
+void VardisApplication::sendToVardis (Packet* packet)
 {
     dbg_enter("sendToVardis/Packet");
-    assert(packet);
-    assert(getProtocol());
-
-    // add required tags and parameters to packet
-    packet->removeTagIfPresent<DispatchProtocolReq>();
-    auto req = packet->addTagIfAbsent<DispatchProtocolReq>();
-    req->setProtocol(DcpSimGlobals::protocolDcpVardis);
-    req->setServicePrimitive(SP_REQUEST);
-    packet->removeTagIfPresent<DispatchProtocolInd>();
-    auto ind = packet->addTagIfAbsent<DispatchProtocolInd>();
-    ind->setProtocol(getProtocol());
-
-    // send it to VarDis
-    send(packet, gidToVardis);
-
+    sendToDcpProtocol(DcpSimGlobals::protocolDcpVardis, packet);
     dbg_leave();
 }
 
@@ -132,17 +81,18 @@ static const std::map<VardisStatus, std::string> status_texts = {
         {VARDIS_STATUS_VARIABLE_EXISTS, "VARDIS_STATUS_VARIABLE_EXISTS"},
         {VARDIS_STATUS_VARIABLE_DESCRIPTION_TOO_LONG, "VARDIS_STATUS_VARIABLE_DESCRIPTION_TOO_LONG"},
         {VARDIS_STATUS_VALUE_TOO_LONG, "VARDIS_STATUS_VALUE_TOO_LONG"},
-        {VARDIS_STATUS_INVALID_VALUE, "VARDIS_STATUS_INVALID_VALUE"},
+        {VARDIS_STATUS_EMPTY_VALUE, "VARDIS_STATUS_EMPTY_VALUE"},
         {VARDIS_STATUS_ILLEGAL_REPCOUNT, "VARDIS_STATUS_ILLEGAL_REPCOUNT"},
         {VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST, "VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST"},
         {VARDIS_STATUS_NOT_PRODUCER, "VARDIS_STATUS_NOT_PRODUCER"},
-        {VARDIS_STATUS_VARIABLE_BEING_DELETED, "VARDIS_STATUS_VARIABLE_BEING_DELETED"}
+        {VARDIS_STATUS_VARIABLE_BEING_DELETED, "VARDIS_STATUS_VARIABLE_BEING_DELETED"},
+        {VARDIS_STATUS_INACTIVE, "VARDIS_STATUS_INACTIVE"}
 };
 
 /**
  * Convert VarDis status value to string
  */
-std::string VardisClientProtocol::getVardisStatusString(VardisStatus status)
+std::string VardisApplication::getVardisStatusString(VardisStatus status)
 {
     auto search = status_texts.find(status);
     if (search != status_texts.end())
@@ -151,7 +101,7 @@ std::string VardisClientProtocol::getVardisStatusString(VardisStatus status)
     }
     else
     {
-        error("VardisClientProtocol::getVardisStatusString: received status value not in status_texts");
+        error("VardisApplication::getVardisStatusString: received status value not in status_texts");
     }
     return "";
 }
@@ -161,9 +111,9 @@ std::string VardisClientProtocol::getVardisStatusString(VardisStatus status)
 /**
  * prints VarDis status value in a log message
  */
-void VardisClientProtocol::printStatus (VardisStatus status)
+void VardisApplication::printStatus (VardisStatus status)
 {
-    dbg_enter("VardisClientProtocol::printStatus");
+    dbg_enter("VardisApplication::printStatus");
 
     auto statstr = getVardisStatusString(status);
     dbg_prefix();
@@ -183,9 +133,9 @@ void VardisClientProtocol::printStatus (VardisStatus status)
  * Default handler for VarDis confirmation primitives, just prints their
  * status value
  */
-void VardisClientProtocol::handleVardisConfirmation(VardisConfirmation* conf)
+void VardisApplication::handleVardisConfirmation(VardisConfirmation* conf)
 {
-    dbg_enter("VardisClientProtocol::handleVardisConfirmation");
+    dbg_enter("VardisApplication::handleVardisConfirmation");
     assert(conf);
     printStatus(conf->getStatus());
     dbg_leave();

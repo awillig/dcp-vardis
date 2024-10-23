@@ -18,7 +18,7 @@
 
 package dcpsimulation.dcp.applications;
 
-import dcpsimulation.dcp.vardis.VardisClientProtocol;
+import dcpsimulation.dcp.vardis.VardisApplication;
 
 @namespace(dcp);
 
@@ -29,7 +29,7 @@ import dcpsimulation.dcp.vardis.VardisClientProtocol;
 // Variable becomes active after creationDelay, and is deleted after
 // deletionTime. In between, new updates are generated with inter-update
 // times given by interUpdateTimeDistr.
-simple VariableProducer extends VardisClientProtocol
+simple VardisVariableProducer extends VardisApplication
 {
     parameters:
 
@@ -37,7 +37,7 @@ simple VariableProducer extends VardisClientProtocol
 		int  varRepCnt;
 
         // time of variable creation
-        volatile double creationTime @unit(s)          = default (50ms);  
+        volatile double creationTime @unit(s)          = default (exponential(50ms));  
 
 		// time between variable updates
 		volatile double interUpdateTimeDistr @unit(s)  = default (exponential(50ms));
@@ -48,6 +48,6 @@ simple VariableProducer extends VardisClientProtocol
 		// variable values (variable is a double)
 		volatile double variableValue                  = default (normal(0,1));
 
-		@class(VariableProducer);
+		@class(VardisVariableProducer);
 		  
 }

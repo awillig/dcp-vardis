@@ -17,19 +17,10 @@
 //
 
 
-import inet.common.packet.Message;
-import BPQueueingMode;
-import BPStatus;
+cplusplus {{
+#include <dcp/common/DcpTypesGlobals.h>
+}}
 
-
-
-class BPRegisterProtocol_Request extends inet::Request
-{
-    int               protId;
-    string            protName;
-    int               maxPayloadSizeB;
-    BPQueueingMode    queueingMode;
-    int               maxEntries;
-    bool              allowMultiplePayloads;
-};
-
+class bytevect {
+    @existingClass;
+}

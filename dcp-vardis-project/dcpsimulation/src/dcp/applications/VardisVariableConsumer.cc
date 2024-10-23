@@ -16,8 +16,8 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#include <dcp/applications/VariableConsumer.h>
-#include <dcp/applications/VariableExample.h>
+#include <dcp/applications/VardisVariableConsumer.h>
+#include <dcp/applications/VardisVariableExample.h>
 
 /*
  * This is a simple consumer module, pairing with the 'VariableProducer' module.
@@ -28,7 +28,7 @@
 
 using namespace dcp;
 
-Define_Module(VariableConsumer);
+Define_Module(VardisVariableConsumer);
 
 
 
@@ -37,13 +37,13 @@ Define_Module(VariableConsumer);
 // ========================================================================================
 
 
-void VariableConsumer::initialize(int stage)
+void VardisVariableConsumer::initialize(int stage)
 {
-    VardisClientProtocol::initialize(stage);
+    VardisApplication::initialize(stage);
 
     if (stage == INITSTAGE_LAST)
     {
-        dbg_setModuleName("VardisAppConsumer");
+        dbg_setModuleName("VardisVariableConsumer");
         dbg_enter("initialize");
         assert(getOwnNodeId() != nullIdentifier);
 
@@ -63,15 +63,15 @@ void VariableConsumer::initialize(int stage)
             // create and schedule sampleMessage. Sampling refers to the process of
             // asking VarDis for a database description and querying all current
             // variables
-            sampleMsg =  new cMessage("VardisAppConsumer:sampleMsg");
+            sampleMsg =  new cMessage("VardisVariableConsumer:sampleMsg");
             state = cState_WaitForSampling;
             scheduleAt(simTime() + samplingPeriod, sampleMsg);
 
             // register a separate protocol for this consumer and register it
             // as Vardis client protocol with dispatcher
             std::stringstream ssLc, ssUc;
-            ssLc << "vardisapp-consumer[" << getOwnNodeId() << "]";
-            ssUc << "VARDISAPP-CONSUMER[" << getOwnNodeId() << "]";
+            ssLc << "vardisvariableconsumer[" << getOwnNodeId() << "]";
+            ssUc << "VARDISVARIABLECONSUMER[" << getOwnNodeId() << "]";
             createProtocol(ssLc.str().c_str(), ssUc.str().c_str());
         }
 
@@ -82,7 +82,7 @@ void VariableConsumer::initialize(int stage)
 
 // ----------------------------------------------------
 
-void VariableConsumer::handleMessage(cMessage *msg)
+void VardisVariableConsumer::handleMessage(cMessage *msg)
 {
     dbg_assertToplevel();
     dbg_enter("handleMessage");
@@ -97,7 +97,7 @@ void VariableConsumer::handleMessage(cMessage *msg)
         return;
     }
 
-    if ((msg->arrivedOn(gidFromVardis)) && dynamic_cast<RTDBDescribeDatabase_Confirm*>(msg))
+    if ((msg->arrivedOn(gidFromDcpProtocol)) && dynamic_cast<RTDBDescribeDatabase_Confirm*>(msg))
      {
          RTDBDescribeDatabase_Confirm* dbConf = (RTDBDescribeDatabase_Confirm*) msg;
          handleRTDBDescribeDatabaseConfirm(dbConf);
@@ -105,7 +105,7 @@ void VariableConsumer::handleMessage(cMessage *msg)
          return;
      }
 
-    if ((msg->arrivedOn(gidFromVardis)) && dynamic_cast<RTDBRead_Confirm*>(msg))
+    if ((msg->arrivedOn(gidFromDcpProtocol)) && dynamic_cast<RTDBRead_Confirm*>(msg))
      {
          RTDBRead_Confirm* readConf = (RTDBRead_Confirm*) msg;
          handleRTDBReadConfirm(readConf);
@@ -113,14 +113,14 @@ void VariableConsumer::handleMessage(cMessage *msg)
          return;
      }
 
-    error("VariableConsumer::handleMessage: unknown message type");
+    error("VardisVariableConsumer::handleMessage: unknown message type");
 
     dbg_leave();
 }
 
 // ----------------------------------------------------
 
-VariableConsumer::~VariableConsumer()
+VardisVariableConsumer::~VardisVariableConsumer()
 {
     cancelAndDelete(sampleMsg);
 }
@@ -131,7 +131,7 @@ VariableConsumer::~VariableConsumer()
 // ========================================================================================
 
 
-void VariableConsumer::handleSampleMsg()
+void VardisVariableConsumer::handleSampleMsg()
 {
     dbg_enter("handleSampleMsg");
     assert(state == cState_WaitForSampling);
@@ -149,7 +149,7 @@ void VariableConsumer::handleSampleMsg()
 
 // ----------------------------------------------------
 
-void VariableConsumer::handleRTDBDescribeDatabaseConfirm(RTDBDescribeDatabase_Confirm* dbConf)
+void VardisVariableConsumer::handleRTDBDescribeDatabaseConfirm(RTDBDescribeDatabase_Confirm* dbConf)
 {
     dbg_enter("handleRTDBDescribeDatabaseConfirm");
     assert(dbConf);
@@ -189,19 +189,19 @@ void VariableConsumer::handleRTDBDescribeDatabaseConfirm(RTDBDescribeDatabase_Co
 
 // ----------------------------------------------------
 
-void VariableConsumer::handleRTDBReadConfirm(RTDBRead_Confirm* readConf)
+void VardisVariableConsumer::handleRTDBReadConfirm(RTDBRead_Confirm* readConf)
 {
     dbg_enter("handleRTDBReadConfirm");
     assert(readConf);
     assert(state == cState_WaitForReadResponses);
     assert(readConf->getStatus() == VARDIS_STATUS_OK);
     assert(readsRequested > 0);
-    assert(readConf->getDataLen() == sizeof(ExampleVariable));
+    assert(readConf->getDataLen() == sizeof(VardisExampleVariable));
 
     // copy received data into local variable
-    ExampleVariable theValue;
+    VardisExampleVariable theValue;
     uint8_t *thePtr = (uint8_t*) &theValue;
-    for (size_t i=0; i<sizeof(ExampleVariable); i++)
+    for (size_t i=0; i<sizeof(VardisExampleVariable); i++)
     {
         *thePtr = readConf->getData(i);
         thePtr++;
@@ -209,11 +209,14 @@ void VariableConsumer::handleRTDBReadConfirm(RTDBRead_Confirm* readConf)
 
     // if variable is new or has updated value print debug output and record statistics
     // (for one selected variable)
-    VarId varId = readConf->getVarId();
+    VarIdT varId = readConf->getVarId();
+
+    DBG_PVAR3("CONSIDERING", (int) varId, readsRequested, (lastReceived.find(varId) == lastReceived.end()));
+
     if (    (lastReceived.find(varId) == lastReceived.end())
          || (theValue.seqno != lastReceived[varId].seqno))
     {
-        DBG_VAR5((int) readConf->getVarId(), theValue.value, theValue.seqno, theValue.tstamp, (simTime() - theValue.tstamp));
+        DBG_PVAR5("UPDATING VARIABLE VALUE", (int) varId, theValue.value, theValue.seqno, theValue.tstamp, (simTime() - theValue.tstamp));
 
         if (varIdToObserve == (int) varId)
         {

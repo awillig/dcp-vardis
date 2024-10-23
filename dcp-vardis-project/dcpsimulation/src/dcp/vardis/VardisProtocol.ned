@@ -25,7 +25,7 @@ import dcpsimulation.dcp.bp.BPClientProtocol;
 simple VardisProtocol extends BPClientProtocol
 {
     parameters:
-        maxPayloadSize = 1000B;
+        maxPayloadSize = default(1000B);
         int             vardisMaxValueLength @unit(byte)        = default (32B);                    // max length of a variable value
         int             vardisMaxDescriptionLength @unit(byte)  = default (64B);                    // max length of variable description string
         int             vardisMaxRepetitions                    = default (5);                      // max number of repetitions of create / update / delete

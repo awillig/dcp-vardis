@@ -16,11 +16,31 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-import inet.common.packet.chunk.Chunk;
 
-class BPPayloadBlockHeader extends inet::FieldsChunk
+import inet.common.packet.Message;
+
+cplusplus {{
+#include <dcp/srp/SafetyDataT.h>
+typedef dcp::SafetyDataT SafetyDataT;
+}}
+
+class SafetyDataT {
+    @existingClass;
+}
+
+
+class SRPUpdateSafetyData_Request extends inet::Message
 {
-    chunkLength = inet::B(4); // length of BPPayloadBlockHeader
-    
-    uint16_t     protocolId;    // id of protocol generating the payload -- should be the same type as BPProtocolId
+    SafetyDataT         safetyData;
+}
+
+enum SRPStatus
+{
+    SRP_STATUS_OK   =  0;
+};
+
+
+class SRPUpdateSafetyData_Confirm extends inet::Message
+{
+    SRPStatus   status;
 }

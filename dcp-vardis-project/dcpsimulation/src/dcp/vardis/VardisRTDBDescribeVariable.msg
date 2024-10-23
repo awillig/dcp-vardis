@@ -17,7 +17,7 @@
 //
 
 import inet.common.packet.Message;
-import inet.linklayer.common.MacAddress;
+import dcp.common.NodeIdentifierT;
 import VardisRTDBConfirmation;
 
 class RTDBDescribeVariable_Request extends inet::Message
@@ -28,10 +28,9 @@ class RTDBDescribeVariable_Request extends inet::Message
 class RTDBDescribeVariable_Confirm extends VardisConfirmation
 {
     uint8_t             varId;
-    inet::MacAddress    prodId;
+    NodeIdentifierT     prodId;
     uint8_t             repCnt;
-    uint8_t             descrLen;
-    uint8_t             descr [];
+    string              descr;
     uint8_t             length;
     uint8_t             value [];
     uint8_t             seqno;

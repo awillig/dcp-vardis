@@ -16,31 +16,29 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#ifndef DCP_VARDIS_VARDISCLIENTPROTOCOL_H_
-#define DCP_VARDIS_VARDISCLIENTPROTOCOL_H_
+#pragma once
 
 #include <inet/common/packet/Message.h>
 #include <inet/common/packet/Packet.h>
 #include <dcp/common/DcpProtocol.h>
 #include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/vardis/VardisStatus_m.h>
-#include <dcp/vardis/VardisRTDBConfirmation_m.h>
+#include <dcp/srp/SRPUpdateSafetyData_m.h>
 
 // --------------------------------------------------------------------------
 
 namespace dcp {
 
 /**
- * This module implements basic functionalities that any VarDis application
- * should have, and any VarDis application (protocol) should inherit from
- * this class. It mainly makes sure that the application module and VarDis
+ * This module implements basic functionalities that any SRP application
+ * should have, and any SRP application (protocol) should inherit from
+ * this class. It mainly makes sure that the application module and SRP
  * can talk to each other via an INET message dispatcher.
  */
 
-class VardisClientProtocol : public DcpProtocol {
+class DcpApplication : public DcpProtocol {
 
 public:
-    virtual ~VardisClientProtocol();
+    virtual ~DcpApplication();
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
     virtual void initialize(int stage) override;
 
@@ -53,8 +51,8 @@ protected:
     Protocol *theProtocol = nullptr;
 
     // gate id's
-    int gidFromVardis = -1;
-    int gidToVardis   = -1;
+    int gidFromDcpProtocol = -1;
+    int gidToDcpProtocol   = -1;
 
 
     // --------------------------------------------
@@ -62,7 +60,7 @@ protected:
     // --------------------------------------------
 
     /**
-     * Create and register application (protocol) with INET, so that dispatcher
+     * Create and register application with INET, so that dispatcher
      * can be used.
      */
     void createProtocol(const char* descr1, const char* descr2);
@@ -72,31 +70,15 @@ protected:
      */
     Protocol* getProtocol () {assert(theProtocol); return theProtocol;};
 
-    /**
-     * Translate VarDis status value into string
-     */
-    std::string getVardisStatusString(VardisStatus status);
 
     /**
-     * Prints received VarDis status as string to logging output
+     * Sending messages or packets down to SRP
      */
-    void printStatus (VardisStatus status);
-
-    /**
-     * Default reaction to any received status value from a VarDis confirm
-     * primitive. This just calls printStatus.
-     */
-    virtual void handleVardisConfirmation(VardisConfirmation *conf);
-
-    /**
-     * Sending messages or packets down to VarDis
-     */
-    void sendToVardis (Message* message);
-    void sendToVardis (Packet* packet);
+    void sendToDcpProtocol (Protocol* targetProtocol, Message* message);
+    void sendToDcpProtocol (Protocol* targetProtocol, Packet* packet);
 
 };
 
 
 } //namespace
 
-#endif /* DCP_VARDIS_VARDISCLIENTPROTOCOL_H_ */
