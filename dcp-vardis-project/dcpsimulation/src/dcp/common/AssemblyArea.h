@@ -104,8 +104,8 @@ class AreaBase {
    */
   inline void block_prechecks (size_t size, byte* pb)
   {
-      if ((size == 0) || (pb == nullptr)) throw AssemblyAreaException("AssemblyArea::block_prechecks: illegal parameters");
-      if (bytes_available < size) throw AssemblyAreaException("AssemblyArea::block_prechecks: not enough space available");
+      if ((size == 0) || (pb == nullptr)) throw AssemblyAreaException("AreaBase::block_prechecks: illegal parameters");
+      if (bytes_available < size) throw AssemblyAreaException("AreaBase::block_prechecks: not enough space available");
   }
 
   /*
@@ -145,6 +145,23 @@ public:
         }
     };
 
+    // Default methods for serializing fixed-size data types in network
+    // order (e.g. for header fields)
+    virtual void serialize_uint16_n (uint16_t val)
+    {
+        if (available() < sizeof(uint16_t)) throw AssemblyAreaException("AssemblyArea::serialize_uint16_n: insufficient space");
+        serialize_byte ((byte) val >> 8);
+        serialize_byte ((byte) val & 0x00FF);
+    };
+
+    virtual void serialize_uint32_n (uint32_t val)
+    {
+        if (available() < sizeof(uint32_t)) throw AssemblyAreaException("AssemblyArea::serialize_uint32_n: insufficient space");
+        serialize_byte ((byte) val >> 24);
+        serialize_byte ((byte) (val & 0x00FF0000)>>16);
+        serialize_byte ((byte) (val & 0x0000FF00)>>8);
+        serialize_byte ((byte) val & 0x000000FF);
+    };
 };
 
 // -------------------------------------------------------------
@@ -174,6 +191,27 @@ public:
             *pb = deserialize_byte ();
             pb++;
         }
+    };
+
+    virtual void deserialize_uint16_n (uint16_t& val)
+    {
+        if (available() < sizeof(uint16_t)) throw DisassemblyAreaException("DisassemblyArea::deserialize_uint16_n: insufficient space");
+        byte b1 = deserialize_byte();
+        byte b2 = deserialize_byte();
+        val = (((uint16_t) b1) << 8) + ((uint16_t) b2);
+    };
+
+    virtual void deserialize_uint32_n (uint32_t& val)
+    {
+        if (available() < sizeof(uint32_t)) throw DisassemblyAreaException("DisassemblyArea::deserialize_uint32_n: insufficient space");
+        byte b1 = deserialize_byte();
+        byte b2 = deserialize_byte();
+        byte b3 = deserialize_byte();
+        byte b4 = deserialize_byte();
+        val =   (((uint32_t) b1) << 24)
+              + (((uint32_t) b2) << 16)
+              + (((uint32_t) b3) << 8)
+              + ((uint32_t) b4);
     };
 
 };
