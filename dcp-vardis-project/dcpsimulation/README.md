@@ -125,3 +125,8 @@ DCP/Vardis specification. Some of the missing functionalities include:
 
 * VarDis management services (activate/deactivate) are not implemented.
 * BP management services (activate/deactivate) are not implemented.
+
+Also, currently the codebase of the simulator is completely disjoint
+from the code base of the implementation, and the latter is more
+recent and more complete. A short-to-medium term aim is to base both
+on a shared code basis.
