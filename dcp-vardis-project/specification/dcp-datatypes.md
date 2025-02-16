@@ -69,7 +69,9 @@ is transmitted in network byte order.
   beacon sender includes its identfier in every beacon and a receiving
   node can extract that identifier from a received beacon to identify
   the sender. Furthermore, each of the DCP protocols is able to
-  retrieve the own node identifier.
+  retrieve the own node identifier. Node identifiers have no deeper
+  meaning in the DCP/VarDis stack, it is only necessary to compare two
+  node identifiers for equality.
 
 - Nodes have access to a source of physical time
   (e.g. GPS). Timestamps are represented using a fixed-length data

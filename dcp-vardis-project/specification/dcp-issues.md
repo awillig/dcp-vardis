@@ -4,7 +4,22 @@
 
 ## Overall
 
-- There is no consideration of security.
+- There is no consideration of security. This includes a number of
+  missing functionalities:
+    - Encryption / decryption
+	- Limiting certain management actions to proper clients. For
+	  example, currently an BP client can de-register any registered
+	  protocol and not just itself. Similarly, a VarDis client can
+	  delete any variable, including variables created by other VarDis
+	  clients.
+	  
+- Related: There is no liveness checking. For example, BP does not
+  currently have a mechanism to discover that a client protocol
+  instance is not running anymore. Similarly, VarDis has no way of
+  checking whether the application that created a variable is still
+  active. If it becomes inactive, a sensible course of action could be
+  to remove all variables it created.
+  
 
 ## Beaconing Protocol
 

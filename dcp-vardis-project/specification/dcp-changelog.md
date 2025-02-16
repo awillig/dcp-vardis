@@ -6,6 +6,76 @@ The change log describes changes made from one version to the
 next. This is restricted to substantial changes, editorial matters
 such as language issues, typos or minor errors are not reported.
 
+## Changes for Version 1.2
+
+### Changes in `dcp-bp.md`
+
+- Clarified that `BP-RegisterProtocol`, `BP-DeregisterProtocol` and
+  `BP-ListRegisteredProtocols` request and confirm primitives may
+  contain additional implementation-dependent parameters, and that
+  correspondingly the processing may also contain additional steps.
+
+- The BP header (type `BPHeaderT` now has an extra field giving the
+  total length of the payload [excluding header] to deal with
+  underlying wireless bearers that pad up payloads. This arose when
+  implementing DCP/VarDis on top of a WiFi interface with EthernetII
+  encapsulation.
+
+- Added the concept of activation and deactivation of a running BP
+  instance. In its deactivated state, the instance will not generate
+  outgoing beacons nor will it process received beacons, but it will
+  still process other service primitives from client
+  protocols. Specifically, a new global variable `bpActive` has been
+  added (see Section [Initialization, Runtime and
+  Shutdown](#bp-initialization-runtime-shutdown)), and two additional
+  management services to activate and deactivate BP (see Section
+  [Other BP Management Services](#bp-services-management)).
+
+- In the discussion of service `BP-TransmitPayload` (see Section
+  [Service `BP-TransmitPayload`](#bp-service-bp-transmit-payload)) it 
+  has been added that the generation of a confirm primitive is now
+  optional for implementations.
+  
+
+### Changes in `dcp-vardis.md`
+
+- When processing an element in an `ICTYPE-CREATE-VARIABLES` container
+  (Section [Processing
+  VarCreateT](#vardis-receive-path-ic-create-variables)), we check
+  further conditions, namely that description length and variable
+  value length are larger than zero, and we check conditions for
+  `repCnt`. Similarly, when processing a received `VarUpdateT`, we
+  check that the value length is strictly positive
+
+- Parameter `VARDISPAR_MAX_REPETITIONS` is now upper-bounded to 15.
+
+- Vardis queueing mode is now set to `BP_QMODE_QUEUE_DROPHEAD` instead
+  of `BP_QMODE_QUEUE_DROPTAIL`.
+
+- Added a subsection on other management services (activate/deactivate
+  VarDis), see Section [Other Management
+  Services](#vardis-services-management).
+  
+- When processing a `RTDB-Create` request (see Section
+  [RTDB-Create](#vardis-service-rtdb-create) we now initialize the
+  `prodId` field of the variable specification with the Vardis
+  instances internal ownNodeIdentifier, so that Vardis clients do not
+  need to know the node identifier.
+
+- In Section [Processing Order of Instruction
+  Containers](#vardis-receive-path-ic-processing-order) a distinction
+  between extraction and processing steps has been introduced, and it
+  has been clarified that error-handling is implementation-dependent.
+
+- For the VarDis parameter `VARDISPAR_BUFFER_CHECK_PERIOD` further
+  details on the type and upper bound of this value have been
+  added. Furthermore, a note about potential depreciation of this
+  parameter has been added. 
+
+### Changes in `dcp-issues.md`
+
+- Elaborated on discussion of security, added client liveness checking.
+
 ## Changes for Version 1.1
 
 ### Changes affecting multiple sections
