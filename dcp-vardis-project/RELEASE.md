@@ -1,3 +1,14 @@
+Version 1.2, March 2025
+=======================
+
+The main feature of this release is an initial implementation of the
+DCP/Vardis protocol stack in C++ under Linux, and tested on Raspberry
+Pi 5 devices. This implementation is in its early stages and not fully
+complete. In the process of preparing this implementation a few
+non-major changes to the specification have been made and partially
+ported to the simulator as well.
+
+
 Version 1.1, October 2024
 =========================
 
