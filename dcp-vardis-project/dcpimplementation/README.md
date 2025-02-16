@@ -79,6 +79,7 @@ confirmations (from BP demon back to client, if required).
   contains scripts for simplifying development (e.g. generating
   example configuration files, defining shell aliases for building and
   testing, and others).
+* `test`: Contains test code (using GoogleTest framework)
 * `src/dcp/applications`: contains some Vardis applications, currently
   a test variable producer and a consumer which continuously displays
   all test variables on the terminal, an application to delete a Vardis
