@@ -317,7 +317,7 @@ namespace dcp::vardis {
      */
     inline bool variableExists (VarIdT varId)
     {
-      return (theVariableDatabase.find(varId) != theVariableDatabase.end());
+      return theVariableDatabase.contains(varId);
     };
 
     
@@ -361,7 +361,7 @@ namespace dcp::vardis {
     {
       auto rems = std::remove_if(q.begin(),
 				 q.end(),
-				 [&](VarIdT varId){ return (    (theVariableDatabase.find(varId) == theVariableDatabase.end())
+				 [&](VarIdT varId){ return (    (not theVariableDatabase.contains(varId))
 								|| (theVariableDatabase.at(varId).toBeDeleted));}
 				 );
       q.erase(rems, q.end());
@@ -375,7 +375,7 @@ namespace dcp::vardis {
     {
       auto rems = std::remove_if(q.begin(),
 				 q.end(),
-				 [&](VarIdT varId){ return (theVariableDatabase.find(varId) == theVariableDatabase.end());}
+				 [&](VarIdT varId){ return (not theVariableDatabase.contains(varId));}
 				 );
       q.erase(rems, q.end());
     }
@@ -389,7 +389,7 @@ namespace dcp::vardis {
     {
       auto rems = std::remove_if(q.begin(),
 				 q.end(),
-				 [&](VarIdT varId){ return (    (theVariableDatabase.find(varId) != theVariableDatabase.end())
+				 [&](VarIdT varId){ return (    (theVariableDatabase.contains(varId))
 								&& (theVariableDatabase.at(varId).toBeDeleted));}
 				 );
       q.erase(rems, q.end());
