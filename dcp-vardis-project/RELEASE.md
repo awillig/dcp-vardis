@@ -1,5 +1,5 @@
-Version 1.2, March 2025
-=======================
+Version 1.2, February 2025
+==========================
 
 The main feature of this release is an initial implementation of the
 DCP/Vardis protocol stack in C++ under Linux, and tested on Raspberry

@@ -1,6 +1,6 @@
 # DCP/Vardis Implementation
 
-(March 2025)
+(February 2025)
 
 This provides a partial implementation of the DCP/Vardis protocol
 stack in Version 1.2.
