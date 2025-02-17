@@ -20,6 +20,15 @@ $bpcommandsockettimeout  = 400;
 $console_logging = 0;
 
 # ===============================================================
+# Create required directories if needed
+# ===============================================================
+
+mkdir ("cfg")         unless (-d "cfg");
+mkdir ("cfg/bp")      unless (-d "cfg/bp");
+mkdir ("cfg/vardis")  unless (-d "cfg/vardis");
+mkdir ("cfg/srp")     unless (-d "cfg/srp");
+
+# ===============================================================
 # BP configuration
 # ===============================================================
 
