@@ -1,5 +1,12 @@
 #!/usr/bin/bash
 
+if (($#ARGV+1) ne 1)
+{
+    print "One parameter expected: last byte of 192.168.144.x IP address.\nExiting.\n";
+    exit;
+}
+
+
 sudo killall wpa_supplicant
 sudo ip link set wlan0 down
 sleep 1
