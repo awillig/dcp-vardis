@@ -4,13 +4,15 @@ DCP/Vardis Simulation for OMNeT++
 
 The DCP/Vardis simulator is an open-source simulation model for the
 DCP/Vardis protocol stack as described in this [arXiv
-paper](https://arxiv.org/abs/2404.01570). It aims to be a reasonably
-(though not completely) faithful implementation of the DCP/VarDis
-protocol stack specification, which can be found
-[here](https://github.com/awillig/dcp-vardis.git). The simulator has
-been developed for the OMNeT++ discrete-event simulation framework
-([website](https://omnetpp.org)) and in addition uses the INET module
-library for OMNeT++ ([website](https://inet.omnetpp.org/)).
+report](https://arxiv.org/abs/2404.01570) and its enhanced and revised
+[journal version](https://doi.org/10.1016/j.comcom.2024.108021). It
+aims to be a reasonably (though not completely) faithful
+implementation of the DCP/VarDis protocol stack specification, which
+can be found [here](https://github.com/awillig/dcp-vardis.git). The
+simulator has been developed for the OMNeT++ discrete-event simulation
+framework ([website](https://omnetpp.org)) and in addition uses the
+INET module library for OMNeT++
+([website](https://inet.omnetpp.org/)).
 
 IMPORTANT: The DCP/Vardis specification and simulation model are being
 continuously developed, bugs are corrected, features are added et
@@ -114,3 +116,17 @@ project:
       applications can be derived (directly or indirectly).
 
 
+
+Restrictions
+============
+
+The simulator does not provide a complete implementation of the
+DCP/Vardis specification. Some of the missing functionalities include:
+
+* VarDis management services (activate/deactivate) are not implemented.
+* BP management services (activate/deactivate) are not implemented.
+
+Also, currently the codebase of the simulator is completely disjoint
+from the code base of the implementation, and the latter is more
+recent and more complete. A short-to-medium term aim is to base both
+on a shared code basis.

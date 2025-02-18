@@ -136,6 +136,8 @@ guarantees at least for some client protocols.
       `0x497E`.
 	- `senderId` is of type `NodeIdentifierT` and contains the node
       identifier of the node sending the beacon.
+	- `length` is of type `BPLengthT` contains the total length of the
+	  BP payload in bytes (not including the `BPHeaderT` itself).
 	- `numPayloads` is an unsigned 8-bit value specifying the number
       of BP payload blocks contained in the remaining BP packet. Each
       payload block includes a `BPPayloadHeaderT` followed by a
@@ -208,8 +210,8 @@ register itself with the local BP entity, so that the client entity
 can submit and receive payloads.
 
 The service user invokes this service by using the
-`BP-RegisterProtocol.request` primitive, which carries the following
-parameters: 
+`BP-RegisterProtocol.request` primitive, which carries at least the
+following parameters:
 
 - `protId` of type `BPProtocolIdT` is the protocol identifier under
   which the new client protocol wants to be registered.
@@ -267,6 +269,11 @@ the BP entity performs at least the following actions:
 7.     return status code BP-STATUS-OK
 ~~~
 
+Note that the `BP-RegisterProtocol.request` and
+`BP-RegisterProtocol.confirm` primitives may carry additional,
+implementation-dependent parameters, and that similarly the processing
+may involve additional steps.
+
 
 
 #### Service `BP-DeregisterProtocol` {#bp-service-bp-deregister-protocol}
@@ -276,8 +283,8 @@ revoke a protocol registration with BP, so that no payloads are being
 transmitted or received and processed any longer.
 
 The service user invokes this service by using the
-`BP-DeregisterProtocol.request` primitive, which carries the following
-parameters:
+`BP-DeregisterProtocol.request` primitive, which carries at least the
+following parameters:
 
 - `protId` of type `BPProtocolIdT` is the protocol identifier of the
   protocol to be de-registered.
@@ -303,6 +310,10 @@ An implementation must guarantee that after finishing processing the
 requesting client protocol are included into beacons anymore, and no
 received payloads are processed any longer.
 
+Note that the `BP-DeregisterProtocol.request` and
+`BP-DeregisterProtocol.confirm` primitives may carry additional,
+implementation-dependent parameters, and that similarly the processing
+may involve additional steps.
 
 
 ### Querying Registered Protocols
@@ -315,7 +326,8 @@ each protocol the following fields from its record of type
 `maxPayloadSize`, `queueMode`, `timeStampRegistration`, `maxEntries`
 and `allowMultiplePayloads`. Note that these fields contain the static
 information about a registered protocol -- its buffer or queue
-contents are not reported.
+contents are not reported. Implementations may choose to add further
+fields to the confirm primitive, e.g. to report statistics.
 
 The service user invokes this service by using the
 `BP-ListRegisteredProtocols.request` primitive, which carries no
@@ -380,10 +392,11 @@ following parameters:
 The BP entity responds with a `BP-TransmitPayload.confirm`
 primitive. This primitive is generated immediately upon processing the
 `BP-TransmitPayload.request` primitive and carries a status code. The
-`BP-TransmitPayload.confirm` primitive therefore only confirms
-that the payload has either been discarded due to an error or has been
+`BP-TransmitPayload.confirm` primitive therefore only confirms that
+the payload has either been discarded due to an error or has been
 placed into a buffer or queue, it does *not* mean that the payload has
-been transmitted.
+been transmitted. Implementations are allowed to make the generation
+and processing of a `BP-TransmitPayload.confirm` primitive optional.
 
 To process the `BP-TransmitPayload.request` primitive, the BP
 performs at least the following actions:
@@ -529,6 +542,49 @@ primitive, the BP performs at least the following actions:
 ~~~
 
 
+### Other BP Management Services {#bp-services-management}
+
+The following additional services support controlling the activities
+of a running BP instance, we refer to them as management
+services. Besides the management services specified below,
+implementations are free to add additional management services
+(e.g. retrieving runtime statistics).
+
+
+#### Service `BP-MGMT-Deactivate`
+
+An application wishes to de-activate a running BP instance. By
+de-activation we mean that the BP instance will not generate beacons
+for transmission, nor will it process received beacons (it will just
+silently discard them). Other service requests will still be processed
+in the de-activated state. The BP instance continues running and can
+be re-activated (through invoking the `BP-MGMT-Activate` service).
+
+An application issues the `BP-MGMT-Deactivate.request` primitive,
+which carries no parameters.
+
+The `BP-MGMT-Deactivate.confirm` primitive is returned after the BP
+entity sets the global variable `bpActive` to false (see also Section
+[Initialization, Runtime and
+Shutdown](#bp-initialization-runtime-shutdown)). As a parameter it
+carries the status code `BP-STATUS-OK`.
+
+
+#### Service `BP-MGMT-Activate`
+
+An application wishes to activate a running BP instance. By
+activation we mean that the BP instance shall generate outgoing
+beacons and process received beacons.
+
+An application issues the `BP-MGMT-Activate.request` primitive, which
+carries no parameters.
+
+The `BP-MGMT-Activate.confirm` primitive is returned after the BP
+entity sets the global variable `bpActive` to true. As a parameter
+it carries the status code `BP-STATUS-OK`.
+
+
+
 ### Non-configurable Parameters {#bp-interface-non-configurable-parameters}
 
 A key non-configurable parameter is the maximum packet size allowed by
@@ -628,6 +684,14 @@ and stores this in the global variable `UWB-MaxPacketSize`. The value of
 the configurable `BPPAR_MAXIMUM_PACKET_SIZE` is initialized to the
 `UWB-MaxPacketSize` value.
 
+The BP instance maintains a global boolean variable called `bpActive`,
+which is initialized to true during BP initialization. When this
+variable has value true, then the BP instance will process received
+beacons and generate outgoing beacons. If this variable has value
+false, then the BP instance will not generate beacons nor will it
+process received beacons. However, even in this inactive state the BP
+instance will process service request primitives in the specified way.
+
 Finally, the BP retrieves from the surrounding system the node
 identifier of the node and stores it in the global variable
 `ownNodeIdentifier` of type `NodeIdentifierT`.
@@ -638,6 +702,10 @@ beacons or processes incoming beacons.
 
 
 ## Transmit Path {#bp-transmit-path}
+
+If the global variable `bpActive` has value false, then no payload
+shall be generated. The remainder of this section assumes that this
+variable has value true.
 
 The timing of beacon transmissions is not specified -- beacons can be
 generated by the BP and submitted to the UWB for example strictly
@@ -717,6 +785,10 @@ representable by the `numPayloads` field of `BPHeaderT`. The
 - Set the `senderId` field to the node identifier of the sending node
   (stored in variable `ownNodeIdentifier` of type `NodeIdentifierT`).
 
+- Set the `length` field to the sum of the following components: for
+  each of the `numPayloads` included payload add the size of that
+  payload and `sizeof(BPPayloadHeaderT)` to the sum
+  
 - Set the `numPayloads` field to the number of appended client
   protocol payloads.
 
@@ -728,9 +800,12 @@ representable by the `numPayloads` field of `BPHeaderT`. The
 
 
 
-
-
 ## Receive Path
+
+If the global variable `bpActive` has value false, then any incoming
+beacon is to be silently discarded by the BP instance. The remainder
+of this section assumes that this variable has value true.
+
 
 When the UWB hands over the bearer payload of a received beacon to the
 BP, it first parses the `BPHeaderT` and then parses the contained
@@ -740,6 +815,8 @@ following sanity checks are performed:
 - The `version` field is equal to `0x01`.
 
 - The `magicNo` field is equal to `0x497E`.
+
+- The `length` field is not zero.
 
 - The `numPayloads` field is not zero.
 

@@ -6,7 +6,8 @@
 
 ### Current Version
 
-- Version 1.1, October 15, 2024
+- Version 1.2, February 18, 2025
+
 
 ### Policy on Versioning
 
@@ -22,15 +23,18 @@ when 'breaking changes' are introduced such as:
 Note that the major version will be included in beacon frames, see [BP
 Data Types](#subsubsec-beaconing-protocol-data-types).
 
-## Document Version
+## Document Version History
 
-- Version 0.1 (July 29, 2022): created initial version
-- Version 0.2 (October 1, 2022): first complete draft for protocol
-  version 1.0
-- Version 1.0 (March 10, 2024): revised and published version of
-  protocol version 1.0
+- Version 1.2 (February 18, 2025): revised and published version of
+  protocol version 1.2
 - Version 1.1 (October 15, 2024): revised and published version of
   protocol version 1.1
+- Version 1.0 (March 10, 2024): revised and published version of
+  protocol version 1.0
+- Version 0.2 (October 1, 2022): first complete draft for protocol
+  version 1.0
+- Version 0.1 (July 29, 2022): created initial version
+
 
 ## Contributors
 
@@ -39,3 +43,6 @@ Data Types](#subsubsec-beaconing-protocol-data-types).
   contributor, email: <andreas.willig@canterbury.ac.nz>)
 - Sam Pell, Department of Computer Science and Software Engineering,
   University of Canterbury, New Zealand
+
+The current maintainer of this specification and the overall
+DCP/VarDis project is Andreas Willig.

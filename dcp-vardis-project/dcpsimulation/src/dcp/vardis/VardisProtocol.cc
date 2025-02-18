@@ -160,7 +160,7 @@ void VardisProtocol::registerAsBPClient()
 
     DBG_VAR1(maxPayloadSize);
 
-    sendRegisterProtocolRequest(BP_PROTID_VARDIS, "VarDis -- Variable Dissemination Protocol V1.1", maxPayloadSize, BP_QMODE_QUEUE_DROPTAIL, false, 10);
+    sendRegisterProtocolRequest(BP_PROTID_VARDIS, "VarDis -- Variable Dissemination Protocol V1.2", maxPayloadSize, BP_QMODE_QUEUE_DROPHEAD, false, 10);
 
     dbg_leave();
 }
@@ -597,6 +597,7 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
     // initialize new database entry and add it
     DBEntry newent;
     newent.spec          =  spec;
+    newent.spec.prodId   =  getOwnNodeId();
     newent.seqno         =  0;
     newent.tStamp        =  simTime();
     newent.countUpdate   =  0;
@@ -1637,7 +1638,11 @@ void VardisProtocol::processVarCreate(const VarCreateT& create)
     if (    (not variableExists(varId))
          && (prodId != getOwnNodeId())
          && (create.spec.descr.length <= vardisMaxDescriptionLength)
+         && (create.spec.descr.length > 0)
          && (create.update.value.length <= vardisMaxValueLength)
+         && (create.update.value.length > 0)
+         && (create.spec.repCnt > 0)
+         && (create.spec.repCnt <= vardisMaxRepetitions)
        )
     {
         DBG_PVAR3("ADDING new variable to database", (int) varId, prodId, create.spec.descr.to_str());

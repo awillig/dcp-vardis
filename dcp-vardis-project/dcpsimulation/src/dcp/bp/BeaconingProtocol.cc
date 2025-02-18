@@ -430,6 +430,20 @@ bool BeaconingProtocol::bpHeaderWellFormed (DisassemblyArea& area, BPHeaderT& bp
         return false;
     }
 
+    if (bpHdr.numPayloads == 0)
+    {
+        DBG_PVAR1("numPayloads is zero", bpHdr.version);
+        dbg_leave();
+        return false;
+    }
+
+    if (bpHdr.length == 0)
+    {
+        DBG_PVAR1("length is zero", bpHdr.version);
+        dbg_leave();
+        return false;
+    }
+
     dbg_leave();
     return true;
 }

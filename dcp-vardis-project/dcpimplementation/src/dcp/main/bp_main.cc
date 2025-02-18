@@ -1,0 +1,264 @@
+#include <cstdlib>
+#include <iostream>
+#include <exception>
+#include <csignal>
+#include <signal.h>
+#include <thread>
+#include <list>
+#include <unistd.h>
+#include <boost/program_options.hpp>
+#include <dcp/common/global_types_constants.h>
+#include <dcp/common/services_status.h>
+#include <dcp/bp/bpclient_configuration.h>
+#include <dcp/bp/bp_configuration.h>
+#include <dcp/bp/bp_runtime_data.h>
+#include <dcp/bp/bp_management_command.h>
+#include <dcp/bp/bp_management_payload.h>
+#include <dcp/bp/bp_transmitter.h>
+#include <dcp/bp/bp_receiver.h>
+#include <dcp/bp/bp_logging.h>
+#include <dcp/bp/bpclient_lib.h>
+
+
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::size_t;
+using std::exception;
+using dcp::BPClientRuntime;
+using dcp::BPClientConfiguration;
+
+namespace po = boost::program_options;
+
+using namespace dcp::bp;
+
+
+void print_version ()
+{
+  cout << dcp::dcpHighlevelDescription
+       << " -- Beaconing Protocol (BP) -- Version " << dcp::dcpVersionNumber
+       << endl;
+}
+
+
+BPRuntimeData* pRuntime = nullptr;
+
+void signalHandler (int signum)
+{
+  BOOST_LOG_SEV(log_main, trivial::info) << "Caught signal code " << signum << " (" << strsignal(signum) << ")";
+  if (pRuntime)
+    {
+      BOOST_LOG_SEV(log_main, trivial::info) << "Setting exit flag";
+      pRuntime->bp_exitFlag = true;
+    }
+}
+
+
+void run_bp_demon (const std::string cfg_filename)
+{
+  // read configuration and start logging
+  BPConfiguration bpconfig;
+  bpconfig.read_from_config_file (cfg_filename);
+  initialize_logging (bpconfig.logging_conf);
+  BOOST_LOG_SEV(log_main, trivial::info) << "Demon mode with config file " << cfg_filename; 
+  BOOST_LOG_SEV(log_main, trivial::info) << "Configuration: " << bpconfig;
+  BOOST_LOG_SEV(log_main, trivial::info) << "uid = " << getuid() << ", euid = " << geteuid();
+  
+  // create runtime data
+  pRuntime = new BPRuntimeData (bpconfig);
+  BOOST_LOG_SEV(log_main, trivial::info) << "Own node identifier (MAC address): " << pRuntime->ownNodeIdentifier;
+  
+  // install signal handlers
+  std::signal(SIGTERM, signalHandler);
+  std::signal(SIGINT, signalHandler);
+  std::signal(SIGABRT, signalHandler);
+  
+  // start threads
+  BOOST_LOG_SEV(log_main, trivial::info) << "Starting threads.";
+  std::thread thread_mgmt_command (management_thread_command, std::ref(*pRuntime));
+  std::thread thread_mgmt_payload (management_thread_payload, std::ref(*pRuntime));
+  std::thread thread_tx (transmitter_thread, std::ref(*pRuntime));
+  std::thread thread_rx (receiver_thread, std::ref(*pRuntime));
+
+  
+  // and wait for their end
+  BOOST_LOG_SEV(log_main, trivial::info) << "Running ...";
+  thread_mgmt_command.join();
+  thread_mgmt_payload.join();
+  thread_tx.join();
+  thread_rx.join();  // possibly not wait on this one so we can escape from next_packet()? (libpcap does not support timeouts)
+  
+  // and exit
+  BOOST_LOG_SEV(log_main, trivial::info) << "Exiting.";
+}
+
+
+void run_bp_shutdown (const std::string cfg_filename)
+{
+  BPClientConfiguration bpconfig;
+  bpconfig.read_from_config_file (cfg_filename, true);
+  
+  BPClientRuntime cl_rt (0, "ephemeral", 100, bpconfig);
+
+  DcpStatus sd_status = cl_rt.shutdown_bp ();
+  cout << "Shutdown: return status = " << bp_status_to_string (sd_status) << endl;
+}
+
+
+void run_bp_activate (const std::string cfg_filename)
+{
+  BPClientConfiguration bpconfig;
+  bpconfig.read_from_config_file (cfg_filename, true);
+  
+  BPClientRuntime cl_rt (0, "ephemeral", 100, bpconfig);
+
+  DcpStatus sd_status = cl_rt.activate_bp ();
+  cout << "Activate: return status = " << bp_status_to_string (sd_status) << endl;
+}
+
+
+void run_bp_deactivate (const std::string cfg_filename)
+{
+  BPClientConfiguration bpconfig;
+  bpconfig.read_from_config_file (cfg_filename, true);
+  
+  BPClientRuntime cl_rt (0, "ephemeral", 100, bpconfig);
+
+  DcpStatus sd_status = cl_rt.deactivate_bp ();
+  cout << "Deactivate: return status = " << bp_status_to_string (sd_status) << endl;
+}
+
+
+void run_query_client_protocols (const std::string cfg_filename)
+{
+  BPClientConfiguration bpconfig;
+  bpconfig.read_from_config_file (cfg_filename, true);
+
+  BPClientRuntime cl_rt (0, "ephemeral", 100, bpconfig);
+
+  std::list<BPRegisteredProtocolDataDescription> descr_list;
+  DcpStatus qcp_status = cl_rt.list_registered_protocols (descr_list);
+
+  if (qcp_status == BP_STATUS_OK)
+    {
+      if (descr_list.size() > 0)
+	{
+	  cout << "Query client protocols: List of currently registered client protocols:" << endl;
+	  for (auto it = descr_list.begin(); it != descr_list.end(); ++it)
+	    {
+	      cout << "Protocol " << it->protocolName << " (protocolId = " << it->protocolId << "):" << endl
+		   << "    maxPayloadSize                 = " << it->maxPayloadSize << endl
+		   << "    queueingMode                   = " << bp_queueing_mode_to_string(it->queueingMode) << endl
+		   << "    timeStampRegistration          = " << it->timeStampRegistration << endl
+		   << "    maxEntries                     = " << it->maxEntries << endl
+		   << "    allowMultiplePayloads          = " << it->allowMultiplePayloads << endl
+		   << "    cntOutgoingPayloads            = " << it->cntOutgoingPayloads << endl
+		   << "    cntReceivedPayloads            = " << it->cntReceivedPayloads << endl
+		   << "    cntDroppedOutgoingPayloads     = " << it->cntDroppedOutgoingPayloads << endl
+		   << "    cntDroppedIncomingPayloads     = " << it->cntDroppedIncomingPayloads << endl
+		;
+	    }
+	}
+      else
+	{
+	  cout << "Query client protocols: No client protocols registered." << endl;
+	}
+    }
+  else
+    {
+      cout << "Query client protocols: return status = " << bp_status_to_string (qcp_status) << endl;
+    }
+}
+
+
+int main (int argc, char* argv[])
+{
+
+  std::string cfg_filename;
+
+  po::options_description desc("Allowed options");
+  desc.add_options()
+    ("help,h",     "produce help message and exit")
+    ("version,v",  "show version information and exit")
+    ("cfghelp,c",  "produce help message for config file format and exit")
+    ("querycp,q",   po::value<std::string>(&cfg_filename), "queries current client protocols registered with BP using given config file")
+    ("run,r",       po::value<std::string>(&cfg_filename), "run BP protocol with given config file")
+    ("shutdown,s",  po::value<std::string>(&cfg_filename), "send shutdown command to running demon using given config file")
+    ("activate,a",   po::value<std::string>(&cfg_filename), "send activate command to running demon using given config file")
+    ("deactivate,d", po::value<std::string>(&cfg_filename), "send deactivate command to running demon using given config file")
+    ;
+  
+  try {
+    
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    if (vm.count("help"))
+      {
+	cout << desc << endl;
+	return EXIT_SUCCESS;
+      }
+
+
+    if (vm.count("version"))
+      {
+	print_version();
+	return EXIT_SUCCESS;
+      }
+
+    if (vm.count("cfghelp"))
+      {
+	BPConfiguration cfg;
+	auto cfgdesc = cfg.construct_options_description();
+	cout << cfgdesc << endl;
+	return EXIT_SUCCESS;
+      }
+    
+    if (vm.count("run"))
+      {
+	cout << "Running BP demon ..." << endl;
+	run_bp_demon (cfg_filename);
+	return EXIT_SUCCESS;
+      }
+
+    if (vm.count("shutdown"))
+      {
+	run_bp_shutdown (cfg_filename);
+	return EXIT_SUCCESS;
+      }
+
+    if (vm.count("activate"))
+      {
+	run_bp_activate (cfg_filename);
+	return EXIT_SUCCESS;
+      }
+
+    if (vm.count("deactivate"))
+      {
+	run_bp_deactivate (cfg_filename);
+	return EXIT_SUCCESS;
+      }
+    
+    if (vm.count("querycp"))
+      {
+	run_query_client_protocols (cfg_filename);
+	return EXIT_SUCCESS;
+      }
+    
+    cerr << "No valid option given." << endl;
+    cerr << desc << endl;
+    return EXIT_FAILURE;
+
+  }
+  catch(exception& e) {
+    cerr << e.what() << endl;
+    cerr << desc << endl;
+    return EXIT_FAILURE;
+  }
+  
+
+  
+  return EXIT_SUCCESS;
+}
+
