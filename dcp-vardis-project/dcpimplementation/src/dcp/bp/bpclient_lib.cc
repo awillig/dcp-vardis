@@ -163,8 +163,9 @@ namespace dcp {
       throw BPClientLibException ("query_number_buffered_payloads: not registered with BP");
     
     BPQueryNumberBufferedPayloads_Confirm conf;
+    DcpStatus stat = simple_bp_request_confirm_service<BPQueryNumberBufferedPayloads_Request, BPQueryNumberBufferedPayloads_Confirm> ("query_number_buffered_payloads", conf);
     num_payloads_buffered = conf.num_payloads_buffered;
-    return simple_bp_request_confirm_service<BPQueryNumberBufferedPayloads_Request, BPQueryNumberBufferedPayloads_Confirm> ("query_number_buffered_payloads", conf);
+    return stat;
   }
   
 
