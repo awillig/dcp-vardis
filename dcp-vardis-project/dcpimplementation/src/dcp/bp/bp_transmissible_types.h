@@ -104,6 +104,13 @@ namespace dcp::bp {
 
 
     /**
+     * @brief Reserves space for this header in an assembly area
+     *        without serializing any data into it
+     */
+    inline void reserve (AssemblyArea& area) const { area.incr(BPHeaderT::fixed_size()); };
+    
+
+    /**
      * @brief Validity checks on a header
      */
     inline bool isWellFormed (const NodeIdentifierT& ownNodeId) const
