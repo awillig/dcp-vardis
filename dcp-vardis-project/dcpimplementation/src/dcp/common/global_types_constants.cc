@@ -66,7 +66,7 @@ namespace dcp {
 
   std::ostream& operator<<(std::ostream& os, const StringT& str)
   {
-    char buff [str.length + 1];
+    char buff [StringT::max_length() + 1];
     std::memcpy (buff, str.data, str.length);
     buff [str.length] = 0;
       os << buff;
