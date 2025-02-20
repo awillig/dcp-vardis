@@ -163,7 +163,7 @@ namespace dcp {
 	  cl_sock.abort (methname + ": response has wrong service type");
 
 	return pConf->status_code;
-      };
+      }
 
 
     

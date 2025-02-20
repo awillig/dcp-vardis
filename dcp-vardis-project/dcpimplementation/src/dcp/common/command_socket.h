@@ -189,7 +189,7 @@ namespace dcp {
       CT conf;
       conf.status_code = statcode;
       send_raw_confirmation (log, conf, sizeof(CT), exitFlag);
-    };
+    }
 
     
     /**
@@ -322,7 +322,7 @@ namespace dcp {
       
       // await and check response
       return read_response (buffer, buffer_len);
-    };
+    }
 
 
     /**
@@ -340,7 +340,7 @@ namespace dcp {
 	  abort ("sendRequest: cannot send request");
 
 	return ret;
-    };
+    }
 
     
 

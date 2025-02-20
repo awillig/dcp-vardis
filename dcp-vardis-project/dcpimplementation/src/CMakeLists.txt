@@ -4,7 +4,7 @@ project(DcpVarDis VERSION 1.1.0 DESCRIPTION "DCP/VarDis Linux Implementation" LA
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -g -fPIC -fopenmp -DBOOST_LOG_DYN_LINK -I.")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -g -fPIC -fopenmp -DBOOST_LOG_DYN_LINK -I.")
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
