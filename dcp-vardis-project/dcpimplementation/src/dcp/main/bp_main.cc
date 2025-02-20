@@ -92,41 +92,26 @@ void run_bp_demon (const std::string cfg_filename)
   BOOST_LOG_SEV(log_main, trivial::info) << "Exiting.";
 }
 
+enum MgmtCommand { Shutdown, Activate, Deactivate };
 
-void run_bp_shutdown (const std::string cfg_filename)
+void run_bp_management_command (MgmtCommand cmd, const std::string cfg_filename)
 {
   BPClientConfiguration bpconfig;
   bpconfig.read_from_config_file (cfg_filename, true);
   
   BPClientRuntime cl_rt (0, "ephemeral", 100, bpconfig);
-
-  DcpStatus sd_status = cl_rt.shutdown_bp ();
-  cout << "Shutdown: return status = " << bp_status_to_string (sd_status) << endl;
-}
-
-
-void run_bp_activate (const std::string cfg_filename)
-{
-  BPClientConfiguration bpconfig;
-  bpconfig.read_from_config_file (cfg_filename, true);
   
-  BPClientRuntime cl_rt (0, "ephemeral", 100, bpconfig);
-
-  DcpStatus sd_status = cl_rt.activate_bp ();
-  cout << "Activate: return status = " << bp_status_to_string (sd_status) << endl;
+  DcpStatus sd_status;
+  switch (cmd)
+    {
+    case Shutdown:     sd_status = cl_rt.shutdown_bp (); break;
+    case Activate:     sd_status = cl_rt.activate_bp (); break;
+    case Deactivate:   sd_status = cl_rt.deactivate_bp (); break;
+    default:           cout << "Unknown type of management command: " << cmd << endl; return;
+    }
+  cout << "BP return status = " << bp_status_to_string (sd_status) << endl;
 }
 
-
-void run_bp_deactivate (const std::string cfg_filename)
-{
-  BPClientConfiguration bpconfig;
-  bpconfig.read_from_config_file (cfg_filename, true);
-  
-  BPClientRuntime cl_rt (0, "ephemeral", 100, bpconfig);
-
-  DcpStatus sd_status = cl_rt.deactivate_bp ();
-  cout << "Deactivate: return status = " << bp_status_to_string (sd_status) << endl;
-}
 
 
 void run_query_client_protocols (const std::string cfg_filename)
@@ -194,19 +179,8 @@ int main (int argc, char* argv[])
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    if (vm.count("help"))
-      {
-	cout << desc << endl;
-	return EXIT_SUCCESS;
-      }
-
-
-    if (vm.count("version"))
-      {
-	print_version();
-	return EXIT_SUCCESS;
-      }
-
+    if (vm.count("help"))     { cout << desc << endl; return EXIT_SUCCESS; }
+    if (vm.count("version"))  {	print_version(); return EXIT_SUCCESS; }
     if (vm.count("cfghelp"))
       {
 	BPConfiguration cfg;
@@ -215,36 +189,12 @@ int main (int argc, char* argv[])
 	return EXIT_SUCCESS;
       }
     
-    if (vm.count("run"))
-      {
-	cout << "Running BP demon ..." << endl;
-	run_bp_demon (cfg_filename);
-	return EXIT_SUCCESS;
-      }
+    if (vm.count("run")) { cout << "Running BP demon ..." << endl; run_bp_demon (cfg_filename);	return EXIT_SUCCESS; }
+    if (vm.count("shutdown"))   { run_bp_management_command (Shutdown, cfg_filename); return EXIT_SUCCESS; }
+    if (vm.count("activate"))   { run_bp_management_command (Activate, cfg_filename); return EXIT_SUCCESS; }
+    if (vm.count("deactivate")) { run_bp_management_command (Deactivate, cfg_filename);	return EXIT_SUCCESS; }
+    if (vm.count("querycp"))    { run_query_client_protocols (cfg_filename); return EXIT_SUCCESS; }
 
-    if (vm.count("shutdown"))
-      {
-	run_bp_shutdown (cfg_filename);
-	return EXIT_SUCCESS;
-      }
-
-    if (vm.count("activate"))
-      {
-	run_bp_activate (cfg_filename);
-	return EXIT_SUCCESS;
-      }
-
-    if (vm.count("deactivate"))
-      {
-	run_bp_deactivate (cfg_filename);
-	return EXIT_SUCCESS;
-      }
-    
-    if (vm.count("querycp"))
-      {
-	run_query_client_protocols (cfg_filename);
-	return EXIT_SUCCESS;
-      }
     
     cerr << "No valid option given." << endl;
     cerr << desc << endl;
