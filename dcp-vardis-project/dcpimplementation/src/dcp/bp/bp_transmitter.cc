@@ -225,7 +225,7 @@ namespace dcp::bp {
     // first serialize a dummy version of the BPHeaderT. We will re-do
     // this once we know the total amount of data
     BPHeaderT tmpBPHdr;
-    tmpBPHdr.serialize (area);
+    tmpBPHdr.reserve (area);
     
     for (auto it = runtime.clientProtocols.begin(); it != runtime.clientProtocols.end(); ++it)
       {
