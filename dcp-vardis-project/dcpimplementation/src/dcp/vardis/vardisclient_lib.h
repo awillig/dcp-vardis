@@ -31,12 +31,15 @@
 #include <dcp/vardis/vardis_service_primitives.h>
 #include <dcp/vardis/vardis_shm_control_segment.h>
 #include <dcp/vardis/vardis_transmissible_types.h>
+#include <dcp/vardis/vardis_variable_store_array_shm.h>
 
 
 using dcp::vardis::DescribeDatabaseVariableDescription;
 using dcp::vardis::vardisCommandSocketBufferSize;
 using dcp::vardis::VardisProtocolStatistics;
 using dcp::vardis::VardisShmControlSegment;
+using dcp::vardis::VardisVariableStoreShm;
+using dcp::vardis::VariableStoreI;
 using dcp::vardis::DescribeVariableDescription;
 using dcp::vardis::VarIdT;
 using dcp::vardis::VarLenT;
@@ -104,7 +107,7 @@ namespace dcp {
     
 
     /**
-     * @brief Pointer to the shared memory segment descriptor
+     * @brief Pointer to the per-client shared memory segment descriptor
      */
     std::shared_ptr<ShmBufferPool>  vardis_shm_area_ptr;
 
@@ -114,6 +117,9 @@ namespace dcp {
      */
     NodeIdentifierT ownNodeIdentifier;
     
+
+    VardisVariableStoreShm variable_store;
+
     
   public:
 
