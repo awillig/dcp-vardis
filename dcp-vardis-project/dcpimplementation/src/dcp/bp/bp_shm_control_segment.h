@@ -23,7 +23,6 @@
 #include <iostream>
 #include <dcp/common/shared_mem_area.h>
 
-using dcp::RingBuffer;
 using dcp::SharedMemBuffer;
 
 
