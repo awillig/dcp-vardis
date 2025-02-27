@@ -34,16 +34,20 @@ namespace dcp {
    * memory area. This manages allocation of the memory, and supports
    * operations such as copying, moving etc. The allocated memory is
    * freed when a MemBlock object ceases to exist.
+   *
+   * Through the 'do_delete' flag it is also possible to suppress
+   * deletion of the memory block that an object points to
    */
 
   class MemBlock {
   public:
-    size_t    length     = 0;
-    byte*     data       = nullptr;
+    size_t    length     = 0;          /*!< Length of memory block */
+    byte*     data       = nullptr;    /*!< Location of memory block in memory */
+    bool      do_delete  = true;       /*!< Whether or not the referenced memory block should be deleted */
     
   public:
     
-    MemBlock () : length(0), data(nullptr) {};
+    MemBlock () {};
 
 
     /**
@@ -53,7 +57,11 @@ namespace dcp {
      *
      * Allocates new memory and copies contents of given MemBlock
      */
-    MemBlock (const MemBlock& other) : length(0), data(nullptr) {set (other.length, other.data); };
+    MemBlock (const MemBlock& other)
+    {
+      do_delete = other.do_delete;
+      set (other.length, other.data);
+    };
 
 
     /**
@@ -64,7 +72,12 @@ namespace dcp {
      *
      * Allocates new memory and copies given data into it
      */
-    MemBlock (size_t len, byte* pdata) : length(0), data(nullptr) { length = len; set (len, pdata); };
+    MemBlock (size_t len, byte* pdata)
+    {
+      length = len;
+      do_delete = true;
+      set (len, pdata);
+    };
 
 
     /**
@@ -74,8 +87,10 @@ namespace dcp {
       {
 	length      = other.length;
 	data        = other.data;
+	do_delete   = other.do_delete;
 	other.length     = 0;
 	other.data       = nullptr;
+	other.do_delete  = true;
       };
 
 
@@ -84,12 +99,22 @@ namespace dcp {
      */
     ~MemBlock ()
       {
-	if (data)
-	  {
-	    delete [] data;
-	  }
+	check_delete ();
       };
 
+
+    /**
+     * @brief Checks if we have valid memory and are requested to
+     *        delete, then deletes memory
+     */
+    inline void check_delete ()
+    {
+      if ((data != nullptr) and do_delete)
+	{
+	  delete [] data;
+	}      
+    };
+    
 
     /**
      * @brief Deletes current memory block if necessary, allocates new
@@ -101,14 +126,12 @@ namespace dcp {
      */
     inline void set (size_t len, byte* pdata)
     {
-      if (data)
-	{
-	  delete [] data;
-	}
+      check_delete ();
       if (len > 0 && pdata)
 	{
-	  length = len;
-	  data = new byte [length];
+	  length    = len;
+	  data      = new byte [length];
+	  do_delete = true;
 	  std::memcpy(data, pdata, length);
 	}
       else
@@ -127,13 +150,17 @@ namespace dcp {
       {
 	if (this != &other)
 	  {
-	    if (data)
+	    do_delete = other.do_delete;
+	    check_delete ();
+	    if (do_delete)
 	      {
-		delete [] data;
+		set (other.length, other.data);
 	      }
-	    length = 0;
-	    data   = nullptr;
-	    set (other.length, other.data);
+	    else
+	      {
+		length = other.length;
+		data   = other.data;
+	      }
 	  }
 	return *this;
       };
@@ -148,20 +175,13 @@ namespace dcp {
     {
       if (this != &other)
 	{
-	  if (data)
-	    {
-	      delete [] data;
-	    }
-	  length = 0;
-	  data   = nullptr;
-	  
-	  if (other.data)
-	    {
-	      data   = other.data;
-	      length = other.length;
-	      other.data   = nullptr;
-	      other.length = 0;
-	    }
+	  do_delete = other.do_delete;
+	  check_delete ();
+	  data   = other.data;
+	  length = other.length;
+	  other.data       = nullptr;
+	  other.length     = 0;
+	  other.do_delete  = true;
 	}
       return *this;
     };
@@ -180,10 +200,10 @@ namespace dcp {
       if (length == 0)
 	return (other.length == 0);
 
-      if (length != other.length)
-	return false;
-
-      if ((data == nullptr) or (other.data == nullptr))
+      if (    (do_delete != other.do_delete)
+           || (length != other.length)
+	   || (data == nullptr)
+	   || (other.data == nullptr))
 	return false;
       
       return (0 == std::memcmp (data, other.data, length));
