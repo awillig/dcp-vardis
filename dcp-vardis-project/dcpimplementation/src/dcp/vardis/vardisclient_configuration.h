@@ -105,8 +105,9 @@ namespace dcp {
 
     /**
      * @brief Overloaded output operator
+     *
      * @param os: output stream to use
-     * @param cfg: the VardisConfiguration object to output 
+     * @param cfg: the VardisClientConfiguration object to output 
      */
     friend std::ostream& operator<<(std::ostream& os, const VardisClientConfiguration& cfg);
 
