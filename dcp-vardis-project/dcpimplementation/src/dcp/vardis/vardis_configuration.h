@@ -23,6 +23,7 @@
 #include <iostream>
 #include <boost/program_options.hpp>
 #include <dcp/bp/bpclient_configuration.h>
+#include <dcp/vardis/vardis_constants.h>
 
 namespace po = boost::program_options;
 
@@ -155,14 +156,16 @@ namespace dcp::vardis {
    * @brief This holds the entire configuration for the Vardis demon
    *
    * It consists of configuration blocks for logging, the actual
-   * Vardis protocol configuration and for the command socket between
-   * the Vardis demon and its client applications / protocols
+   * Vardis protocol configuration, for the command socket between the
+   * Vardis demon and its client applications / protocols, and for the
+   * shared memory block holding the variable database
    */
   typedef struct VardisConfiguration : public BPClientConfiguration {
 
     LoggingConfigurationBlock         logging_conf;
     VardisConfigurationBlock          vardis_conf;
     CommandSocketConfigurationBlock   vardis_cmdsock_conf;
+    SharedMemoryConfigurationBlock    vardis_shm_vardb_conf;
 
 
     /**
@@ -176,11 +179,11 @@ namespace dcp::vardis {
       , logging_conf ()
       , vardis_conf ("Vardis")
       , vardis_cmdsock_conf ("VardisCommandSocket")
+      , vardis_shm_vardb_conf ("VardisVariableDatabaseShm", defaultVardisVariableStoreShmName)
     {
-      logging_conf.logfileNamePrefix         = "dcp-vardis-log";
       bp_cmdsock_conf.commandSocketFile      = "/tmp/dcp-bp-command-socket";
       bp_shm_conf.shmAreaName                = "shm-bpclient-vardis";
-      vardis_cmdsock_conf.commandSocketFile  = "/tmp/dcp-vardis-command-socket";
+      vardis_cmdsock_conf.commandSocketFile  = defaultVardisCommandSocketFileName;
     };
     
 
@@ -194,6 +197,7 @@ namespace dcp::vardis {
       logging_conf.add_options (cfgdesc);
       vardis_conf.add_options (cfgdesc);
       vardis_cmdsock_conf.add_options (cfgdesc);
+      vardis_shm_vardb_conf.add_options (cfgdesc, defaultVardisVariableStoreShmName);
     };
 
     
@@ -206,6 +210,7 @@ namespace dcp::vardis {
       logging_conf.validate ();
       vardis_conf.validate ();
       vardis_cmdsock_conf.validate ();
+      vardis_shm_vardb_conf.validate ();
     };
       
       
