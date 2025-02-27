@@ -7,35 +7,36 @@
 #include <thread>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
+#include <boost/program_options.hpp>
 #include <dcp/applications/vardisapp-test-variabletype.h>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/common/services_status.h>
+#include <dcp/vardis/vardis_constants.h>
 #include <dcp/vardis/vardis_transmissible_types.h>
 #include <dcp/vardis/vardisclient_configuration.h>
 #include <dcp/vardis/vardisclient_lib.h>
 
 
+
 using std::cout;
 using std::endl;
+using std::cerr;
+using dcp::vardis::defaultVardisCommandSocketFileName;
+using dcp::vardis::defaultVardisVariableStoreShmName;
+
 using namespace dcp;
 
-void print_help_and_exit (std::string execname)
+
+const std::string defaultVardisClientShmName = "shm-vardisapp-test-producer";
+
+
+void print_version ()
 {
-  cout << execname << " <sockname> <shmname> <varId> <genperiodMS> <average> <stddev>" << endl
-       << endl
-       << "Creates and periodically updates a Vardis variable. The variable includes the" << endl
-       << "generation timestamp and random values generated from a Gaussian distribution" << endl
-       << "with given average and standard deviation" << endl
-       << endl
-       << "Parameters:" << endl
-       << "    sockname:     filename of Vardis command socket (UNIX Domain socket)" << endl
-       << "    shmname:      unique name of shared memory area for interfacing with VarDis" << endl
-       << "    varId:        variable identifier, unique value between 0 and " << (int) dcp::vardis::VarIdT::max_val() << endl
-       << "    genPeriodMS:  time period between two variable updates (in ms, positive, no more than 65 s)" << endl
-       << "    average:      average value of the Gaussian" << endl
-       << "    stddev:       standard deviation of the Gaussian" << endl;
-  exit (EXIT_SUCCESS);
+  cout << dcp::dcpHighlevelDescription
+       << " -- version " << dcp::dcpVersionNumber
+       << endl;
 }
+
 
 bool       exitFlag = false;
 uint64_t   seqno    = 0;
@@ -62,36 +63,79 @@ VardisTestVariable generate_new_value (boost::normal_distribution<> distribution
 
 int main (int argc, char* argv [])
 {
-  // ----------------------------------
-  // Check parameters
+  std::string cmdsock_name  = defaultVardisCommandSocketFileName;
+  std::string shmname_cli   = defaultVardisClientShmName;
+  std::string shmname_glob  = defaultVardisVariableStoreShmName;
+  int     varIdTmp = 0;
+  int     periodTmp = 0;
+  double  average = 0;
+  double  stddev = 0;
+
   
-  if (argc != 7)
-    print_help_and_exit (std::string (argv[0]));
+  po::options_description desc("Allowed options");
+  desc.add_options()
+    ("help,h",         "produce help message and exit")
+    ("version,v",      "show version information and exit")
+    ("sockname,s",     po::value<std::string>(&cmdsock_name)->default_value(defaultVardisCommandSocketFileName), "filename of VarDis command socket (UNIX Domain Socket)")
+    ("shmcli,c",       po::value<std::string>(&shmname_cli)->default_value(defaultVardisClientShmName), "Name of shared memory area for interfacing with Vardis")
+    ("shmgdb,g",       po::value<std::string>(&shmname_glob)->default_value(defaultVardisVariableStoreShmName), "Unique name of shared memory area for accessing VarDis variables (global database)")
+    ("varid",          po::value<int>(&varIdTmp), "Variable identifier")
+    ("period",         po::value<int>(&periodTmp), "Generation period (in ms)")
+    ("average",        po::value<double>(&average), "Average of generated Gaussian")
+    ("stddev",         po::value<double>(&stddev), "Standard deviation of generated Gaussian")
+    ;
 
-  std::string sockname (argv[1]);
-  std::string shmname  (argv[2]);
-  int         varIdTmp   (std::stoi(std::string(argv[3])));
-  int         periodTmp  (std::stoi(std::string(argv[4])));
-  double      average    (std::stod(std::string(argv[5])));
-  double      stddev     (std::stod(std::string(argv[6])));
+  po::positional_options_description desc_pos;
+  desc_pos.add ("varid", 1);
+  desc_pos.add ("period", 1);
+  desc_pos.add ("average", 1);
+  desc_pos.add ("stddev", 1);
 
-  if ((varIdTmp < 0) || (varIdTmp > dcp::vardis::VarIdT::max_val()))
-    {
-      cout << "Parameter varId outside allowed range. Aborting." << endl;
-      return EXIT_FAILURE;
-    }
+  try {
+    po::variables_map vm;
+    //po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::store (po::command_line_parser(argc, argv).options(desc).positional(desc_pos).run(), vm);
+    po::notify(vm);
 
-  if ((periodTmp <= 0) || (periodTmp > std::numeric_limits<uint16_t>::max()))
-    {
-      cout << "Parameter genPeriodMS outside allowed range. Aborting." << endl;
-      return EXIT_FAILURE;
-    }
+    if (vm.count("help"))
+      {
+	cout << std::string (argv[0]) << " [-s <sockname>] [-mc <shmcli>] [-mg <shmgdb>] <varId> <genperiodMS> <average> <stddev>" << endl;
+	cout << desc << endl;
+	return EXIT_SUCCESS;
+      }
 
-  if (stddev <= 0)
-    {
-      cout << "Parameter stddev outside allowed range. Aborting." << endl;
-      return EXIT_FAILURE;
-    }
+    if (vm.count("version"))
+      {
+	print_version();
+	return EXIT_SUCCESS;
+      }
+    
+    if ((varIdTmp < 0) || (varIdTmp > dcp::vardis::VarIdT::max_val()))
+      {
+	cout << "Varid outside allowed range. Aborting." << endl;
+	return EXIT_FAILURE;
+      }
+    
+    if ((periodTmp <= 0) || (periodTmp > std::numeric_limits<uint16_t>::max()))
+      {
+	cout << "Generation period outside allowed range. Aborting." << endl;
+	return EXIT_FAILURE;
+      }
+    
+    if (stddev < 0)
+      {
+	cout << "Stddev outside allowed range. Aborting." << endl;
+	return EXIT_FAILURE;
+      }
+    
+  }
+  catch(std::exception& e) {
+    cerr << e.what() << endl;
+    cerr << desc << endl;
+    return EXIT_FAILURE;
+  }
+
+  // ----------------------------------
 
   VarIdT    varId (varIdTmp);
   uint16_t  periodMS = (uint16_t) periodTmp;
@@ -107,8 +151,9 @@ int main (int argc, char* argv [])
   // ----------------------------------
   // Register with Vardis and create variable
   VardisClientConfiguration cl_conf;
-  cl_conf.cmdsock_conf.commandSocketFile = sockname;
-  cl_conf.shm_conf.shmAreaName           = shmname;
+  cl_conf.cmdsock_conf.commandSocketFile = cmdsock_name;
+  cl_conf.shm_conf_client.shmAreaName    = shmname_cli;
+  cl_conf.shm_conf_global.shmAreaName    = shmname_glob;
 
   try {
     VardisClientRuntime cl_rt (cl_conf);
@@ -172,5 +217,5 @@ int main (int argc, char* argv [])
     {
       cout << "Caught an exception, got " << e.what() << ", exiting." << endl;
       return EXIT_FAILURE;
-    }  
+    }
 }
