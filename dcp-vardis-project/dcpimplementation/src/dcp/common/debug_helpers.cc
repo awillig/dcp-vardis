@@ -24,14 +24,21 @@
 
 std::string byte_array_to_string (byte* bytes, size_t len)
 {
-  std::stringstream ss;
-  ss << std::hex;
-
-  ss << "{";
-  for (unsigned int i=0; i<len-1; i++)
-    ss << std::setw(2) << std::setfill('0') << (int) bytes[i] << ",";
-  ss << std::setw(2) << std::setfill('0') << (int) bytes[len-1];
-  ss << "}";
-
-  return ss.str();
+  if (len > 0)
+    {
+      std::stringstream ss;
+      ss << std::hex;
+      
+      ss << "{";
+      for (unsigned int i=0; i<len-1; i++)
+	ss << std::setw(2) << std::setfill('0') << (int) bytes[i] << ",";
+      ss << std::setw(2) << std::setfill('0') << (int) bytes[len-1];
+      ss << "}";
+      
+      return ss.str();
+    }
+  else
+    {
+      return "";
+    }
 }
