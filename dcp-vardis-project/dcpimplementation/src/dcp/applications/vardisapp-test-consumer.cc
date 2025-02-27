@@ -16,21 +16,21 @@
 
 using std::cout;
 using std::endl;
+using std::cerr;
+using dcp::vardis::defaultVardisCommandSocketFileName;
+using dcp::vardis::defaultVardisVariableStoreShmName;
+
 using namespace dcp;
 
-void print_help_and_exit (std::string execname)
+
+const std::string defaultVardisClientShmName = "shm-vardisapp-test-consumer";
+
+
+void print_version ()
 {
-  cout << execname << " <sockname> <shmname> <queryPeriodMS>" << endl
-       << endl
-       << "Periodically queries all current Vardis variables and displays their values," << endl
-       << "assuming that they are test variables (including sequence number, timestamp" << endl
-       << "and double value)." << endl
-       << endl
-       << "Parameters:" << endl
-       << "    sockname:       filename of Vardis command socket (UNIX Domain socket)" << endl
-       << "    shmname:        unique name of shared memory area for interfacing with VarDis" << endl
-       << "    queryPeriodMS:  time period between two queries of the variable database (in ms, positive, no more than 65 s)" << endl;
-  exit (EXIT_SUCCESS);
+  cout << dcp::dcpHighlevelDescription
+       << " -- version " << dcp::dcpVersionNumber
+       << endl;
 }
 
 bool       exitFlag = false;
@@ -45,23 +45,58 @@ void signalHandler (int signum)
 
 int main (int argc, char* argv [])
 {
-  // ----------------------------------
-  // Check parameters
+  std::string cmdsock_name  = defaultVardisCommandSocketFileName;
+  std::string shmname_cli   = defaultVardisClientShmName;
+  std::string shmname_glob  = defaultVardisVariableStoreShmName;
+  int     periodTmp = 0;
+
   
-  if (argc != 4)
-    print_help_and_exit (std::string (argv[0]));
+  po::options_description desc("Allowed options");
+  desc.add_options()
+    ("help,h",         "produce help message and exit")
+    ("version,v",      "show version information and exit")
+    ("sockname,s",     po::value<std::string>(&cmdsock_name)->default_value(defaultVardisCommandSocketFileName), "filename of VarDis command socket (UNIX Domain Socket)")
+    ("shmcli,c",       po::value<std::string>(&shmname_cli)->default_value(defaultVardisClientShmName), "Name of shared memory area for interfacing with Vardis")
+    ("shmgdb,g",       po::value<std::string>(&shmname_glob)->default_value(defaultVardisVariableStoreShmName), "Unique name of shared memory area for accessing VarDis variables (global database)")
+    ("period",         po::value<int>(&periodTmp), "Generation period (in ms)")
+    ;
 
-  std::string sockname (argv[1]);
-  std::string shmname  (argv[2]);
-  int         periodTmp  (std::stoi(std::string(argv[3])));
+  po::positional_options_description desc_pos;
+  desc_pos.add ("period", 1);
 
+  try {
+    po::variables_map vm;
+    po::store (po::command_line_parser(argc, argv).options(desc).positional(desc_pos).run(), vm);
+    po::notify(vm);
 
-  if ((periodTmp <= 0) || (periodTmp > std::numeric_limits<uint16_t>::max()))
-    {
-      cout << "Parameter genPeriodMS outside allowed range. Aborting." << endl;
-      return EXIT_FAILURE;
-    }
+    if (vm.count("help"))
+      {
+	cout << std::string (argv[0]) << " [-s <sockname>] [-mc <shmcli>] [-mg <shmgdb>] <queryperiodMS>" << endl;
+	cout << desc << endl;
+	return EXIT_SUCCESS;
+      }
 
+    if (vm.count("version"))
+      {
+	print_version();
+	return EXIT_SUCCESS;
+      }
+    
+    if ((periodTmp <= 0) || (periodTmp > std::numeric_limits<uint16_t>::max()))
+      {
+	cout << "Query period outside allowed range. Aborting." << endl;
+	return EXIT_FAILURE;
+      }
+    
+  }
+  catch(std::exception& e) {
+    cerr << e.what() << endl;
+    cerr << desc << endl;
+    return EXIT_FAILURE;
+  }
+  
+  // ----------------------------------
+  
   uint16_t  periodMS = (uint16_t) periodTmp;
 
   // ----------------------------------
@@ -74,8 +109,9 @@ int main (int argc, char* argv [])
   // ----------------------------------
   // Register with Vardis
   VardisClientConfiguration cl_conf;
-  cl_conf.cmdsock_conf.commandSocketFile = sockname;
-  cl_conf.shm_conf.shmAreaName           = shmname;
+  cl_conf.cmdsock_conf.commandSocketFile = cmdsock_name;
+  cl_conf.shm_conf_client.shmAreaName    = shmname_cli;
+  cl_conf.shm_conf_global.shmAreaName    = shmname_glob;
 
   try {
     VardisClientRuntime cl_rt (cl_conf);
