@@ -44,6 +44,11 @@ namespace dcp {
     const char* what() const throw() { return message_.c_str(); };
   };
 
+  class RingBufferException : public DcpException {
+  public:
+    RingBufferException (const std::string& message) : DcpException("RingBuffer: " + message) {};
+  };
+  
   class ConfigurationException : public DcpException {
   public:
     ConfigurationException (const std::string& message) : DcpException("Configuration: " + message) {};
@@ -72,6 +77,11 @@ namespace dcp {
   class VardisClientLibException : public DcpException {
   public:
     VardisClientLibException (const std::string& message) : DcpException("VardisCLientLib: " + message) {};
+  };
+
+  class VardisVariableStoreException : public DcpException {
+  public:
+    VardisVariableStoreException (const std::string& message) : DcpException("VardisVariableStore: " + message) {};
   };
 
   class ManagementException : public DcpException {
