@@ -508,14 +508,9 @@ namespace dcp {
   /**
    * @brief A ring buffer (or cyclic queue) of SharedMemBuffer instances
    *
-   * A ring buffer is stored in the control segment. It is an array of
-   * SharedMemBuffer entries and two index pointers used for
-   * maintaining a queue over the array. The size of the array is
-   * given as a template parameter.
-   *
-   * The class offers a number of access methods, some which are
-   * unprotected, and some of which acquire the mutex of the control
-   * segment.
+   * Besides the (unprotected) access methods from the base class,
+   * this class additionally offers some methods which acquire the
+   * mutex of the control segment.
    */
 
   template <size_t maxRingBufferElements>
@@ -737,21 +732,38 @@ namespace dcp {
 
 
     /**
-     * @brief Constructors, setting the section name for config file
+     * @brief Default constructor, setting default section name for config file
      */
     SharedMemoryConfigurationBlock ()
       : DcpConfigurationBlock ("sharedmem")
     {};
 
+
+    /**
+     * @brief Constructors, setting section name for config file to
+     *        chosen name
+     *
+     * @param bname: section name for config file
+     */
     SharedMemoryConfigurationBlock (std::string bname)
       : DcpConfigurationBlock (bname)
     {};
 
+
+    /**
+     * @brief Constructors, setting section name for config file to
+     *        chosen name and also setting default area name to given
+     *        name
+     *
+     * @param bname: section name for config file
+     * @param shmname: name of shared memory area file
+     */
     SharedMemoryConfigurationBlock (std::string bname, std::string shmname)
       : DcpConfigurationBlock (bname),
 	shmAreaName (shmname)
     {};
 
+    
     /**
      * @brief Add description of configuration options for config file, also taking default area name
      */
