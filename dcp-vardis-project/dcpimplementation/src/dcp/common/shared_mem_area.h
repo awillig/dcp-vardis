@@ -36,6 +36,7 @@
 #include <dcp/common/exceptions.h>
 #include <dcp/common/foundation_types.h>
 #include <dcp/common/global_types_constants.h>
+#include <dcp/common/ring_buffer.h>
 
 
 using namespace boost::interprocess;
@@ -518,29 +519,11 @@ namespace dcp {
    */
 
   template <size_t maxRingBufferElements>
-  class RingBuffer {
-    
-  private:
-
-    /**
-     * @brief Maximum length of the human-readable name of a ring buffer.
-     *
-     * The name is only relevant for logging / debugging purposes
-     */
-    static constexpr size_t maxRingBufferNameLength =  64;
-
-    
-    uint64_t         in                    = 0;  /*!< Index where next SharedMemBuffer will be stored */
-    uint64_t         out                   = 0;  /*!< Index from where next SharedMemBuffer will be removed */
-    uint64_t         maxCapacity           = 0;  /*!< Maximum number of elements that can be stored in the queue */
-    uint64_t         currentNumberElements = 0;  /*!< Current number of elements in the queue */
-    char             rbName[maxRingBufferNameLength];  /*!< Name of the ring buffer */
-    SharedMemBuffer  the_ring[maxRingBufferElements];  /*!< The actual array containing the SharedMemBuffer elements */
-
-    
+  class ShmRingBuffer : public RingBufferBase<SharedMemBuffer, maxRingBufferElements> {
+        
   public:
 
-    RingBuffer () = delete;
+    ShmRingBuffer () = delete;
 
     /**
      * @brief Constructor
@@ -552,106 +535,10 @@ namespace dcp {
      * long, or when maxCap is either zero or too large (larger than
      * maxRingBufferElements minus one)
      */
-    RingBuffer (const char* name, uint64_t maxCap)
-      : maxCapacity (maxCap)
+    ShmRingBuffer (const char* name, uint64_t maxCap)
+      : RingBufferBase<SharedMemBuffer, maxRingBufferElements> (name, maxCap)
       {
-	if (!name) throw ShmException("RingBuffer::ctor: invalid name");
-	if (std::strlen(name) > maxRingBufferNameLength-1)  throw ShmException(std::format("RingBuffer::ctor: name is too long at {} bytes ({} bytes allowed)", std::strlen(name), maxRingBufferNameLength-1));
-	if ((maxCap < 1) || (maxCap >= maxRingBufferElements)) throw ShmException("RingBuffer::ctor: illegal value for maxCapacity");
-	std::strcpy(rbName, name);
       };
-
-    
-    /**
-     * @brief Returns descriptive name.
-     */
-    inline const char* get_name () const { return rbName; };
-
-
-    /**
-     * @brief Returns number of buffers to use for the ringbuffer
-     */
-    static size_t get_max_ring_buffer_elements () {return maxRingBufferElements; };
-
-    
-    /**
-     * @brief Indicates whether ring buffer is currently empty (true) or not (false).
-     *
-     * Assumes that caller has locked the shared memory area
-     * containing the ring buffer. Does not throw.
-     */
-    inline bool isEmpty () const { return currentNumberElements == 0; };
-
-
-    /**
-     * @brief Indicates whether ring buffer is currently full (true)
-     *        or not (false).
-     *
-     * Assumes that caller has locked the shared memory area
-     * containing the ring buffer. Does not throw.
-     */
-    inline bool isFull () const { return currentNumberElements == maxCapacity; };
-
-    
-    /**
-     * @brief Returns the current number of (SharedMemBuffer) buffers
-     *        in the ring buffer
-     *
-     * Assumes that caller has locked the shared memory area
-     * containing the ring buffer. Does not throw.
-     */
-    inline unsigned int stored_elements () const { return currentNumberElements; };
-
-
-    /**
-     * @brief Returns the maximum number of elements that is allowed
-     *        to be stored in the ringbuffer
-     */
-    inline uint64_t get_max_capacity () const { return maxCapacity; };
-    
-
-    /**
-     * @brief Pops/removes oldest element/buffer from the ring buffer
-     *        and returns the buffer.
-     *
-     * Assumes that caller has locked the shared memory area. Throws
-     * when the ring buffer is empty.
-     */
-    inline SharedMemBuffer pop () {
-      if (isEmpty()) throw ShmException ("RingBuffer::pop(): trying to pop from empty ring buffer");
-      uint64_t rvidx = out;
-      out = (out + 1) % maxRingBufferElements;
-      currentNumberElements--;
-      return the_ring[rvidx];
-    };
-
-
-    /**
-     * @brief Returns the oldest element in the ring buffer without
-     *        removing it.
-     *
-     * Assumes that caller has locked the shared memory area. Throws
-     * when the ring buffer is empty.
-     */
-    SharedMemBuffer peek () const {
-      if (isEmpty()) throw ShmException ("RingBuffer::peek(): trying to peek from empty ring buffer");
-      return the_ring[out];
-    };
-
-
-    /**
-     * @brief Pushes/adds new element / buffer into ring buffer.
-     *
-     * Assumes that caller has locked the shared memory area. Throws
-     * when the ring buffer is full.
-     */
-    void push(const SharedMemBuffer& buf) {
-      if (isFull()) throw ShmException ("RingBuffer::push(): trying to push onto full ring buffer");
-      the_ring[in] = buf;
-      in = (in + 1) % maxRingBufferElements;
-      currentNumberElements++;
-    };
-
 
 
     
@@ -673,7 +560,7 @@ namespace dcp {
      */
     SharedMemBuffer wait_pop (ShmControlSegmentBase& CS, uint16_t timeoutMS = 200)
     {
-      if (timeoutMS <= 0) throw ShmException ("RingBuffer::wait_pop: timeout is not strictly positive");
+      if (timeoutMS <= 0) throw RingBufferException ("wait_pop: timeout is not strictly positive");
       
       TimeStampT start_time = TimeStampT::get_current_system_time ();
       
@@ -681,12 +568,12 @@ namespace dcp {
 	{
 	  {
 	    ScopedShmControlSegmentLock lock (CS);
-	    if (not isEmpty())
-		return pop ();
+	    if (not RingBufferBase<SharedMemBuffer, maxRingBufferElements>::isEmpty())
+		return RingBufferBase<SharedMemBuffer, maxRingBufferElements>::pop ();
 	  }
 	  TimeStampT current_time = TimeStampT::get_current_system_time();
 	  if (current_time.milliseconds_passed_since (start_time) > timeoutMS)
-	    throw ShmException ("RingBuffer::wait_pop: timeout");
+	    throw RingBufferException ("wait_pop: timeout");
 
 	  // #####ISSUE: make sleep time configurable/selectable
 	  std::this_thread::sleep_for (10ms);
@@ -713,7 +600,7 @@ namespace dcp {
      */
     void wait_push (ShmControlSegmentBase& CS, SharedMemBuffer buf, uint16_t timeoutMS = 200)
     {
-      if (timeoutMS <= 0) throw ShmException ("RingBuffer::wait_push: timeout is not strictly positive");
+      if (timeoutMS <= 0) throw RingBufferException ("wait_push: timeout is not strictly positive");
       
       TimeStampT start_time = TimeStampT::get_current_system_time ();
       
@@ -721,16 +608,16 @@ namespace dcp {
 	{
 	  {
 	    ScopedShmControlSegmentLock lock (CS);
-	    if (not isFull())
+	    if (not RingBufferBase<SharedMemBuffer, maxRingBufferElements>::isFull())
 	      {
-		push (buf);
+		RingBufferBase<SharedMemBuffer, maxRingBufferElements>::push (buf);
 		return;
 	      }
 
 	  }
 	  TimeStampT current_time = TimeStampT::get_current_system_time();
 	  if (current_time.milliseconds_passed_since (start_time) > timeoutMS)
-	    throw ShmException ("RingBuffer::wait_push: timeout");
+	    throw RingBufferException ("wait_push: timeout");
 
 	  // #####ISSUE: make sleep time configurable/selectable
 	  std::this_thread::sleep_for (10ms);
@@ -776,12 +663,12 @@ namespace dcp {
     template <size_t RBTargetMaxElements>
     void wait_pop_process_push (ShmControlSegmentBase& CS,
 				byte* buffer_seg_ptr,
-				RingBuffer<RBTargetMaxElements>& rbTarget,
+				ShmRingBuffer<RBTargetMaxElements>& rbTarget,
 				std::function<void (SharedMemBuffer&, byte*)> process,
 				uint16_t timeoutMS = 200)
     {
-      if (buffer_seg_ptr == nullptr) throw ShmException ("RingBuffer::wait_pop_process_push: buffer_seg_ptr is null");
-      if (timeoutMS <= 0) throw ShmException ("RingBuffer::wait_pop_process_push: timeout is not strictly positive");
+      if (buffer_seg_ptr == nullptr) throw RingBufferException ("wait_pop_process_push: buffer_seg_ptr is null");
+      if (timeoutMS <= 0) throw RingBufferException ("wait_pop_process_push: timeout is not strictly positive");
       
       TimeStampT start_time = TimeStampT::get_current_system_time ();
 
@@ -789,9 +676,9 @@ namespace dcp {
 	{
 	  {
 	    ScopedShmControlSegmentLock lock (CS);
-	    if (not isEmpty())
+	    if (not RingBufferBase<SharedMemBuffer, maxRingBufferElements>::isEmpty())
 	      {
-		SharedMemBuffer buff = pop ();
+		SharedMemBuffer buff = RingBufferBase<SharedMemBuffer, maxRingBufferElements>::pop ();
 		byte* data_ptr = buffer_seg_ptr + buff.data_offs ();
 		process (buff, data_ptr);
 		rbTarget.push (buff);
@@ -800,29 +687,12 @@ namespace dcp {
 	  }
 	  TimeStampT current_time = TimeStampT::get_current_system_time();
 	  if (current_time.milliseconds_passed_since (start_time) > timeoutMS)
-	    throw ShmException ("RingBuffer::wait_pop_process_push: timeout");
+	    throw RingBufferException ("wait_pop_process_push: timeout");
 
 	  std::this_thread::sleep_for (5ms);
 	}
 
     }
-
-
-    /**
-     * @brief Outputting ring buffer description
-     */
-    std::ostream& operator<<(std::ostream& os)
-    {
-      os << "RingBuffer{name=" << rbName
-	 << ",in=" << in
-	 << ",out=" << out
-	 << ",maxCap=" << maxCapacity
-	 << ",numElem=" << currentNumberElements
-	 << ",maxElements=" << maxRingBufferElements
-	 << "}";
-      return os;
-    };
-
 
   };
 
@@ -837,8 +707,8 @@ namespace dcp {
   
   const size_t maxRingBufferElements_Normal   =  64;
   const size_t maxRingBufferElements_Free     =  512;  
-  typedef RingBuffer<maxRingBufferElements_Free>    RingBufferFree;
-  typedef RingBuffer<maxRingBufferElements_Normal>  RingBufferNormal;
+  typedef ShmRingBuffer<maxRingBufferElements_Free>    RingBufferFree;
+  typedef ShmRingBuffer<maxRingBufferElements_Normal>  RingBufferNormal;
   
 
   
@@ -863,20 +733,38 @@ namespace dcp {
   class SharedMemoryConfigurationBlock : public DcpConfigurationBlock {
   public:
 
-    std::string shmAreaName = defaultValueShmAreaName; /*!< Name of shared memory area, must be systemwide unique at the time of creation */
+    std::string shmAreaName; /*!< Name of shared memory area, must be systemwide unique at the time of creation */
 
 
     /**
      * @brief Constructors, setting the section name for config file
      */
-    SharedMemoryConfigurationBlock () : DcpConfigurationBlock ("sharedmem") {} ;
-    SharedMemoryConfigurationBlock (std::string bname) : DcpConfigurationBlock (bname) {};
+    SharedMemoryConfigurationBlock ()
+      : DcpConfigurationBlock ("sharedmem")
+    {};
 
+    SharedMemoryConfigurationBlock (std::string bname)
+      : DcpConfigurationBlock (bname)
+    {};
+
+    SharedMemoryConfigurationBlock (std::string bname, std::string shmname)
+      : DcpConfigurationBlock (bname),
+	shmAreaName (shmname)
+    {};
+
+    /**
+     * @brief Add description of configuration options for config file, also taking default area name
+     */
+    virtual void add_options (po::options_description& cfgdesc)
+    {
+      add_options (cfgdesc, defaultValueShmAreaName);
+    };
+    
     
     /**
-     * @brief Add description of configuration options for config file
+     * @brief Add description of configuration options for config file, also taking default area name
      */
-    virtual void add_options (po::options_description& cfgdesc);
+    virtual void add_options (po::options_description& cfgdesc, std::string default_area_name);
 
 
     /**
