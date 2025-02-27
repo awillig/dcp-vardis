@@ -22,8 +22,6 @@ using dcp::vardis::defaultVardisVariableStoreShmName;
 
 using namespace dcp;
 
-const std::string defaultVardisClientShmName = "shm-vardisapp-list-variables";
-
 
 void print_version ()
 {
@@ -36,6 +34,7 @@ void print_version ()
 int main (int argc, char* argv [])
 {
   std::string cmdsock_name  = defaultVardisCommandSocketFileName;
+  std::string shmname_cli   = "irrelevant";
   std::string shmname_glob  = defaultVardisVariableStoreShmName;
 
   
@@ -77,7 +76,7 @@ int main (int argc, char* argv [])
   // Register with Vardis
   VardisClientConfiguration cl_conf;
   cl_conf.cmdsock_conf.commandSocketFile = cmdsock_name;
-  cl_conf.shm_conf_client.shmAreaName    = "irrelevant";
+  cl_conf.shm_conf_client.shmAreaName    = shmname_cli;;
   cl_conf.shm_conf_global.shmAreaName    = shmname_glob;
 
   try {
