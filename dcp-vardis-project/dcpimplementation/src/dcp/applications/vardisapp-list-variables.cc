@@ -13,12 +13,12 @@
 #include <dcp/vardis/vardisclient_configuration.h>
 #include <dcp/vardis/vardisclient_lib.h>
 
-using dcp::vardis::defaultVardisCommandSocketFileName;
+
 using std::cerr;
 using std::cout;
 using std::endl;
 using dcp::vardis::defaultVardisVariableStoreShmName;
-
+using dcp::vardis::defaultVardisCommandSocketFileName;
 
 using namespace dcp;
 
