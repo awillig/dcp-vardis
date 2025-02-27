@@ -92,12 +92,10 @@ namespace dcp {
   
   
   
-  void SharedMemoryConfigurationBlock::add_options (po::options_description& cfgdesc)
+  void SharedMemoryConfigurationBlock::add_options (po::options_description& cfgdesc, std::string default_area_name)
   {
     cfgdesc.add_options()
-      
-      (opt("areaName").c_str(),  po::value<std::string>(&shmAreaName)->default_value(defaultValueShmAreaName), txt("shared memory area name").c_str())
-      
+      (opt("areaName").c_str(),  po::value<std::string>(&shmAreaName)->default_value(default_area_name), txt("shared memory area name").c_str())
       ;
   }
 
