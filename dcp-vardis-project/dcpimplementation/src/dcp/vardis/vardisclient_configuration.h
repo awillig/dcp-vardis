@@ -24,6 +24,7 @@
 #include <dcp/common/command_socket.h>
 #include <dcp/common/configuration.h>
 #include <dcp/common/shared_mem_area.h>
+#include <dcp/vardis/vardis_constants.h>
 
 /**
  * @brief Configuration required for a Vardis client application /
@@ -44,7 +45,8 @@ namespace dcp {
   typedef struct VardisClientConfiguration : public DcpConfiguration {
 
     CommandSocketConfigurationBlock   cmdsock_conf;
-    SharedMemoryConfigurationBlock    shm_conf;
+    SharedMemoryConfigurationBlock    shm_conf_client;
+    SharedMemoryConfigurationBlock    shm_conf_global;
 
     /**
      * @brief Constructor, setting section names for both config
@@ -53,7 +55,8 @@ namespace dcp {
      */
     VardisClientConfiguration () :
       cmdsock_conf ("VardisCommandSocket"),
-      shm_conf ("dcp-vardisclient-shm")
+      shm_conf_client ("dcp-vardisclient-shm"),
+      shm_conf_global ("VardisVariableDatabaseShm")
     {};
     
 
@@ -64,10 +67,12 @@ namespace dcp {
      */
     VardisClientConfiguration (const std::string& cmdsock_file, const std::string& shm_area_name) :
       cmdsock_conf ("VardisCommandSocket"),
-      shm_conf ("dcp-vardisclient-shm")
+      shm_conf_client ("dcp-vardisclient-shm"),
+      shm_conf_global ("VardisVariableDatabaseShm")
     {
-      cmdsock_conf.commandSocketFile = cmdsock_file;
-      shm_conf.shmAreaName           = shm_area_name;
+      cmdsock_conf.commandSocketFile  = cmdsock_file;
+      shm_conf_client.shmAreaName     = shm_area_name;
+      shm_conf_global.shmAreaName     = dcp::vardis::defaultVardisVariableStoreShmName;
     };
     
 
@@ -77,7 +82,8 @@ namespace dcp {
     virtual void build_description (po::options_description& cfgdesc)
     {
       cmdsock_conf.add_options (cfgdesc);
-      shm_conf.add_options (cfgdesc);
+      shm_conf_client.add_options (cfgdesc);
+      shm_conf_global.add_options (cfgdesc);
     };
 
 
@@ -87,9 +93,18 @@ namespace dcp {
     virtual void validate ()
     {
       cmdsock_conf.validate ();
-      shm_conf.validate ();
+      shm_conf_client.validate ();
+      shm_conf_global.validate ();
     };
-        
+
+    /**
+     * @brief Overloaded output operator
+     * @param os: output stream to use
+     * @param cfg: the VardisConfiguration object to output 
+     */
+    friend std::ostream& operator<<(std::ostream& os, const VardisClientConfiguration& cfg);
+
+    
   } VardisClientConfiguration;
   
 };  // namespace dcp
