@@ -84,7 +84,7 @@ namespace dcp::vardis {
   std::ostream& operator<< (std::ostream& os, const dcp::vardis::VardisConfiguration& cfg)
   {
     os << "VardisConfiguration { "
-       << " , loggingToConsole = " << cfg.logging_conf.loggingToConsole
+       << "loggingToConsole = " << cfg.logging_conf.loggingToConsole
        << " , logfileNamePrefix = " << cfg.logging_conf.logfileNamePrefix
        << " , logAutoFlush = " << cfg.logging_conf.logAutoFlush
        << " , minimumSeverityLevel = " << cfg.logging_conf.minimumSeverityLevel
@@ -95,7 +95,8 @@ namespace dcp::vardis {
 
        << " , shmAreaNameBP = " << cfg.bp_shm_conf.shmAreaName
 
-
+       << " , shmAreaNameVarStore = " << cfg.vardis_shm_vardb_conf.shmAreaName
+      
        << " , maxValueLength = " << cfg.vardis_conf.maxValueLength
        << " , maxDescriptionLength = " << cfg.vardis_conf.maxDescriptionLength
        << " , maxRepetitions = " << cfg.vardis_conf.maxRepetitions
