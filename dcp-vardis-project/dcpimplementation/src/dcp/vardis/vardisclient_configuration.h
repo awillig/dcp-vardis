@@ -38,20 +38,20 @@ namespace dcp {
    * @brief Configuration for a Vardis client
    *
    * Contains a command socket (for exchanging service requests and
-   * responses with Vardis demon) and a shared memory segment (for
-   * exchanging RTDB services). For both of these the most important
+   * responses with Vardis demon), a client shared memory segment (for
+   * exchanging RTDB services), and the Vardis global shared memory
+   * segment (variable store). For all of these the most important
    * features are their respective file names
    */
   typedef struct VardisClientConfiguration : public DcpConfiguration {
 
-    CommandSocketConfigurationBlock   cmdsock_conf;
-    SharedMemoryConfigurationBlock    shm_conf_client;
-    SharedMemoryConfigurationBlock    shm_conf_global;
+    CommandSocketConfigurationBlock   cmdsock_conf;     /*!< Filename of Vardis command socket (UNIX Domain Socket) */
+    SharedMemoryConfigurationBlock    shm_conf_client;  /*!< Name of client-specific shared memory area towards Vardis */
+    SharedMemoryConfigurationBlock    shm_conf_global;  /*!< Name of Vardis global shared memory segment for variable store */
 
     /**
-     * @brief Constructor, setting section names for both config
-     *        blocks and setting command socket and shared memory
-     *        names to given arguments
+     * @brief Constructor, setting section names for all config
+     *        blocks
      */
     VardisClientConfiguration () :
       cmdsock_conf ("VardisCommandSocket"),
@@ -61,18 +61,24 @@ namespace dcp {
     
 
     /**
-     * @brief Constructor, setting section names for both config
+     * @brief Constructor, setting section names for all config
      *        blocks and setting command socket and shared memory
      *        names to given arguments
+     *
+     * @param cmdsock_file: Filename of Vardis command socket (a UNIX Domain Socket)
+     * @param client_area_name: shared memory name of client area towards Vardis
+     * @param global_area_name: shared memory name of global Vardis variable store
      */
-    VardisClientConfiguration (const std::string& cmdsock_file, const std::string& shm_area_name) :
+    VardisClientConfiguration (const std::string& cmdsock_file,
+			       std::string client_area_name,
+			       std::string global_area_name = dcp::vardis::defaultVardisVariableStoreShmName) :
       cmdsock_conf ("VardisCommandSocket"),
       shm_conf_client ("dcp-vardisclient-shm"),
       shm_conf_global ("VardisVariableDatabaseShm")
     {
       cmdsock_conf.commandSocketFile  = cmdsock_file;
-      shm_conf_client.shmAreaName     = shm_area_name;
-      shm_conf_global.shmAreaName     = dcp::vardis::defaultVardisVariableStoreShmName;
+      shm_conf_client.shmAreaName     = client_area_name;
+      shm_conf_global.shmAreaName     = global_area_name;
     };
     
 
