@@ -199,7 +199,7 @@ namespace dcp::vardis {
       {
 	std::this_thread::sleep_for (std::chrono::milliseconds (runtime.vardis_config.vardis_conf.pollReceivePayloadMS));
 				     
-	if (not runtime.protocol_data.vardis_isActive)
+	if (not runtime.protocol_data.vardis_store.get_vardis_isactive())
 	  continue;
 
 	// check if we have received a payload
