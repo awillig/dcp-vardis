@@ -30,6 +30,10 @@ using dcp::TimeStampT;
 /**
  * @brief Declares the structure of an entry into the VarDis variable
  *        database (RTDB -- Real-Time DataBase).
+ *
+ * Note: after introducing the VariableStore concept, the DBEntry type
+ * does *not* contain the variable value or variable description
+ * anymore. This turns the DBEntry type into a fixed-size type.
  */
 
 
@@ -38,14 +42,16 @@ using dcp::TimeStampT;
 namespace dcp::vardis {
 
   typedef struct DBEntry {
-    VarSpecT        spec;                    /*!< Variable specification (varId, name) */
+    VarIdT            varId;
+    NodeIdentifierT   prodId;
+    VarRepCntT        repCnt;
+    
     VarSeqnoT       seqno;                   /*!< Last received sequence number for this variable */
     TimeStampT      tStamp;                  /*!< Timestamp where the last update (or create) instruction has been processed */
     VarRepCntT      countUpdate = 0;         /*!< Repetition counter for VarUpdateT instructions */
     VarRepCntT      countCreate = 0;         /*!< Repetition counter for VarCreateT instructions */
     VarRepCntT      countDelete = 0;         /*!< Repetition counter for VarDeleteT instructions */
     bool            toBeDeleted = false;     /*!< Indicates whether variable is currently in the process of being deleted */
-    VarValueT       value;                   /*!< Current value of the variable (a byte block) */
   } DBEntry;
 
 };  // namespace dcp::vardis
