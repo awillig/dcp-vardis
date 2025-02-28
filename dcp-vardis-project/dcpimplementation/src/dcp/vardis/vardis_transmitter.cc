@@ -98,7 +98,7 @@ namespace dcp::vardis {
       {
 	std::this_thread::sleep_for (std::chrono::milliseconds (runtime.vardis_config.vardis_conf.payloadGenerationIntervalMS));
 				     
-	if (not runtime.protocol_data.vardis_isActive)
+	if (not runtime.protocol_data.vardis_store.get_vardis_isactive())
 	  continue;
 
 	// Find a free buffer in the shared memory to BP, construct
