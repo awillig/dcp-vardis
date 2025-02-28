@@ -23,6 +23,7 @@
 #include <functional>
 #include <map>
 #include <queue>
+#include <set>
 #include <dcp/common/area.h>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/vardis/vardis_configuration.h>
@@ -30,20 +31,21 @@
 #include <dcp/vardis/vardis_rtdb_entry.h>
 #include <dcp/vardis/vardis_service_primitives.h>
 #include <dcp/vardis/vardis_transmissible_types.h>
-
+#include <dcp/vardis/vardis_variable_store_interface.h>
 
 
 /**
  * @brief This module defines a record with the pure protocol data of
- *        Vardis (real-time database, queues), and implements all
- *        operations manipulating the protocol data.
+ *        Vardis (real-time database as stored in a variable store
+ *        object, queues), and implements all operations manipulating
+ *        the protocol data.
  *
  * This module deliberately does *not* concern itself with issues like
  * mutual exclusion, etc., which are to be handled outside as
  * necessary.
  *
- * Any using class / code must set the 'ownNodeIdentifier' member
- * itself.
+ * Any using class / code must provide the constructor with relevant
+ * configuration and runtime data
  */
 
 
@@ -51,62 +53,68 @@ namespace dcp::vardis {
 
 
   /**
-   * @brief This class contains all the core Vardis protocol data
+   * @brief This class contains all the core Vardis protocol data and
+   *        implements all the key protocol processing actions
    */
   class VardisProtocolData {
   public:
     
     VardisProtocolData () = delete;
-    VardisProtocolData (const VardisConfigurationBlock& cfg,
-			const NodeIdentifierT nodeid)
-    : ownNodeIdentifier (nodeid)
-    , vardis_conf (cfg)
+
+
+    /**
+     * @brief Constructor, initializes configuration data from Vardis
+     *        variable store
+     */
+    VardisProtocolData (VariableStoreI& store_if)
+      : ownNodeIdentifier (store_if.get_own_node_identifier()),
+	maxSummaries (store_if.get_conf_max_summaries()),
+	maxDescriptionLength (store_if.get_conf_max_description_length()),
+	maxValueLength (store_if.get_conf_max_value_length()),
+	maxRepetitions (store_if.get_conf_max_repetitions()),
+	vardis_store (store_if)
     {};
 
+
+    /**
+     * The following data members contain key configuration and other
+     * parameters for Vardis protocol processing
+     */
+    NodeIdentifierT  ownNodeIdentifier;     /*!< ownNodeIdentifier parameter */
+    uint16_t         maxSummaries;          /*!< maxSummaries protocol parameter */
+    size_t           maxDescriptionLength;  /*!< maxDescriptionLength protocol parameter */
+    size_t           maxValueLength;        /*!< maxValueLength protocol parameter */
+    uint8_t          maxRepetitions;        /*!< maxRepetitions protocol parameter */
+    
+
+    /**
+     * @brief The Vardis variable store object, hold some global flags
+     *        (e.g. vardis_isActive) and runtime statistics, as well
+     *        as all relevant per-variable data (variable value,
+     *        description, DBEntry)
+     */
+    VariableStoreI&  vardis_store;
+    
     
     /**
-     * @brief Holds the own node identifier
+     * @brief A set keeping track of all active variables
+     * (i.e. variables that have been created and not yet deleted),
+     * used mainly for implementing the RTDB-DescribeDatabase service
      */
-    NodeIdentifierT  ownNodeIdentifier;
-
+    std::set<VarIdT> active_variables;
     
-    /**
-     * @brief Vardis protocol configuration data
-     */
-    VardisConfigurationBlock vardis_conf;
-
     
-    /**
-     * @brief Holds the actual real-time variable database.
-     */
-    std::map<VarIdT, DBEntry>  theVariableDatabase;
-
-
     /**
      * @brief The Vardis queues
      */
-    std::deque<VarIdT>    createQ;
-    std::deque<VarIdT>    deleteQ;
-    std::deque<VarIdT>    updateQ;
-    std::deque<VarIdT>    summaryQ;
-    std::deque<VarIdT>    reqUpdQ;
-    std::deque<VarIdT>    reqCreateQ;
+    std::deque<VarIdT>    createQ;     /*!< Queue for VarCreateT instruction records to send */
+    std::deque<VarIdT>    deleteQ;     /*!< Queue for VarDeleteT instruction records to send */
+    std::deque<VarIdT>    updateQ;     /*!< Queue for VarUpdateT instruction records to send */
+    std::deque<VarIdT>    summaryQ;    /*!< Queue for VarSummT instruction records to send */
+    std::deque<VarIdT>    reqUpdQ;     /*!< Queue for VarReqUpdateT instruction records to send */
+    std::deque<VarIdT>    reqCreateQ;  /*!< Queue for VarReqCreateT instruction records to send */
 
-    
-    /**
-     * @brief Indicates whether Vardis is currently active or not.
-     *
-     * Vardis needs to be in active mode to process or generate
-     * payloads, and to process RTDB service requests from clients.
-     */
-    bool vardis_isActive = true;
-
-
-    /**
-     * @brief Statistics for selected Vardis operations
-     */
-    VardisProtocolStatistics vardis_stats;
-    
+        
     // ====================================================================================
     // ====================================================================================
 
@@ -121,10 +129,10 @@ namespace dcp::vardis {
      */
     inline unsigned int instructionSizeVarCreate(VarIdT varId) const
     {
-      const DBEntry& theEntry = theVariableDatabase.at(varId);
-      return    theEntry.spec.total_size()
+      return    VarSpecT::fixed_size()
+	      + vardis_store.size_of_description (varId)
 	      + VarUpdateT::fixed_size()
-	      + theEntry.value.length;
+	+ vardis_store.size_of_value (varId);
     };
 
 
@@ -146,8 +154,7 @@ namespace dcp::vardis {
      */
     inline unsigned int instructionSizeVarUpdate(VarIdT varId) const
     {
-      const DBEntry& theEntry = theVariableDatabase.at(varId);
-      return VarUpdateT::fixed_size() + theEntry.value.length;
+      return VarUpdateT::fixed_size() + vardis_store.size_of_value (varId);
     };
     
 
@@ -184,6 +191,12 @@ namespace dcp::vardis {
     // ====================================================================================
     // ====================================================================================
 
+    void addVarCreate (VarIdT, const DBEntry& theEntry, AssemblyArea& area) const;
+    void addVarSummary (VarIdT varId, const DBEntry& theEntry, AssemblyArea& area) const;
+    void addVarUpdate (VarIdT, const DBEntry& theEntry, AssemblyArea& area) const;
+    void addVarDelete (VarIdT varId, AssemblyArea& area) const;
+    void addVarReqCreate (VarIdT varId, AssemblyArea& area) const;
+    void addVarReqUpdate (VarIdT varId, const DBEntry& theEntry, AssemblyArea& area) const;
 
     /**
      * @brief This internal method calculates how many information
@@ -317,7 +330,7 @@ namespace dcp::vardis {
      */
     inline bool variableExists (VarIdT varId)
     {
-      return theVariableDatabase.contains(varId);
+      return vardis_store.identifier_is_allocated (varId);
     };
 
     
@@ -327,8 +340,8 @@ namespace dcp::vardis {
      */
     inline bool producerIsMe (VarIdT varId)
     {
-      DBEntry& theEntry = theVariableDatabase.at(varId);
-      return theEntry.spec.prodId == ownNodeIdentifier;
+      DBEntry& theEntry = vardis_store.get_db_entry_ref (varId);
+      return theEntry.prodId == ownNodeIdentifier;
     };
 
 
@@ -361,8 +374,8 @@ namespace dcp::vardis {
     {
       auto rems = std::remove_if(q.begin(),
 				 q.end(),
-				 [&](VarIdT varId){ return (    (not theVariableDatabase.contains(varId))
-								|| (theVariableDatabase.at(varId).toBeDeleted));}
+				 [&](VarIdT varId){ return (    (not vardis_store.identifier_is_allocated (varId))
+								|| (vardis_store.get_db_entry_ref(varId).toBeDeleted));}
 				 );
       q.erase(rems, q.end());
     };
@@ -375,7 +388,7 @@ namespace dcp::vardis {
     {
       auto rems = std::remove_if(q.begin(),
 				 q.end(),
-				 [&](VarIdT varId){ return (not theVariableDatabase.contains(varId));}
+				 [&](VarIdT varId){ return (not vardis_store.identifier_is_allocated (varId));}
 				 );
       q.erase(rems, q.end());
     }
@@ -389,8 +402,8 @@ namespace dcp::vardis {
     {
       auto rems = std::remove_if(q.begin(),
 				 q.end(),
-				 [&](VarIdT varId){ return (    (theVariableDatabase.contains(varId))
-								&& (theVariableDatabase.at(varId).toBeDeleted));}
+				 [&](VarIdT varId){ return (    (vardis_store.identifier_is_allocated (varId))
+								&& (vardis_store.get_db_entry_ref(varId).toBeDeleted));}
 				 );
       q.erase(rems, q.end());
     };
