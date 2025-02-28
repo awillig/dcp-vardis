@@ -2,26 +2,18 @@
 #include <gtest/gtest.h>
 #include <dcp/common/area.h>
 #include <dcp/vardis/vardis_protocol_data.h>
+#include <dcp/vardis/vardis_variable_store_array_shm.h>
 
 namespace dcp::vardis {
 
   NodeIdentifierT addr1 ("01:02:03:04:05:06");
   NodeIdentifierT addr2 ("11:12:13:14:15:16");
-
-  VardisConfigurationBlock get_vdconf ()
-  {
-    VardisConfigurationBlock vdconf;
-    vdconf.maxValueLength        = 32;
-    vdconf.maxDescriptionLength  = 32;
-    vdconf.maxRepetitions        = 5;
-    return vdconf;
-  }
   
   // ------------------------------------------------------------
   
   TEST(VardisProtDataTest, Basic) {
-    VardisConfigurationBlock vdconf = get_vdconf();;
-    VardisProtocolData protData (vdconf, nullIdentifier);
+    ArrayVariableStoreShm<256,128> vstore ("shm-vardis-protocol-data-test", true, 20, 32, 32, 5, nullIdentifier);
+    VardisProtocolData protData (vstore);
 
     EXPECT_NE (addr1, addr2);
     
@@ -39,10 +31,9 @@ namespace dcp::vardis {
   // ------------------------------------------------------------
 
   TEST(VardisProtDataTest, VardisActiveForCRUDServices) {
-    VardisConfigurationBlock vdconf = get_vdconf();;
-
-    VardisProtocolData protData (vdconf, addr1);
-    protData.vardis_isActive   = false;
+    ArrayVariableStoreShm<256,128> vstore ("shm-vardis-protocol-data-test", true, 20, 32, 32, 5, addr1);
+    VardisProtocolData protData (vstore);
+    protData.vardis_store.set_vardis_isactive (false);
 
     double dval  = 3.14;
     double ddval = 2*dval;
@@ -64,7 +55,7 @@ namespace dcp::vardis {
     EXPECT_EQ (protData.handle_rtdb_read_request (read_req).status_code, VARDIS_STATUS_INACTIVE);
     EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).status_code, VARDIS_STATUS_INACTIVE);
 
-    protData.vardis_isActive = true;
+    protData.vardis_store.set_vardis_isactive (true);
     EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).status_code, VARDIS_STATUS_OK);
     EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).status_code, VARDIS_STATUS_OK);
     EXPECT_EQ (protData.handle_rtdb_read_request (read_req).status_code, VARDIS_STATUS_OK);
@@ -75,10 +66,9 @@ namespace dcp::vardis {
   // ------------------------------------------------------------
 
   TEST(VardisProtDataTest, RTDBCreateLimits) {
-    VardisConfigurationBlock vdconf = get_vdconf();
-
-    VardisProtocolData protData (vdconf, addr1);
-    protData.vardis_isActive   = true;
+    ArrayVariableStoreShm<256,128> vstore ("shm-vardis-protocol-data-test", true, 20, 32, 32, 5, addr1);
+    VardisProtocolData protData (vstore);
+    protData.vardis_store.set_vardis_isactive (true);
 
     // Verify that repeated creation of same variable returns that variable exists
     {
@@ -161,10 +151,9 @@ namespace dcp::vardis {
   // ------------------------------------------------------------
 
   TEST(VardisProtDataTest, RTDBUpdateLimits) {
-    VardisConfigurationBlock vdconf = get_vdconf();
-
-    VardisProtocolData protData (vdconf, addr1);
-    protData.vardis_isActive   = true;
+    ArrayVariableStoreShm<256,128> vstore ("shm-vardis-protocol-data-test", true, 20, 32, 32, 5, addr1);
+    VardisProtocolData protData (vstore);
+    protData.vardis_store.set_vardis_isactive (true);
 
     double dval  = 3.14;
     RTDB_Create_Request cr_req;
@@ -246,10 +235,9 @@ namespace dcp::vardis {
   // ------------------------------------------------------------
 
   TEST(VardisProtDataTest, RTDBDeleteLimits) {
-    VardisConfigurationBlock vdconf = get_vdconf();
-
-    VardisProtocolData protData (vdconf, addr1);
-    protData.vardis_isActive   = true;
+    ArrayVariableStoreShm<256,128> vstore ("shm-vardis-protocol-data-test", true, 20, 32, 32, 5, addr1);
+    VardisProtocolData protData (vstore);
+    protData.vardis_store.set_vardis_isactive (true);
 
     double dval  = 3.14;
     RTDB_Create_Request cr_req;
@@ -295,10 +283,9 @@ namespace dcp::vardis {
   // ------------------------------------------------------------
 
   TEST(VardisProtDataTest, RTDBReadLimits) {
-    VardisConfigurationBlock vdconf = get_vdconf();
-
-    VardisProtocolData protData (vdconf, addr1);
-    protData.vardis_isActive   = true;
+    ArrayVariableStoreShm<256,128> vstore ("shm-vardis-protocol-data-test", true, 20, 32, 32, 5, addr1);
+    VardisProtocolData protData (vstore);
+    protData.vardis_store.set_vardis_isactive (true);
 
     double dval  = 3.14;
     RTDB_Create_Request cr_req;
@@ -333,10 +320,9 @@ namespace dcp::vardis {
   // ------------------------------------------------------------
 
   TEST(VardisProtDataTest, RTDBOperationOrder) {
-    VardisConfigurationBlock vdconf = get_vdconf();
-    
-    VardisProtocolData protData (vdconf, addr1);
-    protData.vardis_isActive   = true;
+    ArrayVariableStoreShm<256,128> vstore ("shm-vardis-protocol-data-test", true, 20, 32, 32, 5, addr1);    
+    VardisProtocolData protData (vstore);
+    protData.vardis_store.set_vardis_isactive (true);
     
     double dval  = 3.14;
     RTDB_Create_Request cr_req;
@@ -384,10 +370,9 @@ namespace dcp::vardis {
   // ------------------------------------------------------------
   
   TEST(VardisProtDataTest, processVarCreate) {
-    VardisConfigurationBlock vdconf = get_vdconf();
-
-    VardisProtocolData protData (vdconf, addr1);
-    protData.vardis_isActive   = true;
+    ArrayVariableStoreShm<256,128> vstore ("shm-vardis-protocol-data-test", true, 20, 32, 32, 5, addr1);
+    VardisProtocolData protData (vstore);
+    protData.vardis_store.set_vardis_isactive (true);
     
     double dval  = 3.14;
     double ddval = 6.28;
@@ -523,10 +508,9 @@ namespace dcp::vardis {
   // ------------------------------------------------------------
   
   TEST(VardisProtDataTest, processVarDelete) {
-    VardisConfigurationBlock vdconf = get_vdconf();
-
-    VardisProtocolData protData (vdconf, addr1);
-    protData.vardis_isActive   = true;
+    ArrayVariableStoreShm<256,128> vstore ("shm-vardis-protocol-data-test", true, 20, 32, 32, 5, addr1);
+    VardisProtocolData protData (vstore);
+    protData.vardis_store.set_vardis_isactive (true);
 
     double dval  = 3.14;
     RTDB_Create_Request cr_req;
