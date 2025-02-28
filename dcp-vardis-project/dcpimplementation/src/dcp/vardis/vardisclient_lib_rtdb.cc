@@ -33,7 +33,7 @@ using dcp::vardis::RTDB_Read_Confirm;
 using dcp::vardis::RTDB_Read_Request;
 using dcp::vardis::RTDB_Update_Confirm;
 using dcp::vardis::RTDB_Update_Request;
-
+using dcp::vardis::DBEntry;
 
 
 namespace dcp {
@@ -220,48 +220,17 @@ namespace dcp {
       throw VardisClientLibException ("rtdb_read: not registered with Vardis");
     
     if ((value_buffer == nullptr) or (value_bufsize < dcp::vardis::MAX_maxValueLength))
-      throw VardisClientLibException ("vardisclient_rtdb_read: illegal buffer information");
+      throw VardisClientLibException ("rtdb_read: illegal buffer information");
+
+    variable_store.lock ();
+    DBEntry& entry = variable_store.get_db_entry_ref (varId);
+    variable_store.read_value (varId, value_buffer, responseVarLen);
+    responseTimeStamp = entry.tStamp;
+    responseVarId = entry.varId;
+    variable_store.unlock ();
+
+    return VARDIS_STATUS_OK;
     
-    byte*    buffer_seg_ptr     = nullptr;
-    VardisShmControlSegment& CS = obtain_shm_refs (buffer_seg_ptr);
-
-    //report_buffer_occupancy (CS);
-    
-    // first block: submit read request primitive
-    {
-      ScopedShmControlSegmentLock lock (CS);
-      
-      SharedMemBuffer buff;
-      MemoryChunkAssemblyArea area = pop_buffer_and_setup_assembly_area (CS,
-									 buffer_seg_ptr,
-									 "vardisclient_rtdb_read",
-									 CS.rbReadRequest,
-									 CS.rbReadConfirm,
-									 buff);
-
-      RTDB_Read_Request read_req;
-      read_req.varId = varId;
-      read_req.serialize (area);
-
-      buff.set_used_length (area.used());    
-      CS.rbReadRequest.push (buff);
-    }
-
-    SharedMemBuffer buff;
-    MemoryChunkDisassemblyArea area = await_confirmation_and_setup_disassembly_area (CS,
-										     buffer_seg_ptr,
-										     CS.rbReadConfirm,
-										     buff);
-
-    RTDB_Read_Confirm conf;
-    conf.deserialize (area, responseVarLen, value_buffer);
-    responseVarId      = conf.varId;
-    responseTimeStamp  = conf.tStamp;
-    
-
-    move_buffer_to_free (CS, "vardisclient_rtdb_read", buff); 
-    
-    return conf.status_code;
   }
 
   // --------------------------------------
