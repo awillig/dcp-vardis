@@ -51,9 +51,11 @@ namespace dcp {
 
   VardisClientRuntime::VardisClientRuntime (const VardisClientConfiguration& client_conf,
 					    bool do_register)
-  : BaseClientRuntime(client_conf.cmdsock_conf.commandSocketFile, client_conf.cmdsock_conf.commandSocketTimeoutMS)
+    : BaseClientRuntime (client_conf.cmdsock_conf.commandSocketFile, client_conf.cmdsock_conf.commandSocketTimeoutMS),
+      variable_store (client_conf.shm_conf_global.shmAreaName.c_str(), false)
+		      
   {
-    shmSegmentName = client_conf.shm_conf.shmAreaName;
+    shmSegmentName = client_conf.shm_conf_client.shmAreaName;
     if (shmSegmentName.empty()) throw VardisClientLibException ("Shared memory name is empty");
     if (std::strlen (shmSegmentName.c_str()) > maxShmAreaNameLength-1) throw VardisClientLibException ("Shared memory name is too long");
     const std::string& cmdsock_name = client_conf.cmdsock_conf.commandSocketFile;
