@@ -47,7 +47,8 @@ namespace dcp::vardis {
   class VarIdT : public TransmissibleIntegral<byte> {
   public:
     
-    static constexpr uint8_t max_val () { return UINT8_MAX; };
+    static constexpr uint8_t   max_val () { return UINT8_MAX; };
+    static constexpr uint64_t  max_number_identifiers () { return UINT8_MAX + 1; };
     
     VarIdT () : TransmissibleIntegral<byte>(0) {};
     VarIdT (const VarIdT& other) : TransmissibleIntegral<byte> (other) {};
