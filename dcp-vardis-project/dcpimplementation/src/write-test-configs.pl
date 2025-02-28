@@ -91,6 +91,7 @@ queueMaxEntries                =   2
 commandSocketFile        =  /tmp/dcp-vardis-command-socket
 commandSocketTimeoutMS   =  $bpcommandsockettimeout
 
+
 END
 
 open (FH, '>', "cfg/vardis/$outputfile") or die $!;
