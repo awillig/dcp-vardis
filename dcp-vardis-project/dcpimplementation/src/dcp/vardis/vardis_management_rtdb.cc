@@ -103,7 +103,7 @@ namespace dcp::vardis {
     
     {
       ScopedShmControlSegmentLock lock (CS);
-      ScopedProtocolDataMutex pd_mtx (runtime);
+      ScopedVariableStoreMutex pd_mtx (runtime);
       if (not CS.rbCreateRequest.isEmpty())
 	{
 	  auto handler = [] (VardisRuntimeData& runtime, const RTDB_Create_Request& cr_req)
@@ -122,7 +122,7 @@ namespace dcp::vardis {
     
     {
       ScopedShmControlSegmentLock lock (CS);
-      ScopedProtocolDataMutex pd_mtx (runtime);
+      ScopedVariableStoreMutex pd_mtx (runtime);
       if (not CS.rbDeleteRequest.isEmpty())
 	{
 	  auto handler = [] (VardisRuntimeData& runtime, const RTDB_Delete_Request& del_req)
@@ -142,7 +142,7 @@ namespace dcp::vardis {
 
     {
       ScopedShmControlSegmentLock lock (CS);
-      ScopedProtocolDataMutex pd_mtx (runtime);
+      ScopedVariableStoreMutex pd_mtx (runtime);
       if (not CS.rbUpdateRequest.isEmpty())
 	{
 	  auto handler = [] (VardisRuntimeData& runtime, const RTDB_Update_Request& upd_req)

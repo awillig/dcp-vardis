@@ -43,16 +43,16 @@ namespace dcp::vardis {
     try {
       if (runtime.vardis_config.vardis_conf.lockingForIndividualContainers)
 	{
-	  { ScopedProtocolDataMutex mtx (runtime);  pd.makeICTypeCreateVariables (area, containers_added); }
-	  { ScopedProtocolDataMutex mtx (runtime);  pd.makeICTypeDeleteVariables (area, containers_added); }
-	  { ScopedProtocolDataMutex mtx (runtime);  pd.makeICTypeRequestVarCreates (area, containers_added); }
-	  { ScopedProtocolDataMutex mtx (runtime);  pd.makeICTypeSummaries (area, containers_added); }
-	  { ScopedProtocolDataMutex mtx (runtime);  pd.makeICTypeUpdates (area, containers_added); }
-	  { ScopedProtocolDataMutex mtx (runtime);  pd.makeICTypeRequestVarUpdates (area, containers_added); }
+	  { ScopedVariableStoreMutex mtx (runtime);  pd.makeICTypeCreateVariables (area, containers_added); }
+	  { ScopedVariableStoreMutex mtx (runtime);  pd.makeICTypeDeleteVariables (area, containers_added); }
+	  { ScopedVariableStoreMutex mtx (runtime);  pd.makeICTypeRequestVarCreates (area, containers_added); }
+	  { ScopedVariableStoreMutex mtx (runtime);  pd.makeICTypeSummaries (area, containers_added); }
+	  { ScopedVariableStoreMutex mtx (runtime);  pd.makeICTypeUpdates (area, containers_added); }
+	  { ScopedVariableStoreMutex mtx (runtime);  pd.makeICTypeRequestVarUpdates (area, containers_added); }
 	}
       else
 	{
-	  ScopedProtocolDataMutex mtx (runtime);
+	  ScopedVariableStoreMutex mtx (runtime);
 	  pd.makeICTypeCreateVariables (area, containers_added);
 	  pd.makeICTypeDeleteVariables (area, containers_added);
 	  pd.makeICTypeRequestVarCreates (area, containers_added);

@@ -135,39 +135,39 @@ namespace dcp::vardis {
     try {
       if (runtime.vardis_config.vardis_conf.lockingForIndividualContainers)
 	{
-	  { ScopedProtocolDataMutex mtx (runtime);
+	  { ScopedVariableStoreMutex mtx (runtime);
 	    for (auto it = icCreateVariables.begin(); it != icCreateVariables.end(); ++it)
 	      runtime.protocol_data.process_var_create (*it);
 	  }
 
-	  { ScopedProtocolDataMutex mtx (runtime);
+	  { ScopedVariableStoreMutex mtx (runtime);
 	    for (auto it = icDeleteVariables.begin(); it != icDeleteVariables.end(); ++it)
 	      runtime.protocol_data.process_var_delete (*it);
 	  }
 	  
-	  { ScopedProtocolDataMutex mtx (runtime);
+	  { ScopedVariableStoreMutex mtx (runtime);
 	    for (auto it = icUpdates.begin(); it != icUpdates.end(); ++it)
 	      runtime.protocol_data.process_var_update (*it);
 	  }
 	  
-	  { ScopedProtocolDataMutex mtx (runtime);
+	  { ScopedVariableStoreMutex mtx (runtime);
 	    for (auto it = icSummaries.begin(); it != icSummaries.end(); ++it)
 	      runtime.protocol_data.process_var_summary (*it);
 	  }
 	  
-	  { ScopedProtocolDataMutex mtx (runtime);
+	  { ScopedVariableStoreMutex mtx (runtime);
 	    for (auto it = icRequestVarUpdates.begin(); it != icRequestVarUpdates.end(); ++it)
 	      runtime.protocol_data.process_var_requpdate (*it);
 	  }
 
-	  { ScopedProtocolDataMutex mtx (runtime);
+	  { ScopedVariableStoreMutex mtx (runtime);
 	    for (auto it = icRequestVarCreates.begin(); it != icRequestVarCreates.end(); ++it)
 	      runtime.protocol_data.process_var_reqcreate (*it);
 	  }
 	}
       else
 	{
-	  ScopedProtocolDataMutex mtx (runtime);
+	  ScopedVariableStoreMutex mtx (runtime);
 	  for (auto it = icCreateVariables.begin(); it != icCreateVariables.end(); ++it)
 	    runtime.protocol_data.process_var_create (*it);
 	  for (auto it = icDeleteVariables.begin(); it != icDeleteVariables.end(); ++it)
