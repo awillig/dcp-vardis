@@ -24,25 +24,25 @@ namespace dcp::vardis {
 
   std::ostream& operator<< (std::ostream& os, const VarIdT& vid)
   {
-    os << "VarIdT { id = " << (int) vid.val << " }";
+    os << (int) vid.val;
     return os;
   }
 
   std::ostream& operator<< (std::ostream& os, const VarLenT& vlen)
   {
-    os << "VarLenT { len = " << (int) vlen.val << " }";
+    os << (int) vlen.val;
     return os;
   }
 
   std::ostream& operator<< (std::ostream& os, const VarRepCntT& vrc)
   {
-    os << "VarRepCntT { repcnt = " << (int) vrc.val << " }";
+    os << (int) vrc.val;
     return os;
   }
 
   std::ostream& operator<< (std::ostream& os, const VarSeqnoT& vs)
   {
-    os << "VarSeqnoT { seq = " << (int) vs.val << " }";
+    os << (int) vs.val;
     return os;
   }
 
