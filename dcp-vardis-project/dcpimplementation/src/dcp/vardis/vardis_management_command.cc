@@ -156,9 +156,7 @@ namespace dcp::vardis {
     if (wrong_request_size<VardisActivate_Request, VardisActivate_Confirm> (runtime, "handleVardisActivateRequest", nbytes)) return;
 
     BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Processing VardisActivate request.";
-    runtime.protocol_data_mutex.lock ();
-    runtime.protocol_data.vardis_isActive = true;
-    runtime.protocol_data_mutex.unlock ();
+    runtime.variable_store.set_vardis_isactive (true);
 
     send_simple_confirmation<VardisActivate_Confirm>(runtime, VARDIS_STATUS_OK);
   }
@@ -171,9 +169,7 @@ namespace dcp::vardis {
 
     BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Processing VardisDeactivate request.";
     
-    runtime.protocol_data_mutex.lock ();
-    runtime.protocol_data.vardis_isActive = false;
-    runtime.protocol_data_mutex.unlock ();
+    runtime.variable_store.set_vardis_isactive (false);
 
     send_simple_confirmation<VardisDeactivate_Confirm>(runtime, VARDIS_STATUS_OK);
   }
@@ -188,9 +184,9 @@ namespace dcp::vardis {
 
     VardisGetStatistics_Confirm gsConf;
     
-    runtime.protocol_data_mutex.lock();
-    gsConf.protocol_stats = runtime.protocol_data.vardis_stats;
-    runtime.protocol_data_mutex.unlock();
+    runtime.variable_store.lock ();
+    gsConf.protocol_stats = runtime.variable_store.get_vardis_protocol_statistics_ref();
+    runtime.variable_store.unlock ();
 
     runtime.vardisCommandSock.send_raw_data (log_mgmt_command, (byte*) &gsConf, sizeof(VardisGetStatistics_Confirm), runtime.vardis_exitFlag);
   }
@@ -206,19 +202,21 @@ namespace dcp::vardis {
     std::list<DescribeDatabaseVariableDescription> var_descriptions;
 
     {
-      ScopedProtocolDataMutex mtx (runtime);
+      ScopedVariableStoreMutex mtx (runtime);
 
       VardisProtocolData& PD = runtime.protocol_data;
     
-      for (auto it = PD.theVariableDatabase.begin(); it != PD.theVariableDatabase.end(); ++it)
+      for (auto varId : PD.active_variables)
 	{
+	  DBEntry& db_entry = PD.vardis_store.get_db_entry_ref (varId);
 	  DescribeDatabaseVariableDescription descr;
-	  descr.varId          =  (it->second).spec.varId;
-	  descr.prodId         =  (it->second).spec.prodId;
-	  descr.repCnt         =  (it->second).spec.repCnt;
-	  descr.tStamp         =  (it->second).tStamp;
-	  descr.toBeDeleted    =  (it->second).toBeDeleted;
-	  std::strcpy (descr.description, (it->second).spec.descr.to_str().c_str());
+
+          descr.varId          =  db_entry.varId;
+	  descr.prodId         =  db_entry.prodId;
+	  descr.repCnt         =  db_entry.repCnt;
+	  descr.tStamp         =  db_entry.tStamp;
+	  descr.toBeDeleted    =  db_entry.toBeDeleted;
+	  PD.vardis_store.read_description (varId, descr.description);
 	  
 	  var_descriptions.push_back (descr);
 	}    
@@ -251,28 +249,28 @@ namespace dcp::vardis {
     byte val_buffer [MAX_maxValueLength + 1];
     bool found = false;
     {
-      ScopedProtocolDataMutex mtx (runtime);
+      ScopedVariableStoreMutex mtx (runtime);
 
       VardisProtocolData& PD = runtime.protocol_data;
 
-      if (PD.theVariableDatabase.contains (varId))
+      if (PD.vardis_store.identifier_is_allocated (varId))
 	{
 	  found = true;
-	  DBEntry& db_entry = PD.theVariableDatabase.at (varId);
-
-	  var_descr.varId        =  db_entry.spec.varId;
-	  var_descr.prodId       =  db_entry.spec.prodId;
-	  var_descr.repCnt       =  db_entry.spec.repCnt;
-	  std::strcpy (var_descr.description, db_entry.spec.descr.to_str().c_str());	  
+	  DBEntry& db_entry = PD.vardis_store.get_db_entry_ref (varId);
+	  VarLenT  val_size;
+	  
+	  var_descr.varId        =  db_entry.varId;
+	  var_descr.prodId       =  db_entry.prodId;
+	  var_descr.repCnt       =  db_entry.repCnt;
+	  PD.vardis_store.read_description (varId, var_descr.description);
 	  var_descr.seqno        =  db_entry.seqno;
 	  var_descr.tStamp       =  db_entry.tStamp;
 	  var_descr.countUpdate  =  db_entry.countUpdate;
 	  var_descr.countCreate  =  db_entry.countCreate;
 	  var_descr.countDelete  =  db_entry.countDelete;
 	  var_descr.toBeDeleted  =  db_entry.toBeDeleted;
-	  var_descr.value_length =  db_entry.value.length;
-
-	  std::memcpy (val_buffer, db_entry.value.data, db_entry.value.length);
+	  var_descr.value_length =  PD.vardis_store.size_of_value (varId);
+	  PD.vardis_store.read_value (varId, val_buffer, val_size);
 	}
     }
 
