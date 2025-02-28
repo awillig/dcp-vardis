@@ -3,12 +3,13 @@
 #include <dcp/common/exceptions.h>
 #include <dcp/common/shared_mem_area.h>
 
-using dcp::ShmControlSegmentBase;
 using dcp::ScopedShmControlSegmentLock;
-using dcp::ShmBufferPool;
-using dcp::RingBuffer;
 using dcp::SharedMemBuffer;
+using dcp::ShmBufferPool;
+using dcp::ShmControlSegmentBase;
 using dcp::ShmException;
+using dcp::ShmRingBuffer;
+using dcp::RingBufferException;
 using dcp::byte;
 
 
@@ -53,25 +54,25 @@ TEST (ShmTest, SharedMemBufferTest) {
  * ring buffer, and checking that maximum capacity is observed.
  *********************************************************************/
 
-TEST (ShmTest, RingBufferTest_Basic) {
+TEST (ShmTest, ShmRingBufferTest_Basic) {
 
   // Ringbuffer constructor properly checks presence of name, length of name
   // and that name is properly stored
-  RingBuffer<20>* _p;
-  EXPECT_THROW (_p = new RingBuffer<20> (nullptr, 10);, ShmException);
-  EXPECT_THROW (_p = new RingBuffer<20> ("0123456789012345678901234567890123456789012345678901234567890123", 10);, ShmException);
-  _p = new RingBuffer<20> ("012345678901234567890123456789012345678901234567890123456789012", 10);
+  ShmRingBuffer<20>* _p;
+  EXPECT_THROW (_p = new ShmRingBuffer<20> (nullptr, 10);, RingBufferException);
+  EXPECT_THROW (_p = new ShmRingBuffer<20> ("0123456789012345678901234567890123456789012345678901234567890123", 10);, RingBufferException);
+  _p = new ShmRingBuffer<20> ("012345678901234567890123456789012345678901234567890123456789012", 10);
   EXPECT_STREQ(_p->get_name(), "012345678901234567890123456789012345678901234567890123456789012");
 
   // Nothing can be removed (or peeked) from an empty ring buffer
-  EXPECT_THROW(_p->pop(), ShmException);
-  EXPECT_THROW(_p->peek(), ShmException);
+  EXPECT_THROW(_p->pop(), RingBufferException);
+  EXPECT_THROW(_p->peek(), RingBufferException);
 
   delete _p;
   
   // Check proper states of empty and full ring buffers, and that nothing can
   // be added from an empty ringbuffer
-  RingBuffer<20> rb20 ("rb20", 10);
+  ShmRingBuffer<20> rb20 ("rb20", 10);
   SharedMemBuffer empty_buff;
   EXPECT_TRUE (rb20.isEmpty());
   EXPECT_FALSE (rb20.isFull());
@@ -80,7 +81,7 @@ TEST (ShmTest, RingBufferTest_Basic) {
   EXPECT_FALSE (rb20.isEmpty());
   EXPECT_TRUE (rb20.isFull());
   EXPECT_EQ (rb20.stored_elements(), 10);
-  EXPECT_THROW (rb20.push(empty_buff), ShmException);
+  EXPECT_THROW (rb20.push(empty_buff), RingBufferException);
   empty_buff = rb20.pop();
   rb20.push(empty_buff);
 
@@ -92,16 +93,16 @@ TEST (ShmTest, RingBufferTest_Basic) {
  * locking the buffer.
  *********************************************************************/
 
-TEST (ShmTest, RingBufferTest_SimpleCircular) {
-  RingBuffer<20> rbFree ("rbFree", 19);
-  RingBuffer<20> rbQueue ("rbQueue", 19);
+TEST (ShmTest, ShmRingBufferTest_SimpleCircular) {
+  ShmRingBuffer<20> rbFree ("rbFree", 19);
+  ShmRingBuffer<20> rbQueue ("rbQueue", 19);
 
   for (uint64_t i=0;i<19;i++)
     {
       SharedMemBuffer buff (sizeof(int), i, i*sizeof(int));
       rbFree.push(buff);
     }
-  EXPECT_THROW (rbFree.push(SharedMemBuffer()), ShmException);
+  EXPECT_THROW (rbFree.push(SharedMemBuffer()), RingBufferException);
 
   int write_counter = 0;
   int read_counter = 0;
@@ -145,8 +146,8 @@ const char shm_area_name [] = "testing-shm-area-name";
 const int number_values = 10000;
 
 typedef struct TestControlSegment : public ShmControlSegmentBase {
-  RingBuffer<20> rbFree;
-  RingBuffer<20> rbQueue;
+  ShmRingBuffer<20> rbFree;
+  ShmRingBuffer<20> rbQueue;
 
   TestControlSegment ()
     : rbFree ("rbFree", 19),
@@ -164,7 +165,7 @@ typedef struct TestControlSegment : public ShmControlSegmentBase {
 /**********************************************************************
  * Tests parallel reading and writing from a ring buffer in shared
  * memory, including synchronization / locking using the wait_pop and
- * wait_push methods of RingBuffer.
+ * wait_push methods of ShmRingBuffer.
  *********************************************************************/
 
 void producer_thread (TestControlSegment& CS, byte* buffer_seg_ptr)
@@ -182,7 +183,7 @@ void producer_thread (TestControlSegment& CS, byte* buffer_seg_ptr)
 }
 
 
-TEST (ShmTest, RingBufferTest_ConcurrentCircular) {
+TEST (ShmTest, ShmRingBufferTest_ConcurrentCircular) {
 
   auto shmAreaPtr = std::make_shared<ShmBufferPool> (shm_area_name, true, sizeof(TestControlSegment), sizeof(int), 19);
   auto controlSegPtr = new (shmAreaPtr->getControlSegmentPtr()) TestControlSegment ();
@@ -211,7 +212,7 @@ TEST (ShmTest, RingBufferTest_ConcurrentCircular) {
 /**********************************************************************
  * Tests parallel reading and writing from a ring buffer in shared
  * memory, including synchronization / locking using the
- * wait_pop_process_push method of RingBuffer.
+ * wait_pop_process_push method of ShmRingBuffer.
  *********************************************************************/
 
 void producer_thread_two (TestControlSegment& CS, byte* buffer_seg_ptr)
@@ -230,7 +231,7 @@ void producer_thread_two (TestControlSegment& CS, byte* buffer_seg_ptr)
 }
 
 
-TEST (ShmTest, RingBufferTest_ConcurrentCircularTwo) {
+TEST (ShmTest, ShmRingBufferTest_ConcurrentCircularTwo) {
 
   auto shmAreaPtr = std::make_shared<ShmBufferPool> (shm_area_name, true, sizeof(TestControlSegment), sizeof(int), 19);
   auto controlSegPtr = new (shmAreaPtr->getControlSegmentPtr()) TestControlSegment ();
