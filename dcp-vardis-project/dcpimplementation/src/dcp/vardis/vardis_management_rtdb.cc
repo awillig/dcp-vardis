@@ -83,7 +83,7 @@ namespace dcp::vardis {
 
   void handle_client_shared_memory (VardisRuntimeData& runtime, VardisClientProtocolData& clientProt)
   {
-    if (not runtime.protocol_data.vardis_isActive) return;
+    if (not runtime.protocol_data.vardis_store.get_vardis_isactive()) return;
     if (runtime.vardis_exitFlag) return;
 
     if ((clientProt.sharedMemoryAreaPtr == nullptr) || (clientProt.controlSegmentPtr == nullptr))
@@ -157,28 +157,6 @@ namespace dcp::vardis {
 
 	}
     }
-
-
-    // --------------------
-
-    {
-      ScopedShmControlSegmentLock lock (CS);
-      ScopedProtocolDataMutex pd_mtx (runtime);
-      if (not CS.rbReadRequest.isEmpty())
-	{
-	  auto handler = [] (VardisRuntimeData& runtime, const RTDB_Read_Request& read_req)
-                                  {
-				    return runtime.protocol_data.handle_rtdb_read_request (read_req);
-				  };
-	  handle_request_queue<RTDB_Read_Request, RTDB_Read_Confirm> (runtime,
-								      CS.rbReadRequest,
-								      CS.rbReadConfirm,
-								      buffer_seg_ptr,
-								      handler);
-
-	}
-    }
-    
 
     // --------------------
   }
