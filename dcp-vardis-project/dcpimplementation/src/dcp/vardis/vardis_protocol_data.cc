@@ -33,15 +33,16 @@ namespace dcp::vardis {
   
 
   
-  void addVarCreate (VarIdT,
-		     DBEntry& theEntry,
-		     AssemblyArea& area)
+  void VardisProtocolData::addVarCreate (VarIdT, const DBEntry& theEntry, AssemblyArea& area) const
   {
     VarCreateT create;
-    create.spec = theEntry.spec;
-    create.update.varId   =  theEntry.spec.varId;
+    create.spec.varId     =  theEntry.varId;
+    create.spec.prodId    =  theEntry.prodId;
+    create.spec.repCnt    =  theEntry.repCnt;
+    create.spec.descr     =  vardis_store.read_description (theEntry.varId);
+    create.update.varId   =  theEntry.varId;
     create.update.seqno   =  theEntry.seqno;
-    create.update.value   =  theEntry.value;    
+    create.update.value   =  vardis_store.read_value (theEntry.varId);
     create.serialize (area);
   }
   
@@ -50,9 +51,7 @@ namespace dcp::vardis {
   // -----------------------------------------------------------------
   
   
-  void addVarSummary (VarIdT varId,
-		      DBEntry& theEntry,
-		      AssemblyArea& area)
+  void VardisProtocolData::addVarSummary (VarIdT varId, const DBEntry& theEntry, AssemblyArea& area) const
   {
     VarSummT summ;
     summ.varId  = varId;
@@ -62,14 +61,12 @@ namespace dcp::vardis {
   
   // -----------------------------------------------------------------
   
-  void addVarUpdate (VarIdT,
-		     DBEntry& theEntry,
-		     AssemblyArea& area)
+  void VardisProtocolData::addVarUpdate (VarIdT, const DBEntry& theEntry, AssemblyArea& area) const
   {
     VarUpdateT update;
-    update.varId   =  theEntry.spec.varId;
+    update.varId   =  theEntry.varId;
     update.seqno   =  theEntry.seqno;
-    update.value   =  theEntry.value;
+    update.value   =  vardis_store.read_value (theEntry.varId);
     update.serialize (area);
   }
   
@@ -77,8 +74,7 @@ namespace dcp::vardis {
   
   // -----------------------------------------------------------------
   
-  void addVarDelete (VarIdT varId,
-		     AssemblyArea& area)
+  void VardisProtocolData::addVarDelete (VarIdT varId, AssemblyArea& area) const
   {
     VarDeleteT del;
     del.varId = varId;    
@@ -89,8 +85,7 @@ namespace dcp::vardis {
   
   // -----------------------------------------------------------------
   
-  void addVarReqCreate (VarIdT varId,
-			AssemblyArea& area)
+  void VardisProtocolData::addVarReqCreate (VarIdT varId, AssemblyArea& area) const
   {
     VarReqCreateT cr;
     cr.varId = varId;
@@ -99,9 +94,7 @@ namespace dcp::vardis {
   
   // -----------------------------------------------------------------
   
-  void addVarReqUpdate (VarIdT varId,
-			DBEntry& theEntry,
-			AssemblyArea& area)
+  void VardisProtocolData::addVarReqUpdate (VarIdT varId, const DBEntry& theEntry, AssemblyArea& area) const
   {
     VarReqUpdateT upd;
     upd.updSpec.varId = varId;
@@ -179,7 +172,7 @@ namespace dcp::vardis {
       {
         VarIdT nextVarId = createQ.front();
         createQ.pop_front();
-        DBEntry& nextVar = theVariableDatabase.at(nextVarId);
+        DBEntry& nextVar = vardis_store.get_db_entry_ref(nextVarId);
 	
 	if (nextVar.countCreate.val <= 0)
 	  {
@@ -214,7 +207,7 @@ namespace dcp::vardis {
     // or whether summaries function is enabled
     if (    summaryQ.empty()
 	|| (instructionSizeVarSummary(summaryQ.front()) + ICHeaderT::fixed_size() > area.available())
-	|| (vardis_conf.maxSummaries == 0))
+	|| (maxSummaries == 0))
       {
         return;
       }
@@ -222,7 +215,7 @@ namespace dcp::vardis {
     // first work out how many records we will add, cap at vardisMaxSummaries
     std::function<unsigned int(VarIdT)> instSizeFn = [&] (VarIdT varId) { return instructionSizeVarSummary(varId); };
     auto numberRecordsToAdd = numberFittingRecords(summaryQ, area, instSizeFn);
-    numberRecordsToAdd = std::min(numberRecordsToAdd, (unsigned int) vardis_conf.maxSummaries);
+    numberRecordsToAdd = std::min(numberRecordsToAdd, (unsigned int) maxSummaries);
     
     if (numberRecordsToAdd <= 0)
       {
@@ -242,7 +235,7 @@ namespace dcp::vardis {
 	
         summaryQ.pop_front();
         summaryQ.push_back(nextVarId);
-        DBEntry&   theNextEntry  = theVariableDatabase.at(nextVarId);
+        DBEntry&   theNextEntry  = vardis_store.get_db_entry_ref(nextVarId);
         addVarSummary(nextVarId, theNextEntry, area);
       }
     
@@ -288,7 +281,7 @@ namespace dcp::vardis {
     {
         VarIdT nextVarId = updateQ.front();
         updateQ.pop_front();
-        DBEntry& nextVar = theVariableDatabase.at(nextVarId);
+        DBEntry& nextVar = vardis_store.get_db_entry_ref(nextVarId);
 
 	if (nextVar.countUpdate.val <= 0)
 	  {
@@ -352,7 +345,7 @@ namespace dcp::vardis {
 	    throw VardisTransmitException ("makeICTypeDeleteVariables: variable does not exist");
 	  }
 	
-        DBEntry& nextVar = theVariableDatabase.at(nextVarId);
+        DBEntry& nextVar = vardis_store.get_db_entry_ref(nextVarId);
 
 	if (nextVar.countDelete.val <= 0)
 	  {
@@ -370,7 +363,8 @@ namespace dcp::vardis {
         else
         {
 	  BOOST_LOG_SEV(log_tx, trivial::info) << "Deleting variable " << nextVarId;
-	  theVariableDatabase.erase(nextVarId);
+	  vardis_store.deallocate_identifier (nextVarId);
+	  active_variables.erase (nextVarId);
         }
     }
 
@@ -416,7 +410,7 @@ namespace dcp::vardis {
     {
         VarIdT nextVarId = reqUpdQ.front();
         reqUpdQ.pop_front();
-        DBEntry& nextVar = theVariableDatabase.at(nextVarId);
+        DBEntry& nextVar = vardis_store.get_db_entry_ref(nextVarId);
 
         addVarReqUpdate(nextVarId, nextVar, area);
     }
@@ -484,11 +478,11 @@ namespace dcp::vardis {
       
     if (    (not variableExists(varId))
          && (prodId != ownNodeIdentifier)
-         && (create.spec.descr.length <= vardis_conf.maxDescriptionLength)
+         && (create.spec.descr.length <= maxDescriptionLength)
 	 && (create.spec.descr.length > 0)
-         && (create.update.value.length <= vardis_conf.maxValueLength)
+         && (create.update.value.length <= maxValueLength)
          && (create.update.value.length > 0)
-	 && (create.spec.repCnt <= vardis_conf.maxRepetitions)
+	 && (create.spec.repCnt <= maxRepetitions)
 	 && (create.spec.repCnt > 0)
        )
       {
@@ -497,15 +491,20 @@ namespace dcp::vardis {
 
         // create and initialize new DBEntry
         DBEntry newEntry;
-        newEntry.spec         =  create.spec;
+	newEntry.varId        =  create.spec.varId;
+	newEntry.prodId       =  create.spec.prodId;
+	newEntry.repCnt       =  create.spec.repCnt;
         newEntry.seqno        =  create.update.seqno;
         newEntry.tStamp       =  TimeStampT::get_current_system_time();
         newEntry.countUpdate  =  0;
         newEntry.countCreate  =  create.spec.repCnt;
         newEntry.countDelete  =  0;
         newEntry.toBeDeleted  =  false;
-        newEntry.value        =  create.update.value;
-        theVariableDatabase[varId] = newEntry;
+	vardis_store.allocate_identifier (varId);
+	vardis_store.set_db_entry (varId, newEntry);
+	vardis_store.update_description (varId, create.spec.descr);
+	vardis_store.update_value (varId, create.update.value);
+	active_variables.insert (varId);
 
         // just to be safe, delete varId from all queues before inserting it
         // into the right ones
@@ -522,6 +521,7 @@ namespace dcp::vardis {
         removeVarIdFromQueue (reqCreateQ, varId);
 
 	// maintain statistics
+	auto vardis_stats = vardis_store.get_vardis_protocol_statistics_ref ();
 	vardis_stats.count_process_var_create++;
     }
   }
@@ -540,7 +540,7 @@ namespace dcp::vardis {
     
     if (variableExists(varId))
       {
-        DBEntry&        theEntry = theVariableDatabase.at(varId);
+        DBEntry&        theEntry = vardis_store.get_db_entry_ref(varId);
 
         if (    (not theEntry.toBeDeleted)
    	     && (not producerIsMe(varId)))
@@ -551,7 +551,7 @@ namespace dcp::vardis {
 	  theEntry.toBeDeleted  = true;
 	  theEntry.countUpdate  = 0;
 	  theEntry.countCreate  = 0;
-	  theEntry.countDelete  = theEntry.spec.repCnt;
+	  theEntry.countDelete  = theEntry.repCnt;
 	  
 	  // remove varId from relevant queues
 	  removeVarIdFromQueue(updateQ, varId);
@@ -565,7 +565,7 @@ namespace dcp::vardis {
 	  deleteQ.push_back(varId);
 
 	  // maintain statistics
-	  vardis_stats.count_process_var_delete++;
+	  vardis_store.get_vardis_protocol_statistics_ref().count_process_var_delete++;
         }
       }
   }
@@ -595,7 +595,7 @@ namespace dcp::vardis {
       return;
     }
 
-    DBEntry& theEntry = theVariableDatabase.at(varId);
+    DBEntry& theEntry = vardis_store.get_db_entry_ref(varId);
 
     // perform some checks
 
@@ -609,7 +609,7 @@ namespace dcp::vardis {
         return;
     }
 
-    if (    (update.value.length > vardis_conf.maxValueLength)
+    if (    (update.value.length > maxValueLength)
 	 || (update.value.length <= 0))
     {
         return;
@@ -628,7 +628,7 @@ namespace dcp::vardis {
         if (not isVarIdInQueue(updateQ, varId))
 	  {
             updateQ.push_back(varId);
-            theEntry.countUpdate = theEntry.spec.repCnt;
+            theEntry.countUpdate = theEntry.repCnt;
 	  }
         return;
       }
@@ -638,8 +638,8 @@ namespace dcp::vardis {
     // update variable with new value, update relevant queues
     theEntry.seqno        =  update.seqno;
     theEntry.tStamp       =  TimeStampT::get_current_system_time();
-    theEntry.countUpdate  =  theEntry.spec.repCnt;
-    theEntry.value        =  update.value;
+    theEntry.countUpdate  =  theEntry.repCnt;
+    vardis_store.update_value (varId, update.value);
 
     if (not isVarIdInQueue(updateQ, varId))
     {
@@ -648,7 +648,7 @@ namespace dcp::vardis {
     removeVarIdFromQueue(reqUpdQ, varId);
     
     // maintain statistics
-    vardis_stats.count_process_var_update++;
+    vardis_store.get_vardis_protocol_statistics_ref().count_process_var_update++;
   }
   
 
@@ -676,7 +676,7 @@ namespace dcp::vardis {
         return;
       }
     
-    DBEntry& theEntry = theVariableDatabase.at(varId);
+    DBEntry& theEntry = vardis_store.get_db_entry_ref(varId);
     
     // perform some checks
     
@@ -702,7 +702,7 @@ namespace dcp::vardis {
         if (not isVarIdInQueue(updateQ, varId))
 	  {
             updateQ.push_back(varId);
-            theEntry.countUpdate = theEntry.spec.repCnt;
+            theEntry.countUpdate = theEntry.repCnt;
 	  }
         return;
       }
@@ -714,7 +714,7 @@ namespace dcp::vardis {
       }
 
     // maintain statistics
-    vardis_stats.count_process_var_summary++;
+    vardis_store.get_vardis_protocol_statistics_ref().count_process_var_summary++;
   }
   
   
@@ -743,7 +743,7 @@ namespace dcp::vardis {
         return;
       }
     
-    DBEntry& theEntry = theVariableDatabase.at(varId);
+    DBEntry& theEntry = vardis_store.get_db_entry_ref(varId);
     
     if (theEntry.toBeDeleted)
       {
@@ -755,7 +755,7 @@ namespace dcp::vardis {
         return;
       }
     
-    theEntry.countUpdate = theEntry.spec.repCnt;
+    theEntry.countUpdate = theEntry.repCnt;
     
     if (not isVarIdInQueue(updateQ, varId))
       {
@@ -763,7 +763,7 @@ namespace dcp::vardis {
       }
 
     // maintain statistics
-    vardis_stats.count_process_var_requpdate++;
+    vardis_store.get_vardis_protocol_statistics_ref().count_process_var_requpdate++;
   }
 
   // ----------------------------------------------------
@@ -787,14 +787,14 @@ namespace dcp::vardis {
         return;
       }
     
-    DBEntry& theEntry = theVariableDatabase.at(varId);
+    DBEntry& theEntry = vardis_store.get_db_entry_ref(varId);
 
     if (theEntry.toBeDeleted)
       {
         return;
       }
 
-    theEntry.countCreate = theEntry.spec.repCnt;
+    theEntry.countCreate = theEntry.repCnt;
     
     if (not isVarIdInQueue(createQ, varId))
       {
@@ -802,7 +802,7 @@ namespace dcp::vardis {
       }
 
     // maintain statistics
-    vardis_stats.count_process_var_reqcreate++;
+    vardis_store.get_vardis_protocol_statistics_ref().count_process_var_reqcreate++;
   }
 
 
@@ -814,7 +814,7 @@ namespace dcp::vardis {
     const VarValueT&   value  = createReq.value;
     const VarIdT       varId  = spec.varId;    
 
-    if (not vardis_isActive)
+    if (not vardis_store.get_vardis_isactive())
       {
 	return RTDB_Create_Confirm (VARDIS_STATUS_INACTIVE, varId);
       }
@@ -824,12 +824,12 @@ namespace dcp::vardis {
 	return RTDB_Create_Confirm (VARDIS_STATUS_VARIABLE_EXISTS, varId);
       }
     
-    if (spec.descr.length > vardis_conf.maxDescriptionLength)
+    if (spec.descr.length > maxDescriptionLength)
       {
 	return RTDB_Create_Confirm (VARDIS_STATUS_VARIABLE_DESCRIPTION_TOO_LONG, varId);
       }
     
-    if (value.length > vardis_conf.maxValueLength)
+    if (value.length > maxValueLength)
       {
 	return RTDB_Create_Confirm (VARDIS_STATUS_VALUE_TOO_LONG, varId);
       }
@@ -839,23 +839,27 @@ namespace dcp::vardis {
 	return RTDB_Create_Confirm (VARDIS_STATUS_EMPTY_VALUE, varId);
       }
     
-    if ((spec.repCnt == 0) || (spec.repCnt > vardis_conf.maxRepetitions))
+    if ((spec.repCnt == 0) || (spec.repCnt > maxRepetitions))
       {
 	return RTDB_Create_Confirm (VARDIS_STATUS_ILLEGAL_REPCOUNT, varId);
       }
 
     // initialize new database entry and add it
     DBEntry newent;
-    newent.spec          =  std::move(spec);
-    newent.spec.prodId   =  ownNodeIdentifier;
+    newent.varId         =  spec.varId;
+    newent.prodId        =  ownNodeIdentifier;
+    newent.repCnt        =  spec.repCnt;
     newent.seqno         =  0;
     newent.tStamp        =  TimeStampT::get_current_system_time();
     newent.countUpdate   =  0;
     newent.countCreate   =  spec.repCnt;
     newent.countDelete   =  0;
     newent.toBeDeleted   =  false;
-    newent.value         =  std::move(value);
-    theVariableDatabase[spec.varId] = newent;
+    vardis_store.allocate_identifier (spec.varId);
+    vardis_store.set_db_entry (spec.varId, newent);
+    vardis_store.update_description (spec.varId, spec.descr);
+    vardis_store.update_value (spec.varId, value);
+    active_variables.insert (spec.varId);
 
     // clean out varId from all queues, just to be safe
     removeVarIdFromQueue(createQ, spec.varId);
@@ -870,7 +874,7 @@ namespace dcp::vardis {
     summaryQ.push_back(spec.varId);
 
     // Maintain statistics
-    vardis_stats.count_handle_rtdb_create++;
+    vardis_store.get_vardis_protocol_statistics_ref().count_handle_rtdb_create++;
     
     // send confirmation
     return RTDB_Create_Confirm (VARDIS_STATUS_OK, varId);
@@ -885,7 +889,7 @@ namespace dcp::vardis {
 
     // perform various checks
 
-    if (not vardis_isActive)
+    if (not vardis_store.get_vardis_isactive())
     {
       return RTDB_Update_Confirm (VARDIS_STATUS_INACTIVE, varId);
     }
@@ -895,7 +899,7 @@ namespace dcp::vardis {
       return RTDB_Update_Confirm (VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST, varId);
     }
     
-    DBEntry& theEntry = theVariableDatabase.at(varId);
+    DBEntry& theEntry = vardis_store.get_db_entry_ref(varId);
 
     if (not producerIsMe(varId))
     {
@@ -907,7 +911,7 @@ namespace dcp::vardis {
       return RTDB_Update_Confirm (VARDIS_STATUS_VARIABLE_BEING_DELETED, varId);
     }
 
-    if (varLen > vardis_conf.maxValueLength)
+    if (varLen > maxValueLength)
     {
       return RTDB_Update_Confirm (VARDIS_STATUS_VALUE_TOO_LONG, varId);
     }
@@ -919,9 +923,9 @@ namespace dcp::vardis {
 
     // update the DB entry
     theEntry.seqno        = (theEntry.seqno.val + 1) % (VarSeqnoT::modulus());
-    theEntry.countUpdate  = theEntry.spec.repCnt;
+    theEntry.countUpdate  = theEntry.repCnt;
     theEntry.tStamp       = TimeStampT::get_current_system_time();
-    theEntry.value        = std::move(updateReq.value);
+    vardis_store.update_value (varId, updateReq.value);
 
     // add varId to updateQ if necessary
     if (not isVarIdInQueue(updateQ, varId))
@@ -930,7 +934,7 @@ namespace dcp::vardis {
     }
 
     // Maintain statistics
-    vardis_stats.count_handle_rtdb_update++;
+    vardis_store.get_vardis_protocol_statistics_ref().count_handle_rtdb_update++;
     
     return RTDB_Update_Confirm (VARDIS_STATUS_OK, varId);
   }
@@ -943,7 +947,7 @@ namespace dcp::vardis {
 
     // perform some checks
 
-    if (not vardis_isActive)
+    if (not vardis_store.get_vardis_isactive())
       {
 	return RTDB_Delete_Confirm (VARDIS_STATUS_INACTIVE, varId);
       }
@@ -958,7 +962,7 @@ namespace dcp::vardis {
 	return RTDB_Delete_Confirm (VARDIS_STATUS_NOT_PRODUCER, varId);
       }
 
-    DBEntry& theEntry = theVariableDatabase.at(varId);
+    DBEntry& theEntry = vardis_store.get_db_entry_ref(varId);
 
     if (theEntry.toBeDeleted)
     {
@@ -976,12 +980,12 @@ namespace dcp::vardis {
 
     // update variable status
     theEntry.toBeDeleted = true;
-    theEntry.countDelete = theEntry.spec.repCnt;
+    theEntry.countDelete = theEntry.repCnt;
     theEntry.countCreate = 0;
     theEntry.countUpdate = 0;
 
     // Maintain statistics
-    vardis_stats.count_handle_rtdb_delete++;
+    vardis_store.get_vardis_protocol_statistics_ref().count_handle_rtdb_delete++;
     
     return RTDB_Delete_Confirm (VARDIS_STATUS_OK, varId);
   }
@@ -995,7 +999,7 @@ namespace dcp::vardis {
 
     // perform some checks
 
-    if (not vardis_isActive)
+    if (not vardis_store.get_vardis_isactive())
       {
 	return RTDB_Read_Confirm (VARDIS_STATUS_INACTIVE, varId);
       }
@@ -1005,18 +1009,19 @@ namespace dcp::vardis {
 	return RTDB_Read_Confirm (VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST, varId);
       }
 
-    DBEntry& theEntry = theVariableDatabase.at(varId);
+    DBEntry& theEntry = vardis_store.get_db_entry_ref(varId);
 
     if (theEntry.toBeDeleted)
     {
       return RTDB_Read_Confirm (VARDIS_STATUS_VARIABLE_BEING_DELETED, varId);
     }
-    
-    RTDB_Read_Confirm conf (VARDIS_STATUS_OK, varId, theEntry.value.length, theEntry.value.data);
+
+    VarValueT the_value = vardis_store.read_value (varId);
+    RTDB_Read_Confirm conf (VARDIS_STATUS_OK, varId, the_value.length, the_value.data);
     conf.tStamp = theEntry.tStamp;
 
     // Maintain statistics
-    vardis_stats.count_handle_rtdb_read++;
+    vardis_store.get_vardis_protocol_statistics_ref().count_handle_rtdb_read++;
     
     return conf;
   }
