@@ -31,6 +31,7 @@
 #include <dcp/vardis/vardis_protocol_data.h>
 #include <dcp/vardis/vardis_rtdb_entry.h>
 #include <dcp/vardis/vardis_transmissible_types.h>
+#include <dcp/vardis/vardis_variable_store_array_shm.h>
 
 
 /**
@@ -56,7 +57,12 @@ namespace dcp::vardis {
 
     /**
      * @brief Constructor, registers with BP, initializes Vardis
-     *        command socket, and initializes Vardis runtime data
+     *        command socket, and initializes Vardis shared memory
+     *        variable store and runtime data
+     *
+     * @param protocol_id: BPProtocolIdT value to use for Vardis
+     * @param protname: clear text protocol name for Vardis protocol
+     * @param cfg: Vardis configuration data
      *
      * Note: Vardis does not allow multiple payloads in one beacon and
      * the demon does not request or process
@@ -73,15 +79,27 @@ namespace dcp::vardis {
 		       false,   // allowMultiplepayloads
 		       false,   // generateTransmitPayloadConfirms
 		       cfg),
-    vardisCommandSock(cfg.vardis_cmdsock_conf.commandSocketFile, cfg.vardis_cmdsock_conf.commandSocketTimeoutMS),
-    vardis_config (cfg),
-    vardis_exitFlag (false),
-    protocol_data (cfg.vardis_conf, get_own_node_identifier())
+      variable_store (cfg.vardis_shm_vardb_conf.shmAreaName.c_str(),
+		      true,
+		      cfg.vardis_conf.maxSummaries,
+		      cfg.vardis_conf.maxDescriptionLength,
+		      cfg.vardis_conf.maxValueLength,
+		      cfg.vardis_conf.maxRepetitions,
+		      get_own_node_identifier()),
+      vardisCommandSock(cfg.vardis_cmdsock_conf.commandSocketFile, cfg.vardis_cmdsock_conf.commandSocketTimeoutMS),
+      vardis_config (cfg),
+      vardis_exitFlag (false),
+      protocol_data (variable_store)
     {
     };
 
 
-     
+    /**
+     * @brief Vardis variable store (shared memory array-based)
+     */
+    VardisVariableStoreShm variable_store;
+
+    
     /**
      * @brief Command socket for Vardis client applications
      */
@@ -99,16 +117,10 @@ namespace dcp::vardis {
      */
     bool vardis_exitFlag = false;
 
-    /**
-     * @brief Holds the mutex for access to the real-time variable
-     *        database and the queues
-     */
-    std::mutex protocol_data_mutex;
-
 
     /**
-     * @brief Contains the runtime data of the protocol proper
-     *        (real-time variable database, queues)
+     * @brief Contains the runtime data of the protocol proper, and
+     *        all the methods for protocol processing
      */
     VardisProtocolData  protocol_data;
 
@@ -133,7 +145,7 @@ namespace dcp::vardis {
 
 
   /**
-   * @brief Acquires the mutex for the protocol_data member of a
+   * @brief Acquires the mutex for the variable_store member of a
    *        VardisRuntimeData object. The mutex is held throughout the
    *        lifetime of this object.
    *
@@ -142,21 +154,21 @@ namespace dcp::vardis {
    * VardisRuntimedata object lives at least as long as this locking
    * object.
    */
-  class ScopedProtocolDataMutex {
+  class ScopedVariableStoreMutex {
   private:
     VardisRuntimeData* ptr = nullptr;
   public:
-    ScopedProtocolDataMutex() = delete;
-    ScopedProtocolDataMutex (VardisRuntimeData& runtime)
+    ScopedVariableStoreMutex() = delete;
+    ScopedVariableStoreMutex (VardisRuntimeData& runtime)
     {
       ptr = &runtime;
-      runtime.protocol_data_mutex.lock();
+      runtime.variable_store.lock();
     };
     
-    ~ScopedProtocolDataMutex ()
+    ~ScopedVariableStoreMutex ()
     {
       if (ptr)
-	ptr->protocol_data_mutex.unlock();
+	ptr->variable_store.unlock();
     };
   };
 
