@@ -23,7 +23,6 @@
 #include <iostream>
 #include <dcp/common/shared_mem_area.h>
 
-using dcp::RingBuffer;
 using dcp::SharedMemBuffer;
 
 namespace dcp::vardis {
@@ -50,7 +49,6 @@ namespace dcp::vardis {
     RingBufferNormal rbCreateRequest, rbCreateConfirm;   /*!< Request and confirm queues for RTDB-Create */
     RingBufferNormal rbDeleteRequest, rbDeleteConfirm;   /*!< Request and confirm queues for RTDB-Delete */
     RingBufferNormal rbUpdateRequest, rbUpdateConfirm;   /*!< Request and confirm queues for RTDB-Update */
-    RingBufferNormal rbReadRequest, rbReadConfirm;       /*!< Request and confirm queues for RTDB-Read */
     
     
     
@@ -70,9 +68,7 @@ namespace dcp::vardis {
 	rbDeleteRequest ("RTDB-Delete request", maxServicePrimitiveQueueLength),
 	rbDeleteConfirm ("RTDB-Delete confirm", maxServicePrimitiveQueueLength),
 	rbUpdateRequest ("RTDB-Update request", maxServicePrimitiveQueueLength),
-	rbUpdateConfirm ("RTDB-Update confirm", maxServicePrimitiveQueueLength),
-	rbReadRequest ("RTDB-Create request", maxServicePrimitiveQueueLength),
-	rbReadConfirm ("RTDB-Create confirm", maxServicePrimitiveQueueLength)      
+	rbUpdateConfirm ("RTDB-Update confirm", maxServicePrimitiveQueueLength)
     {
       // set up all buffers and put them into free list
       size_t act_buffer_size    =  shmBuffPool.get_actual_buffer_size ();
@@ -98,7 +94,7 @@ namespace dcp::vardis {
      */
     static uint64_t get_minimum_number_buffers_required ()
     {
-      return 9*maxServicePrimitiveQueueLength + 10;
+      return 7*maxServicePrimitiveQueueLength + 10;
     };
 
 
@@ -119,9 +115,6 @@ namespace dcp::vardis {
 
 	 << ", rbUpdateRequest.stored = " << rbUpdateRequest.stored_elements ()
 	 << ", rbUpdateConfirm.stored = " << rbUpdateConfirm.stored_elements ()
-
-	 << ", rbReadRequest.stored = " << rbReadRequest.stored_elements ()
-	 << ", rbReadConfirm.stored = " << rbReadConfirm.stored_elements ()
  
 	;
       
