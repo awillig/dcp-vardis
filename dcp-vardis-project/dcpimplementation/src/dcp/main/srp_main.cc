@@ -13,7 +13,12 @@
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/srp/srp_configuration.h>
+#include <dcp/srp/srp_logging.h>
+#include <dcp/srp/srp_receiver.h>
+#include <dcp/srp/srp_runtime_data.h>
+#include <dcp/srp/srp_scrubber.h>
 #include <dcp/srp/srp_transmissible_types.h>
+#include <dcp/srp/srp_transmitter.h>
 
 using std::cout;
 using std::cerr;
@@ -31,106 +36,83 @@ namespace po = boost::program_options;
 
 using namespace dcp::srp;
 
-
 std::string get_protocol_name ()
 {
-  char buf [500] = "State Reporting Protocol (SRP) -- Version ";
+  char buf [500] = "State Reporting Protocol ";
 
   return std::string(std::string(buf) + dcp::dcpVersionNumber);
 }
 
 
+
 void print_version ()
 {
   cout << dcp::dcpHighlevelDescription
-       << " -- " << get_protocol_name() << endl;
+       << " -- " << get_protocol_name()
+       << endl;
 }
 
-
-bool srp_exitFlag = false;
+SRPRuntimeData* srp_rt_ptr = nullptr;
 
 void signalHandler (int signum)
 {
   cout << "Caught signal " << signum << " (" << strsignal(signum) << ")" << endl;
-  srp_exitFlag = true;
+  if (srp_rt_ptr)
+    srp_rt_ptr->srp_exitFlag = true;
 }
 
 
-
-void payload_generator (BPClientRuntime& cl_rt)
+int run_srp_demon (const std::string cfg_filename)
 {
-  byte txdata [40];
-  byte currval = 0x20; 
-
-  while (not srp_exitFlag)
-    {
-      std::this_thread::sleep_for (3000ms);
-
-      for (byte i=0; i<40; i++)
-	txdata[i] = (currval + i) % 256;
-      currval = (currval + 1) % 256;
-
-      // cout << "payload_generator: transmitting payload " << byte_array_to_string (txdata, 40) << endl;
-      
-      DcpStatus stat = cl_rt.transmit_payload (40, txdata);
-
-      if (stat != BP_STATUS_OK)
-	cout << "payload_generator: returned status " << bp_status_to_string (stat) << endl;
-    }
-}
-
-
-int run_srp_main (std::string cfg_filename)
-{
-  // read configuration
+  // read configuration and start logging
   SRPConfiguration srpconfig;
   srpconfig.read_from_config_file (cfg_filename);
-  cout << "Configuration: " << srpconfig << endl;
-  
-  // install signal handlers
-  std::signal(SIGTERM, signalHandler);
-  std::signal(SIGINT, signalHandler);
-  std::signal(SIGABRT, signalHandler);
+  initialize_logging (srpconfig);
+  BOOST_LOG_SEV(log_main, trivial::info) << "Demon mode with config file " << cfg_filename;
+  BOOST_LOG_SEV(log_main, trivial::info) << "Configuration: " << srpconfig;
+
+
   
   try {
-    BPClientRuntime cl_rt (dcp::BP_PROTID_SRP,
-			   get_protocol_name(),
-			   ExtendedSafetyDataT::fixed_size(),
-			   dcp::bp::BP_QMODE_REPEAT,
-			   0,
-			   false,  // allowMultiplePayloads
-			   false,  // generateTransmitPayloadConfirms
-			   srpconfig);
+    srp_rt_ptr = new SRPRuntimeData (dcp::BP_PROTID_SRP, get_protocol_name(), srpconfig);
 
-    std::thread thread_generator (payload_generator, std::ref(cl_rt));
+    BOOST_LOG_SEV(log_main, trivial::info) << "BP registration successful, ownNodeIdentifier = " << srp_rt_ptr->get_own_node_identifier();
+
     
-    while (not srp_exitFlag)
-      {
-	std::this_thread::sleep_for (50ms);
-	
-	BPLengthT result_length = 0;
-	byte buffer [4000];
-	DcpStatus rx_stat = cl_rt.receive_payload (result_length, buffer);
-	if ((result_length > 0) && rx_stat == BP_STATUS_OK)
-	  {
-	    cout << "Rx thread: Got payload, printing first few bytes: " << byte_array_to_string (buffer, 15) << endl;
-	  }
-	else
-	  {
-	    if (rx_stat != BP_STATUS_OK)
-	      cout << "Rx thread: got rx_stat = " << bp_status_to_string (rx_stat) << endl;
-	  }
-      }
-  
-    thread_generator.join ();
+    // install signal handlers
+    std::signal(SIGTERM, signalHandler);
+    std::signal(SIGINT, signalHandler);
+    std::signal(SIGABRT, signalHandler);
+
+    BOOST_LOG_SEV(log_main, trivial::info) << "Starting threads.";    
+    std::thread thread_rx (receiver_thread, std::ref(*srp_rt_ptr));
+    std::thread thread_tx (transmitter_thread, std::ref(*srp_rt_ptr));
+    std::thread thread_scrub (scrubber_thread, std::ref(*srp_rt_ptr));
+    
+    // and wait for their end
+    BOOST_LOG_SEV (log_main, trivial::info) << "Running ...";
+    thread_rx.join ();
+    thread_tx.join ();
+    thread_scrub.join ();
+
+    delete srp_rt_ptr;
+    srp_rt_ptr = nullptr;
+
+    // and exit
+    BOOST_LOG_SEV(log_main, trivial::info) << "Exiting.";
+
+    return EXIT_SUCCESS;
+    
   }
   catch (std::exception& e)
     {
-      cout << "Caught an exception, got " << e.what() << ", exiting." << endl;
-      return EXIT_FAILURE;
-    }  
+      BOOST_LOG_SEV(log_main, trivial::fatal) << "Caught an exception, got " << e.what() << ", exiting.";
 
-  return EXIT_SUCCESS;
+      if (srp_rt_ptr)
+	delete srp_rt_ptr;
+
+      return EXIT_FAILURE;
+    }
 }
 
 
@@ -177,7 +159,7 @@ int main (int argc, char* argv[])
 
     if (vm.count("run"))
       {
-	return run_srp_main(cfg_filename);
+	return run_srp_demon (cfg_filename);
       }
 
     cerr << "No valid option given." << endl;
