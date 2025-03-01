@@ -77,7 +77,7 @@ namespace dcp::vardis {
 
     if (runtime.bp_shm_area_ptr == nullptr)
       {
-	BOOST_LOG_SEV(log_tx, trivial::fatal) << "Invalid shared memory handle. Exiting.";
+	BOOST_LOG_SEV(log_tx, trivial::fatal) << "Invalid BP shared memory handle. Exiting.";
 	runtime.vardis_exitFlag = true;
 	return;
       }
@@ -87,7 +87,7 @@ namespace dcp::vardis {
 
     if ((control_seg_ptr == nullptr) or (buffer_seg_ptr == nullptr))
       {
-	BOOST_LOG_SEV(log_tx, trivial::fatal) << "Invalid shared memory area pointer(s). Exiting.";
+	BOOST_LOG_SEV(log_tx, trivial::fatal) << "Invalid BP shared memory area pointer(s). Exiting.";
 	runtime.vardis_exitFlag = true;
 	return;
       }
