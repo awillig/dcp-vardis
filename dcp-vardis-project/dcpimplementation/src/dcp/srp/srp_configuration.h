@@ -25,6 +25,7 @@
 #include <dcp/common/command_socket.h>
 #include <dcp/common/shared_mem_area.h>
 #include <dcp/bp/bpclient_configuration.h>
+#include <dcp/srp/srp_constants.h>
 
 namespace po = boost::program_options;
 
@@ -38,7 +39,11 @@ namespace dcp::srp {
 
   
   const uint16_t    defaultValueSrpGenerationPeriodMS   = 100;
-
+  const uint16_t    defaultValueSrpReceptionPeriodMS    = 100;
+  const uint16_t    defaultValueSrpScrubbingPeriodMS    = 500;
+  const uint16_t    defaultValueSrpKeepaliveTimeoutMS   = 5000;
+  const uint16_t    defaultValueSrpScrubbingTimeoutMS   = 3000;
+  
 
   /**
    * @brief This structure holds the configuration data for the core
@@ -52,11 +57,38 @@ namespace dcp::srp {
 
 
     /**
-     * @brief Period between submitting SRP payloads to BP
+     * @brief Period between submitting SRP payloads to BP in ms
      */
     uint16_t srpGenerationPeriodMS = defaultValueSrpGenerationPeriodMS;
 
 
+    /**
+     * @brief Period between attempting to retrieve received payloads in ms
+     */
+    uint16_t srpReceptionPeriodMS  = defaultValueSrpReceptionPeriodMS;
+    
+
+    /**
+     * @brief Period between scrubbing runs
+     */
+    uint16_t srpScrubbingPeriodMS  = defaultValueSrpScrubbingPeriodMS;
+
+    
+    /**
+     * @brief If the own SafetyDataT record has not been updated for
+     *        this long, then payload generation is suppressed
+     */
+    uint16_t srpKeepaliveTimeoutMS = defaultValueSrpKeepaliveTimeoutMS;
+    
+
+    /**
+     * @brief If a neighbours ExtendedSafetyDataT record has not been
+     *        updated for this long, it is dropped from the neighbour
+     *        table (scrubbing process)
+     */
+    uint16_t srpScrubbingTimeoutMS = defaultValueSrpScrubbingTimeoutMS;
+    
+    
     /**
      * @brief Constructors, mainly for setting section names in the
      *        config file
@@ -87,8 +119,9 @@ namespace dcp::srp {
    */
   typedef struct SRPConfiguration : public BPClientConfiguration {
 
-    CommandSocketConfigurationBlock   cmdsock_conf; /*!< Command socket towards BP */
+    LoggingConfigurationBlock         logging_conf; /*!< Logging configuration */
     SRPConfigurationBlock             srp_conf;     /*!< Actual SRP configuration data */
+    SharedMemoryConfigurationBlock    shm_conf;     /*!< Shared memory configuration for neighbour store */
 
 
     /**
@@ -96,10 +129,11 @@ namespace dcp::srp {
      *        default name for command socket towards BP
      */
     SRPConfiguration ()
-      : BPClientConfiguration ("BPCommandSocket", "BPSharedMem")
-      , srp_conf ("SRP")
+      : BPClientConfiguration ("BPCommandSocket", "BPSharedMem"),
+	logging_conf (),
+	srp_conf (),
+	shm_conf ("SRPNeighbourStoreShm", defaultSRPNeighbourStoreShmName)
     {
-      bp_cmdsock_conf.commandSocketFile = "/tmp/dcp-bp-command-socket";
     };
 
 
@@ -110,7 +144,9 @@ namespace dcp::srp {
     virtual void build_description (po::options_description& cfgdesc)
     {
       BPClientConfiguration::build_description (cfgdesc);
+      logging_conf.add_options (cfgdesc);
       srp_conf.add_options (cfgdesc);
+      shm_conf.add_options (cfgdesc, defaultSRPNeighbourStoreShmName);
     };
 
 
@@ -120,10 +156,10 @@ namespace dcp::srp {
     virtual void validate()
     {
       BPClientConfiguration::validate();
+      logging_conf.validate();
       srp_conf.validate();
+      shm_conf.validate();
     };
-
-
     
     friend std::ostream& operator<<(std::ostream& os, const dcp::srp::SRPConfiguration& cfg);
     
