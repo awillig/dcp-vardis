@@ -204,20 +204,25 @@ namespace dcp::vardis {
 
 	// check if we have received a payload
 	BPLengthT result_length = 0;
+	DcpStatus rx_stat;
 	byte rx_buffer [rx_buffer_length];
-	DcpStatus rx_stat = runtime.receive_payload (result_length, rx_buffer);
+	bool more_payloads = false;
 
-	if ((result_length > 0) && rx_stat == BP_STATUS_OK)
-	  {
-	    BOOST_LOG_SEV(log_rx, trivial::info) << "Processing payload of length " << result_length;
-	    MemoryChunkDisassemblyArea area ("vd-rx", (size_t) result_length.val, rx_buffer);
-	    process_received_payload (runtime, area);
-	  }
-	else
-	  {
-	    if (rx_stat != BP_STATUS_OK)
-	      BOOST_LOG_SEV(log_rx, trivial::info) << "Retrieving received payload issued error " << bp_status_to_string (rx_stat);
-	  }
+	do {
+	  rx_stat = runtime.receive_payload (result_length, rx_buffer, more_payloads);
+
+	  if ((result_length > 0) && (rx_stat == BP_STATUS_OK))
+	    {
+	      BOOST_LOG_SEV(log_rx, trivial::info) << "Processing payload of length " << result_length;
+	      MemoryChunkDisassemblyArea area ("vd-rx", (size_t) result_length.val, rx_buffer);
+	      process_received_payload (runtime, area);
+	    }
+	  else
+	    {
+	      if (rx_stat != BP_STATUS_OK)
+		BOOST_LOG_SEV(log_rx, trivial::info) << "Retrieving received payload issued error " << bp_status_to_string (rx_stat);
+	    }
+	} while (more_payloads);
       }
     BOOST_LOG_SEV(log_rx, trivial::info) << "Exiting receive thread.";
   }
