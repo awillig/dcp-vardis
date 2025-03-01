@@ -50,14 +50,7 @@ namespace dcp {
     os << nodeid.to_str();
     return os;
   }
-  
-  
-  bool operator< (const NodeIdentifierT& left, const NodeIdentifierT& right)
-  {
-    return (left.to_uint64_t() < right.to_uint64_t());
-  }
-  
-  
+    
   std::ostream& operator<<(std::ostream& os, const TimeStampT& tstamp)
   {
     os << tstamp.tStamp;
