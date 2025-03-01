@@ -70,7 +70,7 @@ namespace dcp::vardis {
 
   
   typedef struct VardisRegister_Confirm : ServiceConfirm {
-    NodeIdentifierT own_node_identifier = nullIdentifier;
+    NodeIdentifierT own_node_identifier = nullNodeIdentifier;
     
     VardisRegister_Confirm () : ServiceConfirm (stVardis_Register) {};
     VardisRegister_Confirm (DcpStatus statcode) : ServiceConfirm(stVardis_Register, statcode) {};
