@@ -121,10 +121,10 @@ namespace dcp {
   // ---------------------------------------------------------------
   
 
-  DcpStatus BPClientRuntime::receive_payload (BPLengthT& result_length, byte* result_buffer)
+  DcpStatus BPClientRuntime::receive_payload (BPLengthT& result_length, byte* result_buffer, bool& more_payloads)
   {
     if (not _isRegistered)
-      throw BPClientLibException ("transmit_payload: not registered with BP");
+      throw BPClientLibException ("receive_payload: not registered with BP");
     
     BPLengthT max_length = get_max_payload_size();
     
@@ -134,6 +134,7 @@ namespace dcp {
       throw BPClientLibException ("receive_payload: no result buffer given");
 
     result_length = 0;
+    more_payloads = false;
     
     // get hold of the shared memory area
     if (bp_shm_area_ptr == nullptr)
@@ -177,6 +178,8 @@ namespace dcp {
 
     shmBuff.clear();
     CS.rbFree.push (shmBuff);
+
+    more_payloads = not CS.rbReceivePayloadIndication.isEmpty();
     
     return BP_STATUS_OK;
   }
