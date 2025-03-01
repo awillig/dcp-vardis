@@ -391,7 +391,9 @@ namespace dcp {
      *        is copied into. Buffer is left unmodified if no payload is
      *        received. The maximum number of bytes copied is given by
      *        the maximum payload length for this client protocol, the
-     *        buffer should be large enough for that.   
+     *        buffer should be large enough for that.
+     * @param more_payloads: says whether there are more received
+     *        payloads available
      *
      * @return DcpStatus value
      *
@@ -401,7 +403,7 @@ namespace dcp {
      * Note: this method can only be used when the client protocol is
      * registered with BP, otherwise it throws.
      */
-    DcpStatus receive_payload (BPLengthT& result_length, byte* result_buffer);
+    DcpStatus receive_payload (BPLengthT& result_length, byte* result_buffer, bool& more_payloads);
 
 
     /**
