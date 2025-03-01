@@ -143,7 +143,7 @@ namespace dcp::vardis {
     StringT descr ("hello");
     VarSpecT aspec;
     aspec.varId = VarIdT (83);
-    aspec.prodId = nullIdentifier;
+    aspec.prodId = nullNodeIdentifier;
     aspec.repCnt = VarRepCntT (84);
     aspec.descr = descr;
     aspec.serialize (ass_area);

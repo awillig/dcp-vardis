@@ -12,7 +12,7 @@ namespace dcp::vardis {
   // ------------------------------------------------------------
   
   TEST(VardisProtDataTest, Basic) {
-    ArrayVariableStoreShm<256,128> vstore ("shm-vardis-protocol-data-test", true, 20, 32, 32, 5, nullIdentifier);
+    ArrayVariableStoreShm<256,128> vstore ("shm-vardis-protocol-data-test", true, 20, 32, 32, 5, nullNodeIdentifier);
     VardisProtocolData protData (vstore);
 
     EXPECT_NE (addr1, addr2);
