@@ -161,12 +161,15 @@ namespace dcp {
 
 
     /**
-     * @brief Checking equality / inequality of two MAC addresses
+     * @brief Making NodeIdentifierT a totally ordered type
      */
-    inline bool operator== (const NodeIdentifierT& other) const { return (0 == std::memcmp(nodeId, other.nodeId, MAC_ADDRESS_SIZE)); };
-    inline bool operator!= (const NodeIdentifierT& other) const { return (0 != std::memcmp(nodeId, other.nodeId, MAC_ADDRESS_SIZE)); };
-
-
+    friend inline bool operator== (const NodeIdentifierT& lhs, const NodeIdentifierT& rhs) { return (0 == std::memcmp(lhs.nodeId, rhs.nodeId, MAC_ADDRESS_SIZE)); };
+    friend inline bool operator!= (const NodeIdentifierT& lhs, const NodeIdentifierT& rhs) { return not (rhs == lhs); };
+    friend inline bool operator< (const NodeIdentifierT& lhs, const NodeIdentifierT& rhs)  { return (lhs.to_uint64_t() < rhs.to_uint64_t()); };
+    friend inline bool operator> (const NodeIdentifierT& lhs, const NodeIdentifierT& rhs)  { return (rhs < lhs); };
+    friend inline bool operator<= (const NodeIdentifierT& lhs, const NodeIdentifierT& rhs) { return not (lhs > rhs); };
+    friend inline bool operator>= (const NodeIdentifierT& lhs, const NodeIdentifierT& rhs) { return not (lhs < rhs); };
+    
     /**
      * @brief Returns string representation of MAC address (hex-digits-and-colons notation)
      */
@@ -188,10 +191,10 @@ namespace dcp {
 
 
     /**
-     * @brief Friends for stream output and less-than (e.g. for use in std::map)
+     * @brief Friend for stream output
      */
     friend std::ostream& operator<<(std::ostream& os, const NodeIdentifierT& nodeid);
-    friend bool operator< (const dcp::NodeIdentifierT& left, const dcp::NodeIdentifierT& right);
+
 
 
     /**
@@ -205,7 +208,7 @@ namespace dcp {
   /**
    * @brief Representing an un-initialized node identifier
    */
-  const NodeIdentifierT nullIdentifier;
+  const NodeIdentifierT nullNodeIdentifier;
 
 
   /****************************************************************
