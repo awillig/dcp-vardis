@@ -117,7 +117,7 @@ namespace dcp::vardis {
 			   size_t maxdescrlen = 0,
 			   size_t maxvallen = 0,
 			   uint8_t maxrep = 0,
-			   NodeIdentifierT own_node_id = nullIdentifier
+			   NodeIdentifierT own_node_id = nullNodeIdentifier
 			   )
       : isServer (isServer)
     {
