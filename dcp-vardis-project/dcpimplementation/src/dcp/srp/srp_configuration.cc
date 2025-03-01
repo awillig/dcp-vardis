@@ -34,12 +34,19 @@ namespace dcp::srp {
     cfgdesc.add_options()
       
       // SRP parameters
-      (opt("generationPeriodMS").c_str(),   po::value<uint16_t>(&srpGenerationPeriodMS)->default_value(defaultValueSrpGenerationPeriodMS), txt("generation period for values (in MS)").c_str())
+      (opt("generationPeriodMS").c_str(),   po::value<uint16_t>(&srpGenerationPeriodMS)->default_value(defaultValueSrpGenerationPeriodMS), txt("generation period for SRP payloads (in ms)").c_str())
+
+      (opt("receptionPeriodMS").c_str(),   po::value<uint16_t>(&srpReceptionPeriodMS)->default_value(defaultValueSrpReceptionPeriodMS), txt("reception period for retrieving SRP payloads (in ms)").c_str())
+
+      (opt("scrubbingPeriodMS").c_str(),   po::value<uint16_t>(&srpScrubbingPeriodMS)->default_value(defaultValueSrpScrubbingPeriodMS), txt("scrubbing period for the neighbour table (in ms)").c_str())
+
+      (opt("keepaliveTimeoutMS").c_str(),   po::value<uint16_t>(&srpKeepaliveTimeoutMS)->default_value(defaultValueSrpKeepaliveTimeoutMS), txt("timeout for generating own payloads (in ms)").c_str())
+
+      (opt("scrubbingTimeoutMS").c_str(),   po::value<uint16_t>(&srpScrubbingTimeoutMS)->default_value(defaultValueSrpScrubbingTimeoutMS), txt("timeout for neighbour entries in the scrubbing process (in ms)").c_str())
       
       ;
     
   }
-  
   
   void SRPConfigurationBlock::validate ()
   {
@@ -47,14 +54,31 @@ namespace dcp::srp {
      * checks for SRP options
      **********************************/
     if (srpGenerationPeriodMS <= 0) throw ConfigurationException("generation period (in ms) must be strictly positive");
+    if (srpReceptionPeriodMS <= 0) throw ConfigurationException("reception period (in ms) must be strictly positive");
+    if (srpScrubbingPeriodMS <= 0) throw ConfigurationException("scrubbing period (in ms) must be strictly positive");
+    if (srpKeepaliveTimeoutMS <= 0) throw ConfigurationException("keepalive timeout (in ms) must be strictly positive");
+    if (srpScrubbingTimeoutMS <= 0) throw ConfigurationException("scrubbing timeout (in ms) must be strictly positive");
   }
 
   std::ostream& operator<< (std::ostream& os, const dcp::srp::SRPConfiguration& cfg)
   {
     os << "SRPConfiguration {"
-       << "srpGenerationPeriodMS = " << cfg.srp_conf.srpGenerationPeriodMS
-       << " , commandSocketFile = " << cfg.cmdsock_conf.commandSocketFile
-       << " , commandSocketTimeoutMS = " << cfg.cmdsock_conf.commandSocketTimeoutMS
+
+       << "loggingToConsole = " << cfg.logging_conf.loggingToConsole
+       << " , logfileNamePrefix = " << cfg.logging_conf.logfileNamePrefix
+       << " , logAutoFlush = " << cfg.logging_conf.logAutoFlush
+       << " , minimumSeverityLevel = " << cfg.logging_conf.minimumSeverityLevel
+       << " , rotationSize = " << cfg.logging_conf.rotationSize
+       << " , commandSocketFile[BP] = " << cfg.bp_cmdsock_conf.commandSocketFile
+       << " , commandSocketTimeoutMS[BP] = " << cfg.bp_cmdsock_conf.commandSocketTimeoutMS
+       << " , shmAreaNameBP = " << cfg.bp_shm_conf.shmAreaName
+       << " , shmAreaNameNeighbourStore = " << cfg.shm_conf.shmAreaName
+      
+       << " , generationPeriodMS = " << cfg.srp_conf.srpGenerationPeriodMS
+       << " , receptionPeriodMS = " << cfg.srp_conf.srpReceptionPeriodMS
+       << " , scrubbingPeriodMS = " << cfg.srp_conf.srpScrubbingPeriodMS
+       << " , keepaliveTimeoutMS = " << cfg.srp_conf.srpKeepaliveTimeoutMS
+       << " , scrubbingTimeoutMS = " << cfg.srp_conf.srpScrubbingTimeoutMS
        << " }";
     return os;
   }
