@@ -168,6 +168,17 @@ namespace dcp {
 
 
     /**
+     * @brief Re-sets the ring buffer into an empty state
+     */
+    void reset ()
+    {
+      in   = 0;
+      out  = 0;
+      currentNumberElements = 0;
+    };
+    
+
+    /**
      * @brief Outputting ring buffer description
      */
     std::ostream& operator<<(std::ostream& os)
