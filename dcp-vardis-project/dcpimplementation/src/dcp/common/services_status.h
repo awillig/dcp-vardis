@@ -137,6 +137,7 @@ namespace dcp {
    */
   const DcpStatus  BaseBPStatus      =  0x1000;
   const DcpStatus  BaseVardisStatus  =  0x2000;
+  const DcpStatus  BaseSRPStatus     =  0x3000;
 
   
   /*******************************************************************
@@ -214,6 +215,24 @@ namespace dcp {
   std::string vardis_status_to_string (DcpStatus stat);
 
 
+  /*******************************************************************
+   * SRP Status codes
+   ******************************************************************/
+  
+
+  /**
+   * @brief SRP status codes prescribed by the specification
+   */
+  const DcpStatus SRP_STATUS_OK     =  BaseSRPStatus + 0x0000;
+
+  
+  /**
+   * @brief Returns string representation of SRP status code.
+   *
+   * Throws when the status code is not one of the known SRP status
+   * codes.
+   */
+  std::string srp_status_to_string (DcpStatus stat);
   
   
   /*******************************************************************

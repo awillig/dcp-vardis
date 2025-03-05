@@ -138,6 +138,19 @@ namespace dcp {
     return "";
   }
 
-  
+    // -----------------------------------------
+
+  std::string srp_status_to_string (DcpStatus stat)
+  {
+    switch (stat)
+      {
+	// status codes prescribed by the specification
+      case SRP_STATUS_OK:                              return "SRP_STATUS_OK";
+	
+      default:
+	throw std::invalid_argument("srp_status_to_string: illegal status code");
+      }
+    return "";
+  }
   
 };  // namespace dcp
