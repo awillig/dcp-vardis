@@ -132,7 +132,7 @@ namespace dcp::srp {
       : BPClientConfiguration ("BPCommandSocket", "BPSharedMem"),
 	logging_conf (),
 	srp_conf (),
-	shm_conf ("SRPNeighbourStoreShm", defaultSRPNeighbourStoreShmName)
+	shm_conf ("SRPNeighbourStoreShm", defaultSRPStoreShmName)
     {
     };
 
@@ -146,7 +146,7 @@ namespace dcp::srp {
       BPClientConfiguration::build_description (cfgdesc);
       logging_conf.add_options (cfgdesc);
       srp_conf.add_options (cfgdesc);
-      shm_conf.add_options (cfgdesc, defaultSRPNeighbourStoreShmName);
+      shm_conf.add_options (cfgdesc, defaultSRPStoreShmName);
     };
 
 
