@@ -48,6 +48,11 @@ namespace dcp {
   public:
     RingBufferException (const std::string& message) : DcpException("RingBuffer: " + message) {};
   };
+
+  class AVLTreeException : public DcpException {
+  public:
+    AVLTreeException (const std::string& message) : DcpException("AVLTree: " + message) {};
+  };
   
   class ConfigurationException : public DcpException {
   public:
@@ -79,11 +84,16 @@ namespace dcp {
     VardisClientLibException (const std::string& message) : DcpException("VardisCLientLib: " + message) {};
   };
 
-  class VardisVariableStoreException : public DcpException {
+  class VardisStoreException : public DcpException {
   public:
-    VardisVariableStoreException (const std::string& message) : DcpException("VardisVariableStore: " + message) {};
+    VardisStoreException (const std::string& message) : DcpException("VardisStore: " + message) {};
   };
 
+  class SRPStoreException : public DcpException {
+  public:
+    SRPStoreException (const std::string& message) : DcpException("SRPStore: " + message) {};
+  };
+  
   class ManagementException : public DcpException {
   public:
     ManagementException (const std::string& message) : DcpException("Management: " + message) {};
