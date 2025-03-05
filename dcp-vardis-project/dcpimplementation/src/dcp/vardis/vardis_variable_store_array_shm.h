@@ -122,7 +122,7 @@ namespace dcp::vardis {
       : isServer (isServer)
     {
       if (area_name == nullptr)
-	throw VardisVariableStoreException ("no area name");
+	throw VardisStoreException ("no area name");
 
       size_t array_contents_size = ShmArrayType::get_array_contents_size();
       
@@ -132,7 +132,7 @@ namespace dcp::vardis {
 	  shm_obj.truncate (array_contents_size);
 	  region = mapped_region (shm_obj, read_write);
 	  if (region.get_size() != array_contents_size)
-	    throw VardisVariableStoreException (std::format("wrong region size {} where {} is required", region.get_size(), array_contents_size));
+	    throw VardisStoreException (std::format("wrong region size {} where {} is required", region.get_size(), array_contents_size));
 	  ShmArrayType::initialize_array_store ((byte*) region.get_address(),
 						maxsumm,
 						maxdescrlen,
@@ -145,11 +145,11 @@ namespace dcp::vardis {
 	  shm_obj = shared_memory_object (open_only, area_name, read_write);
 	  region  = mapped_region (shm_obj, read_write);
 	  if (region.get_size() != array_contents_size)
-	    throw VardisVariableStoreException (std::format("wrong region size {} where {} is required", region.get_size(), array_contents_size));
+	    throw VardisStoreException (std::format("wrong region size {} where {} is required", region.get_size(), array_contents_size));
 
 	  this->pContents = (ShmArrayContents*) region.get_address();
 	  if (this->pContents == nullptr)
-	    throw VardisVariableStoreException ("illegal region pointer");
+	    throw VardisStoreException ("illegal region pointer");
 
 	}
     };
