@@ -32,6 +32,8 @@ namespace dcp::srp {
     double  position_x;
     double  position_y;
     double  position_z;
+
+    SafetyDataT () : position_x (0), position_y (0), position_z (0) {};
     
     virtual void serialize (AssemblyArea& area)
     {
@@ -59,6 +61,8 @@ namespace dcp::srp {
     NodeIdentifierT   nodeId;
     TimeStampT        timeStamp;
     uint32_t          seqno;
+
+    ExtendedSafetyDataT () {};
     
     virtual void serialize (AssemblyArea& area)
     {
