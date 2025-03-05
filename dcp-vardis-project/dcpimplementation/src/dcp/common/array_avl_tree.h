@@ -20,12 +20,10 @@
 
 #pragma once
 
-#include <concepts>
 #include <cstdint>
-#include <exception>
-#include <format>
-#include <iostream>
-#include <type_traits>
+#include <functional>
+#include <list>
+#include <dcp/common/exceptions.h>
 #include <dcp/common/ring_buffer.h>
 
 using std::cout;
@@ -326,7 +324,18 @@ namespace dcp {
       
       return (is_consistent(left_ch(idx)) and is_consistent(right_ch(idx)));
     };
-    
+
+    void find_matching_keys (int idx, std::function<bool (const DataT&)> predicate, std::list<KeyT>& lst) const
+    {
+      if (is_null(idx)) return;
+      
+      if (predicate (the_array[idx].data))
+	lst.push_back (the_array[idx].key);
+      
+      find_matching_keys (left_ch (idx), predicate, lst);
+      find_matching_keys (right_ch (idx), predicate, lst);
+    };
+   
   public:
     
     ArrayAVLTree ()
@@ -348,6 +357,14 @@ namespace dcp {
       return lookup (root, key);
     };
 
+    inline DataT& lookup_data_ref (KeyT key)
+    {
+      int idx = lookup (key);
+      if (is_null (idx))
+	throw AVLTreeException ("lookup_data_ref: unknown key");
+      return the_array[idx].data;
+    };
+    
     inline bool is_member (KeyT key) const
     {
       return (not is_null (lookup (root, key)));
@@ -355,7 +372,8 @@ namespace dcp {
     
     void insert (KeyT key, DataT& data)
     {
-      root = insert (root, key, data);
+      if (number_elements < arraySize)
+	root = insert (root, key, data);
     };
     
 
@@ -382,6 +400,11 @@ namespace dcp {
 	  the_array[i].nd.height = 0;
 	  the_array[i].used      = false;
 	}
+    };
+
+    void find_matching_keys (std::function<bool (const DataT&)> predicate, std::list<KeyT>& result_lst) const
+    {
+      find_matching_keys (root, predicate, result_lst);
     };
     
   };  
