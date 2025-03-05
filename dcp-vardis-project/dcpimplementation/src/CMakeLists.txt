@@ -50,6 +50,7 @@ add_executable(vardisapp-test-consumer "dcp/applications/vardisapp-test-consumer
 add_executable(vardisapp-delete-variable "dcp/applications/vardisapp-delete-variable.cc")
 add_executable(vardisapp-describe-variable "dcp/applications/vardisapp-describe-variable.cc")
 add_executable(vardisapp-list-variables "dcp/applications/vardisapp-list-variables.cc")
+add_executable(srpapp-test-generate-sd "dcp/applications/srpapp-test-generate-sd.cc")
 
 find_package(Boost COMPONENTS program_options log log_setup REQUIRED)
 set(PROJECT_LIB ${PROJECT_LIB} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
@@ -66,6 +67,7 @@ target_link_libraries(vardisapp-test-consumer -Wl,--start-group ${Boost_PROGRAM_
 target_link_libraries(vardisapp-delete-variable -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis -Wl,--end-group)
 target_link_libraries(vardisapp-describe-variable -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis -Wl,--end-group)
 target_link_libraries(vardisapp-list-variables -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis -Wl,--end-group)
+target_link_libraries(srpapp-test-generate-sd -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpsrp -Wl,--end-group)
 
 
 # ========================================================================================
