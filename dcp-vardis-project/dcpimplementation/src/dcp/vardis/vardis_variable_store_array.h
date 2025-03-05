@@ -185,7 +185,7 @@ namespace dcp::vardis {
     /**
      * @brief Shorthand for the exception type we use
      */
-    typedef VardisVariableStoreException VVSE;
+    typedef VardisStoreException VSE;
 
     
   protected:
@@ -314,11 +314,11 @@ namespace dcp::vardis {
       memory_start_address = mem_start_addr;
       
       if (memory_start_address == nullptr)
-	throw VVSE ("initialize_array_store: Memory start address is null");
+	throw VSE ("initialize_array_store: Memory start address is null");
       if (maxdescrlen >= descrBufferSize - sizeof (uint64_t))
-	throw VVSE ("initialize_array_store: Maximum description length is too large");
+	throw VSE ("initialize_array_store: Maximum description length is too large");
       if (maxvallen >= valueBufferSize - sizeof(uint64_t))
-	throw VVSE ("initialize_array_store: Maximum value length is too large");
+	throw VSE ("initialize_array_store: Maximum value length is too large");
 
       pContents = new (memory_start_address) ArrayContents;
 
@@ -416,8 +416,8 @@ namespace dcp::vardis {
     {
       ArrayContents&  AC = *pContents;
 
-      if (AC.id_states[varId.val].used)  throw VVSE (std::format("allocate_identifier: variable {} exists", (int) varId.val));
-      if (AC.freeList.isEmpty())         throw VVSE (std::format("allocate_identifier: no free buffer available"));
+      if (AC.id_states[varId.val].used)  throw VSE (std::format("allocate_identifier: variable {} exists", (int) varId.val));
+      if (AC.freeList.isEmpty())         throw VSE (std::format("allocate_identifier: no free buffer available"));
     
       FreeListEntry fl_entry  = AC.freeList.pop();
       AC.id_states[varId.val].used        = true;
@@ -440,7 +440,7 @@ namespace dcp::vardis {
     {
       ArrayContents&  AC = *pContents;
 
-      if (not AC.id_states[varId.val].used) throw VVSE (std::format("deallocate_identifier: unused varId {}", (int) varId.val));
+      if (not AC.id_states[varId.val].used) throw VSE (std::format("deallocate_identifier: unused varId {}", (int) varId.val));
 
       AC.id_states[varId.val].used = false;
       FreeListEntry fl_entry;
@@ -481,7 +481,7 @@ namespace dcp::vardis {
     {
       ArrayContents&  AC = *pContents;
 
-      if (not AC.id_states[varId.val].used)  throw VVSE (std::format("deallocate_identifier: unused varId {}", (int) varId.val));
+      if (not AC.id_states[varId.val].used)  throw VSE (std::format("deallocate_identifier: unused varId {}", (int) varId.val));
 
       DBEntry& existing_entry = AC.id_states[varId.val].db_entry;
       existing_entry.varId         = varId;
@@ -507,7 +507,7 @@ namespace dcp::vardis {
     {
       ArrayContents&  AC = *pContents;
 
-      if (not AC.id_states[varId.val].used)  throw VVSE (std::format("deallocate_identifier: unused varId {}", (int) varId.val));
+      if (not AC.id_states[varId.val].used)  throw VSE (std::format("deallocate_identifier: unused varId {}", (int) varId.val));
 
       return AC.id_states[varId.val].db_entry;
     };
@@ -529,10 +529,10 @@ namespace dcp::vardis {
     {
       ArrayContents&  AC = *pContents;
       
-      if (not AC.id_states[varId.val].used)  throw VVSE (std::format("update_value: unused varId {}", (int) varId.val));
-      if (nvsize.val == 0)                   throw VVSE (std::format("update_value: new value size is zero"));
-      if (nvsize.val > valueBufferSize)      throw VVSE (std::format("update_value: new value size {} is too large", (int) nvsize.val));
-      if (newval == nullptr)                 throw VVSE (std::format("update_value: new value is null"));
+      if (not AC.id_states[varId.val].used)  throw VSE (std::format("update_value: unused varId {}", (int) varId.val));
+      if (nvsize.val == 0)                   throw VSE (std::format("update_value: new value size is zero"));
+      if (nvsize.val > valueBufferSize)      throw VSE (std::format("update_value: new value size {} is too large", (int) nvsize.val));
+      if (newval == nullptr)                 throw VSE (std::format("update_value: new value is null"));
 
       byte* effective_addr = AC.value_buffer + AC.id_states[varId.val].val_offs;
       std::memcpy (effective_addr, newval, nvsize.val);
@@ -553,9 +553,9 @@ namespace dcp::vardis {
     {
       ArrayContents&  AC = *pContents;
       
-      if (not AC.id_states[varId.val].used)  throw VVSE (std::format("update_value: unused varId {}", (int) varId.val));
-      if (newval.length == 0)                throw VVSE (std::format("update_value: new value size is zero"));
-      if (newval.length > valueBufferSize)   throw VVSE (std::format("update_value: new value size {} is too large", (int) newval.length));
+      if (not AC.id_states[varId.val].used)  throw VSE (std::format("update_value: unused varId {}", (int) varId.val));
+      if (newval.length == 0)                throw VSE (std::format("update_value: new value size is zero"));
+      if (newval.length > valueBufferSize)   throw VSE (std::format("update_value: new value size {} is too large", (int) newval.length));
 
       byte* effective_addr = AC.value_buffer + AC.id_states[varId.val].val_offs;
       std::memcpy (effective_addr, newval.data, newval.length);
@@ -578,8 +578,8 @@ namespace dcp::vardis {
     {
       ArrayContents&  AC = *pContents;
 
-      if (not AC.id_states[varId.val].used) throw VVSE (std::format("read_value: unused varId {}", (int) varId.val));
-      if (output_buffer == nullptr)         throw VVSE (std::format("read_value: output buffer is null"));
+      if (not AC.id_states[varId.val].used) throw VSE (std::format("read_value: unused varId {}", (int) varId.val));
+      if (output_buffer == nullptr)         throw VSE (std::format("read_value: output buffer is null"));
             
       byte* effective_addr = AC.value_buffer + AC.id_states[varId.val].val_offs;
       std::memcpy (output_buffer, effective_addr, AC.id_states[varId.val].val_size);
@@ -599,7 +599,7 @@ namespace dcp::vardis {
     {
       ArrayContents&  AC = *pContents;
 
-      if (not AC.id_states[varId.val].used) throw VVSE (std::format("read_value: unused varId {}", (int) varId.val));
+      if (not AC.id_states[varId.val].used) throw VSE (std::format("read_value: unused varId {}", (int) varId.val));
 
       byte* effective_addr = (byte*) AC.value_buffer + AC.id_states[varId.val].val_offs;
       VarValueT rv;
@@ -640,9 +640,9 @@ namespace dcp::vardis {
     {
       ArrayContents&  AC = *pContents;
       
-      if (not AC.id_states[varId.val].used)     throw VVSE (std::format("update_description: unused varId {}", (int) varId.val));
-      if (new_descr.length == 0)                throw VVSE (std::format("update_description: new description size is zero"));
-      if (new_descr.length > descrBufferSize)   throw VVSE (std::format("update_value: new description size {} is too large", (int) new_descr.length));
+      if (not AC.id_states[varId.val].used)     throw VSE (std::format("update_description: unused varId {}", (int) varId.val));
+      if (new_descr.length == 0)                throw VSE (std::format("update_description: new description size is zero"));
+      if (new_descr.length > descrBufferSize)   throw VSE (std::format("update_value: new description size {} is too large", (int) new_descr.length));
 
       byte* effective_addr = (byte*) AC.description_buffer + AC.id_states[varId.val].descr_offs;
       std::memcpy (effective_addr, new_descr.data, new_descr.length);
@@ -662,7 +662,7 @@ namespace dcp::vardis {
     {
       ArrayContents&  AC = *pContents;
 
-      if (not AC.id_states[varId.val].used) throw VVSE (std::format("read_description: unused varId {}", (int) varId.val));
+      if (not AC.id_states[varId.val].used) throw VSE (std::format("read_description: unused varId {}", (int) varId.val));
 
       byte* effective_addr = (byte*) AC.description_buffer + AC.id_states[varId.val].descr_offs;
       StringT rv;
@@ -689,8 +689,8 @@ namespace dcp::vardis {
     {
       ArrayContents&  AC = *pContents;
       
-      if (not AC.id_states[varId.val].used) throw VVSE (std::format("read_description: unused varId {}", (int) varId.val));
-      if (buf == nullptr)                   throw VVSE (std::format("read_description: empty buffer"));
+      if (not AC.id_states[varId.val].used) throw VSE (std::format("read_description: unused varId {}", (int) varId.val));
+      if (buf == nullptr)                   throw VSE (std::format("read_description: empty buffer"));
 
       byte* effective_addr = (byte*) AC.description_buffer + AC.id_states[varId.val].descr_offs;
       std::memcpy (buf, effective_addr, AC.id_states[varId.val].descr_size);
