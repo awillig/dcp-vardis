@@ -26,7 +26,7 @@
 #include <type_traits>
 #include <dcp/common/exceptions.h>
 #include <dcp/common/ring_buffer.h>
-#include <dcp/vardis/vardis_variable_store_interface.h>
+#include <dcp/vardis/vardis_store_interface.h>
 
 
 using dcp::RingBufferBase;

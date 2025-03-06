@@ -25,7 +25,7 @@
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
-#include <dcp/vardis/vardis_variable_store_array.h>
+#include <dcp/vardis/vardis_store_array.h>
 
 
 using namespace boost::interprocess;
