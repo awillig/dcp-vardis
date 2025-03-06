@@ -179,7 +179,7 @@ namespace dcp::vardis {
       , logging_conf ()
       , vardis_conf ("Vardis")
       , vardis_cmdsock_conf ("VardisCommandSocket")
-      , vardis_shm_vardb_conf ("VardisVariableDatabaseShm", defaultVardisVariableStoreShmName)
+      , vardis_shm_vardb_conf ("VardisVariableDatabaseShm", defaultVardisStoreShmName)
     {
       bp_cmdsock_conf.commandSocketFile      = "/tmp/dcp-bp-command-socket";
       bp_shm_conf.shmAreaName                = "shm-bpclient-vardis";
@@ -197,7 +197,7 @@ namespace dcp::vardis {
       logging_conf.add_options (cfgdesc);
       vardis_conf.add_options (cfgdesc);
       vardis_cmdsock_conf.add_options (cfgdesc);
-      vardis_shm_vardb_conf.add_options (cfgdesc, defaultVardisVariableStoreShmName);
+      vardis_shm_vardb_conf.add_options (cfgdesc, defaultVardisStoreShmName);
     };
 
     
