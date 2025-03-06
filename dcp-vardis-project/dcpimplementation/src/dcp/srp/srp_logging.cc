@@ -18,7 +18,6 @@
  */
 
 
-#include <iostream>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
@@ -43,9 +42,6 @@ namespace attrs    = boost::log::attributes;
 namespace keywords = boost::log::keywords;
 namespace trivial  = boost::log::trivial;
 
-
-using std::cout;
-using std::endl;
 
 
 BOOST_LOG_ATTRIBUTE_KEYWORD(a_severity, "Severity", trivial::severity_level)
