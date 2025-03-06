@@ -20,68 +20,46 @@
 
 #pragma once
 
-#include <dcp/common/transmissible_type.h>
-#include <dcp/common/area.h>
 #include <dcp/common/global_types_constants.h>
+
+/**
+ * @brief This module contains the two key transmissible data types of
+ *        the SRP protocol
+ *
+ * Note that for simplicity we do not make use of the serialization
+ * framework, and just use these types as is.
+ */
 
 
 namespace dcp::srp {
 
-  class SafetyDataT : public TransmissibleType <3*sizeof(double)> {
-  public:
+
+  /**
+   * @brief Contains the position of the sender node
+   *
+   * To be refined by applications, e.g. possibly be extended to
+   * contain more (e.g. heading).
+   */
+  typedef struct SafetyDataT {
     double  position_x;
     double  position_y;
     double  position_z;
-
-    SafetyDataT () : position_x (0), position_y (0), position_z (0) {};
-    
-    virtual void serialize (AssemblyArea& area)
-    {
-      area.serialize_byte_block (sizeof(double), (byte*) &position_x);
-      area.serialize_byte_block (sizeof(double), (byte*) &position_y);
-      area.serialize_byte_block (sizeof(double), (byte*) &position_z);
-    };
-    virtual void deserialize (DisassemblyArea& area)
-    {
-      area.deserialize_byte_block (sizeof(double), (byte*) &position_x);
-      area.deserialize_byte_block (sizeof(double), (byte*) &position_y);
-      area.deserialize_byte_block (sizeof(double), (byte*) &position_z);
-    };
-
     friend std::ostream& operator<<(std::ostream& os, const SafetyDataT& sd);
-  };
+  } SafetyDataT;
   
-  
-  class ExtendedSafetyDataT : public TransmissibleType<SafetyDataT::fixed_size()
-						       + NodeIdentifierT::fixed_size()
-						       + TimeStampT::fixed_size()
-						       + sizeof(uint32_t)> {
-  public:
+
+  /**
+   * @brief Contains the ExtendedSafetyDataT structure, including
+   *        actual safety data and metadata such as a sequence number
+   */
+  typedef struct ExtendedSafetyDataT {
     SafetyDataT       safetyData;
     NodeIdentifierT   nodeId;
     TimeStampT        timeStamp;
     uint32_t          seqno;
 
-    ExtendedSafetyDataT () {};
-    
-    virtual void serialize (AssemblyArea& area)
-    {
-      safetyData.serialize (area);
-      nodeId.serialize (area);
-      timeStamp.serialize (area);
-      area.serialize_byte_block(sizeof(uint32_t), (byte*) &seqno);
-    };
-    virtual void deserialize (DisassemblyArea& area)
-    {
-      safetyData.deserialize(area);
-      nodeId.deserialize(area);
-      timeStamp.deserialize (area);
-      area.deserialize_byte_block(sizeof(uint32_t), (byte*) &seqno);
-    };
-
-    friend std::ostream& operator<<(std::ostream& os, const ExtendedSafetyDataT& esd);
-    
-  };
+    friend std::ostream& operator<<(std::ostream& os, const ExtendedSafetyDataT& esd);    
+  } ExtendedSafetyDataT;
 
   
 };  // namespace dcp::srp
