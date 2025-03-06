@@ -43,6 +43,7 @@ namespace dcp::srp {
   const uint16_t    defaultValueSrpScrubbingPeriodMS    = 500;
   const uint16_t    defaultValueSrpKeepaliveTimeoutMS   = 5000;
   const uint16_t    defaultValueSrpScrubbingTimeoutMS   = 3000;
+  const double      defaultValueSrpGapSizeEWMAAlpha     = 0.95;
   
 
   /**
@@ -88,6 +89,12 @@ namespace dcp::srp {
      */
     uint16_t srpScrubbingTimeoutMS = defaultValueSrpScrubbingTimeoutMS;
     
+
+    /**
+     * @brief Alpha value for EWMA estimator for the avarge gap size
+     *        for one particular neighbour
+     */
+    double srpGapSizeEWMAAlpha        = defaultValueSrpGapSizeEWMAAlpha;
     
     /**
      * @brief Constructors, mainly for setting section names in the
@@ -132,7 +139,7 @@ namespace dcp::srp {
       : BPClientConfiguration ("BPCommandSocket", "BPSharedMem"),
 	logging_conf (),
 	srp_conf (),
-	shm_conf ("SRPNeighbourStoreShm", defaultSRPStoreShmName)
+	shm_conf ("SRPStoreShm", defaultSRPStoreShmName)
     {
     };
 
