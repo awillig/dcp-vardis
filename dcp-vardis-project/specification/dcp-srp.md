@@ -224,9 +224,8 @@ the following parameters:
 - `maxPayloadSize` is set to
   `ssizeof(ExtendedSafetyDataT)`. Implementations may opt to add an
   additional safety margin.
-- `queueingMode` is set to `BP_QMODE_REPEAT`, meaning that the
-  BP will always transmit the last `ExtendedSafetyDataT` record that the
-  SRP has handed over.
+- `queueingMode` is set to `BP_QMODE_ONCE`, meaning that the
+  BP will transmit each `ExtendedSafetyDataT` record only once.
 
 Optionally, before registering with the BP, the SRP entity can choose
 to first submit a `BP-DeregisterProtocol.request` primitive with
