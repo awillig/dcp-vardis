@@ -53,6 +53,8 @@ using dcp::vardis::VarValueT;
  * @brief This module / class provides the runtime data that a Vardis
  *        client application / protocol needs, and offers a range of
  *        management services.
+ *
+ * This module profides the 'official API' available to a Vardis client.
  */
 
 
