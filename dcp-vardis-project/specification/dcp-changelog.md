@@ -6,6 +6,14 @@ The change log describes changes made from one version to the
 next. This is restricted to substantial changes, editorial matters
 such as language issues, typos or minor errors are not reported.
 
+## Changes for Version 1.3
+
+### Changes in `dcp-srp.md`
+
+- Now queueing mode `BP_QMODE_ONCE` is used for SRP, to help
+  suppressing transmission of safety data when it has not been updated
+  by applications for a while.
+
 ## Changes for Version 1.2
 
 ### Changes in `dcp-bp.md`
