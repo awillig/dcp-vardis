@@ -29,14 +29,15 @@
 namespace dcp::srp {
 
   /**
-   * @brief This class defines the abstraction of an SRP neighbour
-   *        store, providing key operations on the neighbour table
-   *        and the current node safety data
+   * @brief This class defines the abstraction of a SRP store,
+   *        providing key operations on the neighbour table and the
+   *        current node safety data and other runtime data
    *
-   * Logically, the neighbour store contains the neighbour table
-   * (holding information about all currently known neighbours) and an
-   * area in which an application can supply the latest information
-   * about the own position / speed / heading etc.
+   * Logically, the SRP store contains the neighbour table (holding
+   * information about all currently known neighbours), an area in
+   * which an application can supply the latest information about the
+   * own position / speed / heading etc, and important runtime flags
+   * like the srp_isActive flag.
    */
 
   
@@ -77,13 +78,13 @@ namespace dcp::srp {
 
 
     /**
-     * @brief Lock access to neighbour store
+     * @brief Lock access to neighbour table
      */
     virtual void lock_neighbour_table () {};
 
 
     /**
-     * @brief Unlock access to neighbour store
+     * @brief Unlock access to neighbour table
      */
     virtual void unlock_neighbour_table () {};
 
@@ -132,8 +133,15 @@ namespace dcp::srp {
      * Note: this operation does not perform locking / unlocking.
      */
     virtual bool does_esd_entry_exist (const NodeIdentifierT nodeId) const = 0;
-    
 
+
+
+    /**
+     * @brief Removes the entry for the given node identifier from the
+     *        neighbour table (important for scrubbing process)
+     *
+     * @param nodeId: identifier of the node to remove
+     */
     virtual void remove_esd_entry (const NodeIdentifierT nodeId) = 0;
 
     
@@ -141,12 +149,79 @@ namespace dcp::srp {
      * Management of my own (Extended)SafetyData and related data
      **************************************************************/
 
+
+    /**
+     * @brief Sets own safety data field for transmission and starts
+     *        related timer (cf. keepaliveTimoutMS configuration
+     *        parameter)
+     *
+     * @param own_sd: new own SafetyDataT record
+     */
     virtual void set_own_safety_data (const SafetyDataT& own_sd) = 0;
+
+
+    /**
+     * @brief Sets the sequence number to be used in future
+     *        transmissions of the own safety data
+     *
+     * @param newseqno: new sequence number to use
+     */
     virtual void set_own_sequence_number (uint32_t newseqno) = 0;
+
+
+    /**
+     * @brief Sets the own_safety_data_written flag, indicating
+     *        whether any safety data have been written into the own
+     *        safety data field
+     *
+     * @param new_flag: new value of flag
+     *
+     * This is used to ensure that no own safety data is transmitted
+     * as long as none have been written. The flag should be
+     * automatically re-set to false once the keepaliveTimeoutMS has
+     * expired.
+     */
+    virtual void set_own_safety_data_written_flag (bool new_flag) = 0;
+
+
+    /**
+     * @brief Returns reference to currently stored own safety data
+     */
     virtual SafetyDataT& get_own_safety_data () = 0;
+
+
+    /**
+     * @brief Returns timestamp for the last time the own safety data
+     *        was written to (using the set_own_safety_data method)
+     */
     virtual TimeStampT   get_own_safety_data_timestamp ()  const = 0;
+
+
+    /**
+     * @brief Returns value of the own-safety-data-written flag
+     */
+    virtual bool         get_own_safety_data_written_flag () const = 0;
+
+
+    /**
+     * @brief Returns current value of the sequence number being used
+     *        in future transmissions
+     */
     virtual uint32_t     get_own_sequence_number () const = 0;
 
+
+    /**
+     * @brief Returns a list of all node identifiers for which their
+     *        scrubbing timeout has expired
+     *
+     * @param current_time: current system time
+     * @param timeoutMS: any neighbour table entry with a last
+     *        reception timestamp older than this timeout value
+     *        will be included in the result list
+     *
+     * @return list of all node identifiers with last reception
+     * timestamps older than given timeout value
+     */
     virtual std::list<NodeIdentifierT> find_nodes_to_scrub (TimeStampT current_time, uint16_t timeoutMS) const = 0;
     
   };
