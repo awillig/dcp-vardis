@@ -7,7 +7,6 @@
 using dcp::ArrayAVLTree;
 using dcp::NodeIdentifierT;
 using dcp::nullNodeIdentifier;
-using dcp::A_NOTFOUND;
 
 std::mt19937 generator;
 
@@ -70,7 +69,6 @@ TEST (AVLTest, initialTest) {
 	  cnt++;
 	  avl_tree.remove (j);
 	  avl_tree.remove (j);
-	  cout << "deleting: cnt = " << cnt << ", number_elements = " << avl_tree.get_number_elements () << ", j = " << j << endl;
 	  EXPECT_EQ (avl_tree.get_number_elements (), perm_size - cnt);
 	  EXPECT_EQ (avl_tree.get_number_elements (), avl_tree.number_reachable ());
 	  EXPECT_TRUE (avl_tree.is_consistent ());
