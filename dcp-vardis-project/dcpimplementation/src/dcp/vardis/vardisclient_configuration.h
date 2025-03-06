@@ -71,7 +71,7 @@ namespace dcp {
      */
     VardisClientConfiguration (const std::string& cmdsock_file,
 			       std::string client_area_name,
-			       std::string global_area_name = dcp::vardis::defaultVardisVariableStoreShmName) :
+			       std::string global_area_name = dcp::vardis::defaultVardisStoreShmName) :
       cmdsock_conf ("VardisCommandSocket"),
       shm_conf_client ("dcp-vardisclient-shm"),
       shm_conf_global ("VardisVariableDatabaseShm")
