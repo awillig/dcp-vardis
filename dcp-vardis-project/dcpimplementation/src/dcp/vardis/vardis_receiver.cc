@@ -213,7 +213,7 @@ namespace dcp::vardis {
 
 	  if ((result_length > 0) && (rx_stat == BP_STATUS_OK))
 	    {
-	      BOOST_LOG_SEV(log_rx, trivial::info) << "Processing payload of length " << result_length;
+	      BOOST_LOG_SEV(log_rx, trivial::trace) << "Processing payload of length " << result_length;
 	      MemoryChunkDisassemblyArea area ("vd-rx", (size_t) result_length.val, rx_buffer);
 	      process_received_payload (runtime, area);
 	    }
