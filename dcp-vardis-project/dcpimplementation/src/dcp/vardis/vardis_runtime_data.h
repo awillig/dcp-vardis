@@ -31,7 +31,7 @@
 #include <dcp/vardis/vardis_protocol_data.h>
 #include <dcp/vardis/vardis_rtdb_entry.h>
 #include <dcp/vardis/vardis_transmissible_types.h>
-#include <dcp/vardis/vardis_variable_store_array_shm.h>
+#include <dcp/vardis/vardis_store_array_shm.h>
 
 
 /**
