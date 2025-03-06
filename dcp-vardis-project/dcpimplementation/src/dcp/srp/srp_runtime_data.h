@@ -50,20 +50,32 @@ namespace dcp::srp {
     
     SRPRuntimeData () = delete;
 
+
+    /**
+     * @brief Constructor
+     *
+     * @param protocol_id: BP protocol id to be used for SRP
+     * @param protname: clear-text protocol name for SRPapp
+     * @param cfg: SRP configuration
+     *
+     * Initializes SRP as BP client (i.e. performs protocol
+     * registration) and also initializes the SRP store (global shared
+     * memory segment)
+     */
     SRPRuntimeData (const BPProtocolIdT protocol_id,
 		    const std::string protname,
 		    const SRPConfiguration& cfg)
     : BPClientRuntime (protocol_id,
 		       protname,
-		       ExtendedSafetyDataT::fixed_size(),
-		       dcp::bp::BP_QMODE_REPEAT,
+		       sizeof(ExtendedSafetyDataT),
+		       dcp::bp::BP_QMODE_ONCE,
 		       0,
 		       false,   // allowMultiplepayloads
 		       false,   // generateTransmitPayloadConfirms
 		       cfg),
       srp_store (cfg.shm_conf.shmAreaName.c_str(),
 		 true,
-		 0.9,    // alpha value for EWMA estimator
+		 cfg.srp_conf.srpGapSizeEWMAAlpha,
 		 get_own_node_identifier()),
       srp_config (cfg),
       srp_exitFlag (false)
@@ -71,6 +83,11 @@ namespace dcp::srp {
     };
 
 
+    /**
+     * @brief This holds the SRP store, containing the neighbour table
+     *        and the own safety data for transmission, as well as
+     *        some other global data (e.g. SRP active flag)
+     */
     DefaultSRPStoreType srp_store;
     
         
@@ -91,9 +108,9 @@ namespace dcp::srp {
 
 
   /**
-   * @brief Acquires the mutex for the neighbour_store member of a
-   *        SRPRuntimeData object. The mutex is held throughout the
-   *        lifetime of this object.
+   * @brief Acquires the mutex for the neighbour table of the SRP
+   *        store. The mutex is held throughout the lifetime of this
+   *        object.
    *
    * Note that an object of this class maintains a pointer to a
    * SRPRuntimeData object. The caller must guarantee that the
@@ -119,6 +136,16 @@ namespace dcp::srp {
   };
 
 
+  /**
+   * @brief Acquires the mutex for the own safety data part of the SRP
+   *        store. The mutex is held throughout the lifetime of this
+   *        object.
+   *
+   * Note that an object of this class maintains a pointer to a
+   * SRPRuntimeData object. The caller must guarantee that the
+   * SRPRuntimedata object lives at least as long as this locking
+   * object.
+   */
   class ScopedOwnSDMutex {
   private:
     SRPRuntimeData* ptr = nullptr;
