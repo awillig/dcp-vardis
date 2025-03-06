@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <dcp/common/area.h>
 #include <dcp/vardis/vardis_protocol_data.h>
-#include <dcp/vardis/vardis_variable_store_array_shm.h>
+#include <dcp/vardis/vardis_store_array_shm.h>
 
 namespace dcp::vardis {
 
