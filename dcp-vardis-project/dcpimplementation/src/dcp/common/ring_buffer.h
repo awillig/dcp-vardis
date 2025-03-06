@@ -32,7 +32,8 @@ namespace dcp {
    *        number of elements (of parameterized type) in a fixed
    *        amount of memory
    *
-   * @tparam ElemT: type of elements of a ring buffer
+   * @tparam ElemT: type of elements of a ring buffer. Should have
+   *         a copy constructor
    * @tparam maxRingBufferElements: number of array elements in the
    *         ring buffer
    *
