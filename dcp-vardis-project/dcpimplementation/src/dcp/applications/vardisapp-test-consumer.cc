@@ -18,7 +18,7 @@ using std::cout;
 using std::endl;
 using std::cerr;
 using dcp::vardis::defaultVardisCommandSocketFileName;
-using dcp::vardis::defaultVardisVariableStoreShmName;
+using dcp::vardis::defaultVardisStoreShmName;
 
 using namespace dcp;
 
@@ -47,7 +47,7 @@ int main (int argc, char* argv [])
 {
   std::string cmdsock_name  = defaultVardisCommandSocketFileName;
   std::string shmname_cli   = defaultVardisClientShmName;
-  std::string shmname_glob  = defaultVardisVariableStoreShmName;
+  std::string shmname_glob  = defaultVardisStoreShmName;
   int     periodTmp = 0;
 
   
@@ -57,7 +57,7 @@ int main (int argc, char* argv [])
     ("version,v",      "show version information and exit")
     ("sockname,s",     po::value<std::string>(&cmdsock_name)->default_value(defaultVardisCommandSocketFileName), "filename of VarDis command socket (UNIX Domain Socket)")
     ("shmcli,c",       po::value<std::string>(&shmname_cli)->default_value(defaultVardisClientShmName), "Name of shared memory area for interfacing with Vardis")
-    ("shmgdb,g",       po::value<std::string>(&shmname_glob)->default_value(defaultVardisVariableStoreShmName), "Unique name of shared memory area for accessing VarDis variables (global database)")
+    ("shmgdb,g",       po::value<std::string>(&shmname_glob)->default_value(defaultVardisStoreShmName), "Unique name of shared memory area for accessing VarDis variables (global database)")
     ("period",         po::value<int>(&periodTmp), "Generation period (in ms)")
     ;
 

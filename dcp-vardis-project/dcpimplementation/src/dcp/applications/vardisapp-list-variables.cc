@@ -17,7 +17,7 @@
 using std::cerr;
 using std::cout;
 using std::endl;
-using dcp::vardis::defaultVardisVariableStoreShmName;
+using dcp::vardis::defaultVardisStoreShmName;
 using dcp::vardis::defaultVardisCommandSocketFileName;
 
 using namespace dcp;
@@ -35,7 +35,7 @@ int main (int argc, char* argv [])
 {
   std::string cmdsock_name  = defaultVardisCommandSocketFileName;
   std::string shmname_cli   = "irrelevant";
-  std::string shmname_glob  = defaultVardisVariableStoreShmName;
+  std::string shmname_glob  = defaultVardisStoreShmName;
 
   
   po::options_description desc("Allowed options");
@@ -43,7 +43,7 @@ int main (int argc, char* argv [])
     ("help,h",         "produce help message and exit")
     ("version,v",      "show version information and exit")
     ("sockname,s",     po::value<std::string>(&cmdsock_name)->default_value(defaultVardisCommandSocketFileName), "filename of VarDis command socket (UNIX Domain Socket)")
-    ("shmgdb,g",       po::value<std::string>(&shmname_glob)->default_value(defaultVardisVariableStoreShmName), "Unique name of shared memory area for accessing VarDis variables (global database)")
+    ("shmgdb,g",       po::value<std::string>(&shmname_glob)->default_value(defaultVardisStoreShmName), "Unique name of shared memory area for accessing VarDis variables (global database)")
     ;
 
   try {
