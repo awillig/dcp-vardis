@@ -159,6 +159,7 @@ int main (int argc, char* argv[])
 
     if (vm.count("run"))
       {
+	cout << "Running SRP demon ..." << endl;		
 	return run_srp_demon (cfg_filename);
       }
 
