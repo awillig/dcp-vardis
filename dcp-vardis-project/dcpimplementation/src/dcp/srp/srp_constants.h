@@ -28,6 +28,6 @@
 
 namespace dcp::srp {
 
-  const std::string   defaultSRPStoreShmName   = "shm-srp-store";
+  const std::string   defaultSRPStoreShmName   = "shm-area-srp-store";
   
 };  // namespace dcp::srp
