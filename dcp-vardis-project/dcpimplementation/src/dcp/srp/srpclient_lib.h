@@ -31,9 +31,17 @@
 
 
 /**
- * @brief This module / class provides the runtime data that a Vardis
+ * @brief This module / class provides the runtime data that a SRP
  *        client application / protocol needs, and offers a range of
- *        management services.
+ *        data access and management services.
+ *
+ * Note that the SRP demon does not offer a command socket a a
+ * per-client shared memory segment, only one global shared memory
+ * segment (the SRP store) containing all relevant data like the
+ * neighbour table, a buffer for the own safety data and others. An
+ * SRP client attaches to this shared memory segment as a client.
+ *
+ * This module provides the 'official API' available to a SRP client.
  */
 
 using dcp::srp::SafetyDataT;
@@ -41,10 +49,17 @@ using dcp::srp::DefaultSRPStoreType;
 
 namespace dcp {
 
-  //class SRPClientRuntime : public BaseClientRuntime {
+  /**
+   * @brief Class providing all the runtime data a SRP client needs
+   */
   class SRPClientRuntime {
   protected:
-    
+
+
+    /**
+     * @brief This member holds access to the SRP store (in shared
+     *        memory)
+     */
     DefaultSRPStoreType srp_store;
 
     
@@ -55,21 +70,12 @@ namespace dcp {
 
 
     /**
-     * @brief Constructor, checks validity of command socket and
-     *        shared memory segment names, and then registers with
-     *        Vardis. Throws if invalid or registration failed
+     * @brief Constructor, initializes access to the SRP store
      *
-     * @param client_conf: Configuration data for Vardis client
-     * @param do_register: specifies whether client should
-     *        register with Vardis demon
+     * @param client_conf: Configuration data for SRP client (contains
+     *        in particular the name of the SRP store)
      */
     SRPClientRuntime (const SRPClientConfiguration& client_conf);
-
-    
-    /**
-     * @brief Destructor, deregisters with Vardis if previously registered
-     */
-    ~SRPClientRuntime ();
 
 
     /****************************************************************
@@ -86,35 +92,36 @@ namespace dcp {
      * Management services
      ***************************************************************/
 
-    /**
-     * @brief Request the SRP demon to exit
-     *
-     * After calling this no further service requests should be sent
-     * to the Vardis demon, otherwise undefined behaviour might result
-     */
-    DcpStatus shutdown_srp ();
-
 
     /**
-     * @brief Request Vardis demon to activate, i.e. resume processing
-     *        of received payloads, generating payloads and processing
-     *        of RTDB service requests
+     * @brief Request SRP demon to activate, i.e. resume processing of
+     *        received payloads and generating payloads
      */
     DcpStatus activate_srp ();
 
 
     /**
-     * @brief Request Vardis demon to deactivate, i.e. stop processing
-     *        of received payloads, stop generating own payloads, and stop
-     *        processing RTDB service requests
+     * @brief Request SRP demon to deactivate, i.e. stop processing
+     *        received payloads and stop generating own payloads
      */
     DcpStatus deactivate_srp ();
 
     
     /****************************************************************
-     * Synchronous RTDB services
+     * Service for sending own safety data
      ***************************************************************/
 
+
+    /**
+     * @brief Writes new safety data into buffer for periodic
+     *        transmission
+     *
+     * Note: After this operation the safety data is sent only for a
+     * limited amount of time (cf configuration parameter
+     * keepaliveTimeoutMS) before ceasing. Therefore, this must be
+     * regularly refreshed to keep transmission of the own safety data
+     * going.
+     */
     DcpStatus set_own_safety_data (const SafetyDataT& new_sd);
 
     
