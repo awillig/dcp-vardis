@@ -109,14 +109,24 @@ commandSocketFile       =  $bpcommandsocketfile
 commandSocketTimeoutMS  =  $bpcommandsockettimeout
 
 [BPSharedMem]
-areaName  =   shm-area-bpclient-vardis
+areaName  =   shm-area-bpclient-srp
+
+[logging]
+loggingToConsole     =  $console_logging
+filenamePrefix       =  log-dcp-srp
+severityLevel        =  trace
+
+[SRPStoreShm]
+areaName  =   shm-area-srp-store
+
 
 [SRP]
-averageX            =  $srpaverage
-averageY            =  $srpaverage
-averageZ            =  $srpaverage
-stdDev              =  25
-generationPeriodMS  =  200
+generationPeriodMS  =  150
+receptionPeriodMS   =  100
+scrubbingPeriodMS   =  500
+keepaliveTimeoutMS  =  3000
+scrubbingTimeoutMS  =  3000
+
 
 END
 
