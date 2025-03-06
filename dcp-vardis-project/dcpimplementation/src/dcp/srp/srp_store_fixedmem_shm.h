@@ -25,14 +25,18 @@
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
+#include <dcp/srp/srp_configuration.h>
 #include <dcp/srp/srp_store_fixedmem.h>
 
 
 using namespace boost::interprocess;
 
 /**
- * @brief This module provides a neighbour table / neighbour store
- *        that is stored in a shared-memory segment
+ * @brief This module provides an SRP store that is stored in a
+ *        shared-memory segment
+ *
+ * This mainly relies on the implementation in srp_store_fixedmem, it
+ * only manages the shared memory section to be used.
  */
 
 
@@ -52,11 +56,11 @@ namespace dcp::srp {
 
 
   /**
-   * @brief Template class for an array-based variable store located
-   *        in shared memory
+   * @brief Template class for a fixed memory SRP store located in
+   *        shared memory
    *
-   * @tparam valueBufferSize: size of a memory buffer for storing variable value
-   * @tparam descrBufferSize: size of a memory buffer for storing variable description
+   * @tparam maxNeighbours: maximum number of neighbours that can be
+   *         stored
    */
   template <uint64_t maxNeighbours>
   class FixedMemSRPStoreShm : public FixedMemSRPStoreBase<GlobalStateShm, maxNeighbours> {
@@ -93,27 +97,25 @@ namespace dcp::srp {
 
 
     /**
-     * @brief Allocates shared memory segment and creates a variable
-     *        store in there
+     * @brief Allocates shared memory segment and creates an SRP
+     *        store structure in there
      *
      * @param area_name: name of shared memory segment
      * @param isServer: indicates whether caller is server
-     *        (Vardis demon) or not (Vardis client)
-     * @param maxsumm: value of maxSummaries configuration parameter
-     * @param maxdescrlen: value of maxDescriptionLength configuration parameter
-     * @param maxvallen: value of maxValueLength configuration parameter
-     * @param maxrep: value of maxRepetitions configuration parameter
+     *        (SRP demon) or not (SRP client)
+     * @param alpha_gapsize_ewma: alpha value to be used for EWMA estimator
+     *        for average sequence number gap size of a neighbour 
      * @param own_node_id: value of ownNodeIdentifier parameter
      *
      * As a server, allocates shared memory object, and initializes
-     * the array-based variable store there. As a client, attempts to
-     * open and attach to the shared memory segment.
+     * the fixed-memory SRP store there. As a client, attempts to open
+     * and attach to the shared memory segment.
      *
      * Throws when shared memory allocation does not work.
      */
     FixedMemSRPStoreShm (const char* area_name,
 			 bool isServer,
-			 double alpha_gapsize_ewma = 0.9,
+			 double alpha_gapsize_ewma = defaultValueSrpGapSizeEWMAAlpha,
 			 NodeIdentifierT own_node_id = nullNodeIdentifier
 			 )
       : isServer (isServer)
@@ -160,6 +162,10 @@ namespace dcp::srp {
     };
     
 
+    /**
+     * @brief Locking access to the neighbour table part of the shared
+     *        memory segment
+     */
     void lock_neighbour_table ()
     {
       ShmFixedMemContents&  FMC = *(this->pContents);
@@ -167,12 +173,21 @@ namespace dcp::srp {
     };
 
 
+    /**
+     * @brief Unlocking access to the neighbour table part of the
+     *        shared memory segment
+     */
     void unlock_neighbour_table ()
     {
       ShmFixedMemContents&  FMC = *(this->pContents);
       FMC.global_state.neighbour_table_mutex.unlock();
     };
 
+
+    /**
+     * @brief Locking access to the own safety data part of the shared
+     *        memory segment
+     */
     void lock_own_safety_data ()
     {
       ShmFixedMemContents&  FMC = *(this->pContents);
@@ -180,6 +195,10 @@ namespace dcp::srp {
     };
 
 
+    /**
+     * @brief Unlocking access to the own safety data part of the
+     *        shared memory segment
+     */
     void unlock_own_safety_data ()
     {
       ShmFixedMemContents&  FMC = *(this->pContents);
@@ -188,6 +207,10 @@ namespace dcp::srp {
     
   }; 
 
+
+  /**
+   * @brief Shorthand type definition
+   */
   typedef FixedMemSRPStoreShm<1000> DefaultSRPStoreType;
 
   
