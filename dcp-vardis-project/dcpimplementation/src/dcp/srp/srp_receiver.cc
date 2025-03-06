@@ -18,7 +18,6 @@
  */
 
 
-#include <iostream>
 #include <queue>
 #include <thread>
 #include <chrono>
@@ -39,7 +38,6 @@ namespace dcp::srp {
   
   void receiver_thread (SRPRuntimeData& runtime)
   {
-    std::cout << runtime.srp_exitFlag << std::endl;
     BOOST_LOG_SEV(log_rx, trivial::info) << "Starting receive thread.";
     while (not runtime.srp_exitFlag)
       {
