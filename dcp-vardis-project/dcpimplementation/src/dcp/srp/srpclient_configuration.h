@@ -36,24 +36,18 @@ namespace dcp {
   /**
    * @brief Configuration for a SRP client
    *
-   * Contains a command socket (for exchanging service requests and
-   * responses with Vardis demon), a client shared memory segment (for
-   * exchanging RTDB services), and the Vardis global shared memory
-   * segment (variable store). For all of these the most important
-   * features are their respective file names
+   * Contains the SRP global shared memory segment (SRP store). For
+   * this the most important features is the shared memory segment
+   * file name.
    */
   typedef struct SRPClientConfiguration : public DcpConfiguration {
     SharedMemoryConfigurationBlock    shm_conf_store;  /*!< Name of SRP store (contains neighbour table etc) */
 
     
     /**
-     * @brief Constructor, setting section names for all config
-     *        blocks and setting command socket and shared memory
-     *        names to given arguments
+     * @brief Constructor, setting SRP store file name
      *
-     * @param cmdsock_file: Filename of Vardis command socket (a UNIX Domain Socket)
-     * @param client_area_name: shared memory name of client area towards Vardis
-     * @param global_area_name: shared memory name of global Vardis variable store
+     * @param store_area_name: shared memory name of global SRP store
      */
     SRPClientConfiguration (std::string store_area_name = dcp::srp::defaultSRPStoreShmName) :
       shm_conf_store ("SRPStoreShm")
@@ -83,7 +77,7 @@ namespace dcp {
      * @brief Overloaded output operator
      *
      * @param os: output stream to use
-     * @param cfg: the VardisClientConfiguration object to output 
+     * @param cfg: the SRPClientConfiguration object to output 
      */
     friend std::ostream& operator<<(std::ostream& os, const SRPClientConfiguration& cfg);
 
