@@ -34,12 +34,6 @@ namespace dcp {
 
   // -----------------------------------------------------------------------------------
 
-  SRPClientRuntime::~SRPClientRuntime ()
-  {
-  }
-
-  // -----------------------------------------------------------------------------------
-
   NodeIdentifierT SRPClientRuntime::get_own_node_identifier () const
   {
     return srp_store.get_own_node_identifier ();
