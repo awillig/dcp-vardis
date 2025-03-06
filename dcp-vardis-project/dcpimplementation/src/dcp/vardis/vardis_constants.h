@@ -34,7 +34,7 @@ namespace dcp::vardis {
   const size_t        MAX_maxValueLength            = VarLenT::max_val();
   const size_t        MAX_maxDescriptionLength      = StringT::max_length();
 
-  const std::string   defaultVardisVariableStoreShmName   = "shm-vardis-global-database";
+  const std::string   defaultVardisStoreShmName           = "shm-vardis-global-database";
   const std::string   defaultVardisCommandSocketFileName  = "/tmp/dcp-vardis-command-socket";
   
 };  // namespace dcp::vardis
