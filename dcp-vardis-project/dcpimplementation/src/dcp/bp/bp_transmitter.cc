@@ -117,14 +117,14 @@ namespace dcp::bp {
 	if (dcp::bp::BPPayloadHeaderT::fixed_size() + CS.buffer.used_length() - sizeof(BPTransmitPayload_Request)  <= area.available())
 	  {		
 	    serialize_payload (protEntry, area, buffer_seg_ptr, CS.buffer, numPayloadsAdded);
-	    CS.buffer.clear ();
 	  }
 	else
 	  {
 	    BOOST_LOG_SEV(log_tx, trivial::fatal) << "transfer_and_free_payload_from_buffer: payload is too large, dropping it";
-	    CS.buffer.clear();
 	    runtime.bp_exitFlag = true;
 	  }
+	CS.buffer.clear();
+	CS.rbFree.push (CS.buffer);
       }
   }
 
@@ -149,6 +149,7 @@ namespace dcp::bp {
 	  {
 	    BOOST_LOG_SEV(log_tx, trivial::fatal) << "transfer_and_leave_payload_from_buffer: payload is too large, dropping it";
 	    CS.buffer.clear();
+	    CS.rbFree.push (CS.buffer);
 	    runtime.bp_exitFlag = true;
 	  }
       }
