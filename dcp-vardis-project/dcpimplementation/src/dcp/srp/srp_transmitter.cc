@@ -18,7 +18,6 @@
  */
 
 
-#include <iostream>
 #include <queue>
 #include <thread>
 #include <chrono>
@@ -37,8 +36,6 @@ namespace dcp::srp {
   
   void transmitter_thread (SRPRuntimeData& runtime)
   {
-    std::cout << runtime.srp_exitFlag << std::endl;
-    
     BOOST_LOG_SEV(log_tx, trivial::info) << "Starting transmit thread.";
 
     if (runtime.bp_shm_area_ptr == nullptr)
@@ -72,6 +69,9 @@ namespace dcp::srp {
 
 	ScopedShmControlSegmentLock lock (CS);
 	ScopedOwnSDMutex own_sd_lock (runtime);
+
+	if (not runtime.srp_store.get_own_safety_data_written_flag ())
+	  continue;
 	
 	TimeStampT curr_time = TimeStampT::get_current_system_time();
 	TimeStampT past_time = runtime.srp_store.get_own_safety_data_timestamp();
@@ -80,6 +80,9 @@ namespace dcp::srp {
 	// data for a while
 	if (curr_time.milliseconds_passed_since(past_time) >= keepalive_timeout)
 	  {
+	    if (runtime.srp_store.get_own_safety_data_written_flag ())
+	      BOOST_LOG_SEV(log_tx, trivial::info) << "Stop sending own safety data after not being updated for a while.";
+	    runtime.srp_store.set_own_safety_data_written_flag (false);
 	    continue;
 	  }
 
