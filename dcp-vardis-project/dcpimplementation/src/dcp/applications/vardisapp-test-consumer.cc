@@ -42,15 +42,12 @@ bool       exitFlag = false;
 
 void signalHandler (int signum)
 {
-  cout << "Caught signal code " << signum << " (" << strsignal(signum) << "). Exiting." << endl;
   exitFlag = true;
 }
 
 
 void show_header (int counter)
 {
-  move (0, 0);
-  printw ("Vardis variables (%d)", counter);
   move (0, 0);
   printw ("Vardis variables (%d)", counter);
   move (1, 0);
