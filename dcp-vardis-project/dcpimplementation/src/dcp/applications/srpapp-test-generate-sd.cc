@@ -135,7 +135,6 @@ int main (int argc, char* argv [])
   
 
   // ----------------------------------
-  // Register with Vardis and create variable
   SRPClientConfiguration cl_conf;
   cl_conf.shm_conf_store.shmAreaName    = shmname_store;
 
