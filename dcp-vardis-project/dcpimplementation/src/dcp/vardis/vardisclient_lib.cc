@@ -19,7 +19,6 @@
 
 
 #include <format>
-#include <iostream>
 #include <dcp/vardis/vardis_service_primitives.h>
 #include <dcp/vardis/vardis_constants.h>
 #include <dcp/vardis/vardisclient_lib.h>
@@ -143,12 +142,10 @@ namespace dcp {
     int nrcvd = cl_sock.sendRequestAndReadResponseBlock<VardisRegister_Request> (rpReq, buffer, vardisCommandSocketBufferSize);
 
     if (nrcvd != sizeof(VardisRegister_Confirm))
-      {
-	std::cout << "register_with_vardis: response has size " << nrcvd
-		  << " but I expected size " << sizeof(VardisRegister_Confirm)
-		  << std::endl;
-	
-	cl_sock.abort ("register_with_vardis: response has wrong size");
+      {	
+	cl_sock.abort (std::format("register_with_vardis: response has wrong size {} (expected: {})",
+				   nrcvd,
+				   sizeof(VardisRegister_Confirm)));
       }
     
     VardisRegister_Confirm *pConf = (VardisRegister_Confirm*) buffer;
@@ -190,12 +187,15 @@ namespace dcp {
     byte buffer [vardisCommandSocketBufferSize];
     int nrcvd = cl_sock.sendRequestAndReadResponseBlock<VardisDeregister_Request> (drpReq, buffer, vardisCommandSocketBufferSize);
     
-    if (nrcvd != sizeof(VardisDeregister_Confirm)) cl_sock.abort ("deregister_with_vardis: response has wrong size");
+    if (nrcvd != sizeof(VardisDeregister_Confirm))
+      cl_sock.abort (std::format("deregister_with_vardis: response has wrong size {} (expected: {})",
+				 nrcvd,
+				 sizeof(VardisDeregister_Confirm)));
     
     VardisDeregister_Confirm *pConf = (VardisDeregister_Confirm*) buffer;
     
     if (pConf->s_type != stVardis_Deregister)
-      cl_sock.abort ("deregister_with_vardis: response has wrong service type");
+      cl_sock.abort (std::format("deregister_with_vardis: response has wrong service type {}", pConf->s_type));
 
     if (pConf->status_code == VARDIS_STATUS_OK)
       _isRegistered = false;
