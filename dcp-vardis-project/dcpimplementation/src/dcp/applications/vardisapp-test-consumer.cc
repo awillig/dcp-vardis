@@ -13,12 +13,17 @@
 #include <dcp/vardis/vardisclient_configuration.h>
 #include <dcp/vardis/vardisclient_lib.h>
 
+// For some odd reason ncurses should be included last, otherwise we
+// get tons of compiler errors
+#include <ncurses.h>   
 
-using std::cout;
-using std::endl;
-using std::cerr;
+
 using dcp::vardis::defaultVardisCommandSocketFileName;
 using dcp::vardis::defaultVardisStoreShmName;
+using std::cerr;
+using std::cout;
+using std::endl;
+using dcp::vardis::VarSeqnoT;
 
 using namespace dcp;
 
@@ -41,6 +46,61 @@ void signalHandler (int signum)
   exitFlag = true;
 }
 
+
+void show_header (int counter)
+{
+  move (0, 0);
+  printw ("Vardis variables (%d)", counter);
+  move (0, 0);
+  printw ("Vardis variables (%d)", counter);
+  move (1, 0);
+  printw ("----------------------------------------------------");
+
+  attron (A_BOLD);
+  move (3, 0);
+  printw ("VarId");
+  move (3, 8);
+  printw ("Descr");
+  move (3, 30);
+  printw ("Producer");
+  move (3, 50);
+  printw ("Seqno");
+  move (3, 60);
+  printw ("Value");
+  move (3, 74);
+  printw ("Age (ms)");
+  
+  attroff (A_BOLD);
+}
+
+void show_var_line (const int line,
+		    const VarIdT varId,
+		    const char* descr,
+		    const NodeIdentifierT prodId,
+		    const VarSeqnoT seqno,
+		    const double value,
+		    const uint16_t age)
+{
+  move (line, 0);
+  printw ("%d", (int) varId.val);
+  move (line, 8);
+  printw ("%.20s", descr);
+  move (line, 30);
+  printw ("%s", prodId.to_str().c_str());
+  move (line, 50);
+  printw ("%d", (int) seqno.val);
+  move (line, 60);
+  printw ("%.3f", value);
+  move (line, 74);
+  printw ("%d", age);
+}
+
+
+void show_footer (const int line)
+{
+  move (line, 0);
+  printw ("----------------------------------------------------");
+}
 
 
 int main (int argc, char* argv [])
@@ -123,71 +183,93 @@ int main (int argc, char* argv [])
     cout << "Entering update loop. Stop with <Ctrl-C>." << endl;
     
     int counter = 0;
+
+    initscr ();
     
     while (not exitFlag)
       {
 	std::this_thread::sleep_for (std::chrono::milliseconds (periodMS));
-	
-	cout << "----------------------------------------------------" << endl;
-	cout << "Round " << counter << endl;
-	counter++;
-	
-	std::list<DescribeDatabaseVariableDescription> db_list;
-	
-	DcpStatus dd_status = cl_rt.describe_database (db_list);
-	if (dd_status != VARDIS_STATUS_OK)
+
+	int h, w;
+	getmaxyx (stdscr, h, w);
+
+	if ((w >= 80) and (h >= 20))
 	  {
-	    cout << "Obtaining database description failed with status " << vardis_status_to_string (dd_status) << ", exiting." << endl;
-	    return EXIT_FAILURE;
-	  }
+	    counter++;
+	    show_header (counter);
+		
+	    std::list<DescribeDatabaseVariableDescription> db_list;
 	
-	for (const auto& descr : db_list)
-	  {
-	    VarIdT      respVarId;
-	    VarLenT     respVarLen;
-	    TimeStampT  respTimeStamp;
-	    const size_t read_buffer_size = 1000;
-	    byte     read_buffer [read_buffer_size];
-	    DcpStatus read_status = cl_rt.rtdb_read (descr.varId, respVarId, respVarLen, respTimeStamp, read_buffer_size, read_buffer);
-	    
-	    if (read_status != VARDIS_STATUS_OK)
+	    DcpStatus dd_status = cl_rt.describe_database (db_list);
+	    if (dd_status != VARDIS_STATUS_OK)
 	      {
-		cout << "Reading varId " << descr.varId << " failed with status " << vardis_status_to_string (read_status) << endl;
-		continue;
-	      }
-	    
-	    if (respVarId != descr.varId)
-	      {
-		cout << "Submitted read request for varId " << descr.varId << " but got response for varId " << respVarId << ", exiting." << endl;
+		endwin ();
+		cout << "Obtaining database description failed with status " << vardis_status_to_string (dd_status) << ", exiting." << endl;
 		return EXIT_FAILURE;
 	      }
+
+	    int line = 5;
 	    
-	    if (respVarLen != sizeof(VardisTestVariable))
+	    for (const auto& descr : db_list)
 	      {
-		cout << "Submitted read request for varId " << descr.varId << ", got respVarLen = " << respVarLen << " but expected length " << sizeof(VardisTestVariable) << ", exiting." << endl;
-		return EXIT_FAILURE;
+		if (line < h-1)
+		  {
+		    VarIdT      respVarId;
+		    VarLenT     respVarLen;
+		    TimeStampT  respTimeStamp;
+		    const size_t read_buffer_size = 1000;
+		    byte     read_buffer [read_buffer_size];
+		    DcpStatus read_status = cl_rt.rtdb_read (descr.varId, respVarId, respVarLen, respTimeStamp, read_buffer_size, read_buffer);
+		    
+		    if (read_status != VARDIS_STATUS_OK)
+		      {
+			endwin ();
+			cout << "Reading varId " << descr.varId << " failed with status " << vardis_status_to_string (read_status) << endl;
+			continue;
+		      }
+		    
+		    if (respVarId != descr.varId)
+		      {
+			endwin ();
+			cout << "Submitted read request for varId " << descr.varId << " but got response for varId " << respVarId << ", exiting." << endl;
+			return EXIT_FAILURE;
+		      }
+		    
+		    if (respVarLen != sizeof(VardisTestVariable))
+		      {
+			endwin ();
+			cout << "Submitted read request for varId " << descr.varId << ", got respVarLen = " << respVarLen << " but expected length " << sizeof(VardisTestVariable) << ", exiting." << endl;
+			return EXIT_FAILURE;
+		      }
+		    
+		    VardisTestVariable* tv_ptr = (VardisTestVariable*) read_buffer;
+		    
+		    TimeStampT start_time  = tv_ptr->tstamp;
+		    TimeStampT rcvd_time   = respTimeStamp;
+		    auto age = rcvd_time.milliseconds_passed_since (start_time);
+		    
+		    show_var_line (line, descr.varId, descr.description, descr.prodId, tv_ptr->seqno, tv_ptr->value, age);
+		    line++;
+		    
+		    //cout << "id = " << (int) descr.varId.val
+		    //     << ", prod = " << descr.prodId
+		    //     << ", repCnt = " << (int) descr.repCnt.val
+		    //  //<< ", descr = " << descr.description
+		    //  //<< ", tStamp = " << descr.tStamp
+		    //     << ", toBeDeleted = " << descr.toBeDeleted
+		    //     << ", tv.seqno = " << tv_ptr->seqno
+		    //  //<< ", tv.tstamp = " << tv_ptr->tstamp
+		    //     << ", tv.value = " << tv_ptr->value
+		    //     << ", age (ms) = " << age
+		    //     << endl;
+		    
+		  }
 	      }
-	    
-	    VardisTestVariable* tv_ptr = (VardisTestVariable*) read_buffer;
-	    
-	    TimeStampT start_time  = tv_ptr->tstamp;
-	    TimeStampT rcvd_time   = respTimeStamp;
-	    auto age = rcvd_time.milliseconds_passed_since (start_time);
-	    
-	    cout << "id = " << (int) descr.varId.val
-   	         << ", prod = " << descr.prodId
-	         << ", repCnt = " << (int) descr.repCnt.val
-	         //<< ", descr = " << descr.description
-	         //<< ", tStamp = " << descr.tStamp
-	         << ", toBeDeleted = " << descr.toBeDeleted
-	         << ", tv.seqno = " << tv_ptr->seqno
-	         //<< ", tv.tstamp = " << tv_ptr->tstamp
-	         << ", tv.value = " << tv_ptr->value
-	         << ", age (ms) = " << age
-	         << endl;
-	    
+	    show_footer (h-1);
 	  }
+	refresh();
       }
+    endwin ();
     return EXIT_SUCCESS;
     
   }
