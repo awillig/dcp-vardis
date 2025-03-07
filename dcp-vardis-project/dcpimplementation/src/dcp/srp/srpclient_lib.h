@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <iostream>
 #include <list>
 #include <dcp/common/command_socket.h>
 #include <dcp/common/exceptions.h>
@@ -45,6 +44,7 @@
  */
 
 using dcp::srp::SafetyDataT;
+using dcp::srp::ExtendedSafetyDataT;
 using dcp::srp::DefaultSRPStoreType;
 
 namespace dcp {
@@ -124,7 +124,20 @@ namespace dcp {
      */
     DcpStatus set_own_safety_data (const SafetyDataT& new_sd);
 
+
+    /****************************************************************
+     * Services for accessing neighbour table
+     ***************************************************************/
     
+
+    /**
+     * @brief Return list of ExtendedSafetyDataT records for all
+     *        currently registered neighbours
+     *
+     * @param neighbour_list: output value containing list of ExtendedSafetyDataT
+     *        records of all current neighbours
+     */
+    DcpStatus get_all_neighbours_esd (std::list<ExtendedSafetyDataT>& neighbour_list);
     
   };
   
