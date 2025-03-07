@@ -64,7 +64,7 @@ target_link_libraries(dcp-bp -Wl,--start-group  ${PROJECT_LIB} tins dcpcommon dc
 target_link_libraries(dcp-srp -Wl,--start-group tins ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpbp dcpsrp -Wl,--end-group)
 target_link_libraries(dcp-vardis -Wl,--start-group tins ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpbp dcpvardis -Wl,--end-group)
 target_link_libraries(vardisapp-test-producer -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis -Wl,--end-group)
-target_link_libraries(vardisapp-test-consumer -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis -Wl,--end-group)
+target_link_libraries(vardisapp-test-consumer -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis ncurses -Wl,--end-group)
 target_link_libraries(vardisapp-delete-variable -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis -Wl,--end-group)
 target_link_libraries(vardisapp-describe-variable -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis -Wl,--end-group)
 target_link_libraries(vardisapp-list-variables -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis -Wl,--end-group)
