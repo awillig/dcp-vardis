@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <functional>
 #include <list>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <dcp/common/global_types_constants.h>
@@ -220,10 +221,23 @@ namespace dcp::srp {
      *        will be included in the result list
      *
      * @return list of all node identifiers with last reception
-     * timestamps older than given timeout value
+     *         timestamps older than given timeout value
      */
     virtual std::list<NodeIdentifierT> find_nodes_to_scrub (TimeStampT current_time, uint16_t timeoutMS) const = 0;
-    
+
+
+    /**
+     * @brief Returns a list of the ExtendedSafetyDataT records of all
+     *        node identifiers whose ExtendSafetyDataT record
+     *        satisfies a predicate
+     *
+     * @param predicate: predicate applied to an ExtendedSafetyDataT&
+     *
+     * @return list of all ExtendedSafetyDataT records of nodes whose
+     *         ExtendedSafetyDataT satisfies the predicate
+     */
+    virtual std::list<ExtendedSafetyDataT> list_matching_esd_records (std::function<bool (const ExtendedSafetyDataT&)> predicate) const = 0;
+
   };
 
   
