@@ -56,17 +56,26 @@ namespace dcp {
 		      
   {
     shmSegmentName = client_conf.shm_conf_client.shmAreaName;
-    if (shmSegmentName.empty()) throw VardisClientLibException ("Shared memory name is empty");
-    if (std::strlen (shmSegmentName.c_str()) > maxShmAreaNameLength-1) throw VardisClientLibException ("Shared memory name is too long");
+
+    if (shmSegmentName.empty())
+      throw VardisClientLibException ("Shared memory name is empty");
+
+    if (std::strlen (shmSegmentName.c_str()) > maxShmAreaNameLength-1)
+      throw VardisClientLibException (std::format("Shared memory name {} is too long", shmSegmentName));
+    
     const std::string& cmdsock_name = client_conf.cmdsock_conf.commandSocketFile;
-    if (cmdsock_name.empty()) throw VardisClientLibException ("Command socket name is empty");
-    if (std::strlen(cmdsock_name.c_str()) > CommandSocket::max_command_socket_name_length()) throw VardisClientLibException ("Command socket name is too long");
+
+    if (cmdsock_name.empty())
+      throw VardisClientLibException ("Command socket name is empty");
+
+    if (std::strlen(cmdsock_name.c_str()) > CommandSocket::max_command_socket_name_length())
+      throw VardisClientLibException (std::format ("Command socket name {} is too long", cmdsock_name));
 
     if (do_register)
       {
 	DcpStatus reg_response = register_with_vardis();
 	if (reg_response != VARDIS_STATUS_OK)
-	  throw VardisClientLibException (std::format("Registration with Vardis failed, status code = {}", reg_response));
+	  throw VardisClientLibException (std::format("Registration with Vardis failed, status code = {}", vardis_status_to_string(reg_response)));
       }
   }
 
@@ -144,7 +153,8 @@ namespace dcp {
     
     VardisRegister_Confirm *pConf = (VardisRegister_Confirm*) buffer;
     
-    if (pConf->s_type != stVardis_Register) cl_sock.abort ("register_with_vardis: response has wrong service type");
+    if (pConf->s_type != stVardis_Register)
+      cl_sock.abort (std::format("register_with_vardis: response has wrong service type {}", pConf->s_type));
 
     // if response is ok, try to attach to shared memory block
     try {
@@ -157,7 +167,7 @@ namespace dcp {
 							     );
     }
     catch (ShmException& shme) {
-      cl_sock.abort ("register_with_vardis: cannot attach to shared memory block");
+      cl_sock.abort (std::format("register_with_vardis: cannot attach to shared memory block {}", shmSegmentName));
     }
 
     if (pConf->status_code == VARDIS_STATUS_OK)
