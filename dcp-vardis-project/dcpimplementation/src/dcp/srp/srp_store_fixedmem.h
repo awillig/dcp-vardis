@@ -502,6 +502,32 @@ namespace dcp::srp {
     };
     
     // ---------------------------------------
+
+    virtual std::list<ExtendedSafetyDataT> list_matching_esd_records (std::function<bool (const ExtendedSafetyDataT&)> predicate) const
+    {
+      FixedMemContents&  FMC = *pContents;
+      
+      std::function<bool (const NeighbourState&)> all_predicate =
+	[] (const NeighbourState&)
+	{
+	  return true;
+	};
+      
+      std::list<NodeIdentifierT> node_list;
+      FMC.neighbour_table.find_matching_keys (all_predicate, node_list);
+
+      std::list<ExtendedSafetyDataT> result_list;
+      for (const auto& idx : node_list)
+	{
+	  ExtendedSafetyDataT& esd_ref = get_esd_entry_ref (idx);
+	  if (predicate (esd_ref))
+	    result_list.push_back (esd_ref);
+	}
+      return result_list;
+
+    };
+    
+    // ---------------------------------------
     
     
   };
