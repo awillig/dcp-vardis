@@ -69,7 +69,7 @@ target_link_libraries(vardisapp-delete-variable -Wl,--start-group ${Boost_PROGRA
 target_link_libraries(vardisapp-describe-variable -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis -Wl,--end-group)
 target_link_libraries(vardisapp-list-variables -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis -Wl,--end-group)
 target_link_libraries(srpapp-test-generate-sd -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpsrp -Wl,--end-group)
-target_link_libraries(srpapp-display-neighbour-table -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpsrp -Wl,--end-group)
+target_link_libraries(srpapp-display-neighbour-table -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpsrp ncurses -Wl,--end-group)
 
 
 # ========================================================================================
