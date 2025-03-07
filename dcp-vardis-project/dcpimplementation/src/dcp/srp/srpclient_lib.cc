@@ -18,8 +18,7 @@
  */
 
 
-#include <format>
-#include <iostream>
+#include <functional>
 #include <dcp/srp/srp_constants.h>
 #include <dcp/srp/srpclient_lib.h>
 
@@ -50,6 +49,24 @@ namespace dcp {
     return SRP_STATUS_OK;
   }
 
+  
+  // -----------------------------------------------------------------------------------
+
+  DcpStatus SRPClientRuntime::get_all_neighbours_esd (std::list<ExtendedSafetyDataT>& neighbour_list)
+  {
+    std::function<bool (const ExtendedSafetyDataT&)> all_predicate =
+      [] (const srp::ExtendedSafetyDataT&)
+      {
+	return true;
+      };
+    
+    srp_store.lock_neighbour_table ();
+    neighbour_list = srp_store.list_matching_esd_records (all_predicate);
+    srp_store.unlock_neighbour_table ();
+    
+    return SRP_STATUS_OK;
+  }
+  
   
   // -----------------------------------------------------------------------------------
   
