@@ -21,6 +21,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 /**
  * @brief Provides some constants used in SRP
