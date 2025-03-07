@@ -272,6 +272,7 @@ int main (int argc, char* argv [])
   }
   catch (std::exception& e)
     {
+      endwin();
       cout << "Caught an exception, got " << e.what() << ", exiting." << endl;
       return EXIT_FAILURE;
     }  
