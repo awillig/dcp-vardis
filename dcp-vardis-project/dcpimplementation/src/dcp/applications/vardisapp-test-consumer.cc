@@ -40,7 +40,7 @@ void print_version ()
 
 bool       exitFlag = false;
 
-void signalHandler (int signum)
+void signalHandler (int)
 {
   exitFlag = true;
 }
@@ -49,9 +49,9 @@ void signalHandler (int signum)
 void show_header (int counter)
 {
   move (0, 0);
-  printw ("Vardis variables (%d)", counter);
+  printw ("Vardis variables (%d) -- Press Ctrl-C to exit", counter);
   move (1, 0);
-  printw ("----------------------------------------------------");
+  printw ("-------------------------------------------------------------------");
 
   attron (A_BOLD);
   move (3, 0);
@@ -96,7 +96,7 @@ void show_var_line (const int line,
 void show_footer (const int line)
 {
   move (line, 0);
-  printw ("----------------------------------------------------");
+  printw ("-------------------------------------------------------------------");
 }
 
 
@@ -193,6 +193,7 @@ int main (int argc, char* argv [])
 	if ((w >= 80) and (h >= 20))
 	  {
 	    counter++;
+	    clear ();
 	    show_header (counter);
 		
 	    std::list<DescribeDatabaseVariableDescription> db_list;
@@ -209,7 +210,7 @@ int main (int argc, char* argv [])
 	    
 	    for (const auto& descr : db_list)
 	      {
-		if (line < h-1)
+		if (line < h-2)
 		  {
 		    VarIdT      respVarId;
 		    VarLenT     respVarLen;
@@ -246,20 +247,7 @@ int main (int argc, char* argv [])
 		    auto age = rcvd_time.milliseconds_passed_since (start_time);
 		    
 		    show_var_line (line, descr.varId, descr.description, descr.prodId, tv_ptr->seqno, tv_ptr->value, age);
-		    line++;
-		    
-		    //cout << "id = " << (int) descr.varId.val
-		    //     << ", prod = " << descr.prodId
-		    //     << ", repCnt = " << (int) descr.repCnt.val
-		    //  //<< ", descr = " << descr.description
-		    //  //<< ", tStamp = " << descr.tStamp
-		    //     << ", toBeDeleted = " << descr.toBeDeleted
-		    //     << ", tv.seqno = " << tv_ptr->seqno
-		    //  //<< ", tv.tstamp = " << tv_ptr->tstamp
-		    //     << ", tv.value = " << tv_ptr->value
-		    //     << ", age (ms) = " << age
-		    //     << endl;
-		    
+		    line++;		    
 		  }
 	      }
 	    show_footer (h-1);
