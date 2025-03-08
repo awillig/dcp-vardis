@@ -30,6 +30,20 @@
 namespace dcp::srp {
 
   /**
+   * @brief This type summarizes data of interest about a neighbour,
+   *        it is used as the return type for list_matching_node_information
+   */
+  typedef struct NodeInformation {
+    ExtendedSafetyDataT esd;
+    TimeStampT          last_reception_time;
+    double              avg_seqno_gap_size_estimate;
+  } NodeInformation;
+  
+
+  
+
+
+  /**
    * @brief This class defines the abstraction of a SRP store,
    *        providing key operations on the neighbour table and the
    *        current node safety data and other runtime data
@@ -39,9 +53,7 @@ namespace dcp::srp {
    * which an application can supply the latest information about the
    * own position / speed / heading etc, and important runtime flags
    * like the srp_isActive flag.
-   */
-
-  
+   */  
   class SRPStoreI {
   public:
     
@@ -107,7 +119,8 @@ namespace dcp::srp {
      **************************************************************/
 
     /**
-     * @brief Set the ExtendedSafetyData for the given neighbour
+     * @brief Set the ExtendedSafetyData for the given neighbour and
+     *        record the insertion time
      *
      * Note: this operation does not perform locking / unlocking.
      */
@@ -128,6 +141,31 @@ namespace dcp::srp {
     virtual ExtendedSafetyDataT& get_esd_entry_ref (const NodeIdentifierT nodeId) const = 0;
 
 
+    /**
+     * @brief Retrieves the last local time an ExtendedSafetyDataT
+     *        record for this node was received.
+     *
+     * @param nodeId: node identifier
+     *
+     * @return Timestamp of last reception time
+     *
+     * Throws if entry does not exist
+     */
+    virtual TimeStampT get_neighbour_last_reception_time (const NodeIdentifierT nodeId) const = 0;
+    
+
+    /**
+     * @brief Retrieves the average gap size estimate for the given neighbour
+     *
+     * @param nodeId: node identifier
+     *
+     * @return Current average gap size estimate
+     *
+     * Throws if neighbour entry does not exist
+     */
+    virtual double get_neighbour_avg_seqno_gap_estimate (const NodeIdentifierT nodeId) const = 0;
+    
+    
     /**
      * @brief Checks whether an entry for the given nodeId exists
      *
@@ -227,16 +265,16 @@ namespace dcp::srp {
 
 
     /**
-     * @brief Returns a list of the ExtendedSafetyDataT records of all
-     *        node identifiers whose ExtendSafetyDataT record
-     *        satisfies a predicate
+     * @brief Returns a list of NodeInformation records of all node
+     *        identifiers whose ExtendSafetyDataT record satisfies a
+     *        predicate
      *
      * @param predicate: predicate applied to an ExtendedSafetyDataT&
      *
-     * @return list of all ExtendedSafetyDataT records of nodes whose
+     * @return list of all NodeInformation records of nodes whose
      *         ExtendedSafetyDataT satisfies the predicate
      */
-    virtual std::list<ExtendedSafetyDataT> list_matching_esd_records (std::function<bool (const ExtendedSafetyDataT&)> predicate) const = 0;
+    virtual std::list<NodeInformation> list_matching_node_information (std::function<bool (const ExtendedSafetyDataT&)> predicate) const = 0;
 
   };
 
