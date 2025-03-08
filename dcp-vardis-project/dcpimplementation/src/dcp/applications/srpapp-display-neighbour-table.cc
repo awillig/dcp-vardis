@@ -34,19 +34,18 @@ void print_version ()
 
 bool       exitFlag = false;
 
-void signalHandler (int signum)
+void signalHandler (int)
 {
-  cout << "Caught signal code " << signum << " (" << strsignal(signum) << "). Exiting." << endl;
   exitFlag = true;
 }
 
 
-void show_header (int counter)
+void show_header (int counter, int numelems)
 {
   move (0, 0);
-  printw ("Neighbour table (%d)", counter);
+  printw ("Neighbour table (%d, %d elements) -- Press Ctrl-C to exit", counter, numelems);
   move (1, 0);
-  printw ("----------------------------------------------------");
+  printw ("-------------------------------------------------------------------");
 
   attron (A_BOLD);
   move (3, 0);
@@ -56,7 +55,11 @@ void show_header (int counter)
   move (3, 50);
   printw ("Seqno");
   move (3, 60);
-  printw ("Age (ms)");
+  printw ("AgeTx(ms)");
+  move (3, 71);
+  printw ("AgeRx(ms)");
+  move (3, 82);
+  printw ("AvgGapSize");
   
   attroff (A_BOLD);
 }
@@ -65,7 +68,9 @@ void show_node_line (const int line,
 		     const NodeIdentifierT  nodeId,
 		     const SafetyDataT sd,
 		     const uint32_t seqno,
-		     const uint16_t age)
+		     const uint16_t age_tx,
+		     const uint16_t age_rx,
+		     const double avg_gapsize)
 {
   move (line, 0);
   printw ("%s", nodeId.to_str().c_str());
@@ -74,14 +79,18 @@ void show_node_line (const int line,
   move (line, 50);
   printw ("%d", seqno);
   move (line, 60);
-  printw ("%d", age);
+  printw ("%d", age_tx);
+  move (line, 71);
+  printw ("%d", age_rx);
+  move (line, 82);
+  printw ("%.2f", avg_gapsize);
 }
 		     
 
 void show_footer (const int line)
 {
   move (line, 0);
-  printw ("----------------------------------------------------");
+  printw ("-------------------------------------------------------------------");
 }
 
 
@@ -166,25 +175,29 @@ int main (int argc, char* argv [])
 
 	int h, w;
 	getmaxyx (stdscr, h, w);
-	if ((w >= 85) and (h >= 20))
+	if ((w >= 80) and (h >= 20))
 	  {
 	    counter++;
-	    show_header(counter);
 	      
-	    std::list<srp::ExtendedSafetyDataT> esd_list;
-	    cl_rt.get_all_neighbours_esd(esd_list);
+	    std::list<srp::NodeInformation> ni_list;
+	    cl_rt.get_all_neighbours_node_information (ni_list);
 
+	    clear ();
+	    show_header(counter, (int) ni_list.size());
+	    
 	    int line = 5;
 
-	    if (line < h-1)
+	    for (const auto& ni : ni_list)
 	      {
-		for (const auto& esd : esd_list)
+		if (line < h-2)
 		  {
-		    TimeStampT current_time   = TimeStampT::get_current_system_time();
-		    TimeStampT received_time  = esd.timeStamp;
-		    auto age = current_time.milliseconds_passed_since(received_time);
+		    TimeStampT current_time      = TimeStampT::get_current_system_time();
+		    TimeStampT transmitted_time  = ni.esd.timeStamp;
+		    TimeStampT received_time     = ni.last_reception_time;
+		    auto age_tx = current_time.milliseconds_passed_since(transmitted_time);
+		    auto age_rx = current_time.milliseconds_passed_since(received_time);
 		    
-		    show_node_line (line, esd.nodeId, esd.safetyData, esd.seqno, age);
+		    show_node_line (line, ni.esd.nodeId, ni.esd.safetyData, ni.esd.seqno, age_tx, age_rx, ni.avg_seqno_gap_size_estimate);
 		    line++;
 		  }
 	      }
