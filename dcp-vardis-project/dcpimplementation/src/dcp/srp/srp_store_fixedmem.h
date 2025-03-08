@@ -308,6 +308,41 @@ namespace dcp::srp {
 
 
     /**
+     * @brief Returns timestamp of last reception from the given node
+     *
+     * @param nodeId: node identifier
+     *
+     * @return Timestamp of last reception
+     */
+    virtual TimeStampT get_neighbour_last_reception_time (const NodeIdentifierT nodeId) const
+    {
+      FixedMemContents&  FMC = *pContents;
+      NeighbourState& nstate = FMC.neighbour_table.lookup_data_ref (nodeId);
+      return nstate.last_esd_received;
+    };
+
+
+        // ---------------------------------------
+
+
+    /**
+     * @brief Returns timestamp of last reception from the given node
+     *
+     * @param nodeId: node identifier
+     *
+     * @return Timestamp of last reception
+     */
+    virtual double get_neighbour_avg_seqno_gap_estimate (const NodeIdentifierT nodeId) const
+    {
+      FixedMemContents&  FMC = *pContents;
+      NeighbourState& nstate = FMC.neighbour_table.lookup_data_ref (nodeId);
+      return nstate.avg_seqno_gap_size;
+    };
+    
+
+    // ---------------------------------------
+    
+    /**
      * @brief Remove neighbour table entry for given node identifier
      *        (useful for scrubbing)
      *
@@ -503,7 +538,7 @@ namespace dcp::srp {
     
     // ---------------------------------------
 
-    virtual std::list<ExtendedSafetyDataT> list_matching_esd_records (std::function<bool (const ExtendedSafetyDataT&)> predicate) const
+    virtual std::list<NodeInformation> list_matching_node_information (std::function<bool (const ExtendedSafetyDataT&)> predicate) const
     {
       FixedMemContents&  FMC = *pContents;
       
@@ -516,12 +551,19 @@ namespace dcp::srp {
       std::list<NodeIdentifierT> node_list;
       FMC.neighbour_table.find_matching_keys (all_predicate, node_list);
 
-      std::list<ExtendedSafetyDataT> result_list;
+      std::list<NodeInformation> result_list;
       for (const auto& idx : node_list)
 	{
 	  ExtendedSafetyDataT& esd_ref = get_esd_entry_ref (idx);
 	  if (predicate (esd_ref))
-	    result_list.push_back (esd_ref);
+	    {
+	      NeighbourState ns = FMC.neighbour_table.lookup_data_ref(idx);
+	      NodeInformation ni;
+	      ni.esd                          = esd_ref;
+	      ni.last_reception_time          = ns.last_esd_received;
+	      ni.avg_seqno_gap_size_estimate  = ns.avg_seqno_gap_size;
+	      result_list.push_back (ni);
+	    }
 	}
       return result_list;
 
