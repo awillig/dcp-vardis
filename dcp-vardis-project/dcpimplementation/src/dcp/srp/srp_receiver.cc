@@ -61,7 +61,7 @@ namespace dcp::srp {
 	      ExtendedSafetyDataT *pESD = (ExtendedSafetyDataT*) rx_buffer;
 
 	      if (pESD->nodeId == runtime.srp_store.get_own_node_identifier ())
-		continue;
+	      	continue;
 
 	      ScopedNeighbourTableMutex mtx (runtime);
 	      runtime.srp_store.insert_esd_entry (*pESD);	      
