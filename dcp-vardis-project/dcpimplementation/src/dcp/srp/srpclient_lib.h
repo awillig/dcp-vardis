@@ -46,6 +46,7 @@
 using dcp::srp::SafetyDataT;
 using dcp::srp::ExtendedSafetyDataT;
 using dcp::srp::DefaultSRPStoreType;
+using dcp::srp::NodeInformation;
 
 namespace dcp {
 
@@ -131,13 +132,13 @@ namespace dcp {
     
 
     /**
-     * @brief Return list of ExtendedSafetyDataT records for all
-     *        currently registered neighbours
+     * @brief Return list of NodeInformation records for all currently
+     *        registered neighbours
      *
-     * @param neighbour_list: output value containing list of ExtendedSafetyDataT
-     *        records of all current neighbours
+     * @param neighbour_list: output value containing list of
+     *        NodeInformation records of all current neighbours
      */
-    DcpStatus get_all_neighbours_esd (std::list<ExtendedSafetyDataT>& neighbour_list);
+    DcpStatus get_all_neighbours_node_information (std::list<NodeInformation>& neighbour_list);
     
   };
   
