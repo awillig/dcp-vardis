@@ -106,20 +106,22 @@ namespace dcp {
     TransmissibleIntegral (const TransmissibleIntegral<T>& other) : val(other.val) {};
 
     /**
-     * @brief Comparison operators
+     * @brief Comparison operators, making this a totally ordered type
      */
-    inline bool operator== (const TransmissibleIntegral<T>& other) const { return val == other.val; };
+    friend inline bool operator== (const TransmissibleIntegral<T>& lhs, const TransmissibleIntegral<T>& rhs) { return lhs.val == rhs.val; };
+    friend inline bool operator!= (const TransmissibleIntegral<T>& lhs, const TransmissibleIntegral<T>& rhs) { return not (lhs == rhs); };
+    friend inline bool operator< (const TransmissibleIntegral<T>& lhs, const TransmissibleIntegral<T>& rhs) { return lhs.val < rhs.val; };
+    friend inline bool operator> (const TransmissibleIntegral<T>& lhs, const TransmissibleIntegral<T>& rhs) { return (rhs < lhs); };
+    friend inline bool operator<= (const TransmissibleIntegral<T>& lhs, const TransmissibleIntegral<T>& rhs) { return not (lhs > rhs); };
+    friend inline bool operator>= (const TransmissibleIntegral<T>& lhs, const TransmissibleIntegral<T>& rhs) { return not (lhs < rhs); };
+
     inline bool operator== (const T& other) const { return val == other; };
-    inline bool operator!= (const TransmissibleIntegral<T>& other) const { return val != other.val; };
-    inline bool operator!= (const T& other) const { return val != other; };
-    inline bool operator<= (const TransmissibleIntegral<T>& other) const { return val <= other.val; };
-    inline bool operator<= (const T& other) const { return val <= other; };
-    inline bool operator>= (const TransmissibleIntegral<T>& other) const { return val >= other.val; };
-    inline bool operator>= (const T& other) const { return val >= other; };
-    inline bool operator< (const TransmissibleIntegral<T>& other) const { return val < other.val; };
+    inline bool operator!= (const T& other) const { return not (val == other); };
     inline bool operator< (const T& other) const { return val < other; };
-    inline bool operator> (const TransmissibleIntegral<T>& other) const { return val > other.val; };
-    inline bool operator> (const T& other) const { return val > other; };
+    inline bool operator> (const T& other) const { return (other < val); };
+    inline bool operator<= (const T& other) const { return not (val > other); };
+    inline bool operator>= (const T& other) const { return not (val < other); };
+
 
     /**
      * @brief Assignment and other modifying operators
