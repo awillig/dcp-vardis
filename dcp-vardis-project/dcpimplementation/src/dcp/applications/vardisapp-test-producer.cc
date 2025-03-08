@@ -43,9 +43,8 @@ uint64_t   seqno    = 0;
 
 boost::mt19937 generator;
 
-void signalHandler (int signum)
+void signalHandler (int)
 {
-  cout << "Caught signal code " << signum << " (" << strsignal(signum) << "). Exiting." << endl;
   exitFlag = true;
 }
 

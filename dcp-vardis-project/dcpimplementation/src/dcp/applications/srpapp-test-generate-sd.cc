@@ -33,9 +33,8 @@ bool       exitFlag = false;
 
 boost::mt19937 generator;
 
-void signalHandler (int signum)
+void signalHandler (int)
 {
-  cout << "Caught signal code " << signum << " (" << strsignal(signum) << "). Exiting." << endl;
   exitFlag = true;
 }
 
