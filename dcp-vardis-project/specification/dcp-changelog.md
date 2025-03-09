@@ -14,6 +14,12 @@ such as language issues, typos or minor errors are not reported.
   suppressing transmission of safety data when it has not been updated
   by applications for a while.
 
+### Changes in `dcp-vardis.md`
+
+- Changed typo in pseudo-code for service `RTDB-Update` (replaced
+  `updateQ.contains` by `updateQ.qExists`)
+  
+
 ## Changes for Version 1.2
 
 ### Changes in `dcp-bp.md`

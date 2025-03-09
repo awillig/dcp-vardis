@@ -734,7 +734,7 @@ steps:
 		   ent.countUpdate  = ent.spec.repCnt
 		   ent.tStamp       = current system time
 10.    RTDB.update(ent)
-11.    if (not updateQ.contains(varId))
+11.    if (not updateQ.qExists (varId))
         updateQ.qAppend(varId)
 12.    return status code VARDIS-STATUS-OK
 ~~~
