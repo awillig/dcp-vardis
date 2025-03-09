@@ -66,7 +66,7 @@ void show_header (int counter)
   move (3, 60);
   printw ("Value");
   move (3, 74);
-  printw ("Age (ms)");
+  printw ("Age(ms)");
   
   attroff (A_BOLD);
 }
@@ -75,7 +75,7 @@ void show_var_line (const int line,
 		    const VarIdT varId,
 		    const char* descr,
 		    const NodeIdentifierT prodId,
-		    const VarSeqnoT seqno,
+		    const uint32_t seqno,
 		    const double value,
 		    const uint16_t age)
 {
@@ -86,7 +86,7 @@ void show_var_line (const int line,
   move (line, 30);
   printw ("%s", prodId.to_str().c_str());
   move (line, 50);
-  printw ("%d", (int) seqno.val);
+  printw ("%d", seqno);
   move (line, 60);
   printw ("%.3f", value);
   move (line, 74);
