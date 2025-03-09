@@ -97,7 +97,6 @@ int main (int argc, char* argv [])
 
   try {
     po::variables_map vm;
-    //po::store(po::parse_command_line(argc, argv, desc), vm);
     po::store (po::command_line_parser(argc, argv).options(desc).positional(desc_pos).run(), vm);
     po::notify(vm);
 
