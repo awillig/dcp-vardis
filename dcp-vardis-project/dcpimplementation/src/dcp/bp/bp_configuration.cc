@@ -43,6 +43,10 @@ namespace dcp::bp {
       (opt("maxBeaconSize").c_str(),     po::value<size_t>(&maxBeaconSize)->default_value(defaultValueMaxBeaconSize), txt("BP: maximum beacon size (bytes)").c_str())
       (opt("avgBeaconPeriodMS").c_str(), po::value<double>(&avgBeaconPeriodMS)->default_value(defaultValueAvgBeaconPeriodMS), txt("BP: average beacon period (ms)").c_str())
       (opt("jitterFactor").c_str(),      po::value<double>(&jitterFactor)->default_value(defaultValueJitterFactor), txt("BP: jitter factor (strictly between 0 and 1)").c_str())
+
+      // Other parameters (e.g. run-time statistics)
+      (opt("interBeaconTimeEWMAAlpha").c_str(),      po::value<double>(&interBeaconTimeEWMAAlpha)->default_value(defaultValueInterBeaconTimeEWMAAlpha), txt("BP: alpha value for EWMA estimator of inter-beacon reception time in ms (between 0 and 1)").c_str())
+      (opt("beaconSizeEWMAAlpha").c_str(),      po::value<double>(&beaconSizeEWMAAlpha)->default_value(defaultValueBeaconSizeEWMAAlpha), txt("BP: alpha value for EWMA estimator of beacon size in bytes (between 0 and 1)").c_str())
       
       ;
   }
@@ -70,6 +74,16 @@ namespace dcp::bp {
     if (maxBeaconSize > mtuSize) throw ConfigurationException ("BP: maximum beacon size exceeds MTU size");
     if (avgBeaconPeriodMS <= 0) throw ConfigurationException ("BP: beacon period must be strictly positive");
     if ((jitterFactor <= 0) || (jitterFactor >= 1)) throw ConfigurationException ("BP: jitter factor must be strictly between zero and one");
+
+    /***********************************
+     * checks for other options
+     **********************************/
+
+    if (interBeaconTimeEWMAAlpha < 0) throw ConfigurationException ("BP: alpha value for EWMA inter beacon time estimator must be non-negative");
+    if (interBeaconTimeEWMAAlpha > 1) throw ConfigurationException ("BP: alpha value for EWMA inter beacon time estimator must not exceed one");
+    if (beaconSizeEWMAAlpha < 0) throw ConfigurationException ("BP: alpha value for EWMA beacon size estimator must be non-negative");
+    if (beaconSizeEWMAAlpha > 1) throw ConfigurationException ("BP: alpha value for EWMA beacon size estimator must not exceed one");
+
     
   }
 
@@ -81,7 +95,9 @@ namespace dcp::bp {
        << " , maxBeaconSize = " << cfg.bp_conf.maxBeaconSize
        << " , avgBeaconPeriodMS = " << cfg.bp_conf.avgBeaconPeriodMS
        << " , jitterFactor = " << cfg.bp_conf.jitterFactor
-
+       << " , interBeaconTimeEWMAAlpha = " << cfg.bp_conf.interBeaconTimeEWMAAlpha
+       << " , beaconSizeEWMAAlpha = " << cfg.bp_conf.beaconSizeEWMAAlpha
+      
        << " , loggingToConsole = " << cfg.logging_conf.loggingToConsole
        << " , logfileNamePrefix = " << cfg.logging_conf.logfileNamePrefix
        << " , logAutoFlush = " << cfg.logging_conf.logAutoFlush

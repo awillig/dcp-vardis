@@ -35,13 +35,14 @@ namespace dcp::bp {
       
   const size_t minimumRequiredMTUSize  = 256;
   
-  const std::string defaultValueInterfaceName         = "wlan0";
-  const size_t      defaultValueMtuSize               = 1492;
-  const uint16_t    defaultValueEtherType             = 0x4953;
-  const size_t      defaultValueMaxBeaconSize         = 1000;
-  const double      defaultValueAvgBeaconPeriodMS     = 100.0;
-  const double      defaultValueJitterFactor          = 0.1;
-  
+  const std::string defaultValueInterfaceName               = "wlan0";
+  const size_t      defaultValueMtuSize                     = 1492;
+  const uint16_t    defaultValueEtherType                   = 0x4953;
+  const size_t      defaultValueMaxBeaconSize               = 1000;
+  const double      defaultValueAvgBeaconPeriodMS           = 100.0;
+  const double      defaultValueJitterFactor                = 0.1;
+  const double      defaultValueInterBeaconTimeEWMAAlpha    = 0.975;
+  const double      defaultValueBeaconSizeEWMAAlpha         = 0.975;
   
     /**
      * @brief This struct contains the configuration data for BP to operate on.
@@ -105,6 +106,24 @@ namespace dcp::bp {
        */ 
       double      jitterFactor    = defaultValueJitterFactor;
             
+
+      /**************************************************
+       * Other options (e.g. runtime statistics)
+       *************************************************/
+
+
+      /**
+       * @brief Alpha value for the EWMA estimator of the average
+       *        inter-beacon reception time (in ms)
+       */
+      double  interBeaconTimeEWMAAlpha = defaultValueInterBeaconTimeEWMAAlpha;
+
+
+      /**
+       * @brief Alpha value for the EWMA estimator of the average
+       *        received beacon size (in bytes)
+       */
+      double  beaconSizeEWMAAlpha      = defaultValueBeaconSizeEWMAAlpha;
       
             
       /**************************************************
