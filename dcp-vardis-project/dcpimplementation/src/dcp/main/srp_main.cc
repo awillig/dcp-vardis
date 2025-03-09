@@ -56,7 +56,8 @@ SRPRuntimeData* srp_rt_ptr = nullptr;
 
 void signalHandler (int signum)
 {
-  cout << "Caught signal " << signum << " (" << strsignal(signum) << ")" << endl;
+  BOOST_LOG_SEV(log_main, trivial::info) << "Caught signal code " << signum << " (" << strsignal(signum) << ")";
+  BOOST_LOG_SEV(log_main, trivial::info) << "Setting exit flag.";
   if (srp_rt_ptr)
     srp_rt_ptr->srp_exitFlag = true;
 }

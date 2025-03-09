@@ -46,11 +46,9 @@ BPRuntimeData* pRuntime = nullptr;
 void signalHandler (int signum)
 {
   BOOST_LOG_SEV(log_main, trivial::info) << "Caught signal code " << signum << " (" << strsignal(signum) << ")";
+  BOOST_LOG_SEV(log_main, trivial::info) << "Setting exit flag.";
   if (pRuntime)
-    {
-      BOOST_LOG_SEV(log_main, trivial::info) << "Setting exit flag";
-      pRuntime->bp_exitFlag = true;
-    }
+    pRuntime->bp_exitFlag = true;
 }
 
 

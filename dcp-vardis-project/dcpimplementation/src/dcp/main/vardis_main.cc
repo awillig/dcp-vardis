@@ -56,7 +56,7 @@ VardisRuntimeData* vd_rt_ptr = nullptr;
 void signalHandler (int signum)
 {
   BOOST_LOG_SEV(log_main, trivial::info) << "Caught signal code " << signum << " (" << strsignal(signum) << ")";
-  BOOST_LOG_SEV(log_main, trivial::info) << "Setting exit flag";
+  BOOST_LOG_SEV(log_main, trivial::info) << "Setting exit flag.";
   if (vd_rt_ptr)
     vd_rt_ptr->vardis_exitFlag = true;
 }
