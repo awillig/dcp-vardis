@@ -222,6 +222,8 @@ namespace dcp::bp {
 
     SnifferConfiguration sniff_config;
     Sniffer*  pSniffer = nullptr;
+    double    bcnSizeAlpha = runtime.bp_config.bp_conf.beaconSizeEWMAAlpha;
+    double    ibTimeAlpha  = runtime.bp_config.bp_conf.interBeaconTimeEWMAAlpha;
 
     try {
       sniff_config.set_promisc_mode (true);
@@ -251,7 +253,8 @@ namespace dcp::bp {
 	    BOOST_LOG_SEV(log_rx, trivial::trace)
 	      << "Got frame with srcaddr = " << eth_frame.src_addr()
 	      << ", dstaddr = " << eth_frame.dst_addr()
-	      << ", payload-type = " << eth_frame.payload_type();
+	      << ", payload-type = " << eth_frame.payload_type()
+	      << ", size = " << eth_frame.size();
 	    
 	    
 	    if ((eth_frame.dst_addr() == EthernetII::BROADCAST) && (eth_frame.payload_type() == runtime.bp_config.bp_conf.etherType))
@@ -260,8 +263,38 @@ namespace dcp::bp {
 		bytevect payload      = raw_pdu.payload();
 		ByteVectorDisassemblyArea area ("bp-rx", payload);
 
-		BOOST_LOG_SEV(log_rx, trivial::trace) << "process_received_payload: payload bytes = "
-						      << byte_array_to_string (&(payload[0]), 40);
+		TimeStampT current_time = TimeStampT::get_current_system_time();
+		auto ib_time = current_time.milliseconds_passed_since(runtime.last_beacon_reception_time);
+
+		// update beacon size statistics
+		if (runtime.cntBPPayloads == 0)
+		  {
+		    runtime.avg_received_beacon_size = (double) payload.size ();
+		  }
+		else
+		  {
+		    runtime.avg_received_beacon_size =
+		      bcnSizeAlpha * runtime.avg_received_beacon_size
+		      + (1 - bcnSizeAlpha) * ((double) payload.size());		    
+		  }
+
+		// update inter beacon time statistics
+		if (runtime.cntBPPayloads == 1)
+		  {
+		    runtime.avg_inter_beacon_reception_time = (double) ib_time;
+		  }
+		else if (runtime.cntBPPayloads > 1)
+		  {
+		    runtime.avg_inter_beacon_reception_time =
+		      ibTimeAlpha * runtime.avg_inter_beacon_reception_time
+		      + (1 - ibTimeAlpha) * ((double) ib_time);
+		  }
+		
+		runtime.last_beacon_reception_time = TimeStampT::get_current_system_time();
+		runtime.cntBPPayloads++;
+
+		BOOST_LOG_SEV(log_rx, trivial::trace) << "process_received_payload: avg inter beacon time (ms) = " << runtime.avg_inter_beacon_reception_time
+						      << ", avg beacon size (B) = " << runtime.avg_received_beacon_size;
 
 		if (runtime.bp_isActive)
 		  {
