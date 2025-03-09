@@ -24,6 +24,7 @@ The implementation furthermore makes use of additional libraries:
 - The `libtins` library in version 4.5 for convenient sending and
   receiving / filtering packets over an interface. Libtins relies on
   `libpcap`.
+- The `ncurses` library for some of the applications.
 
 ## Structure
 
