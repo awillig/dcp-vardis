@@ -56,6 +56,7 @@ add_executable(srpapp-display-neighbour-table "dcp/applications/srpapp-display-n
 find_package(Boost COMPONENTS program_options log log_setup REQUIRED)
 set(PROJECT_LIB ${PROJECT_LIB} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
 find_library(TINS_LIB tins)
+find_library(NCURSES_LIB ncurses)
 
 target_link_libraries(dcpbp dcpcommon tins ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
 target_link_libraries(dcpsrp dcpbp)
