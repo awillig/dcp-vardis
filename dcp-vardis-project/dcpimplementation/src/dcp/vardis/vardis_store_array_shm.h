@@ -128,9 +128,15 @@ namespace dcp::vardis {
       
       if (isServer)
 	{
-	  shm_obj = shared_memory_object (create_only, area_name, read_write);
-	  shm_obj.truncate (array_contents_size);
-	  region = mapped_region (shm_obj, read_write);
+	  try {
+	    shm_obj = shared_memory_object (create_only, area_name, read_write);
+	    shm_obj.truncate (array_contents_size);
+	    region = mapped_region (shm_obj, read_write);
+	  }
+	  catch (const std::exception& e)
+	    {
+	      throw VardisStoreException (std::format ("Caught exception '{}' while attempting to create and initialize shared memory object named {}", e.what(), area_name));
+	    }	  
 	  if (region.get_size() != array_contents_size)
 	    throw VardisStoreException (std::format("wrong region size {} where {} is required", region.get_size(), array_contents_size));
 	  ShmArrayType::initialize_array_store ((byte*) region.get_address(),
@@ -142,8 +148,14 @@ namespace dcp::vardis {
 	}
       else
 	{
-	  shm_obj = shared_memory_object (open_only, area_name, read_write);
-	  region  = mapped_region (shm_obj, read_write);
+	  try {
+	    shm_obj = shared_memory_object (open_only, area_name, read_write);
+	    region  = mapped_region (shm_obj, read_write);
+	  }
+	  catch (const std::exception& e)
+	    {
+	      throw VardisStoreException (std::format ("Caught exception '{}' while attempting to attach to shared memory object named {}", e.what(), area_name));
+	    }
 	  if (region.get_size() != array_contents_size)
 	    throw VardisStoreException (std::format("wrong region size {} where {} is required", region.get_size(), array_contents_size));
 

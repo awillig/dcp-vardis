@@ -126,9 +126,15 @@ namespace dcp::srp {
       
       if (isServer)
 	{
-	  shm_obj = shared_memory_object (create_only, area_name, read_write);
-	  shm_obj.truncate (store_contents_size);
-	  region = mapped_region (shm_obj, read_write);
+	  try {
+	    shm_obj = shared_memory_object (create_only, area_name, read_write);
+	    shm_obj.truncate (store_contents_size);
+	    region = mapped_region (shm_obj, read_write);
+	  }
+	  catch (const std::exception& e)
+	    {
+	      throw SRPStoreException (std::format ("Caught exception '{}' while attempting to create and initialize shared memory object named {}", e.what(), area_name));
+	    }
 	  if (region.get_size() != store_contents_size)
 	    throw SRPStoreException (std::format("wrong region size {} where {} is required", region.get_size(), store_contents_size));
 	  ShmSRPStoreType::initialize_srp_store ((byte*) region.get_address(),
@@ -137,8 +143,14 @@ namespace dcp::srp {
 	}
       else
 	{
-	  shm_obj = shared_memory_object (open_only, area_name, read_write);
-	  region  = mapped_region (shm_obj, read_write);
+	  try {
+	    shm_obj = shared_memory_object (open_only, area_name, read_write);
+	    region  = mapped_region (shm_obj, read_write);
+	  }
+	  catch (const std::exception& e)
+	    {
+	      throw SRPStoreException (std::format ("Caught exception '{}' while attempting to attach to shared memory object named {}", e.what(), area_name));
+	    }
 	  if (region.get_size() != store_contents_size)
 	    throw SRPStoreException (std::format("wrong region size {} where {} is required", region.get_size(), store_contents_size));
 
