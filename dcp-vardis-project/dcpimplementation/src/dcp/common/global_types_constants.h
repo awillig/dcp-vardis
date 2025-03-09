@@ -264,10 +264,10 @@ namespace dcp {
      *
      * @param past_time: The reference time
      */
-    inline uint16_t milliseconds_passed_since (const TimeStampT& past_time) const
+    inline uint32_t milliseconds_passed_since (const TimeStampT& past_time) const
     {
       auto duration = tStamp - past_time.tStamp;
-      return (uint16_t) (duration.count() / 1000000);
+      return (uint32_t) (duration.count() / 1000000);
     };
   };
 
