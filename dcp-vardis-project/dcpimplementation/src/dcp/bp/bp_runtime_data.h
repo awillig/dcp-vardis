@@ -111,7 +111,31 @@ namespace dcp::bp {
      * @brief Number of received payloads from unknown / unregistered client protocol id's
      */
     unsigned int  cntDroppedUnknownPayloads  =  0;
+
+
+    /**
+     * @brief Number of received BP payloads
+     */
+    unsigned int cntBPPayloads  = 0;
+
+
+    /**
+     * @brief Timestamp of previous beacon reception
+     */
+    TimeStampT last_beacon_reception_time;
     
+    
+    /**
+     * @brief Estimation of average inter-beacon reception time (in ms)
+     */
+    double avg_inter_beacon_reception_time = 0;
+    
+
+    /**
+     * @brief Estimation of average received beacon size (in bits)
+     */
+    double avg_received_beacon_size = 0;
+
     
     /*********************************************************************
      * Methods
