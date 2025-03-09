@@ -22,6 +22,7 @@
 #pragma once
 
 #include <exception>
+#include <format>
 #include <iostream>
 
 /**
@@ -34,6 +35,13 @@
  */
 
 
+#define DCP_EXCEPTION(name_) \
+  class name_ : public DcpException { \
+  public: \
+  name_ (const std::string& message) : DcpException (std::format("{}: {}", #name_, message)) {}; \
+  };
+
+
 namespace dcp {
 
   class DcpException : public std::exception {
@@ -44,96 +52,23 @@ namespace dcp {
     const char* what() const throw() { return message_.c_str(); };
   };
 
-  class RingBufferException : public DcpException {
-  public:
-    RingBufferException (const std::string& message) : DcpException("RingBuffer: " + message) {};
-  };
-
-  class AVLTreeException : public DcpException {
-  public:
-    AVLTreeException (const std::string& message) : DcpException("AVLTree: " + message) {};
-  };
-  
-  class ConfigurationException : public DcpException {
-  public:
-    ConfigurationException (const std::string& message) : DcpException("Configuration: " + message) {};
-  };
-
-  class SocketException : public DcpException {
-  public:
-    SocketException (const std::string& message) : DcpException("Socket: " + message) {};
-  };
-  
-  class ReceiverException : public DcpException {
-  public:
-    ReceiverException (const std::string& message) : DcpException("Receiver: " + message) {};
-  };
-
-  class TransmitterException : public DcpException {
-  public:
-    TransmitterException (const std::string& message) : DcpException("Transmitter: " + message) {};
-  };
-
-  class BPClientLibException : public DcpException {
-  public:
-    BPClientLibException (const std::string& message) : DcpException("BPCLientLib: " + message) {};
-  };
-
-  class VardisClientLibException : public DcpException {
-  public:
-    VardisClientLibException (const std::string& message) : DcpException("VardisCLientLib: " + message) {};
-  };
-
-  class VardisStoreException : public DcpException {
-  public:
-    VardisStoreException (const std::string& message) : DcpException("VardisStore: " + message) {};
-  };
-
-  class SRPStoreException : public DcpException {
-  public:
-    SRPStoreException (const std::string& message) : DcpException("SRPStore: " + message) {};
-  };
-  
-  class ManagementException : public DcpException {
-  public:
-    ManagementException (const std::string& message) : DcpException("Management: " + message) {};
-  };
-  
-  class LoggingException : public DcpException {
-  public:
-    LoggingException (const std::string& message) : DcpException("Logging: " + message) {};
-  };
-
-
-  class AreaException : public DcpException {
-  public:
-    AreaException (const std::string& message) : DcpException("Area: " + message) {};
-  };
-
-  class AssemblyAreaException : public DcpException {
-  public:
-    AssemblyAreaException (const std::string& message) : DcpException("AssemblyArea: " + message) {};
-  };
-  
-  class DisassemblyAreaException : public DcpException {
-  public:
-    DisassemblyAreaException (const std::string& message) : DcpException("DisassemblyArea: " + message) {};
-  };
-  
-  class ShmException : public DcpException {
-  public:
-    ShmException (const std::string& message) : DcpException("Shm: " + message) {};
-  };
-
-  class VardisReceiveException : public DcpException {
-  public:
-    VardisReceiveException (const std::string& message) : DcpException("VardisReceive: " + message) {};
-  };
-
-  class VardisTransmitException : public DcpException {
-  public:
-    VardisTransmitException (const std::string& message) : DcpException("VardisTransmit: " + message) {};
-  };
-
+  DCP_EXCEPTION(RingBufferException)
+  DCP_EXCEPTION(AVLTreeException)
+  DCP_EXCEPTION(ConfigurationException)
+  DCP_EXCEPTION(SocketException)
+  DCP_EXCEPTION(ReceiverException)
+  DCP_EXCEPTION(TransmitterException)
+  DCP_EXCEPTION(BPClientLibException)
+  DCP_EXCEPTION(VardisClientLibException)
+  DCP_EXCEPTION(VardisStoreException)
+  DCP_EXCEPTION(SRPStoreException)
+  DCP_EXCEPTION(ManagementException)
+  DCP_EXCEPTION(LoggingException)
+  DCP_EXCEPTION(AreaException)
+  DCP_EXCEPTION(AssemblyAreaException)
+  DCP_EXCEPTION(DisassemblyAreaException)
+  DCP_EXCEPTION(ShmException)
+  DCP_EXCEPTION(VardisReceiveException)
+  DCP_EXCEPTION(VardisTransmitException)
  
 };  // namespace dcp
