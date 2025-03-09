@@ -8,6 +8,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <boost/program_options.hpp>
+#include <dcp/common/exceptions.h>
 #include <dcp/srp/srp_transmissible_types.h>
 #include <dcp/srp/srpclient_configuration.h>
 #include <dcp/srp/srpclient_lib.h>
@@ -21,6 +22,7 @@ using std::cout;
 using std::endl;
 using std::cerr;
 using dcp::srp::defaultSRPStoreShmName;
+using dcp::DcpException;
 
 using namespace dcp;
 
@@ -223,6 +225,13 @@ int main (int argc, char* argv [])
     endwin ();
     return EXIT_SUCCESS;
   }
+  catch (DcpException& e)
+    {
+      endwin();
+      cout << "DCP ERROR - " << e.what() << endl;
+      cout << "Exiting." << endl;
+      return EXIT_FAILURE;
+    }
   catch (std::exception& e)
     {
       endwin();

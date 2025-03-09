@@ -8,6 +8,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <boost/program_options.hpp>
+#include <dcp/common/exceptions.h>
 #include <dcp/srp/srp_transmissible_types.h>
 #include <dcp/srp/srpclient_configuration.h>
 #include <dcp/srp/srpclient_lib.h>
@@ -179,6 +180,12 @@ int main (int argc, char* argv [])
     
     return EXIT_SUCCESS;
   }
+  catch (DcpException& e)
+    {
+      cout << "DCP ERROR - " << e.what() << endl;
+      cout << "Exiting." << endl;
+      return EXIT_FAILURE;
+    }
   catch (std::exception& e)
     {
       cout << "Caught an exception, got " << e.what() << ", exiting." << endl;

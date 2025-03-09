@@ -6,6 +6,7 @@
 #include <list>
 #include <thread>
 #include <boost/program_options.hpp>
+#include <dcp/common/exceptions.h>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/vardis/vardis_constants.h>
 #include <dcp/vardis/vardis_service_primitives.h>
@@ -102,6 +103,12 @@ int main (int argc, char* argv [])
 	<< endl;
       } 
   }
+  catch (DcpException& e)
+    {
+      cout << "DCP ERROR - " << e.what() << endl;
+      cout << "Exiting." << endl;
+      return EXIT_FAILURE;
+    }
   catch (std::exception& e)
     {
       cout << "Caught an exception, got " << e.what() << ", exiting." << endl;

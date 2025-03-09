@@ -9,6 +9,7 @@
 #include <boost/random/normal_distribution.hpp>
 #include <boost/program_options.hpp>
 #include <dcp/applications/vardisapp-test-variabletype.h>
+#include <dcp/common/exceptions.h>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/common/services_status.h>
 #include <dcp/vardis/vardis_constants.h>
@@ -228,6 +229,12 @@ int main (int argc, char* argv [])
     
     return EXIT_SUCCESS;
   }
+  catch (DcpException& e)
+    {
+      cout << "DCP ERROR - " << e.what() << endl;
+      cout << "Exiting." << endl;
+      return EXIT_FAILURE;
+    }
   catch (std::exception& e)
     {
       cout << "Caught an exception, got " << e.what() << ", exiting." << endl;
