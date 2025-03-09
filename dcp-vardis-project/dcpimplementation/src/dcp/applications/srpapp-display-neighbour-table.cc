@@ -70,8 +70,8 @@ void show_node_line (const int line,
 		     const NodeIdentifierT  nodeId,
 		     const SafetyDataT sd,
 		     const uint32_t seqno,
-		     const uint16_t age_tx,
-		     const uint16_t age_rx,
+		     const uint32_t age_tx,
+		     const uint32_t age_rx,
 		     const double avg_gapsize)
 {
   move (line, 0);

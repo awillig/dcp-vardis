@@ -77,7 +77,7 @@ void show_var_line (const int line,
 		    const NodeIdentifierT prodId,
 		    const uint32_t seqno,
 		    const double value,
-		    const uint16_t age)
+		    const uint32_t age)
 {
   move (line, 0);
   printw ("%d", (int) varId.val);
