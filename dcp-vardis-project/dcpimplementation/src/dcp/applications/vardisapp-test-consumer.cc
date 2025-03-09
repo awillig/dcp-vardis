@@ -99,6 +99,10 @@ void show_footer (const int line)
   printw ("-------------------------------------------------------------------");
 }
 
+void output_cmdline_guidance (char* argv[])
+{
+  cout << std::string (argv[0]) << " [-s <sockname>] [-mc <shmcli>] [-mg <shmgdb>] <queryperiodMS>" << endl;
+}
 
 int main (int argc, char* argv [])
 {
@@ -128,7 +132,7 @@ int main (int argc, char* argv [])
 
     if (vm.count("help"))
       {
-	cout << std::string (argv[0]) << " [-s <sockname>] [-mc <shmcli>] [-mg <shmgdb>] <queryperiodMS>" << endl;
+	output_cmdline_guidance (argv);
 	cout << desc << endl;
 	return EXIT_SUCCESS;
       }
@@ -137,6 +141,14 @@ int main (int argc, char* argv [])
       {
 	print_version();
 	return EXIT_SUCCESS;
+      }
+
+    if (vm.count("period") == 0)
+      {
+	cout << "Insufficient arguments." << endl;
+	output_cmdline_guidance (argv);
+	cout << desc << endl;
+	return EXIT_FAILURE;
       }
     
     if ((periodTmp <= 0) || (periodTmp > std::numeric_limits<uint16_t>::max()))

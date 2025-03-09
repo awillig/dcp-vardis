@@ -21,6 +21,12 @@ void print_version ()
        << endl;
 }
 
+void output_cmdline_guidance (char* argv[])
+{
+  cout << std::string (argv[0]) << " [-s <sockname>] [-mg <shmgdb>] <varId>" << endl;
+}
+
+
 int main (int argc, char* argv [])
 {
   std::string cmdsock_name  = defaultVardisCommandSocketFileName;
@@ -47,7 +53,7 @@ int main (int argc, char* argv [])
 
     if (vm.count("help"))
       {
-	cout << std::string (argv[0]) << " [-s <sockname>] [-mg <shmgdb>] <varId>" << endl;
+	output_cmdline_guidance(argv);
 	cout << desc << endl;
 	return EXIT_SUCCESS;
       }
@@ -56,6 +62,14 @@ int main (int argc, char* argv [])
       {
 	print_version();
 	return EXIT_SUCCESS;
+      }
+
+    if (vm.count("varid") == 0)
+      {
+	cout << "Insufficient arguments." << endl;
+	output_cmdline_guidance (argv);
+	cout << desc << endl;
+	return EXIT_FAILURE;
       }
     
     if ((varIdTmp < 0) || (varIdTmp > dcp::vardis::VarIdT::max_val()))

@@ -59,6 +59,11 @@ VardisTestVariable generate_new_value (boost::normal_distribution<> distribution
   return rv;
 }
 
+void output_cmdline_guidance (char* argv[])
+{
+  cout << std::string (argv[0]) << " [-s <sockname>] [-mc <shmcli>] [-mg <shmgdb>] <varId> <genperiodMS> <average> <stddev>" << endl;
+}
+
 
 int main (int argc, char* argv [])
 {
@@ -98,7 +103,7 @@ int main (int argc, char* argv [])
 
     if (vm.count("help"))
       {
-	cout << std::string (argv[0]) << " [-s <sockname>] [-mc <shmcli>] [-mg <shmgdb>] <varId> <genperiodMS> <average> <stddev>" << endl;
+	output_cmdline_guidance(argv);
 	cout << desc << endl;
 	return EXIT_SUCCESS;
       }
@@ -108,6 +113,18 @@ int main (int argc, char* argv [])
 	print_version();
 	return EXIT_SUCCESS;
       }
+
+    if (    (vm.count("varid") == 0)
+	 || (vm.count("period") == 0)
+	 || (vm.count("average") == 0)
+	 || (vm.count("stddev") == 0))
+      {
+	cout << "Insufficient arguments." << endl;
+	output_cmdline_guidance (argv);
+	cout << desc << endl;
+	return EXIT_FAILURE;
+      }
+
     
     if ((varIdTmp < 0) || (varIdTmp > dcp::vardis::VarIdT::max_val()))
       {

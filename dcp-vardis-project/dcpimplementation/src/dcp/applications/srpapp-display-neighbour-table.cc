@@ -94,6 +94,12 @@ void show_footer (const int line)
 }
 
 
+void output_cmdline_guidance (char* argv[])
+{
+  cout << std::string (argv[0]) << " [-s <shmstore>] <queryperiodMS>" << endl;
+}
+
+
 int main (int argc, char* argv [])
 {
   std::string shmname_store  = defaultSRPStoreShmName;
@@ -118,7 +124,7 @@ int main (int argc, char* argv [])
 
     if (vm.count("help"))
       {
-	cout << std::string (argv[0]) << " [-s <shmstore>] <genperiodMS> <average-x> <average-y> <average-z> <stddev>" << endl;
+	output_cmdline_guidance (argv);
 	cout << desc << endl;
 	return EXIT_SUCCESS;
       }
@@ -128,12 +134,20 @@ int main (int argc, char* argv [])
 	print_version();
 	return EXIT_SUCCESS;
       }
+
+    if (vm.count("period") == 0)
+      {
+	cout << "Insufficient arguments." << endl;
+	output_cmdline_guidance (argv);
+	cout << desc << endl;
+	return EXIT_FAILURE;
+      }
     
     if ((periodTmp <= 0) || (periodTmp > std::numeric_limits<uint16_t>::max()))
       {
 	cout << "Generation period outside allowed range. Aborting." << endl;
 	return EXIT_FAILURE;
-      }    
+      }
   }
   catch(std::exception& e) {
     cerr << e.what() << endl;

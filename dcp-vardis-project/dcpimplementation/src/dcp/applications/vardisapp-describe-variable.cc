@@ -19,6 +19,10 @@ void print_version ()
        << endl;
 }
 
+void output_cmdline_guidance (char* argv[])
+{
+  cout << std::string (argv[0]) << " [-s <sockname>] <varid>" << endl;
+}
 
 int main (int argc, char* argv [])
 {
@@ -41,12 +45,12 @@ int main (int argc, char* argv [])
 
   try {
     po::variables_map vm;
-    //po::store(po::parse_command_line(argc, argv, desc), vm);
     po::store (po::command_line_parser(argc, argv).options(desc).positional(desc_pos).run(), vm);
     po::notify(vm);
 
     if (vm.count("help"))
       {
+	output_cmdline_guidance(argv);
 	cout << std::string (argv[0]) << " [-s <sockname>]" << endl;
 	cout << desc << endl;
 	return EXIT_SUCCESS;
@@ -56,6 +60,14 @@ int main (int argc, char* argv [])
       {
 	print_version();
 	return EXIT_SUCCESS;
+      }
+
+    if (vm.count("varid") == 0)
+      {
+	cout << "Insufficient arguments." << endl;
+	output_cmdline_guidance (argv);
+	cout << desc << endl;
+	return EXIT_FAILURE;
       }
 
     if ((varIdTmp < 0) || (varIdTmp > dcp::vardis::VarIdT::max_val()))

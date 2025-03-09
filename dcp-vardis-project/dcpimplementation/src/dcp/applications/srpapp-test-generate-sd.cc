@@ -51,6 +51,11 @@ SafetyDataT generate_new_sd (boost::normal_distribution<> dx,
   return sd;
 }
 
+void output_cmdline_guidance (char* argv[])
+{
+  cout << std::string (argv[0]) << " [-s <shmstore>] <genperiodMS> <average-x> <average-y> <average-z> <stddev>" << endl;
+}
+
 
 int main (int argc, char* argv [])
 {
@@ -99,6 +104,19 @@ int main (int argc, char* argv [])
 	print_version();
 	return EXIT_SUCCESS;
       }
+
+    if (    (vm.count("period") == 0)
+	 || (vm.count("averagex") == 0)
+	 || (vm.count("averagey") == 0)
+	 || (vm.count("averagez") == 0)
+	 || (vm.count("stddev") == 0))
+      {
+	cout << "Insufficient arguments." << endl;
+	output_cmdline_guidance (argv);
+	cout << desc << endl;
+	return EXIT_FAILURE;
+      }
+
     
     if ((periodTmp <= 0) || (periodTmp > std::numeric_limits<uint16_t>::max()))
       {
