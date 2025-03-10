@@ -130,7 +130,7 @@ namespace dcp::bp {
 		return;
 	      }
 
-	    if (pRequest->s_type != stBPTransmitPayload)
+	    if (pRequest->s_type != stBP_TransmitPayload)
 	      {
 		BOOST_LOG_SEV(log_mgmt_payload, trivial::info) << "handle_payload_from_client: service request has wrong type " << pRequest->s_type
 							       << ", dropping it. ProtocolId = " << clProt.protocolId
