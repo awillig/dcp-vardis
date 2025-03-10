@@ -156,6 +156,37 @@ namespace dcp {
   }
 
   // -----------------------------------------------------------------------------------
+  
+  DcpStatus BPClientRuntime::get_runtime_statistics (double& avg_inter_beacon_time,
+						     double& avg_beacon_size,
+						     unsigned int& number_received_payloads)
+  {
+    ScopedClientSocket cl_sock (commandSock);
+    BPGetStatistics_Request gs_req;
+
+    byte buffer [command_sock_buffer_size];
+    int nrcvd = cl_sock.sendRequestAndReadResponseBlock<BPGetStatistics_Request> (gs_req, buffer, command_sock_buffer_size);
+
+    if ((size_t) nrcvd < sizeof(BPGetStatistics_Confirm))
+      cl_sock.abort ("get_runtime_statistics: too little or too much data");
+
+    BPGetStatistics_Confirm* pConf = (BPGetStatistics_Confirm*) buffer;
+
+    if (pConf->s_type != stBP_GetStatistics)
+      cl_sock.abort ("get_runtime_statistics: response has wrong service type");
+
+    if (pConf->status_code == BP_STATUS_OK)
+      {
+	avg_inter_beacon_time     = pConf->avg_inter_beacon_time;
+	avg_beacon_size           = pConf->avg_beacon_size;
+	number_received_payloads  = pConf->number_received_beacons;
+      }
+    
+    return pConf->status_code;
+  }
+
+  
+  // -----------------------------------------------------------------------------------
 
   DcpStatus BPClientRuntime::query_number_buffered_payloads (unsigned long& num_payloads_buffered)
   {
@@ -179,7 +210,7 @@ namespace dcp {
     byte buffer [command_sock_buffer_size];
     int nrcvd = cl_sock.sendRequestAndReadResponseBlock<BPListRegisteredProtocols_Request> (lrpReq, buffer, command_sock_buffer_size);
 
-    if ((((size_t) nrcvd) < sizeof(BPListRegisteredProtocols_Request)) || (((size_t) nrcvd) >= command_sock_buffer_size - 1))
+    if ((((size_t) nrcvd) < sizeof(BPListRegisteredProtocols_Confirm)) || (((size_t) nrcvd) >= command_sock_buffer_size - 1))
       cl_sock.abort ("list_registered_protocols: too little or too much data");
 
     BPListRegisteredProtocols_Confirm* pConf = (BPListRegisteredProtocols_Confirm*) buffer;

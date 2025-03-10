@@ -353,10 +353,28 @@ namespace dcp {
     /**
      * @brief Ask BP demon to return a list of all registered
      *        protocols (service 'BP-ListRegisteredProtocols')
+     *
+     * @param descrs: output parameter containing a list of
+     *        descriptions of registered protocols
      */
     DcpStatus list_registered_protocols (std::list<BPRegisteredProtocolDataDescription>& descrs);
 
 
+    /**
+     * @brief Ask BP demon for certain runtime statistics
+     *
+     * @param avg_inter_beacon_time: output parameter holding the
+     *        average inter beacon reception time in milliseconds
+     * @param avg_beacon_size: output parameter holding the average
+     *        beacon size in bytes
+     * @param number_received_payloads: output parameter holding the
+     *        number of beacons received by BP (with or without errors)
+     */
+    DcpStatus get_runtime_statistics (double& avg_inter_beacon_time,
+				      double& avg_beacon_size,
+				      unsigned int& number_received_payloads);
+    
+    
     /********************************************************************************
      * Payload exchange and management services, only usable when
      * client protocol is registered with BP
