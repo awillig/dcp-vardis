@@ -531,28 +531,33 @@ namespace dcp {
 
 
     /**
-     * @brief Retrieves a list of all the tree node indices in the
-     *        given sub-tree for which their data satisfies a given
-     *        predicate
+     * @brief For the given sub-tree, checks all nodes whether they
+     *        satisfy a predicate, and for those that do collects
+     *        transforms of them into an output list
      *
-     * @param idx: index of the sub-tree root
-     * @param predicate: checks given data field whether or not predicate
-     *        is satisfied
-     * @param lst: output parameter containing the list of all node indices
-     *        of the nodes satisfying the predicate
-     *
+     * @tparam R: type of the elements of the result list
+     * @param root: Root of the sub-tree to consider
+     * @param predicate: Boolean predicate applied to a node (its key and data)
+     * @param transform: Transforms given key and data to output type
+     * @param result_lst: output parameter collecting the results of the
+     *        transform function applied to all nodes satisfying the predicate
      */
-    void find_matching_keys (int idx, std::function<bool (const DataT&)> predicate, std::list<KeyT>& lst) const
+    template <typename R>
+    void find_matching_data (int root,
+			     std::function<bool (KeyT, const DataT&)> predicate,
+			     std::function<R (KeyT, const DataT&)> transform,
+			     std::list<R>& result_lst) const
     {
-      if (is_null(idx)) return;
-      
-      if (predicate (the_array[idx].data))
-	lst.push_back (the_array[idx].key);
-      
-      find_matching_keys (left_ch (idx), predicate, lst);
-      find_matching_keys (right_ch (idx), predicate, lst);
-    };
-   
+      if (is_null (root)) return;
+
+      if (predicate (the_array[root].key, the_array[root].data))
+	result_lst.push_back (transform (the_array[root].key, the_array[root].data));
+
+      find_matching_data (left_ch (root), predicate, transform, result_lst);
+      find_matching_data (right_ch (root), predicate, transform, result_lst); 
+    }
+
+    
   public:
 
     /*********************************************************************
@@ -675,20 +680,25 @@ namespace dcp {
 
 
     /**
-     * @brief Retrieves a list of all the tree node indices in the
-     *        tree for which their data satisfies a given predicate
+     * @brief For the global tree, checks all nodes whether they
+     *        satisfy a predicate, and for those that do collects
+     *        transforms of them into an output list
      *
-     * @param predicate: checks given data field whether or not predicate
-     *        is satisfied
-     * @param result_lst: output parameter containing the list of all
-     *        node indices of the nodes satisfying the predicate
-     *
-     */
-    void find_matching_keys (std::function<bool (const DataT&)> predicate, std::list<KeyT>& result_lst) const
+     * @tparam R: type of the elements of the result list
+     * @param root: Root of the sub-tree to consider
+     * @param predicate: Boolean predicate applied to a node (its key and data)
+     * @param transform: Transforms given key and data to output type
+     * @param result_lst: output parameter collecting the results of the
+     *        transform function applied to all nodes satisfying the predicate
+     */      
+    template <typename R>
+    void find_matching_data (std::function<bool (KeyT, const DataT&)> predicate,
+			     std::function<R (KeyT, const DataT&)> transform,
+			     std::list<R>& result_lst) const
     {
-      find_matching_keys (root, predicate, result_lst);
-    };
-
+      find_matching_data<R> (root, predicate, transform, result_lst);
+    }
+    
     /*********************************************************************
      * Public methods only relevant for unit testing
      ********************************************************************/
