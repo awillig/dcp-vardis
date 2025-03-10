@@ -538,43 +538,43 @@ namespace dcp::bp {
     switch (serv_type)
       {
 	
-      case stBPRegisterProtocol:
+      case stBP_RegisterProtocol:
 	runtime.clientProtocols_mutex.lock();
 	handleBPRegisterProtocol_Request (runtime, buffer, nbytes);
 	runtime.clientProtocols_mutex.unlock();
 	break;
 	
-      case stBPDeregisterProtocol:
+      case stBP_DeregisterProtocol:
 	runtime.clientProtocols_mutex.lock();
 	handleBPDeregisterProtocol_Request (runtime, buffer, nbytes);
 	runtime.clientProtocols_mutex.unlock();
 	break;
 	
-      case stBPListRegisteredProtocols:
+      case stBP_ListRegisteredProtocols:
 	runtime.clientProtocols_mutex.lock();
 	handleBPListRegisteredProtocols_Request (runtime, buffer, nbytes);
 	runtime.clientProtocols_mutex.unlock();
 	break;
 	
-      case stBPShutDown:
+      case stBP_ShutDown:
 	handleBPShutDown_Request (runtime, buffer, nbytes);
 	break;
 	
-      case stBPActivate:
+      case stBP_Activate:
 	handleBPActivate_Request (runtime, buffer, nbytes);
 	break;
 	
-      case stBPDeactivate:
+      case stBP_Deactivate:
 	handleBPDeactivate_Request (runtime, buffer, nbytes);
 	break;
 
-      case stBPClearBuffer:
+      case stBP_ClearBuffer:
 	runtime.clientProtocols_mutex.lock();
 	handleBPClearBuffer_Request (runtime, buffer, nbytes);
 	runtime.clientProtocols_mutex.unlock();
 	break;
 
-      case stBPQueryNumberBufferedPayloads:
+      case stBP_QueryNumberBufferedPayloads:
 	runtime.clientProtocols_mutex.lock();
 	handleBPQueryNumberBufferedPayloads_Request (runtime, buffer, nbytes);
 	runtime.clientProtocols_mutex.unlock();
