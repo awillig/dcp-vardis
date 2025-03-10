@@ -75,6 +75,17 @@ namespace dcp {
    */
   const size_t maxShmAreaNameLength = 255;
 
+
+  /**
+   * @brief Timeout for packet sniffer in ms
+   */
+  const uint16_t defaultPacketSnifferTimeoutMS = 200;
+
+
+  /**
+   * @brief Timeout value for command sockets in ms
+   */
+  const uint16_t    defaultValueCommandSocketTimeoutMS   = 200;
   
 
   /****************************************************************
