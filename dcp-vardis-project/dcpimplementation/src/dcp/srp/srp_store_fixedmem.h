@@ -525,49 +525,54 @@ namespace dcp::srp {
     {
       FixedMemContents&  FMC = *pContents;
       
-      std::function<bool (const NeighbourState&)> predicate =
-	[current_time, timeoutMS] (const NeighbourState& nstate)
+      std::function<bool (NodeIdentifierT, const NeighbourState&)> predicate =
+	[current_time, timeoutMS] (NodeIdentifierT, const NeighbourState& nstate)
 	{
 	  return current_time.milliseconds_passed_since (nstate.last_esd_received) >= timeoutMS;
 	};
+
+      std::function<NodeIdentifierT (NodeIdentifierT, const NeighbourState&)> transform =
+	[] (NodeIdentifierT nodeId, const NeighbourState&) { return nodeId; };
       
       std::list<NodeIdentifierT> result_list;
-      FMC.neighbour_table.find_matching_keys (predicate, result_list);
+      FMC.neighbour_table. template find_matching_data<NodeIdentifierT> (predicate, transform, result_list);
       return result_list;
     };
-    
+
     // ---------------------------------------
 
-    virtual std::list<NodeInformation> list_matching_node_information (std::function<bool (const ExtendedSafetyDataT&)> predicate) const
+    virtual std::list<NodeInformation> list_matching_node_information (std::function<bool (const ExtendedSafetyDataT&)> esd_predicate) const
     {
       FixedMemContents&  FMC = *pContents;
+      std::list<NodeInformation> result_list;
       
-      std::function<bool (const NeighbourState&)> all_predicate =
-	[] (const NeighbourState&)
+      std::function<bool (NodeIdentifierT, const NeighbourState&)> full_predicate =
+	[&] (NodeIdentifierT, const NeighbourState& nstate)
 	{
-	  return true;
+	  byte* effective_address = (byte*) FMC.neighbour_ESD + nstate.esd_offs;
+	  ExtendedSafetyDataT* pESD = (ExtendedSafetyDataT*) effective_address;
+	  return esd_predicate (*pESD);
+	};
+
+      std::function<NodeInformation (NodeIdentifierT, const NeighbourState&)> transform =
+	[&] (NodeIdentifierT, const NeighbourState& nstate)
+	{
+	  byte* effective_address = (byte*) FMC.neighbour_ESD + nstate.esd_offs;
+	  ExtendedSafetyDataT* pESD = (ExtendedSafetyDataT*) effective_address;
+	  
+	  NodeInformation ni;
+	  ni.esd                          = *pESD;
+	  ni.last_reception_time          = nstate.last_esd_received;
+	  ni.avg_seqno_gap_size_estimate  = nstate.avg_seqno_gap_size;
+
+	  return ni;
 	};
       
-      std::list<NodeIdentifierT> node_list;
-      FMC.neighbour_table.find_matching_keys (all_predicate, node_list);
 
-      std::list<NodeInformation> result_list;
-      for (const auto& idx : node_list)
-	{
-	  ExtendedSafetyDataT& esd_ref = get_esd_entry_ref (idx);
-	  if (predicate (esd_ref))
-	    {
-	      NeighbourState ns = FMC.neighbour_table.lookup_data_ref(idx);
-	      NodeInformation ni;
-	      ni.esd                          = esd_ref;
-	      ni.last_reception_time          = ns.last_esd_received;
-	      ni.avg_seqno_gap_size_estimate  = ns.avg_seqno_gap_size;
-	      result_list.push_back (ni);
-	    }
-	}
+      FMC.neighbour_table. template find_matching_data <NodeInformation> (full_predicate, transform, result_list); 
       return result_list;
-
     };
+
     
     // ---------------------------------------
     
