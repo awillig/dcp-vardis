@@ -38,7 +38,7 @@ namespace dcp {
   /**
    * @brief Data type holding service type identifier
    */
-  typedef uint16_t  DcpServiceType;
+  typedef uint16_t DcpServiceType;
 
 
   /**
@@ -62,20 +62,21 @@ namespace dcp {
   /**
    * @brief These are the BP services defined in the specification
    */
-  const DcpServiceType  stBPRegisterProtocol             = BaseBPServiceType + 0x0001;
-  const DcpServiceType  stBPDeregisterProtocol           = BaseBPServiceType + 0x0002;
-  const DcpServiceType  stBPListRegisteredProtocols      = BaseBPServiceType + 0x0003;
-  const DcpServiceType  stBPClearBuffer                  = BaseBPServiceType + 0x0004;
-  const DcpServiceType  stBPQueryNumberBufferedPayloads  = BaseBPServiceType + 0x0005;
-  const DcpServiceType  stBPReceivePayload               = BaseBPServiceType + 0x0006;
-  const DcpServiceType  stBPTransmitPayload              = BaseBPServiceType + 0x0007;
+  const DcpServiceType  stBP_RegisterProtocol             = BaseBPServiceType + 0x0001;
+  const DcpServiceType  stBP_DeregisterProtocol           = BaseBPServiceType + 0x0002;
+  const DcpServiceType  stBP_ListRegisteredProtocols      = BaseBPServiceType + 0x0003;
+  const DcpServiceType  stBP_ClearBuffer                  = BaseBPServiceType + 0x0004;
+  const DcpServiceType  stBP_QueryNumberBufferedPayloads  = BaseBPServiceType + 0x0005;
+  const DcpServiceType  stBP_ReceivePayload               = BaseBPServiceType + 0x0006;
+  const DcpServiceType  stBP_TransmitPayload              = BaseBPServiceType + 0x0007;
 
   /**
    * @brief These are additional management-oriented services
    */
-  const DcpServiceType  stBPShutDown       = BaseBPServiceType + 0x0100;     /*!< shutting down the BP */
-  const DcpServiceType  stBPActivate       = BaseBPServiceType + 0x0101;     /*!< activate BP (enable processing of payloads) */
-  const DcpServiceType  stBPDeactivate     = BaseBPServiceType + 0x0102;     /*!< deactivate BP (disable processing of payloads) */
+  const DcpServiceType  stBP_ShutDown       = BaseBPServiceType + 0x0100;     /*!< shutting down the BP */
+  const DcpServiceType  stBP_Activate       = BaseBPServiceType + 0x0101;     /*!< activate BP (enable processing of payloads) */
+  const DcpServiceType  stBP_Deactivate     = BaseBPServiceType + 0x0102;     /*!< deactivate BP (disable processing of payloads) */
+  const DcpServiceType  stBP_GetStatistics  = BaseBPServiceType + 0x0103;     /*!< query BP runtime statistics */
 
 
   /**
