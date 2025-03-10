@@ -54,7 +54,7 @@ namespace dcp {
     int           the_command_socket   = -1;     /*!< Socket on which the server accepts connection requests */
     int           data_socket          = -1;     /*!< Current data socket when interacting with a client */
     std::string   socketName           = "";     /*!< Socket name, should be valid filename for Unix Domain Socket */
-    uint16_t      socketTimeoutMS      =  200;   /*!< Timeout for reading from command socket */
+    uint16_t      socketTimeoutMS      =  defaultValueCommandSocketTimeoutMS;   /*!< Timeout for reading from command socket */
 
     /**
      * @brief Waits for an incoming client connection for a limited
@@ -439,7 +439,7 @@ namespace dcp {
 
 
   const std::string defaultValueCommandSocketFile        = "/tmp/dcp-command-socket"; /*!< Default name for command socket */
-  const uint16_t    defaultValueCommandSocketTimeoutMS   = 100;                       /*!< Default timeout in ms for command socket */
+
   
 
   /**
