@@ -29,16 +29,17 @@ namespace dcp {
     switch(st)
       {
 	// services given in the specification
-      case  stBPRegisterProtocol             :  return "stBPRegisterProtocol";
-      case  stBPDeregisterProtocol           :  return "stBPDeregisterProtocol";
-      case  stBPListRegisteredProtocols      :  return "stBPListRegisteredProtocols";
-      case  stBPClearBuffer                  :  return "stBPClearBuffer";
-      case  stBPQueryNumberBufferedPayloads  :  return "stBPQueryNumberBufferedPayloads";
+      case  stBP_RegisterProtocol             :  return "stBP_RegisterProtocol";
+      case  stBP_DeregisterProtocol           :  return "stBP_DeregisterProtocol";
+      case  stBP_ListRegisteredProtocols      :  return "stBP_ListRegisteredProtocols";
+      case  stBP_ClearBuffer                  :  return "stBP_ClearBuffer";
+      case  stBP_QueryNumberBufferedPayloads  :  return "stBP_QueryNumberBufferedPayloads";
 
 	// implementation-dependent services
-      case  stBPShutDown                     :  return "stBPShutDown";
-      case  stBPActivate                     :  return "stBPActivate";
-      case  stBPDeactivate                   :  return "stBPDeactivate";
+      case  stBP_ShutDown                     :  return "stBP_ShutDown";
+      case  stBP_Activate                     :  return "stBP_Activate";
+      case  stBP_Deactivate                   :  return "stBP_Deactivate";
+      case  stBP_GetStatistics                :  return "stBP_GetStatistics";
 	
       default:
 	throw std::invalid_argument("bp_service_type_to_string: illegal service type");
