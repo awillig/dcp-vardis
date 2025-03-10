@@ -90,7 +90,7 @@ void run_bp_demon (const std::string cfg_filename)
   BOOST_LOG_SEV(log_main, trivial::info) << "Exiting.";
 }
 
-enum MgmtCommand { Shutdown, Activate, Deactivate };
+enum MgmtCommand { Shutdown, Activate, Deactivate, Stats };
 
 void run_bp_management_command (MgmtCommand cmd, const std::string cfg_filename)
 {
@@ -105,6 +105,25 @@ void run_bp_management_command (MgmtCommand cmd, const std::string cfg_filename)
     case Shutdown:     sd_status = cl_rt.shutdown_bp (); break;
     case Activate:     sd_status = cl_rt.activate_bp (); break;
     case Deactivate:   sd_status = cl_rt.deactivate_bp (); break;
+    case Stats:
+      {
+	double avg_inter_beacon_time;
+	double avg_beacon_size;
+	unsigned int number_received_payloads;
+	sd_status = cl_rt.get_runtime_statistics (avg_inter_beacon_time, avg_beacon_size, number_received_payloads);
+	if (sd_status == BP_STATUS_OK)
+	  {
+	    cout << "Average inter-beacon time (ms):      " << avg_inter_beacon_time << endl;
+	    cout << "Average beacon size (B):             " << avg_beacon_size << endl;
+	    cout << "Number received payloads:            " << number_received_payloads << endl;
+	    
+	    if (avg_inter_beacon_time > 0)
+	      {
+		cout << "Average data reception rate (B/s):   " << avg_beacon_size / (avg_inter_beacon_time / 1000) << endl;
+	      }
+	  }
+	break;
+      }
     default:           cout << "Unknown type of management command: " << cmd << endl; return;
     }
   cout << "BP return status = " << bp_status_to_string (sd_status) << endl;
@@ -169,6 +188,7 @@ int main (int argc, char* argv[])
     ("shutdown,s",  po::value<std::string>(&cfg_filename), "send shutdown command to running demon using given config file")
     ("activate,a",   po::value<std::string>(&cfg_filename), "send activate command to running demon using given config file")
     ("deactivate,d", po::value<std::string>(&cfg_filename), "send deactivate command to running demon using given config file")
+    ("runtimestats,t",  po::value<std::string>(&cfg_filename), "show BP runtime statistics and exit")
     ;
   
   try {
@@ -188,11 +208,12 @@ int main (int argc, char* argv[])
       }
     
     if (vm.count("run")) { cout << "Running BP demon ..." << endl; run_bp_demon (cfg_filename);	return EXIT_SUCCESS; }
-    if (vm.count("shutdown"))   { run_bp_management_command (Shutdown, cfg_filename); return EXIT_SUCCESS; }
-    if (vm.count("activate"))   { run_bp_management_command (Activate, cfg_filename); return EXIT_SUCCESS; }
-    if (vm.count("deactivate")) { run_bp_management_command (Deactivate, cfg_filename);	return EXIT_SUCCESS; }
-    if (vm.count("querycp"))    { run_query_client_protocols (cfg_filename); return EXIT_SUCCESS; }
+    if (vm.count("shutdown"))     { run_bp_management_command (Shutdown, cfg_filename); return EXIT_SUCCESS; }
+    if (vm.count("activate"))     { run_bp_management_command (Activate, cfg_filename); return EXIT_SUCCESS; }
+    if (vm.count("deactivate"))   { run_bp_management_command (Deactivate, cfg_filename);	return EXIT_SUCCESS; }
+    if (vm.count("querycp"))      { run_query_client_protocols (cfg_filename); return EXIT_SUCCESS; }
 
+    if (vm.count("runtimestats")) { run_bp_management_command (Stats, cfg_filename); return EXIT_SUCCESS; }
     
     cerr << "No valid option given." << endl;
     cerr << desc << endl;
