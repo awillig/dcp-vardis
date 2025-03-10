@@ -10,12 +10,14 @@ stack in Version 1.2.
 
 The implementation has been developed using the C++ programming
 language under Linux (Ubuntu 24.04 Desktop), and underwent initial
-tests on a Raspberry Pi 5 (Ubuntu Server) 24.04. The implementation
-uses C++-20 features, the GNU `g++` compiler in version 13.3, and
-`cmake` in version 3.28.3 as build system. The module documentation is
-built using the `doxygen` package in 1.9.8 as well as the `dia` and
-`mscgen` packages in versions 0.98.0 and 0.20, respectively. For unit
-testing currently GoogleTest in version 1.15.2 is used.
+tests on a Raspberry Pi 5 (Ubuntu Server) 24.04 (note that Raspberry
+Pi OS will not work, as it is based on Debian Bookworm, which uses too
+old versions of the g++ compiler). The implementation uses C++-20
+features, the GNU `g++` compiler in version 13.3, and `cmake` in
+version 3.28.3 as build system. The module documentation is built
+using the `doxygen` package in 1.9.8 as well as the `dia` and `mscgen`
+packages in versions 0.98.0 and 0.20, respectively. For unit testing
+currently GoogleTest in version 1.15.2 is used.
 
 The implementation furthermore makes use of additional libraries:
 - The C++ Boost library in Version 1.83 for logging, command line
