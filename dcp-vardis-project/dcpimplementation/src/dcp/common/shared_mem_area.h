@@ -553,7 +553,7 @@ namespace dcp {
      * #####ISSUE: There should probably also be a non-throwing
      *      version?? At least it does not throw while having the lock
      */
-    SharedMemBuffer wait_pop (ShmControlSegmentBase& CS, uint16_t timeoutMS = 200)
+    SharedMemBuffer wait_pop (ShmControlSegmentBase& CS, uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS <= 0) throw RingBufferException ("wait_pop: timeout is not strictly positive");
       
@@ -593,7 +593,7 @@ namespace dcp {
      *
      * #####ISSUE: There should probably also be a non-throwing version??
      */
-    void wait_push (ShmControlSegmentBase& CS, SharedMemBuffer buf, uint16_t timeoutMS = 200)
+    void wait_push (ShmControlSegmentBase& CS, SharedMemBuffer buf, uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS <= 0) throw RingBufferException ("wait_push: timeout is not strictly positive");
       
@@ -660,7 +660,7 @@ namespace dcp {
 				byte* buffer_seg_ptr,
 				ShmRingBuffer<RBTargetMaxElements>& rbTarget,
 				std::function<void (SharedMemBuffer&, byte*)> process,
-				uint16_t timeoutMS = 200)
+				uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
     {
       if (buffer_seg_ptr == nullptr) throw RingBufferException ("wait_pop_process_push: buffer_seg_ptr is null");
       if (timeoutMS <= 0) throw RingBufferException ("wait_pop_process_push: timeout is not strictly positive");
