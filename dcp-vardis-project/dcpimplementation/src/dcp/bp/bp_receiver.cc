@@ -23,6 +23,7 @@
 #include <tins/tins.h>
 #include <dcp/common/area.h>
 #include <dcp/common/debug_helpers.h>
+#include <dcp/common/global_types_constants.h>
 #include <dcp/bp/bp_receiver.h>
 #include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/bp/bp_logging.h>
@@ -232,7 +233,7 @@ namespace dcp::bp {
       filt_ss << "ether dst ff:ff:ff:ff:ff:ff and ether proto " << runtime.bp_config.bp_conf.etherType;
       sniff_config.set_filter (filt_ss.str());
       sniff_config.set_immediate_mode (true);
-      sniff_config.set_timeout (100);
+      sniff_config.set_timeout (defaultPacketSnifferTimeoutMS);
 
       pSniffer = new Sniffer (runtime.bp_config.bp_conf.interfaceName, sniff_config);
     }
