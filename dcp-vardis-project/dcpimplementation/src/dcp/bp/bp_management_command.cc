@@ -151,8 +151,10 @@ namespace dcp::bp {
       }
 
     BPGetStatistics_Confirm gs_conf;
-    gs_conf.avg_inter_beacon_time = runtime.avg_inter_beacon_reception_time;
-    gs_conf.avg_beacon_size       = runtime.avg_received_beacon_size;
+    gs_conf.status_code              = BP_STATUS_OK;
+    gs_conf.avg_inter_beacon_time    = runtime.avg_inter_beacon_reception_time;
+    gs_conf.avg_beacon_size          = runtime.avg_received_beacon_size;
+    gs_conf.number_received_beacons  = runtime.cntBPPayloads;
 
     runtime.commandSocket.send_raw_confirmation (log_mgmt_command, gs_conf, sizeof(gs_conf), runtime.bp_exitFlag);
   }
