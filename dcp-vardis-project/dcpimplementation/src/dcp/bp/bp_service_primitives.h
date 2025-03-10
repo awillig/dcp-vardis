@@ -322,8 +322,9 @@ namespace dcp::bp {
   // -------------------------------------------------------------
   
   typedef struct BPGetStatistics_Confirm : ServiceConfirm {
-    double avg_inter_beacon_time;
-    double avg_beacon_size;
+    double        avg_inter_beacon_time;
+    double        avg_beacon_size;
+    unsigned int  number_received_beacons;
     BPGetStatistics_Confirm () : ServiceConfirm(stBP_GetStatistics) {};
     BPGetStatistics_Confirm (DcpStatus scode) : ServiceConfirm(stBP_GetStatistics, scode) {};
 
