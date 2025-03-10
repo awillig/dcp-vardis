@@ -136,6 +136,29 @@ namespace dcp::bp {
   
   // ------------------------------------------------------------------
 
+  void handleBPGetStatistics_Request (BPRuntimeData& runtime, byte*, size_t nbytes)
+  {
+    if (nbytes != sizeof(BPGetStatistics_Request))
+      {
+	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+	    << "Processing BPGetStatistics request: wrong data size = "
+	    << nbytes
+	    << ", exiting."
+           ;
+	runtime.bp_exitFlag = true;
+	send_simple_confirmation<BPGetStatistics_Confirm>(runtime, BP_STATUS_INTERNAL_ERROR);
+	return;
+      }
+
+    BPGetStatistics_Confirm gs_conf;
+    gs_conf.avg_inter_beacon_time = runtime.avg_inter_beacon_reception_time;
+    gs_conf.avg_beacon_size       = runtime.avg_received_beacon_size;
+
+    runtime.commandSocket.send_raw_confirmation (log_mgmt_command, gs_conf, sizeof(gs_conf), runtime.bp_exitFlag);
+  }
+  
+  // ------------------------------------------------------------------
+
   void handleBPRegisterProtocol_Request (BPRuntimeData& runtime, byte* buffer, size_t nbytes)
   {
     if (nbytes != sizeof(BPRegisterProtocol_Request))
@@ -568,6 +591,10 @@ namespace dcp::bp {
 	handleBPDeactivate_Request (runtime, buffer, nbytes);
 	break;
 
+      case stBP_GetStatistics:
+	handleBPGetStatistics_Request (runtime, buffer, nbytes);
+	break;
+	
       case stBP_ClearBuffer:
 	runtime.clientProtocols_mutex.lock();
 	handleBPClearBuffer_Request (runtime, buffer, nbytes);
