@@ -19,6 +19,7 @@
 
 
 
+#include <format>
 #include <dcp/common/services_status.h>
 
 
@@ -42,7 +43,7 @@ namespace dcp {
       case  stBP_GetStatistics                :  return "stBP_GetStatistics";
 	
       default:
-	throw std::invalid_argument("bp_service_type_to_string: illegal service type");
+	throw std::invalid_argument(std::format("bp_service_type_to_string: illegal service type {}", st));
       }
     return "";
   }
@@ -74,7 +75,7 @@ namespace dcp {
 
 	
       default:
-	throw std::invalid_argument("vardis_service_type_to_string: illegal service type");
+	throw std::invalid_argument(std::format("vardis_service_type_to_string: illegal service type {}", st));
       }
     return "";
   }
@@ -104,7 +105,7 @@ namespace dcp {
       case VARDIS_STATUS_UNKNOWN_APPLICATION:             return "VARDIS_STATUS_UNKNOWN_APPLICATION";
 	
       default:
-	throw std::invalid_argument("vardis_status_to_string: illegal status code");
+	throw std::invalid_argument(std::format("vardis_status_to_string: illegal status code {}", stat));
       }
     return "";
   }
@@ -134,7 +135,7 @@ namespace dcp {
       case BP_STATUS_WRONG_PROTOCOL_TYPE:            return "BP_STATUS_WRONG_PROTOCOL_TYPE";
 	
       default:
-	throw std::invalid_argument("bp_status_to_string: illegal status code");
+	throw std::invalid_argument(std::format("bp_status_to_string: illegal status code {}", stat));
       }
     return "";
   }
@@ -149,7 +150,7 @@ namespace dcp {
       case SRP_STATUS_OK:                              return "SRP_STATUS_OK";
 	
       default:
-	throw std::invalid_argument("srp_status_to_string: illegal status code");
+	throw std::invalid_argument(std::format("srp_status_to_string: illegal status code {}", stat));
       }
     return "";
   }
