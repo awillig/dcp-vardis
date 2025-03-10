@@ -1,3 +1,4 @@
+#include <functional>
 #include <list>
 #include <random>
 #include <gtest/gtest.h>
@@ -73,7 +74,26 @@ TEST (AVLTest, initialTest) {
 	  EXPECT_EQ (avl_tree.get_number_elements (), avl_tree.number_reachable ());
 	  EXPECT_TRUE (avl_tree.is_consistent ());
 	}
+    }  
+}
+
+TEST (AVLTest, find_matching_data_test) {
+  ArrayAVLTree<int, int, arraySize>  avl_tree;
+
+  for (int j = 0; j < 20; j++)
+    {
+      avl_tree.insert (j, j);
     }
 
-  
+  EXPECT_EQ (avl_tree.get_number_elements (), 20);
+  EXPECT_EQ (avl_tree.number_reachable (), 20);
+  EXPECT_TRUE (avl_tree.is_consistent ());
+
+  std::function<bool (int, const int&)> predicate = [] (int, const int& val) { return (val % 2 == 0); };
+  std::function<double (int, const int&)> transform = [] (int, const int& val) { return ((double) val); };
+  std::list<double> result_list;
+
+  avl_tree.find_matching_data<double> (predicate, transform, result_list);
+
+  EXPECT_EQ (result_list.size(), 10);
 }
