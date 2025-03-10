@@ -108,7 +108,7 @@ namespace dcp {
     
     BPRegisterProtocol_Confirm *pConf = (BPRegisterProtocol_Confirm*) buffer;
     
-    if (pConf->s_type != stBPRegisterProtocol) cl_sock.abort ("register_with_bp: response has wrong service type");
+    if (pConf->s_type != stBP_RegisterProtocol) cl_sock.abort ("register_with_bp: response has wrong service type");
 
     ownNodeIdentifier = pConf->ownNodeIdentifier;
 
@@ -184,7 +184,7 @@ namespace dcp {
 
     BPListRegisteredProtocols_Confirm* pConf = (BPListRegisteredProtocols_Confirm*) buffer;
 
-    if (pConf->s_type != stBPListRegisteredProtocols)
+    if (pConf->s_type != stBP_ListRegisteredProtocols)
       cl_sock.abort ("list_registered_protocols: response has wrong service type");
 
     if (pConf->status_code == BP_STATUS_OK)

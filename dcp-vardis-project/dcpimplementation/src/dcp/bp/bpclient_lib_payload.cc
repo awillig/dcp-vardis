@@ -162,7 +162,7 @@ namespace dcp {
     BPReceivePayload_Indication* pInd         = (BPReceivePayload_Indication*) data_ptr;
     byte*                        payload_ptr  = data_ptr + sizeof(BPReceivePayload_Indication);              
 
-    if (pInd->s_type != stBPReceivePayload)
+    if (pInd->s_type != stBP_ReceivePayload)
       throw BPClientLibException ("receive_payload: incorrect service type");
     if (pInd->length == 0)
       throw BPClientLibException ("receive_payload: got payload of zero length");
