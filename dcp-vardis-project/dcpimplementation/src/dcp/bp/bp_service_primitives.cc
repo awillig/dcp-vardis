@@ -194,5 +194,29 @@ namespace dcp::bp {
        << " }";
     return os;
   }
+
+
+
+
+
+  std::ostream& operator<<(std::ostream& os, const BPGetStatistics_Request& req)
+  {
+    os << "BPGetStatistics_Request{s_type = " << bp_service_type_to_string(req.s_type)
+       << "}";
+    return os;
+  }
+
+  std::ostream& operator<<(std::ostream& os, const BPGetStatistics_Confirm& conf)
+  {
+    os << "BPGetStatistics_Confirm{s_type = " << bp_service_type_to_string (conf.s_type)
+       << ", status_code = " << bp_status_to_string (conf.status_code)
+       << ", avg_inter_beacon_time = " << conf.avg_inter_beacon_time
+       << ", avg_beacon_size = " << conf.avg_beacon_size
+       << " }";
+    return os;
+  }
+
+
+  
   
 };  // namespace dcp::bp
