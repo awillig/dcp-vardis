@@ -111,6 +111,7 @@ namespace dcp::srp {
     public:
       NodeIdentifierT  nodeId     = nullNodeIdentifier;  /*!< node identifier of neighbour */
       uint64_t         esd_offs   = 0;                   /*!< Byte offset (relative to start of neighbour_ESD memory block) for storing ExtendedSafetyDataT value */
+      bool             seqno_received     = false;
       uint32_t         last_seqno         = 0;           /*!< Last sequence number received from this neighbour */
       double           avg_seqno_gap_size = 0;           /*!< Estimated average sequence number gap size for this neighbour (EWMA estimator) */
       TimeStampT       last_esd_received;                /*!< Timestamp at which last ExtendedSafetyDataT record from this neighbour was received */
@@ -280,11 +281,18 @@ namespace dcp::srp {
 	  byte* effective_address = (byte*) FMC.neighbour_ESD + nstate.esd_offs;
 	  std::memcpy (effective_address, (byte*) &new_esd, sizeof(ExtendedSafetyDataT));
 	  nstate.last_esd_received  = TimeStampT::get_current_system_time ();
-	  
-	  double new_gap_size = (double) (new_esd.seqno - nstate.last_seqno);
-	  nstate.last_seqno = new_esd.seqno;
-	  nstate.avg_seqno_gap_size = (1 - alpha) * new_gap_size + alpha * nstate.avg_seqno_gap_size;
-	  
+
+	  if (nstate.seqno_received)
+	    {
+	      double new_gap_size = (double) (new_esd.seqno - nstate.last_seqno);
+	      nstate.avg_seqno_gap_size = (1 - alpha) * new_gap_size + alpha * nstate.avg_seqno_gap_size;
+	    }
+	  else
+	    {
+	      nstate.avg_seqno_gap_size = 1;
+	    }
+	  nstate.last_seqno      = new_esd.seqno;
+	  nstate.seqno_received  = true;
 	  return;
 	}
 
@@ -295,6 +303,7 @@ namespace dcp::srp {
       new_nstate.nodeId              = nodeId;
       new_nstate.esd_offs            = fl_entry.esd_offs;
       new_nstate.last_seqno          = new_esd.seqno;
+      new_nstate.seqno_received      = false;
       new_nstate.avg_seqno_gap_size  = 0;
       new_nstate.last_esd_received   = TimeStampT::get_current_system_time();
 
