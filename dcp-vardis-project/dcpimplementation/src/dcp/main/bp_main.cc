@@ -7,6 +7,7 @@
 #include <list>
 #include <unistd.h>
 #include <boost/program_options.hpp>
+#include <dcp/common/exceptions.h>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/common/services_status.h>
 #include <dcp/bp/bpclient_configuration.h>
@@ -20,13 +21,14 @@
 #include <dcp/bp/bpclient_lib.h>
 
 
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::size_t;
-using std::exception;
-using dcp::BPClientRuntime;
 using dcp::BPClientConfiguration;
+using dcp::BPClientRuntime;
+using std::cerr;
+using std::cout;
+using std::endl;
+using std::exception;
+using std::size_t;
+using dcp::DcpException;
 
 namespace po = boost::program_options;
 
@@ -220,7 +222,13 @@ int main (int argc, char* argv[])
     return EXIT_FAILURE;
 
   }
-  catch(exception& e) {
+  catch (DcpException& e)
+    {
+      cout << "DCP ERROR - " << e.what() << endl;
+      cout << "Exiting." << endl;
+      return EXIT_FAILURE;
+    }
+  catch (exception& e) {
     cerr << e.what() << endl;
     cerr << desc << endl;
     return EXIT_FAILURE;
