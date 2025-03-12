@@ -2,6 +2,7 @@
 #include <csignal>
 #include <cstdint>
 #include <exception>
+#include <format>
 #include <iostream>
 #include <limits>
 #include <thread>
@@ -174,14 +175,11 @@ int main (int argc, char* argv [])
   try {
     VardisClientRuntime cl_rt (cl_conf);
 
-    std::stringstream ssDescr;
-    ssDescr << "vardis-testvar-" << (int) varId.val;
-  
     VarSpecT spec;
     spec.varId   = varId;
     spec.prodId  = cl_rt.get_own_node_identifier();
     spec.repCnt  = 1;
-    spec.descr   = StringT (ssDescr.str());
+    spec.descr   = StringT (std::format("vardis-testvar-{}", (int) varId.val));
     
     VardisTestVariable initial_varval = generate_new_value (distribution);
     VarValueT initial_value (sizeof(VardisTestVariable), (byte*) &initial_varval);
