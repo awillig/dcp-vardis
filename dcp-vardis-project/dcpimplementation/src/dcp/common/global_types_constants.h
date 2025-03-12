@@ -67,7 +67,7 @@ namespace dcp {
   /**
    * @brief Default timeout for a shared memory lock in ms
    */
-  const uint16_t   defaultSharedMemoryLockTimeoutMS = 250;
+  const uint16_t   defaultSharedMemoryLockTimeoutMS = 500;
 
 
   /**
@@ -79,13 +79,13 @@ namespace dcp {
   /**
    * @brief Timeout for packet sniffer in ms
    */
-  const uint16_t defaultPacketSnifferTimeoutMS = 200;
+  const uint16_t defaultPacketSnifferTimeoutMS = 300;
 
 
   /**
    * @brief Timeout value for command sockets in ms
    */
-  const uint16_t    defaultValueCommandSocketTimeoutMS   = 200;
+  const uint16_t    defaultValueCommandSocketTimeoutMS   = 500;
   
 
   /****************************************************************
