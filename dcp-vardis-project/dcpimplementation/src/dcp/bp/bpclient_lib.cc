@@ -223,6 +223,9 @@ namespace dcp {
 	if ((nrcvd - sizeof(BPListRegisteredProtocols_Confirm)) % sizeof(BPRegisteredProtocolDataDescription) != 0)
 	  cl_sock.abort ("list_registered_protocols: response does not carry integral number of registered protocol description records");
 
+	if ((nrcvd - sizeof(BPListRegisteredProtocols_Confirm)) / sizeof(BPRegisteredProtocolDataDescription) != pConf->numberProtocols)
+	  cl_sock.abort ("list_registered_protocols: response does not carry the right number of registered protocol description records");
+	
 	BPRegisteredProtocolDataDescription* descrPtr = (BPRegisteredProtocolDataDescription*) (buffer + sizeof(BPListRegisteredProtocols_Confirm));
 	
 	for (uint64_t i = 0; i < pConf->numberProtocols; i++)
