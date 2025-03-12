@@ -19,12 +19,12 @@ namespace dcp::vardis {
     
     EXPECT_FALSE (protData.variableExists (0));
     EXPECT_ANY_THROW (protData.producerIsMe (0));
-    EXPECT_FALSE (protData.isVarIdInQueue (protData.createQ, 0));
-    EXPECT_FALSE (protData.isVarIdInQueue (protData.updateQ, 0));
-    EXPECT_FALSE (protData.isVarIdInQueue (protData.deleteQ, 0));
-    EXPECT_FALSE (protData.isVarIdInQueue (protData.summaryQ, 0));
-    EXPECT_FALSE (protData.isVarIdInQueue (protData.reqCreateQ, 0));
-    EXPECT_FALSE (protData.isVarIdInQueue (protData.reqUpdQ, 0));
+    EXPECT_FALSE (protData.createQ.contains (0));
+    EXPECT_FALSE (protData.updateQ.contains (0));
+    EXPECT_FALSE (protData.deleteQ.contains (0));
+    EXPECT_FALSE (protData.summaryQ.contains (0));
+    EXPECT_FALSE (protData.reqCreateQ.contains (0));
+    EXPECT_FALSE (protData.reqUpdQ.contains (0));
 
   }
 
