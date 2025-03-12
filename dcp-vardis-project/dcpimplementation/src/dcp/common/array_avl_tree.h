@@ -685,7 +685,6 @@ namespace dcp {
      *        transforms of them into an output list
      *
      * @tparam R: type of the elements of the result list
-     * @param root: Root of the sub-tree to consider
      * @param predicate: Boolean predicate applied to a node (its key and data)
      * @param transform: Transforms given key and data to output type
      * @param result_lst: output parameter collecting the results of the
