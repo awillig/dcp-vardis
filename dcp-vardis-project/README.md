@@ -13,11 +13,11 @@ project contains:
 * A simulator based on the OMNeT++ discrete-even simulation framework
   ([website](https://omnetpp.org)) and the INET module library for
   OMNeT++ ([website](https://inet.omnetpp.org/)). The simulator can be
-  found in sub-directory `dcpsimulation`. 
-* A first (and incomplete) implementation of the DCP/Vardis protocol
-  stack in the C++ programming language under Linux, tested on
-  Raspberry Pi 5 devices. The implementation can be found in
-  sub-directory `dcpimplementation`.
+  found in sub-directory `dcpsimulation`.  
+* A first implementation of the DCP/Vardis protocol stack in the C++
+  programming language under Linux, tested on Raspberry Pi 5
+  devices. The implementation can be found in sub-directory
+  `dcpimplementation`.
 
 We welcome any contributions! If you are interested in contributing to
 this project please get in touch with [Andreas
