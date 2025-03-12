@@ -20,6 +20,7 @@
 
 
 #include <iostream>
+#include <format>
 #include <fstream>
 extern "C" {
 #include <netinet/in.h>
@@ -216,15 +217,16 @@ namespace dcp {
     BPListRegisteredProtocols_Confirm* pConf = (BPListRegisteredProtocols_Confirm*) buffer;
 
     if (pConf->s_type != stBP_ListRegisteredProtocols)
-      cl_sock.abort ("list_registered_protocols: response has wrong service type");
+      cl_sock.abort (std::format("list_registered_protocols: response has wrong service type {}", pConf->s_type));
 
     if (pConf->status_code == BP_STATUS_OK)
-      {	
-	if ((nrcvd - sizeof(BPListRegisteredProtocols_Confirm)) % sizeof(BPRegisteredProtocolDataDescription) != 0)
+      {
+	int data_size = nrcvd - sizeof(BPListRegisteredProtocols_Confirm);
+	if (data_size % sizeof(BPRegisteredProtocolDataDescription) != 0)
 	  cl_sock.abort ("list_registered_protocols: response does not carry integral number of registered protocol description records");
 
-	if ((nrcvd - sizeof(BPListRegisteredProtocols_Confirm)) / sizeof(BPRegisteredProtocolDataDescription) != pConf->numberProtocols)
-	  cl_sock.abort ("list_registered_protocols: response does not carry the right number of registered protocol description records");
+	if (data_size / sizeof(BPRegisteredProtocolDataDescription) != pConf->numberProtocols)
+	  cl_sock.abort (std::format("list_registered_protocols: response does not carry the right number of registered protocol description records, data_size is {}, expected are {}, actual are {}", data_size, pConf->numberProtocols, data_size / sizeof(BPRegisteredProtocolDataDescription)));
 	
 	BPRegisteredProtocolDataDescription* descrPtr = (BPRegisteredProtocolDataDescription*) (buffer + sizeof(BPListRegisteredProtocols_Confirm));
 	
