@@ -143,18 +143,16 @@ namespace dcp::vardis {
    */
   void VardisProtocolData::makeICTypeCreateVariables (AssemblyArea& area, unsigned int& containers_added)
   {
-    dropNonexistingDeleted(createQ);
-    
     // check for empty createQ or insufficient size to add at least the first instruction record
     if (    createQ.empty()
-         || (instructionSizeVarCreate(createQ.front()) + ICHeaderT::fixed_size()) > area.available())
+         || (instructionSizeVarCreate(createQ.queue.front()) + ICHeaderT::fixed_size()) > area.available())
       {
         return;
       }
     
     // first work out how many records we will add
     std::function<unsigned int(VarIdT)> instSizeFn = [&] (VarIdT varId) { return instructionSizeVarCreate(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(createQ, area, instSizeFn);
+    auto numberRecordsToAdd = numberFittingRecords(createQ.queue, area, instSizeFn);
     
     if (numberRecordsToAdd <= 0)
       {
@@ -185,7 +183,7 @@ namespace dcp::vardis {
 	
         if (nextVar.countCreate.val > 0)
 	  {
-            createQ.push_back(nextVarId);
+            createQ.insert(nextVarId);
 	  }
       }
     containers_added += 1;
@@ -199,10 +197,7 @@ namespace dcp::vardis {
    * an ICHeader and a as many VarSummT records as possible / available.
    */
   void VardisProtocolData::makeICTypeSummaries (AssemblyArea& area, unsigned int& containers_added)
-  {
-    
-    dropNonexistingDeleted(summaryQ);
-    
+  {    
     // check for empty summaryQ, insufficient size to add at least the first instruction record,
     // or whether summaries function is enabled
     if (    summaryQ.empty()
@@ -214,7 +209,7 @@ namespace dcp::vardis {
     
     // first work out how many records we will add, cap at vardisMaxSummaries
     std::function<unsigned int(VarIdT)> instSizeFn = [&] (VarIdT varId) { return instructionSizeVarSummary(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(summaryQ, area, instSizeFn);
+    auto numberRecordsToAdd = numberFittingRecords(summaryQ.queue, area, instSizeFn);
     numberRecordsToAdd = std::min(numberRecordsToAdd, (unsigned int) maxSummaries);
     
     if (numberRecordsToAdd <= 0)
@@ -234,7 +229,7 @@ namespace dcp::vardis {
         VarIdT nextVarId  = summaryQ.front();
 	
         summaryQ.pop_front();
-        summaryQ.push_back(nextVarId);
+        summaryQ.insert(nextVarId);
         DBEntry&   theNextEntry  = vardis_store.get_db_entry_ref(nextVarId);
         addVarSummary(nextVarId, theNextEntry, area);
       }
@@ -252,8 +247,6 @@ namespace dcp::vardis {
    */
   void VardisProtocolData::makeICTypeUpdates (AssemblyArea& area, unsigned int& containers_added)
   {    
-    dropNonexistingDeleted(updateQ);
-    
     // check for empty updateQ or insufficient size to add at least the first instruction record
     if (    updateQ.empty()
 	 || (instructionSizeVarUpdate(updateQ.front()) + ICHeaderT::fixed_size() > area.available()))
@@ -263,7 +256,7 @@ namespace dcp::vardis {
     
     // first work out how many records we will add
     std::function<unsigned int(VarIdT)> instSizeFn = [&] (VarIdT varId) { return instructionSizeVarUpdate(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(updateQ, area, instSizeFn);
+    auto numberRecordsToAdd = numberFittingRecords(updateQ.queue, area, instSizeFn);
     
     if (numberRecordsToAdd <= 0)
       {
@@ -294,7 +287,7 @@ namespace dcp::vardis {
 
         if (nextVar.countUpdate.val > 0)
         {
-            updateQ.push_back(nextVarId);
+            updateQ.insert(nextVarId);
         }
     }
 
@@ -310,8 +303,6 @@ namespace dcp::vardis {
    */
   void VardisProtocolData::makeICTypeDeleteVariables (AssemblyArea& area, unsigned int& containers_added)
   {
-    dropNonexisting(deleteQ);
-
     // check for empty deleteQ or insufficient size to add at least the first instruction record
     if (    deleteQ.empty()
 	 || (instructionSizeVarDelete(deleteQ.front()) + ICHeaderT::fixed_size() > area.available()))
@@ -321,7 +312,7 @@ namespace dcp::vardis {
 
     // first work out how many records we will add
     std::function<unsigned int(VarIdT)> instSizeFn = [&] (VarIdT varId) { return instructionSizeVarDelete(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(deleteQ, area, instSizeFn);
+    auto numberRecordsToAdd = numberFittingRecords(deleteQ.queue, area, instSizeFn);
 
     if (numberRecordsToAdd <= 0)
       {
@@ -358,7 +349,7 @@ namespace dcp::vardis {
 
         if (nextVar.countDelete.val > 0)
         {
-            deleteQ.push_back(nextVarId);
+            deleteQ.insert(nextVarId);
         }
         else
         {
@@ -381,8 +372,6 @@ namespace dcp::vardis {
    */
   void VardisProtocolData::makeICTypeRequestVarUpdates (AssemblyArea& area, unsigned int& containers_added)
   {
-    dropNonexistingDeleted(reqUpdQ);
-
     // check for empty reqUpdQ or insufficient size to add at least the first instruction record
     if (    reqUpdQ.empty()
 	 || (instructionSizeReqUpdate(reqUpdQ.front()) + ICHeaderT::fixed_size() > area.available()))
@@ -392,7 +381,7 @@ namespace dcp::vardis {
 
     // first work out how many records we will add
     std::function<unsigned int(VarIdT)> instSizeFn = [&] (VarIdT varId) { return instructionSizeReqUpdate(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(reqUpdQ, area, instSizeFn);
+    auto numberRecordsToAdd = numberFittingRecords(reqUpdQ.queue, area, instSizeFn);
 
     if (numberRecordsToAdd <= 0)
       {
@@ -428,8 +417,6 @@ namespace dcp::vardis {
    */
   void VardisProtocolData::makeICTypeRequestVarCreates (AssemblyArea& area, unsigned int& containers_added)
   {
-    dropDeleted(reqCreateQ);
-
     // check for empty reqCreateQ or insufficient size to add at least the first instruction record
     if (    reqCreateQ.empty()
 	 || (instructionSizeReqCreate(reqCreateQ.front()) + ICHeaderT::fixed_size() > area.available()))
@@ -439,7 +426,7 @@ namespace dcp::vardis {
 
     // first work out how many records we will add
     std::function<unsigned int(VarIdT)> instSizeFn = [&] (VarIdT varId) { return instructionSizeReqCreate(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(reqCreateQ, area, instSizeFn);
+    auto numberRecordsToAdd = numberFittingRecords(reqCreateQ.queue, area, instSizeFn);
 
     if (numberRecordsToAdd <= 0)
       {
@@ -508,17 +495,16 @@ namespace dcp::vardis {
 
         // just to be safe, delete varId from all queues before inserting it
         // into the right ones
-        removeVarIdFromQueue (createQ, varId);
-        removeVarIdFromQueue (deleteQ, varId);
-        removeVarIdFromQueue (updateQ, varId);
-        removeVarIdFromQueue (summaryQ, varId);
-        removeVarIdFromQueue (reqUpdQ, varId);
-        removeVarIdFromQueue (reqCreateQ, varId);
+        createQ.remove (varId);
+        deleteQ.remove (varId);
+        updateQ.remove (varId);
+        summaryQ.remove (varId);
+        reqUpdQ.remove (varId);
+        reqCreateQ.remove (varId);
 
         // add varId to relevant queues
-        createQ.push_back (varId);
-        summaryQ.push_back (varId);
-        removeVarIdFromQueue (reqCreateQ, varId);
+        createQ.insert (varId);
+        summaryQ.insert (varId);
 
 	// maintain statistics
 	auto vardis_stats = vardis_store.get_vardis_protocol_statistics_ref ();
@@ -554,15 +540,15 @@ namespace dcp::vardis {
 	  theEntry.countDelete  = theEntry.repCnt;
 	  
 	  // remove varId from relevant queues
-	  removeVarIdFromQueue(updateQ, varId);
-	  removeVarIdFromQueue(createQ, varId);
-	  removeVarIdFromQueue(reqUpdQ, varId);
-	  removeVarIdFromQueue(reqCreateQ, varId);
-	  removeVarIdFromQueue(summaryQ, varId);
-	  removeVarIdFromQueue(deleteQ, varId);
+	  updateQ.remove (varId);
+	  createQ.remove (varId);
+	  reqUpdQ.remove (varId);
+	  reqCreateQ.remove (varId);
+	  summaryQ.remove (varId);
+	  deleteQ.remove (varId);
 
 	  // add it to deleteQ
-	  deleteQ.push_back(varId);
+	  deleteQ.insert(varId);
 
 	  // maintain statistics
 	  vardis_store.get_vardis_protocol_statistics_ref().count_process_var_delete++;
@@ -589,8 +575,8 @@ namespace dcp::vardis {
     {
       BOOST_LOG_SEV(log_rx, trivial::trace) << "process_var_update: got update for unknown variable, varId = " << varId << ". Stopping processing.";
 
-      if (not isVarIdInQueue(reqCreateQ, varId))
-	reqCreateQ.push_back(varId);
+      if (not reqCreateQ.contains (varId))
+	reqCreateQ.insert(varId);
       
       return;
     }
@@ -625,9 +611,9 @@ namespace dcp::vardis {
     if (more_recent_seqno(theEntry.seqno, update.seqno))
       {
         // I have a more recent sequence number
-        if (not isVarIdInQueue(updateQ, varId))
+        if (not updateQ.contains (varId))
 	  {
-            updateQ.push_back(varId);
+            updateQ.insert (varId);
             theEntry.countUpdate = theEntry.repCnt;
 	  }
         return;
@@ -641,11 +627,11 @@ namespace dcp::vardis {
     theEntry.countUpdate  =  theEntry.repCnt;
     vardis_store.update_value (varId, update.value);
 
-    if (not isVarIdInQueue(updateQ, varId))
+    if (not updateQ.contains (varId))
     {
-        updateQ.push_back(varId);
+        updateQ.insert (varId);
     }
-    removeVarIdFromQueue(reqUpdQ, varId);
+    reqUpdQ.remove (varId);
     
     // maintain statistics
     vardis_store.get_vardis_protocol_statistics_ref().count_process_var_update++;
@@ -669,9 +655,9 @@ namespace dcp::vardis {
     // if variable does not exist in local RTDB, request a VarCreate
     if (not variableExists(varId))
       {
-        if (not isVarIdInQueue(reqCreateQ, varId))
+        if (not reqCreateQ.contains (varId))
 	  {
-            reqCreateQ.push_back(varId);
+            reqCreateQ.insert (varId);
 	  }
         return;
       }
@@ -699,18 +685,18 @@ namespace dcp::vardis {
     // old
     if (more_recent_seqno(theEntry.seqno, seqno))
       {
-        if (not isVarIdInQueue(updateQ, varId))
+        if (not updateQ.contains (varId))
 	  {
-            updateQ.push_back(varId);
+            updateQ.insert (varId);
             theEntry.countUpdate = theEntry.repCnt;
 	  }
         return;
       }
     
     // If my own value is too old, schedule transmission of VarReqUpdate
-    if (not isVarIdInQueue(reqUpdQ, varId))
+    if (not reqUpdQ.contains (varId))
       {
-        reqUpdQ.push_back(varId);
+        reqUpdQ.insert (varId);
       }
 
     // maintain statistics
@@ -736,9 +722,9 @@ namespace dcp::vardis {
     
     if (not variableExists(varId))
       {
-        if (not isVarIdInQueue(reqCreateQ, varId))
+        if (not reqCreateQ.contains (varId))
 	  {
-            reqCreateQ.push_back(varId);
+            reqCreateQ.insert (varId);
 	  }
         return;
       }
@@ -757,9 +743,9 @@ namespace dcp::vardis {
     
     theEntry.countUpdate = theEntry.repCnt;
     
-    if (not isVarIdInQueue(updateQ, varId))
+    if (not updateQ.contains (varId))
       {
-	updateQ.push_back(varId);
+	updateQ.insert (varId);
       }
 
     // maintain statistics
@@ -780,9 +766,9 @@ namespace dcp::vardis {
     
     if (not variableExists(varId))
       {
-        if (not isVarIdInQueue(reqCreateQ, varId))
+        if (not reqCreateQ.contains (varId))
 	  {
-            reqCreateQ.push_back(varId);
+            reqCreateQ.insert (varId);
 	  }
         return;
       }
@@ -796,9 +782,9 @@ namespace dcp::vardis {
 
     theEntry.countCreate = theEntry.repCnt;
     
-    if (not isVarIdInQueue(createQ, varId))
+    if (not createQ.contains (varId))
       {
-	createQ.push_back(varId);
+	createQ.insert (varId);
       }
 
     // maintain statistics
@@ -814,6 +800,8 @@ namespace dcp::vardis {
     const VarValueT&   value  = createReq.value;
     const VarIdT       varId  = spec.varId;    
 
+    BOOST_LOG_SEV(log_tx, trivial::trace) << "Received RTDB-Create request for variable " << spec.varId;
+    
     if (not vardis_store.get_vardis_isactive())
       {
 	return RTDB_Create_Confirm (VARDIS_STATUS_INACTIVE, varId);
@@ -844,6 +832,8 @@ namespace dcp::vardis {
 	return RTDB_Create_Confirm (VARDIS_STATUS_ILLEGAL_REPCOUNT, varId);
       }
 
+    BOOST_LOG_SEV(log_tx, trivial::trace) << "Processing RTDB-Create request for variable " << spec.varId;
+    
     // initialize new database entry and add it
     DBEntry newent;
     newent.varId         =  spec.varId;
@@ -862,16 +852,16 @@ namespace dcp::vardis {
     active_variables.insert (spec.varId);
 
     // clean out varId from all queues, just to be safe
-    removeVarIdFromQueue(createQ, spec.varId);
-    removeVarIdFromQueue(updateQ, spec.varId);
-    removeVarIdFromQueue(summaryQ, spec.varId);
-    removeVarIdFromQueue(deleteQ, spec.varId);
-    removeVarIdFromQueue(reqUpdQ, spec.varId);
-    removeVarIdFromQueue(reqCreateQ, spec.varId);
+    createQ.remove (spec.varId);
+    updateQ.remove (spec.varId);
+    summaryQ.remove (spec.varId);
+    deleteQ.remove (spec.varId);
+    reqUpdQ.remove (spec.varId);
+    reqCreateQ.remove ( spec.varId);
 
     // add new variable to relevant queues
-    createQ.push_back(spec.varId);
-    summaryQ.push_back(spec.varId);
+    createQ.insert (spec.varId);
+    summaryQ.insert (spec.varId);
 
     // Maintain statistics
     vardis_store.get_vardis_protocol_statistics_ref().count_handle_rtdb_create++;
@@ -887,6 +877,8 @@ namespace dcp::vardis {
     const VarIdT  varId  = updateReq.varId;
     const VarLenT varLen = updateReq.value.length;
 
+    BOOST_LOG_SEV(log_tx, trivial::trace) << "Received RTDB-Update request for variable " << varId;
+    
     // perform various checks
 
     if (not vardis_store.get_vardis_isactive())
@@ -921,6 +913,8 @@ namespace dcp::vardis {
       return RTDB_Update_Confirm (VARDIS_STATUS_EMPTY_VALUE, varId);
     }
 
+    BOOST_LOG_SEV(log_tx, trivial::trace) << "Handling RTDB-Update request for variable " << varId;
+    
     // update the DB entry
     theEntry.seqno        = (theEntry.seqno.val + 1) % (VarSeqnoT::modulus());
     theEntry.countUpdate  = theEntry.repCnt;
@@ -928,9 +922,9 @@ namespace dcp::vardis {
     vardis_store.update_value (varId, updateReq.value);
 
     // add varId to updateQ if necessary
-    if (not isVarIdInQueue(updateQ, varId))
+    if (not updateQ.contains (varId))
     {
-        updateQ.push_back(varId);
+        updateQ.insert (varId);
     }
 
     // Maintain statistics
@@ -945,6 +939,8 @@ namespace dcp::vardis {
   {
     VarIdT varId = deleteReq.varId;
 
+    BOOST_LOG_SEV(log_tx, trivial::trace) << "Received RTDB-Delete request for variable " << varId;
+    
     // perform some checks
 
     if (not vardis_store.get_vardis_isactive())
@@ -968,16 +964,21 @@ namespace dcp::vardis {
     {
       return RTDB_Delete_Confirm (VARDIS_STATUS_VARIABLE_BEING_DELETED, varId);
     }
+
+    BOOST_LOG_SEV(log_tx, trivial::trace) << "Handling RTDB-Delete request for variable " << varId;
     
     // add varId to deleteQ, remove it from any other queue
     // assert(not isVarIdInQueue(deleteQ, varId));
-    deleteQ.push_back(varId);
-    removeVarIdFromQueue(createQ, varId);
-    removeVarIdFromQueue(summaryQ, varId);
-    removeVarIdFromQueue(updateQ, varId);
-    removeVarIdFromQueue(reqUpdQ, varId);
-    removeVarIdFromQueue(reqCreateQ, varId);
 
+    createQ.remove (varId);
+    deleteQ.remove (varId);
+    summaryQ.remove (varId);
+    updateQ.remove (varId);
+    reqUpdQ.remove (varId);
+    reqCreateQ.remove (varId);
+
+    deleteQ.insert(varId);
+    
     // update variable status
     theEntry.toBeDeleted = true;
     theEntry.countDelete = theEntry.repCnt;
@@ -997,6 +998,8 @@ namespace dcp::vardis {
   {
     VarIdT varId = readReq.varId;
 
+    BOOST_LOG_SEV(log_tx, trivial::trace) << "Received RTDB-Read request for variable " << varId;
+    
     // perform some checks
 
     if (not vardis_store.get_vardis_isactive())
@@ -1015,6 +1018,8 @@ namespace dcp::vardis {
     {
       return RTDB_Read_Confirm (VARDIS_STATUS_VARIABLE_BEING_DELETED, varId);
     }
+
+    BOOST_LOG_SEV(log_tx, trivial::trace) << "Handling RTDB-Delete request for variable " << varId;
 
     VarValueT the_value = vardis_store.read_value (varId);
     RTDB_Read_Confirm conf (VARDIS_STATUS_OK, varId, the_value.length, the_value.data);

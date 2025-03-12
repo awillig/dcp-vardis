@@ -52,6 +52,41 @@
 namespace dcp::vardis {
 
 
+  class VarIdQueue {
+  protected:
+    std::set<VarIdT>    members;
+  public:
+    std::deque<VarIdT>  queue;
+
+    inline bool empty () const { return members.empty (); };
+    inline size_t size () const { return members.size (); };
+    inline bool contains (VarIdT varId) const { return members.contains (varId); };
+    inline void remove (VarIdT varId)
+    {
+      if (contains (varId))
+	{
+	  members.erase (varId);
+	  auto rems = std::remove (queue.begin(), queue.end(), varId);
+	  queue.erase (rems, queue.end());
+	}
+    };
+    inline void insert (VarIdT varId)
+    {
+      if (not contains (varId))
+	{
+	  members.insert (varId);
+	  queue.push_back (varId);
+	}
+    };
+    inline VarIdT front () const { return queue.front(); };
+    inline void pop_front ()
+    {
+      remove (front ());
+    };
+  };
+
+  
+
   /**
    * @brief This class contains all the core Vardis protocol data and
    *        implements all the key protocol processing actions
@@ -107,12 +142,12 @@ namespace dcp::vardis {
     /**
      * @brief The Vardis queues
      */
-    std::deque<VarIdT>    createQ;     /*!< Queue for VarCreateT instruction records to send */
-    std::deque<VarIdT>    deleteQ;     /*!< Queue for VarDeleteT instruction records to send */
-    std::deque<VarIdT>    updateQ;     /*!< Queue for VarUpdateT instruction records to send */
-    std::deque<VarIdT>    summaryQ;    /*!< Queue for VarSummT instruction records to send */
-    std::deque<VarIdT>    reqUpdQ;     /*!< Queue for VarReqUpdateT instruction records to send */
-    std::deque<VarIdT>    reqCreateQ;  /*!< Queue for VarReqCreateT instruction records to send */
+    VarIdQueue    createQ;     /*!< Queue for VarCreateT instruction records to send */
+    VarIdQueue    deleteQ;     /*!< Queue for VarDeleteT instruction records to send */
+    VarIdQueue    updateQ;     /*!< Queue for VarUpdateT instruction records to send */
+    VarIdQueue    summaryQ;    /*!< Queue for VarSummT instruction records to send */
+    VarIdQueue    reqUpdQ;     /*!< Queue for VarReqUpdateT instruction records to send */
+    VarIdQueue    reqCreateQ;  /*!< Queue for VarReqCreateT instruction records to send */
 
         
     // ====================================================================================
@@ -348,21 +383,21 @@ namespace dcp::vardis {
     /**
      * @brief Checks whether an entry for the given varId is in the given queue
      */
-    inline bool isVarIdInQueue(const std::deque<VarIdT>& q, VarIdT varId)
-    {
-      return (std::find(q.begin(), q.end(), varId) != q.end());
-    };
+    //inline bool isVarIdInQueue(const std::deque<VarIdT>& q, VarIdT varId)
+    // {
+    //  return (std::find(q.begin(), q.end(), varId) != q.end());
+    //};
 
   protected:
 
     /**
      * @brief Removes all entries for given varId from the given queue
      */
-    inline void removeVarIdFromQueue(std::deque<VarIdT>& q, VarIdT varId)
-    {
-      auto rems = std::remove(q.begin(), q.end(), varId);
-      q.erase(rems, q.end());
-    };
+    //inline void removeVarIdFromQueue(std::deque<VarIdT>& q, VarIdT varId)
+    //{
+    //  auto rems = std::remove(q.begin(), q.end(), varId);
+    //  q.erase(rems, q.end());
+    //};
 
 
     /**
@@ -370,43 +405,43 @@ namespace dcp::vardis {
      *        either no entry exists in the RTDB or the entry is to be
      *        deleted
      */
-    inline void dropNonexistingDeleted(std::deque<VarIdT>& q)
-    {
-      auto rems = std::remove_if(q.begin(),
-				 q.end(),
-				 [&](VarIdT varId){ return (    (not vardis_store.identifier_is_allocated (varId))
-								|| (vardis_store.get_db_entry_ref(varId).toBeDeleted));}
-				 );
-      q.erase(rems, q.end());
-    };
+    //inline void dropNonexistingDeleted(std::deque<VarIdT>& q)
+    //{
+    //  auto rems = std::remove_if(q.begin(),
+    //				 q.end(),
+    //				 [&](VarIdT varId){ return (    (not vardis_store.identifier_is_allocated (varId))
+    //								|| (vardis_store.get_db_entry_ref(varId).toBeDeleted));}
+    //				 );
+    //q.erase(rems, q.end());
+    //};
 
     /**
      * @brief Removes all varId's from the given queue for which no
      *        entry exists in the RTDB
      */
-    inline void dropNonexisting(std::deque<VarIdT>& q)
-    {
-      auto rems = std::remove_if(q.begin(),
-				 q.end(),
-				 [&](VarIdT varId){ return (not vardis_store.identifier_is_allocated (varId));}
-				 );
-      q.erase(rems, q.end());
-    }
+    //inline void dropNonexisting(std::deque<VarIdT>& q)
+    //{
+    //  auto rems = std::remove_if(q.begin(),
+    //				 q.end(),
+    //				 [&](VarIdT varId){ return (not vardis_store.identifier_is_allocated (varId));}
+    //				 );
+    //q.erase(rems, q.end());
+    //}
 
 
     /**
      * @brief Removes all varId's from the given queue for which an
      *        entry exists in the RTDB and this entry is to be deleted
      */
-    inline void dropDeleted(std::deque<VarIdT>& q)
-    {
-      auto rems = std::remove_if(q.begin(),
-				 q.end(),
-				 [&](VarIdT varId){ return (    (vardis_store.identifier_is_allocated (varId))
-								&& (vardis_store.get_db_entry_ref(varId).toBeDeleted));}
-				 );
-      q.erase(rems, q.end());
-    };
+    //inline void dropDeleted(std::deque<VarIdT>& q)
+    //{
+    //  auto rems = std::remove_if(q.begin(),
+    //				 q.end(),
+    //				 [&](VarIdT varId){ return (    (vardis_store.identifier_is_allocated (varId))
+    //								&& (vardis_store.get_db_entry_ref(varId).toBeDeleted));}
+    //				 );
+    //q.erase(rems, q.end());
+    //};
   };
 
 };  // namespace dcp::vardis
