@@ -145,7 +145,7 @@ void run_query_client_protocols (const std::string cfg_filename)
     {
       if (descr_list.size() > 0)
 	{
-	  cout << "Query client protocols: List of currently registered client protocols:" << endl;
+	  cout << "Query client protocols: " << descr_list.size() << " protocols currently registered:" << endl;
 	  for (auto it = descr_list.begin(); it != descr_list.end(); ++it)
 	    {
 	      cout << "Protocol " << it->protocolName << " (protocolId = " << it->protocolId << "):" << endl
