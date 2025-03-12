@@ -175,7 +175,7 @@ int main (int argc, char* argv [])
     VardisClientRuntime cl_rt (cl_conf);
 
     std::stringstream ssDescr;
-    ssDescr << "vardisapp-testvariable-varId = " << (int) varId.val;
+    ssDescr << "vardis-testvar-" << (int) varId.val;
   
     VarSpecT spec;
     spec.varId   = varId;
