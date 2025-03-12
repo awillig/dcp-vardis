@@ -15,7 +15,7 @@ $bpperiodms    = $ARGV[0]; shift;
 $vdperiodms    = $ARGV[0]; shift;
 
 $bpcommandsocketfile     = "/tmp/dcp-bp-command-socket";
-$bpcommandsockettimeout  = 400;
+$bpcommandsockettimeout  = 500;
 
 $console_logging = 0;
 
