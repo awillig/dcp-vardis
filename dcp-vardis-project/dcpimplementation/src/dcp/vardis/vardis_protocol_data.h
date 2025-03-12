@@ -52,15 +52,45 @@
 namespace dcp::vardis {
 
 
+  /**
+   * @brief Support class for a Vardis queue, with entries of type VarIdT
+   *
+   * This class maintains both a deque and a set -- the set is
+   * maintained to make queries of membership of a VarId in a queue
+   * more efficient
+   */
   class VarIdQueue {
   protected:
-    std::set<VarIdT>    members;
+    std::set<VarIdT>    members;    /*!< Set recording the varId's in this queue */
   public:
-    std::deque<VarIdT>  queue;
+    std::deque<VarIdT>  queue;      /*!< The actual queue -- public so that client code can iterate */
 
+
+    /**
+     * @brief Returns whether or not the VarIdQueue is empty
+     */
     inline bool empty () const { return members.empty (); };
+
+
+    /**
+     * @brief Returns the number of varId's in the VarIDQueue
+     */
     inline size_t size () const { return members.size (); };
+
+
+    /**
+     * @brief Checks whether given varId is in the VarIdQueue
+     *
+     * @param varId: variable identifier
+     */
     inline bool contains (VarIdT varId) const { return members.contains (varId); };
+
+
+    /**
+     * @brief Removes given varId from the VarIdQueue
+     *
+     * @param varId: variable identifier
+     */
     inline void remove (VarIdT varId)
     {
       if (contains (varId))
@@ -70,6 +100,14 @@ namespace dcp::vardis {
 	  queue.erase (rems, queue.end());
 	}
     };
+
+
+    /**
+     * @brief Adds new varId to the VarIdQueue, if not already
+     *        included, no changes otherwise
+     *
+     * @param varId: variable identifier
+     */
     inline void insert (VarIdT varId)
     {
       if (not contains (varId))
@@ -78,7 +116,25 @@ namespace dcp::vardis {
 	  queue.push_back (varId);
 	}
     };
-    inline VarIdT front () const { return queue.front(); };
+
+
+    /**
+     * @brief Returns the varId at the front of the queue
+     *
+     * Throws if VarIdQueue is empty
+     */
+    inline VarIdT front () const
+    {
+      if (empty ()) throw std::invalid_argument ("VarIdQueue::front: empty queue");
+      return queue.front();
+    };
+
+
+    /**
+     * @brief Removes the front element of the queue.
+     *
+     * Throws if VarIdQueue is empty
+     */
     inline void pop_front ()
     {
       remove (front ());
@@ -378,70 +434,7 @@ namespace dcp::vardis {
       DBEntry& theEntry = vardis_store.get_db_entry_ref (varId);
       return theEntry.prodId == ownNodeIdentifier;
     };
-
-
-    /**
-     * @brief Checks whether an entry for the given varId is in the given queue
-     */
-    //inline bool isVarIdInQueue(const std::deque<VarIdT>& q, VarIdT varId)
-    // {
-    //  return (std::find(q.begin(), q.end(), varId) != q.end());
-    //};
-
-  protected:
-
-    /**
-     * @brief Removes all entries for given varId from the given queue
-     */
-    //inline void removeVarIdFromQueue(std::deque<VarIdT>& q, VarIdT varId)
-    //{
-    //  auto rems = std::remove(q.begin(), q.end(), varId);
-    //  q.erase(rems, q.end());
-    //};
-
-
-    /**
-     * @brief Removes all varId's from the given queue for which
-     *        either no entry exists in the RTDB or the entry is to be
-     *        deleted
-     */
-    //inline void dropNonexistingDeleted(std::deque<VarIdT>& q)
-    //{
-    //  auto rems = std::remove_if(q.begin(),
-    //				 q.end(),
-    //				 [&](VarIdT varId){ return (    (not vardis_store.identifier_is_allocated (varId))
-    //								|| (vardis_store.get_db_entry_ref(varId).toBeDeleted));}
-    //				 );
-    //q.erase(rems, q.end());
-    //};
-
-    /**
-     * @brief Removes all varId's from the given queue for which no
-     *        entry exists in the RTDB
-     */
-    //inline void dropNonexisting(std::deque<VarIdT>& q)
-    //{
-    //  auto rems = std::remove_if(q.begin(),
-    //				 q.end(),
-    //				 [&](VarIdT varId){ return (not vardis_store.identifier_is_allocated (varId));}
-    //				 );
-    //q.erase(rems, q.end());
-    //}
-
-
-    /**
-     * @brief Removes all varId's from the given queue for which an
-     *        entry exists in the RTDB and this entry is to be deleted
-     */
-    //inline void dropDeleted(std::deque<VarIdT>& q)
-    //{
-    //  auto rems = std::remove_if(q.begin(),
-    //				 q.end(),
-    //				 [&](VarIdT varId){ return (    (vardis_store.identifier_is_allocated (varId))
-    //								&& (vardis_store.get_db_entry_ref(varId).toBeDeleted));}
-    //				 );
-    //q.erase(rems, q.end());
-    //};
+    
   };
 
 };  // namespace dcp::vardis
