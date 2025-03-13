@@ -223,7 +223,7 @@ namespace dcp {
     for (uint64_t i=0; i < pConf->numberVariableDescriptions; i++)
       {
 	byte descbuffer [sizeof(DescribeDatabaseVariableDescription)];
-	int nread = cl_sock.read_response (descbuffer, sizeof(DescribeDatabaseVariableDescription));
+	int nread = cl_sock.read_whole_response (descbuffer, sizeof(DescribeDatabaseVariableDescription));
 
 	if ((size_t) nread < sizeof(DescribeDatabaseVariableDescription))
 	  cl_sock.abort (std::format ("describe_database: response for single entry has insufficient size {}", nread));
@@ -256,7 +256,7 @@ namespace dcp {
     VardisDescribeVariable_Confirm* pConf = (VardisDescribeVariable_Confirm*) conf_buffer;
     var_descr = pConf->var_description;
 
-    int nread = cl_sock.read_response (buffer, var_descr.value_length.val);
+    int nread = cl_sock.read_whole_response (buffer, var_descr.value_length.val);
     
     if ((size_t) nread < var_descr.value_length.val)
       cl_sock.abort (std::format ("describe_variable: response for variable value has insufficient size {}", nread));
