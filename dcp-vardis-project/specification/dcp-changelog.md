@@ -8,6 +8,10 @@ such as language issues, typos or minor errors are not reported.
 
 ## Changes for Version 1.3
 
+### Changes in `dcp-datatypes.md`
+
+- Renamed some operations on queues, removed some unused ones
+
 ### Changes in `dcp-srp.md`
 
 - Now queueing mode `BP_QMODE_ONCE` is used for SRP, to help
@@ -16,8 +20,10 @@ such as language issues, typos or minor errors are not reported.
 
 ### Changes in `dcp-vardis.md`
 
-- Changed typo in pseudo-code for service `RTDB-Update` (replaced
-  `updateQ.contains` by `updateQ.qExists`)
+- Renamed queue operations (e.g. `qExists` is now replaced by `contains`).
+- Removed discussion of and calls to operations `qDropDeleted`,
+  `qDropNonexistingDeleted` and `qDropNonexisting`, as these are not
+  needed anymore (and are potentially expensive operations)
   
 
 ## Changes for Version 1.2

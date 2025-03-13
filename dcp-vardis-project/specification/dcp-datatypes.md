@@ -118,18 +118,14 @@ generally supports the following operations:
   queue.
 - `qAppend()` takes a value of the element type `T` as a parameter and
   appends it to the end of the queue.
-- `qRemove()` takes a value of element type `T` as a parameter and
+- `remove()` takes a value of element type `T` as a parameter and
   removes all elements with the same value from the queue.
-- `qIsEmpty()` returns a value of type `Bool`  telling whether or not
+- `empty()` returns a value of type `Bool`  telling whether or not
   the queue is empty. It does not take any parameters and does not
   modify the queue.
-- `qExists()` takes a value of element type `T` as parameter and
+- `contains()` takes a value of element type `T` as parameter and
   returns `true` if the queue contains an entry with value equal to
   the parameter, and `false` otherwise.
-- `qLength()` takes no parameters and returns the number of elements
-  currently stored in the queue.
-- `qClear()` takes no parameters and drops all entries from the queue,
-  so that it is empty after this operation.
 
 The `List` data type generally supports the following operations:
 

@@ -220,7 +220,7 @@ the following parameters:
   types](#subsubsec-beaconing-protocol-data-types)).
 - `name` is set to "SRP -- State Reporting Protocol Vx.y" where
   'x' and 'y' refer to the present version of SRP. Currently, the
-  version number is "V1.2".
+  version number is "V1.3".
 - `maxPayloadSize` is set to
   `ssizeof(ExtendedSafetyDataT)`. Implementations may opt to add an
   additional safety margin.

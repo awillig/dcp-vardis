@@ -6,7 +6,7 @@
 
 ### Current Version
 
-- Version 1.2, February 18, 2025
+- Version 1.3, March 13, 2025
 
 
 ### Policy on Versioning
@@ -25,6 +25,8 @@ Data Types](#subsubsec-beaconing-protocol-data-types).
 
 ## Document Version History
 
+- Version 1.3 (March 13, 2025): revised and published version protocol
+  version 1.3
 - Version 1.2 (February 18, 2025): revised and published version of
   protocol version 1.2
 - Version 1.1 (October 15, 2024): revised and published version of

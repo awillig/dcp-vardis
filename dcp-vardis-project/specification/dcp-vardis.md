@@ -438,26 +438,8 @@ To manipulate and specify the contents of the instruction containers
 in future beacons, for each container type (see Section [Instruction
 Containers](#vardis-definitions-instruction-containers)), the VarDis
 instance maintains a number of variables of type `Queue<VarIdT>` (see
-Section [Queues and Lists](#sec-queues-lists)). In addition to the
-standard operations on queues, in VarDis we make use of the following
-additional operations:
+Section [Queues and Lists](#sec-queues-lists)).
 
-- `qDropNonexistingDeleted()` drops all `VarIdT` values from the given
-  queue for which either `RTDB.lookup()` indicates that the
-  corresponding variable does not exist in the real-time database, or
-  the database entry for the variable (of type `DBEntry`) has the
-  `toBeDeleted` flag set to `true`.
-- `qDropNonexisting()` drops all `VarIdT` values from the given queue
-  for which `RTDB.lookup()` indicates that the corresponding variable
-  does not exist in the real-time database.
-- `qDropDeleted()` drops all `VarIdT` values from the given queue
-  for which `RTDB.lookup()` indicates that the corresponding variable
-  exist in the real-time database but has its `toBeDeleted` flag set
-  to `true`.
-- `qAdjoin()` checks whether the variable identifier given as
-  parameter is already contained in the queue -- if so, the queue
-  remains unchanged. If not, the variable identifier is appended to
-  the queue.
 
 A VarDis entity maintains the following queues at runtime, all of type
 `Queue<VarIdT>`:
@@ -609,12 +591,12 @@ steps:
 		   newent.countDelete  =  0
 		   newent.toBeDeleted  =  False
 
-8.     createQ.qRemove (spec.varId)
-9.     deleteQ.qRemove (spec.varId)
-10.    updateQ.qRemove (spec.varId)
-11.	   summaryQ.qRemove (spec.varId)
-12.	   reqUpdQ.qRemove (spec.varId)
-13.	   reqCreateQ.qRemove (spec.varId)
+8.     createQ.remove (spec.varId)
+9.     deleteQ.remove (spec.varId)
+10.    updateQ.remove (spec.varId)
+11.	   summaryQ.remove (spec.varId)
+12.	   reqUpdQ.remove (spec.varId)
+13.	   reqCreateQ.remove (spec.varId)
 
 14.    RTDB.update(newent)
 15.    createQ.qAppend (spec.varId)
@@ -671,11 +653,11 @@ steps:
 5.     If (ent.toBeDeleted == true) then
            stop processing, return status code VARDIS-STATUS-VARIABLE-BEING-DELETED
 6.     deleteQ.qAppend(varId)
-7.     createQ.qRemove(varId)
-8.     summaryQ.qRemove(varId)
-9.     updateQ.qRemove(varId)
-10.    reqUpdQ.qRemove(varId)
-11.    reqCreateQ.qRemove(varId)
+7.     createQ.remove(varId)
+8.     summaryQ.remove(varId)
+9.     updateQ.remove(varId)
+10.    reqUpdQ.remove(varId)
+11.    reqCreateQ.remove(varId)
 12.    ent.toBeDeleted   =  True
 13.    ent.countDelete   =  ent.spec.repCnt
 14.    ent.countCreate   =  0
@@ -734,7 +716,7 @@ steps:
 		   ent.countUpdate  = ent.spec.repCnt
 		   ent.tStamp       = current system time
 10.    RTDB.update(ent)
-11.    if (not updateQ.qExists (varId))
+11.    if (not updateQ.contains (varId))
         updateQ.qAppend(varId)
 12.    return status code VARDIS-STATUS-OK
 ~~~
@@ -908,33 +890,33 @@ with the `icNumRecords` field being zero will be treated as an error
 by the receive path. Insertion is considered in the following order
 and under the following conditions:
 
-- First step: When `createQ.qIsEmpty()` indicates a non-empty queue,
+- First step: When `createQ.empty()` indicates a non-empty queue,
   then generate an `ICTYPE-CREATE-VARIABLES` instruction container with
   as many distinct `VarCreateT` instruction records as are available
   and may fit into the VarDis payload.
-- Second step: When `deleteQ.qIsEmpty()` indicates a non-empty queue
+- Second step: When `deleteQ.empty()` indicates a non-empty queue
   and there is sufficient space left in the VarDis payload, then
   generate an `ICTYPE-DELETE-VARIABLES` instruction container with as
   many distinct `VarDeleteT` instruction records as are available and
   may fit into the remaining VarDis payload.
-- Third step: When `reqCreateQ.qIsEmpty()` indicates a non-empty queue
+- Third step: When `reqCreateQ.empty()` indicates a non-empty queue
   and there is sufficient space left in the VarDis payload, then
   generate an `ICTYPE-REQUEST-VARCREATES` instruction container with as
   many distinct `VarRecCreateT` instruction records as are available
   and may fit into the remaining VarDis payload.
-- Fourth step: When `summaryQ.qIsEmpty()` indicates a non-empty queue,
+- Fourth step: When `summaryQ.empty()` indicates a non-empty queue,
   `VARDISPAR_MAX_SUMMARIE` is larger than zero and there is sufficient
   space left in the VarDis payload, then generate an
   `ICTYPE-SUMMARIES` instruction container with as many distinct
   `VarSummT` instruction records as are needed and may fit into the
   remaining VarDis payload, but not exceeding the value of the
   `VARDISPAR_MAX_SUMMARIES` parameter.
-- Fifth step: When `updateQ.qIsEmpty()` indicates a non-empty queue
+- Fifth step: When `updateQ.empty()` indicates a non-empty queue
   and there is sufficient space left in the VarDis payload, then
   generate an `ICTYPE-UPDATES` instruction container with as many
   distinct `VarUpdateT` instruction records as are available and may
   fit into the remaining VarDis payload.
-- Sixth step: When `reqUpdQ.qIsEmpty()` indicates a non-empty queue
+- Sixth step: When `reqUpdQ.empty()` indicates a non-empty queue
   and there is sufficient space left in the VarDis payload, then
   generate an `ICTYPE-REQUEST-VARUPDATES` instruction container with
   as many distinct `VarReqUpdateT` instruction records pairs as are
@@ -975,24 +957,23 @@ The process of composing the `ICTYPE-SUMMARIES` instruction container
 includes the following steps:
 
 ~~~
-1.     summaryQ.qDropNonexistingDeleted()
-2.     If (    (summaryQ.qIsEmpty()) 
+1.     If (    (summaryQ.empty()) 
             || (no space to add ICHeaderT and one VarSummT)
 			|| (VARDISPAR_MAX_SUMMARIES == 0)) then
            stop processing, return empty ICTYPE-SUMMARIES container
-3.     Let numRecordsToAdd0 = numberFittingRecords(summaryQ,VarSummT)
+2.     Let numRecordsToAdd0 = numberFittingRecords(summaryQ,VarSummT)
            numRecordsToAdd  = min(numRecordsToAdd0, VARDISPAR_MAX_SUMMARIES)
            ieHdr : ICHeaderT
-4.     ieHdr.icType        = ICTYPE-SUMMARIES
+3.     ieHdr.icType        = ICTYPE-SUMMARIES
        ieHdr.icNumRecords  = numRecordsToAdd
-5.     Add ieHdr to ICTYPE-SUMMARIES container
-6.     for (i=0 ; i<numRecordsToAdd ; i++)
+4.     Add ieHdr to ICTYPE-SUMMARIES container
+5.     for (i=0 ; i<numRecordsToAdd ; i++)
            Let nextVarId = summaryQ.qPeek()
 		       nextVar   = RTDB.lookup (nextVarId)
 		   summaryQ.qTake()
 		   summaryQ.qAppend(nextVarId)
 		   Add VarSummT using (nextVarId, nextVar.seqno) to ICTYPE-SUMMARIES container
-7.     return the ICTYPE-SUMMARIES container
+6.     return the ICTYPE-SUMMARIES container
 ~~~
 
 
@@ -1016,16 +997,15 @@ The process of composing the `ICTYPE-CREATE-VARIABLES` instruction
 container includes the following steps:
 
 ~~~
-1.     createQ.qDropNonexistingDeleted()
-2.     If (    (createQ.qIsEmpty())
+1.     If (    (createQ.empty())
             || (no space to add ICHeaderT and VarCreateT for createQ.qPeek())) then
            stop processing, return empty ICTYPE-CREATE-VARIABLES container
-3.     Let numRecordsToAdd = numberFittingRecords(createQ, VarCreateT)
+2.     Let numRecordsToAdd = numberFittingRecords(createQ, VarCreateT)
            ieHdr : ICHeaderT
-4.     ieHdr.icType        = ICTYPE-CREATE-VARIABLES
+3.     ieHdr.icType        = ICTYPE-CREATE-VARIABLES
        ieHdr.icNumRecords  = numRecordsToAdd
-5.     Add ieHdr to ICTYPE-CREATE-VARIABLES container
-6.     for (i=0 ; i<numRecordsToAdd ; i++)
+4.     Add ieHdr to ICTYPE-CREATE-VARIABLES container
+5.     for (i=0 ; i<numRecordsToAdd ; i++)
            Let nextVarId = createQ.qPeek()
 		       nextVar   = RTDB.lookup(nextVarId)
 		   createQ.qTake()
@@ -1034,7 +1014,7 @@ container includes the following steps:
 		   Add VarCreateT using (nextVar.spec, nextVar.value) to ICTYPE-CREATE-VARIABLES
            if (nextVar.countCreate > 0)
 		      createQ.qAppend(nextVarId)
-7.     Return the constructed ICTYPE-CREATE-VARIABLES container
+6.     Return the constructed ICTYPE-CREATE-VARIABLES container
 ~~~
 
 
@@ -1067,16 +1047,15 @@ The process of composing the `ICTYPE-DELETE-VARIABLES` instruction
 container includes the following steps:
 
 ~~~
-1.     deleteQ.qDropNonexisting()
-2.     If (    (deleteQ.qIsEmpty())
+1.     If (    (deleteQ.empty())
             || (no space to add ICHeaderT and VarDeleteT for deleteQ.qPeek())) then
            stop processing, return empty ICTYPE-DELETE-VARIABLES container
-3.     Let numRecordsToAdd = numberFittingRecords(deleteQ, VarDeleteT)
+2.     Let numRecordsToAdd = numberFittingRecords(deleteQ, VarDeleteT)
            ieHdr : ICHeaderT
-4.     ieHdr.icType        = ICTYPE-DELETE-VARIABLES
+3.     ieHdr.icType        = ICTYPE-DELETE-VARIABLES
        ieHdr.icNumRecords  = numRecordsToAdd
-5.     Add ieHdr to ICTYPE-DELETE-VARIABLES container
-6.     for (i=0 ; i<numRecordsToAdd ; i++)
+4.     Add ieHdr to ICTYPE-DELETE-VARIABLES container
+5.     for (i=0 ; i<numRecordsToAdd ; i++)
            Let nextVarId = deleteQ.qPeek()
 		       nextVar   = RTDB.lookup(nextVarId)
 		   deleteQ.qTake()
@@ -1087,7 +1066,7 @@ container includes the following steps:
 		      deleteQ.qAppend(nextVarId)
 		   else
 		      RTDB.remove(nextVarId)
-7.     Return the constructed ICTYPE-DELETE-VARIABLES container
+6.     Return the constructed ICTYPE-DELETE-VARIABLES container
 ~~~
 
 The preceding procedure adds an `ICHeaderT` and `VarIdT` records to the
@@ -1109,21 +1088,20 @@ The process of composing the `ICTYPE-REQUEST-VARUPDATES` instruction
 container includes the following steps:
 
 ~~~
-1.     reqUpdQ.qDropNonexistingDeleted()
-2.     If (    (reqUpdQ.qIsEmpty())
+1.     If (    (reqUpdQ.empty())
             || (no space to add ICHeaderT and VarReqUpdateT for reqUpdQ.qPeek())) then
            stop processing, return empty ICTYPE-REQUEST-VARUPDATES container
-3.     Let numRecordsToAdd = numberFittingRecords(reqUpdQ, VarSummT)
+2.     Let numRecordsToAdd = numberFittingRecords(reqUpdQ, VarSummT)
            ieHdr : ICHeaderT
-4.     ieHdr.icType        = ICTYPE-REQUEST-VARUPDATES
+3.     ieHdr.icType        = ICTYPE-REQUEST-VARUPDATES
        ieHdr.icNumRecords  = numRecordsToAdd
-5.     Add ieHdr to ICTYPE-REQUEST-VARUPDATES container
-6.     for (i=0 ; i<numRecordsToAdd ; i++)
+4.     Add ieHdr to ICTYPE-REQUEST-VARUPDATES container
+5.     for (i=0 ; i<numRecordsToAdd ; i++)
            Let nextVarId = reqUpdQ.qPeek()
 		       nextVar   = RTDB.lookup(nextVarId)
 		   reqUpdQ.qTake()
 		   Add VarSummT using (nextVarId, nextVar.seqno) to ICTYPE-REQUEST-VARUPDATES
-7.     Return the constructed ICTYPE-REQUEST-VARUPDATES container
+6.     Return the constructed ICTYPE-REQUEST-VARUPDATES container
 ~~~
 
 The preceding procedure adds an `ICHeaderT` and `VarIdT` records to the
@@ -1144,7 +1122,6 @@ substitutions:
   - Replace `reqUpdQ` by `reqCreateQ`
   - Replace `ICTYPE-REQUEST-VARUPDATES` by `ICTYPE-REQUEST-VARCREATES`
   - Replace `VarSummT` by `VarIdT`
-  - Replace `qDropNonexistingDeleted` by `qDropDeleted`
 
 
 ## Initialization, Runtime and Shutdown {#vardis-init-runtime-shutdown}
@@ -1191,7 +1168,7 @@ the following parameters:
 - `protId` is set to `BP_PROTID_VARDIS`.
 - `name` is set to "VarDis -- Variable Dissemination Protocol Vx.y"
   where 'x' and 'y' refer to the present version of VarDis. Currently,
-  the version number is "V1.2".
+  the version number is "V1.3".
 - `maxPayloadSize` is set to the value of the
   `VARDISPAR_MAX_PAYLOAD_SIZE` configuration parameter.
 - `queueingMode` is set to `BP_QMODE_QUEUE_DROPHEAD`.
@@ -1436,12 +1413,12 @@ the following steps:
 		   newent.countDelete  =  0
 		   newent.toBeDeleted  =  False
 
-6.     createQ.qRemove (spec.varId)
-7.     deleteQ.qRemove (spec.varId)
-8.     updateQ.qRemove (spec.varId)
-9.	   summaryQ.qRemove (spec.varId)
-10.	   reqUpdQ.qRemove (spec.varId)
-11.	   reqCreateQ.qRemove (spec.varId)
+6.     createQ.remove (spec.varId)
+7.     deleteQ.remove (spec.varId)
+8.     updateQ.remove (spec.varId)
+9.	   summaryQ.remove (spec.varId)
+10.	   reqUpdQ.remove (spec.varId)
+11.	   reqCreateQ.remove (spec.varId)
 
 
 12.    RTDB.update(newent)
@@ -1471,12 +1448,12 @@ VarDis instance performs the following steps:
 7.     ent.countCreate = 0
 8.     ent.countDelete = ent.spec.repCnt
 9.     RTDB.update(ent)
-10.    updateQ.qRemove(varId)
-11.    createQ.qRemove(varId)
-12.    reqUpdQ.qRemove(varId)
-13.    reqCreateQ.qRemove(varId)
-14.    summaryQ.qRemove(varId)
-15.    deleteQ.qRemove(varId)
+10.    updateQ.remove(varId)
+11.    createQ.remove(varId)
+12.    reqUpdQ.remove(varId)
+13.    reqCreateQ.remove(varId)
+14.    summaryQ.remove(varId)
+15.    deleteQ.remove(varId)
 16.    deleteQ.qAppend(varId)
 ~~~
 
@@ -1494,7 +1471,7 @@ steps:
 ~~~
 1.     Let varId = upd.varId
 2.     If (RTDB.lookup(varId) == false) then
-           If (reqCreateQ.qExists(varId) == false) then
+           If (reqCreateQ.contains(varId) == false) then
                reqCreateQ.qAppend(varId)
 		   stop processing
 3.     Let ent = RTDB.lookup(varId)
@@ -1508,7 +1485,7 @@ steps:
 7.     If (upd.seqno == ent.seqno) then
            stop processing
 8.     If (upd.seqno is strictly older than ent.seqno) then
-           if (updateQ.qExists(varId) == false) then
+           if (updateQ.contains(varId) == false) then
 		       updateQ.qAppend(varId)
 			   ent.countUpdate = ent.spec.repCnt
 			   RTDB.update(ent)
@@ -1518,9 +1495,9 @@ steps:
 11.    ent.tStamp        =  current system time
 12.    ent.countUpdate   =  ent.spec.repCnt
 13.    RTDB.update(ent)
-14.    if (updateQ.qExists(varId) == false) then
+14.    if (updateQ.contains(varId) == false) then
            updateQ.qAppend(varId)
-15.    reqUpdQ.qRemove(varId)
+15.    reqUpdQ.remove(varId)
 ~~~
 
 
@@ -1535,7 +1512,7 @@ of `VarSummT` instruction records. For each included `VarSummT` record
 1.     Let varId      = summ.varId
            rcvdseqno  = summ.seqno
 2.     If (RTDB.lookup(varId) == false) then
-           If (reqCreateQ.qExists(varId) == false) then
+           If (reqCreateQ.contains(varId) == false) then
                reqCreateQ.qAppend(varId)
 		   stop processing
 3.     Let ent = RTDB.lookup(varId)
@@ -1546,12 +1523,12 @@ of `VarSummT` instruction records. For each included `VarSummT` record
 6.     If (rcvdseqno == ent.seqno) then
            stop processing
 7.     If (rcvdseqno is strictly older than ent.seqno) then
-           if (updateQ.qExists(varId) == false) then
+           if (updateQ.contains(varId) == false) then
 		       updateQ.qAppend(varId)
 			   ent.countUpdate = ent.spec.repCnt
 			   RTDB.update(ent)
 	       stop processing
-8.     If (reqUpdQ.qExists(varId) == false) then
+8.     If (reqUpdQ.contains(varId) == false) then
            reqUpdQ.qAppend(varId)
 ~~~
 
@@ -1568,7 +1545,7 @@ receiving VarDis instance performs the following steps:
 
 ~~~
 1.     If (RTDB.lookup(varId) == false) then
-           If (reqCreateQ.qExists(varId) == false) then
+           If (reqCreateQ.contains(varId) == false) then
                reqCreateQ.qAppend(varId)
            stop processing
 2.     Let ent = RTDB.lookup(varId)
@@ -1578,7 +1555,7 @@ receiving VarDis instance performs the following steps:
            stop processing
 5.     ent.countUpdate  =  ent.spec.repCnt
 6.     RTDB.update(ent)
-7.     If (updateQ.qExists(varId) == false) then
+7.     If (updateQ.contains(varId) == false) then
            updateQ.qAppend(varId)
 ~~~
 
@@ -1595,7 +1572,7 @@ following steps:
 
 ~~~
 1.     If (RTDB.lookup(varId) == false) then
-           If (reqCreateQ.qExists(varId) == false) then
+           If (reqCreateQ.contains(varId) == false) then
                reqCreateQ.qAppend(varId)
            stop processing
 2.     Let ent = RTDB.lookup(varId)
@@ -1603,7 +1580,7 @@ following steps:
            stop processing
 4.     ent.countCreate  =  ent.spec.repCnt
 5.     RTDB.update(ent)
-6.     If (createQ.qExists(varId) == false) then
+6.     If (createQ.contains(varId) == false) then
            createQ.qAppend(varId)
 ~~~
 
