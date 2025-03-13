@@ -279,31 +279,17 @@ namespace dcp {
 
 
     /**
-     * @brief Reads response data from the socket and stores them in the given buffer
+     * @brief Reads all available data from the socket until EOF and
+     *        places it in given buffer
      *
-     * @param buffer: The buffer to store the data into
-     * @param buffer_len: Size of the buffer
+     * @param buffer: points to the buffer into which to store data
+     * @param buffer_len: maximum amount of data that can be stored in that buffer
+     * @param max_attempts: maximum number of attempts to read data from socket
+     *        (a failed attempt corresponds to a read operation that times out)
      *
-     * @return the number of bytes read from the command socket (server response)
-     */
-    int read_response (byte* buffer, size_t buffer_len)
-    {
-      if (the_sock < 0)
-	{
-	  throw SocketException ("read_response: invalid socket");
-	  return -1;
-	}
-      
-      int nbytes = read (the_sock, buffer, buffer_len);
-      if (nbytes < 0) abort ("read_response: socket has no data");
-      return nbytes;
-    };
-
-
-    /**
-     * @brief Reads all data from the socket until EOF
-     *
-     *
+     * Throws when the socket does not exist, when an error in a
+     * system call occurs or when the provided buffer is not large
+     * enough
      */
     int read_whole_response (byte* buffer, size_t buffer_len, int max_attempts = 5)
     {
