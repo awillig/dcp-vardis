@@ -160,7 +160,7 @@ namespace dcp::bp {
     bpHdr.deserialize (area);
     if (not bpHdr.isWellFormed (runtime.ownNodeIdentifier))
       {
-	BOOST_LOG_SEV(log_rx, trivial::info) << "process_received_payload: malformed BPHeaderT, no further processing. Header is " << bpHdr;
+	BOOST_LOG_SEV(log_rx, trivial::trace) << "process_received_payload: malformed BPHeaderT, no further processing. Header is " << bpHdr;
 	return;
       }
 
