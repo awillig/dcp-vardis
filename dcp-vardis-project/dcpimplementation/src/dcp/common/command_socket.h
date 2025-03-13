@@ -301,6 +301,57 @@ namespace dcp {
 
 
     /**
+     * @brief Reads all data from the socket until EOF
+     *
+     *
+     */
+    int read_whole_response (byte* buffer, size_t buffer_len, int max_attempts = 5)
+    {
+      if (the_sock < 0)
+	{
+	  throw SocketException ("read_whole_response: invalid socket");
+	  return -1;
+	}
+      
+      size_t bytes_read = 0;
+      int    attempts   = 0;
+
+      while (true)
+	{
+	  fd_set set;
+	  struct timeval timeout;
+	  FD_ZERO (&set);
+	  FD_SET (the_sock, &set);
+	  timeout.tv_sec   = 0;
+	  timeout.tv_usec  = 500000;
+
+	  attempts++;
+	  
+	  int rv = select (the_sock + 1, &set, NULL, NULL, &timeout);
+	  if (rv == -1)
+	    throw SocketException ("read_whole_response: select() returns error");
+
+	  if ((rv == 0) and (attempts >= max_attempts))
+	    throw SocketException ("read_whole_response: exhausted all attempts to read from socket");
+
+	  int nrcvd = read (the_sock, (void*) (buffer + bytes_read), buffer_len - bytes_read);
+
+	  if (nrcvd < 0) throw SocketException (std::format("read_whole_response: read() returns error code {}", strerror (errno)));
+
+	  if (nrcvd == 0)
+	    {
+	      return bytes_read;
+	    }
+
+	  bytes_read += nrcvd;
+
+	  if (bytes_read >= buffer_len)
+	    throw SocketException ("read_whole_response: buffer provided is too small");
+	}
+    };
+    
+
+    /**
      * @brief Convenience method for the client to send a request to
      *        the server and receive a response
      *
@@ -321,7 +372,7 @@ namespace dcp {
 	abort ("sendRequestAndReadResponseBlock: cannot send request");
       
       // await and check response
-      return read_response (buffer, buffer_len);
+      return read_whole_response (buffer, buffer_len);
     }
 
 
