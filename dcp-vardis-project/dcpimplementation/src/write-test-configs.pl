@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 
-if (($#ARGV+1) ne 5)
+if (($#ARGV+1) ne 6)
 {
-    print "Five parameters expected: ifname outputfilename stnidshort bpperiodms vdperiodms.\nExiting.\n";
+    print "Six parameters expected: ifname outputfilename stnidshort bpperiodms vdperiodms severity.\nExiting.\n";
     exit;
 }
 
@@ -13,6 +13,7 @@ $srpaverage    = $ARGV[0]; shift;
 $srpaverage    = 1000 * $srpaverage;
 $bpperiodms    = $ARGV[0]; shift;
 $vdperiodms    = $ARGV[0]; shift;
+$severity      = $ARGV[0]; shift;
 
 $bpcommandsocketfile     = "/tmp/dcp-bp-command-socket";
 $bpcommandsockettimeout  = 500;
@@ -37,7 +38,7 @@ my $bpcfg = <<END;
 [logging]
 loggingToConsole     =  $console_logging 
 filenamePrefix       =  log-dcp-bp
-severityLevel        =  trace
+severityLevel        =  $severity
 
 [BPCommandSocket]
 commandSocketFile       =  $bpcommandsocketfile
@@ -75,7 +76,7 @@ areaName  =   shm-area-bpclient-vardis
 [logging]
 loggingToConsole     =  $console_logging
 filenamePrefix       =  log-dcp-vardis
-severityLevel        =  trace
+severityLevel        =  $severity
 
 [Vardis]
 maxValueLength                 =   64
@@ -114,7 +115,7 @@ areaName  =   shm-area-bpclient-srp
 [logging]
 loggingToConsole     =  $console_logging
 filenamePrefix       =  log-dcp-srp
-severityLevel        =  trace
+severityLevel        =  $severity
 
 [SRPStoreShm]
 areaName  =   shm-area-srp-store
