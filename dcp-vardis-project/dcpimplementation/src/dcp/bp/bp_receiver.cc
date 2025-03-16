@@ -222,10 +222,11 @@ namespace dcp::bp {
     BOOST_LOG_SEV(log_rx, trivial::info) << "Starting receiver thread.";
 
     SnifferConfiguration sniff_config;
-    Sniffer*  pSniffer = nullptr;
-    double    bcnSizeAlpha = runtime.bp_config.bp_conf.beaconSizeEWMAAlpha;
-    double    ibTimeAlpha  = runtime.bp_config.bp_conf.interBeaconTimeEWMAAlpha;
-
+    Sniffer*   pSniffer = nullptr;
+    double     bcnSizeAlpha = runtime.bp_config.bp_conf.beaconSizeEWMAAlpha;
+    double     ibTimeAlpha  = runtime.bp_config.bp_conf.interBeaconTimeEWMAAlpha;
+    TimeStampT last_beacon_reception_time;
+    
     try {
       sniff_config.set_promisc_mode (true);
       sniff_config.set_snap_len (runtime.bp_config.bp_conf.mtuSize + 256);
@@ -265,7 +266,7 @@ namespace dcp::bp {
 		ByteVectorDisassemblyArea area ("bp-rx", payload);
 
 		TimeStampT current_time = TimeStampT::get_current_system_time();
-		auto ib_time = current_time.milliseconds_passed_since(runtime.last_beacon_reception_time);
+		auto ib_time = current_time.milliseconds_passed_since(last_beacon_reception_time);
 
 		// update beacon size statistics
 		if (runtime.cntBPPayloads == 0)
@@ -291,7 +292,7 @@ namespace dcp::bp {
 		      + (1 - ibTimeAlpha) * ((double) ib_time);
 		  }
 		
-		runtime.last_beacon_reception_time = TimeStampT::get_current_system_time();
+		last_beacon_reception_time = TimeStampT::get_current_system_time();
 		runtime.cntBPPayloads++;
 
 		BOOST_LOG_SEV(log_rx, trivial::trace) << "process_received_payload: avg inter beacon time (ms) = " << runtime.avg_inter_beacon_reception_time
