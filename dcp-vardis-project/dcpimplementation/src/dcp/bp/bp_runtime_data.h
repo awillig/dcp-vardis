@@ -120,12 +120,6 @@ namespace dcp::bp {
 
 
     /**
-     * @brief Timestamp of previous beacon reception
-     */
-    TimeStampT last_beacon_reception_time;
-    
-    
-    /**
      * @brief Estimation of average inter-beacon reception time (in ms)
      */
     double avg_inter_beacon_reception_time = 0;
