@@ -151,7 +151,7 @@ namespace dcp {
      * @brief Returns the oldest element in the ring buffer without
      *        removing it.
      */
-    ElemT peek () const {
+    inline ElemT peek () const {
       if (isEmpty()) throw RingBufferException ("peek(): trying to peek from empty ring buffer");
       return the_ring[out];
     };
@@ -160,7 +160,7 @@ namespace dcp {
     /**
      * @brief Pushes/adds new element / buffer into ring buffer.
      */
-    void push(const ElemT& buf) {
+    inline void push(const ElemT& buf) {
       if (isFull()) throw RingBufferException ("push(): trying to push onto full ring buffer");
       the_ring[in] = buf;
       in = (in + 1) % maxRingBufferElements;
@@ -171,7 +171,7 @@ namespace dcp {
     /**
      * @brief Re-sets the ring buffer into an empty state
      */
-    void reset ()
+    inline void reset ()
     {
       in   = 0;
       out  = 0;
