@@ -42,8 +42,6 @@
 
 namespace dcp {
 
-  const int A_NULL     = -1;    /*!< Index corresponding to a null pointer */
-
   /**
    * @brief Balanced binary search tree over an array
    *
@@ -65,6 +63,8 @@ namespace dcp {
     /*********************************************************************
      * Types and data members
      ********************************************************************/
+
+    const int A_NULL     = -1;    /*!< Index corresponding to a null pointer */
     
     /**
      * @brief Type containing tree management data
