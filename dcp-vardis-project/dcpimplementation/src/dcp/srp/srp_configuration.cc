@@ -36,8 +36,6 @@ namespace dcp::srp {
       // SRP parameters
       (opt("generationPeriodMS").c_str(),   po::value<uint16_t>(&srpGenerationPeriodMS)->default_value(defaultValueSrpGenerationPeriodMS), txt("generation period for SRP payloads (in ms)").c_str())
 
-      (opt("receptionPeriodMS").c_str(),   po::value<uint16_t>(&srpReceptionPeriodMS)->default_value(defaultValueSrpReceptionPeriodMS), txt("reception period for retrieving SRP payloads (in ms)").c_str())
-
       (opt("scrubbingPeriodMS").c_str(),   po::value<uint16_t>(&srpScrubbingPeriodMS)->default_value(defaultValueSrpScrubbingPeriodMS), txt("scrubbing period for the neighbour table (in ms)").c_str())
 
       (opt("keepaliveTimeoutMS").c_str(),   po::value<uint16_t>(&srpKeepaliveTimeoutMS)->default_value(defaultValueSrpKeepaliveTimeoutMS), txt("timeout for generating own payloads (in ms)").c_str())
@@ -55,7 +53,6 @@ namespace dcp::srp {
      * checks for SRP options
      **********************************/
     if (srpGenerationPeriodMS <= 0) throw ConfigurationException("generation period (in ms) must be strictly positive");
-    if (srpReceptionPeriodMS <= 0) throw ConfigurationException("reception period (in ms) must be strictly positive");
     if (srpScrubbingPeriodMS <= 0) throw ConfigurationException("scrubbing period (in ms) must be strictly positive");
     if (srpKeepaliveTimeoutMS <= 0) throw ConfigurationException("keepalive timeout (in ms) must be strictly positive");
     if (srpScrubbingTimeoutMS <= 0) throw ConfigurationException("scrubbing timeout (in ms) must be strictly positive");
@@ -78,7 +75,6 @@ namespace dcp::srp {
        << " , shmAreaNameNeighbourStore = " << cfg.shm_conf.shmAreaName
       
        << " , generationPeriodMS = " << cfg.srp_conf.srpGenerationPeriodMS
-       << " , receptionPeriodMS = " << cfg.srp_conf.srpReceptionPeriodMS
        << " , scrubbingPeriodMS = " << cfg.srp_conf.srpScrubbingPeriodMS
        << " , keepaliveTimeoutMS = " << cfg.srp_conf.srpKeepaliveTimeoutMS
        << " , scrubbingTimeoutMS = " << cfg.srp_conf.srpScrubbingTimeoutMS
