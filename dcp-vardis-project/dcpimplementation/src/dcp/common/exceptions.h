@@ -37,12 +37,9 @@
 
 #define DCP_EXCEPTION(name_) \
   class name_ : public DcpException { \
-  private: \
-  std::string _ename = #name_; \
   public: \
-  name_ (const std::string& message) : DcpException (std::format("{}", message)) {}; \
-  name_ (const std::string& modname, const std::string& message) : DcpException (std::format("[{}]{}", modname ,message)) {}; \
-  std::string ename () const { return _ename; }; \
+  name_ (std::string message) : DcpException (#name_, std::string(), message) {}; \
+  name_ (std::string modname, std::string message) : DcpException (#name_, modname, message) {}; \
   };
 
 
@@ -50,10 +47,20 @@ namespace dcp {
 
   class DcpException : public std::exception {
   private:
+    std::string ename_;
+    std::string modname_;
     std::string message_;
   public:
-    DcpException (const std::string& message) : message_(message) {};
+    DcpException (std::string exname,
+		  std::string modname,
+		  std::string& message)
+      : ename_ (exname),
+	modname_ (modname),
+	message_ (message)
+    {};
     const char* what() const throw() { return message_.c_str(); };
+    const char* ename() const throw() { return ename_.c_str(); };
+    const char* modname() const throw() { return modname_.c_str(); };
   };
 
   DCP_EXCEPTION(RingBufferException)
