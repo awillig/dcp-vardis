@@ -33,7 +33,9 @@ namespace dcp {
 
   void SharedMemoryConfigurationBlock::validate ()
   {
-    if (shmAreaName.empty()) throw ConfigurationException("no shared memory name given");
+    if (shmAreaName.empty())
+      throw ConfigurationException("SharedMemoryConfigurationBlock",
+				   "no shared memory name given");
   }
   
 };  // namespace dcp
