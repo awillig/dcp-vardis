@@ -86,6 +86,12 @@ namespace dcp {
    * @brief Timeout value for command sockets in ms
    */
   const uint16_t    defaultValueCommandSocketTimeoutMS   = 500;
+
+
+  /**
+   * @brief Maximum size of a beacon payload in bytes
+   */
+  const size_t maxBeaconPayloadSize  = 1500;
   
 
   /****************************************************************
