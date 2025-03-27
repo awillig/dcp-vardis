@@ -23,7 +23,6 @@
 
 #include <exception>
 #include <format>
-#include <iostream>
 
 /**
  * @brief This module defines various types of exceptions used in the
