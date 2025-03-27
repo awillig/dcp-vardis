@@ -20,12 +20,10 @@
 
 #include <chrono>
 #include <thread>
-#include <dcp/common/shared_mem_area.h>
 #include <dcp/vardis/vardis_client_protocol_data.h>
 #include <dcp/vardis/vardis_logging.h>
 #include <dcp/vardis/vardis_management_rtdb.h>
 #include <dcp/vardis/vardis_protocol_data.h>
-
 
 namespace dcp::vardis {
 
@@ -34,49 +32,60 @@ namespace dcp::vardis {
   template <typename RT, typename CT>
   void handle_request_queue (
 			     VardisRuntimeData& runtime,
-			     RingBufferNormal& requestQueue,
-			     RingBufferNormal& confirmQueue,
-			     byte* buffer_seg_ptr,
-			     CT (*handler) (VardisRuntimeData&, const RT&)
+			     PayloadQueue& requestQueue,
+			     ConfirmQueue& confirmQueue,
+			     CT (*caller_handler) (VardisRuntimeData&, const RT&)
 			     )
   {
-    while (not requestQueue.isEmpty())
+    bool timed_out;
+
+    std::function <void (byte*, size_t)> req_handler = [&] (byte* memaddr, size_t len)
+    {
+      BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace)
+	<< "handle_request_queue: got buffer from request queue "
+	<< requestQueue.get_queue_name ()
+	<< " and confirm queue " << confirmQueue.get_queue_name ();
+      
+      MemoryChunkDisassemblyArea disass_area ("vd-hrq-dass", len, memaddr);
+      
+      RT theRequest;
+      theRequest.deserialize (disass_area);
+      
+      BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace)
+	<< "handle_request_queue: got request "
+	<< theRequest;
+      
+      CT theConfirm = caller_handler (runtime, theRequest);
+      bool conf_timed_out;
+      bool conf_is_full;
+      PushHandler conf_handler = [&] (byte* conf_memaddr, size_t)
       {
-	SharedMemBuffer buff = requestQueue.pop ();
-
-	BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace) << "handle_request_queue: got buffer " << buff
-						     << " from request ringbuffer " << requestQueue.get_name()
-						     << " and confirm ringbuffer " << confirmQueue.get_name()
-	  ;
-	
-	byte* data_ptr       = buffer_seg_ptr + buff.data_offs ();
-	MemoryChunkDisassemblyArea disass_area ("vd-hrq-dass", buff.used_length(), data_ptr);
-
-	RT theRequest;
-	theRequest.deserialize (disass_area);
-
-	BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace) << "handle_request_queue: got request " << theRequest;
-	
-	CT theConfirm = handler (runtime, theRequest);
-
-	BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace) << "handle_request_queue: status code after processing = "
-						     << vardis_status_to_string (theConfirm.status_code);
-	
-	buff.clear();
-
-	if (confirmQueue.isFull())
-	  {
-	    BOOST_LOG_SEV(log_mgmt_rtdb, trivial::fatal) << "handle_request_queue: confirm queue is full, exiting.";
-	    runtime.vardis_exitFlag = true;
-	    return;
-	  }
-
-	MemoryChunkAssemblyArea ass_area ("vd-hrq-ass", buff.max_length (), data_ptr);
+	MemoryChunkAssemblyArea ass_area ("vd-hrq-ass", sizeof(CT), conf_memaddr);
 	theConfirm.serialize (ass_area);
-	buff.set_used_length (ass_area.used());
-	
-	confirmQueue.push (buff);
-      }
+	return ass_area.used();
+      };
+      
+      BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace)
+	<< "handle_request_queue: status code after processing = "
+	<< vardis_status_to_string (theConfirm.status_code);
+      
+      confirmQueue.push_nowait (conf_handler, conf_timed_out, conf_is_full);
+      
+      if (conf_timed_out or conf_is_full)
+	{
+	  BOOST_LOG_SEV(log_mgmt_rtdb, trivial::fatal) << "handle_request_queue: cannot place confirm in queue. Exiting.";
+	  runtime.vardis_exitFlag = true;
+	  return;
+	}
+    };
+
+    requestQueue.popall_nowait (req_handler, timed_out);
+    if (timed_out)
+      {
+	BOOST_LOG_SEV(log_mgmt_rtdb, trivial::fatal) << "handle_request_queue: shared memory timeout while processing request queue. Exiting.";
+	runtime.vardis_exitFlag = true;
+	return;
+      }    
   }
 
   // ----------------------------------------------------------------------------
@@ -86,79 +95,50 @@ namespace dcp::vardis {
     if (not runtime.protocol_data.vardis_store.get_vardis_isactive()) return;
     if (runtime.vardis_exitFlag) return;
 
-    if ((clientProt.sharedMemoryAreaPtr == nullptr) || (clientProt.controlSegmentPtr == nullptr))
+    VardisShmControlSegment& CS = *(clientProt.pSCS);
+
+    // --------------------
+    
+    {
+      ScopedVariableStoreMutex pd_mtx (runtime);
+      auto handler = [] (VardisRuntimeData& runtime, const RTDB_Create_Request& cr_req)
       {
-	BOOST_LOG_SEV(log_mgmt_rtdb, trivial::fatal)
-	  << "handle_client_shared_memory: handling memory area " << clientProt.clientName
-	  << ": no valid shared memory area segment";
-	runtime.vardis_exitFlag = true;
-	return;
-      }
-
-    VardisShmControlSegment& CS = *(clientProt.controlSegmentPtr);
-    byte* buffer_seg_ptr        = (byte*) clientProt.sharedMemoryAreaPtr->getBufferSegmentPtr();
-
-
-    // --------------------
-    
-    {
-      ScopedShmControlSegmentLock lock (CS);
-      ScopedVariableStoreMutex pd_mtx (runtime);
-      if (not CS.rbCreateRequest.isEmpty())
-	{
-	  auto handler = [] (VardisRuntimeData& runtime, const RTDB_Create_Request& cr_req)
-                                  {
-				    return runtime.protocol_data.handle_rtdb_create_request (cr_req);
-				  };
-	  handle_request_queue<RTDB_Create_Request, RTDB_Create_Confirm> (runtime,
-									  CS.rbCreateRequest,
-									  CS.rbCreateConfirm,
-									  buffer_seg_ptr,
-									  handler);
-	}
+	return runtime.protocol_data.handle_rtdb_create_request (cr_req);
+      };
+      handle_request_queue<RTDB_Create_Request, RTDB_Create_Confirm> (runtime,
+								      CS.pqCreateRequest,
+								      CS.pqCreateConfirm,
+								      handler);
     }
 
     // --------------------
     
     {
-      ScopedShmControlSegmentLock lock (CS);
       ScopedVariableStoreMutex pd_mtx (runtime);
-      if (not CS.rbDeleteRequest.isEmpty())
-	{
-	  auto handler = [] (VardisRuntimeData& runtime, const RTDB_Delete_Request& del_req)
-                                  {
-				    return runtime.protocol_data.handle_rtdb_delete_request (del_req);
-				  };
-	  handle_request_queue<RTDB_Delete_Request, RTDB_Delete_Confirm> (runtime,
-									  CS.rbDeleteRequest,
-									  CS.rbDeleteConfirm,
-									  buffer_seg_ptr,
-									  handler);
-
-	}
+      auto handler = [] (VardisRuntimeData& runtime, const RTDB_Delete_Request& del_req)
+      {
+	return runtime.protocol_data.handle_rtdb_delete_request (del_req);
+      };
+      handle_request_queue<RTDB_Delete_Request, RTDB_Delete_Confirm> (runtime,
+								      CS.pqDeleteRequest,
+								      CS.pqDeleteConfirm,
+								      handler);
     }
 
     // --------------------
 
     {
-      ScopedShmControlSegmentLock lock (CS);
       ScopedVariableStoreMutex pd_mtx (runtime);
-      if (not CS.rbUpdateRequest.isEmpty())
-	{
-	  auto handler = [] (VardisRuntimeData& runtime, const RTDB_Update_Request& upd_req)
-                                  {
-				    return runtime.protocol_data.handle_rtdb_update_request (upd_req);
-				  };
-	  handle_request_queue<RTDB_Update_Request, RTDB_Update_Confirm> (runtime,
-									  CS.rbUpdateRequest,
-									  CS.rbUpdateConfirm,
-									  buffer_seg_ptr,
-									  handler);
-
-	}
+      auto handler = [] (VardisRuntimeData& runtime, const RTDB_Update_Request& upd_req)
+      {
+	return runtime.protocol_data.handle_rtdb_update_request (upd_req);
+      };
+      handle_request_queue<RTDB_Update_Request, RTDB_Update_Confirm> (runtime,
+								      CS.pqUpdateRequest,
+								      CS.pqUpdateConfirm,
+								      handler);
     }
 
-    // --------------------
   }
   
   // ----------------------------------------------------------------------------
@@ -175,9 +155,9 @@ namespace dcp::vardis {
 	{
 	  ScopedClientApplicationsMutex ca_mtx (runtime);
 
-	  for (auto it = runtime.clientApplications.begin(); it != runtime.clientApplications.end(); ++it)
+	  for (auto& clapp : runtime.clientApplications)
 	    {
-	      handle_client_shared_memory (runtime, it->second);
+	      handle_client_shared_memory (runtime, clapp.second);
 	    }
 	}
       }
