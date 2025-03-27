@@ -25,11 +25,11 @@
 #include <format>
 #include <type_traits>
 #include <dcp/common/exceptions.h>
-#include <dcp/common/ring_buffer.h>
+#include <dcp/common/fixedmem_ring_buffer.h>
 #include <dcp/vardis/vardis_store_interface.h>
 
 
-using dcp::RingBufferBase;
+using dcp::FixedMemRingBuffer;
 
 
 /**
@@ -235,7 +235,7 @@ namespace dcp::vardis {
       /**
        * @brief Free list for buffers
        */
-      RingBufferBase<FreeListEntry, get_number_buffers()+1>  freeList;
+      FixedMemRingBuffer<FreeListEntry, get_number_buffers()+1>  freeList;
 
 
       /**
