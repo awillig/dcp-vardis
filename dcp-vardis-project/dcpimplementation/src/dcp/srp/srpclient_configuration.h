@@ -21,7 +21,7 @@
 #pragma once
 
 #include <dcp/common/configuration.h>
-#include <dcp/common/shared_mem_area.h>
+#include <dcp/common/sharedmem_configuration.h>
 #include <dcp/srp/srp_constants.h>
 
 
