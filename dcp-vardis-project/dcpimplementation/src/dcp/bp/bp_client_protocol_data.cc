@@ -30,7 +30,9 @@ namespace dcp::bp {
   {
     pSSB = std::make_shared<ShmStructureBase> (area_name, sizeof(BPShmControlSegment), true);
     pSCS = (BPShmControlSegment*) pSSB->get_memory_address ();
-    if (!pSCS) throw ShmException ("BPClientProtocolData: cannot allocate BPShmControlSegment");
+    if (!pSCS)
+      throw ShmException ("BPClientProtocolData",
+			  "cannot allocate BPShmControlSegment");
     
     new (pSCS) BPShmControlSegment (static_info, gen_pld_confirms);
   }
