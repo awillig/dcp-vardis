@@ -439,7 +439,7 @@ namespace dcp {
     /**
      * @brief Getter for buffer pointer
      */
-    byte* getBufferPtr () const { return buffer; };
+    byte* get_buffer_ptr () const { return buffer; };
 
 
     /**
