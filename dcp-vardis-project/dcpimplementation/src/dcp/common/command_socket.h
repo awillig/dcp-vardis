@@ -246,7 +246,7 @@ namespace dcp {
     {
       the_sock = cmdsock.open_client ();
       if (the_sock < 0)
-	throw ManagementException ("ScopedClientSocket: invalid socket");
+	throw ManagementException ("ScopedClientSocket", "invalid socket");
     };
 
 
@@ -334,7 +334,7 @@ namespace dcp {
       if (the_sock >= 0)
 	close (the_sock);
       the_sock = -1;
-      throw SocketException (std::format ("ScopedClientSocket::abort: {}", msg));
+      throw SocketException ("ScopedClientSocket::abort", msg);
     };
     
   };
