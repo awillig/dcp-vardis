@@ -25,19 +25,16 @@
 #include <memory>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/common/memblock.h>
-#include <dcp/common/shared_mem_area.h>
+//#include <dcp/common/shared_mem_area.h>
 #include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcp/bp/bp_shm_control_segment.h>
 
 using std::ostream;
-using dcp::ShmBufferPool;
 
 
 namespace dcp::bp {
 
-
-  typedef MemBlock BPBufferEntry;
 
 
   /**
@@ -49,21 +46,25 @@ namespace dcp::bp {
    * client. Each client protocol has its separate shared memory
    * segment.
    */
-  typedef struct BPClientProtocolData {
+  class BPClientProtocolData {
 
+  public:
+    
     /**************************************************************
      * Main entries required for core BP operation
      *************************************************************/
-    
-    BPProtocolIdT     protocolId;       /*!< Protocol identifier of client protocol */
-    std::string       protocolName;     /*!< Textual name of client protocol */
-    BPLengthT         maxPayloadSize;   /*!< Maximum payload size for this client protocol */
-    BPQueueingMode    queueingMode;     /*!< Queueing mode for this client protocol */
-    uint16_t          maxEntries;       /*!< Maximum number of queue entries for one of the BP_QMODE_QUEUE_* queueing modes */
 
-    TimeStampT   timeStampRegistration;           /*!< Time at which protocol was registered */
-    bool         bufferOccupied = false;          /*!< Buffer occupancy flag for BP_QMODE_ONCE and BP_QMODE_REPEAT */
-    bool         allowMultiplePayloads = false;   /*!< Can multiple payloads for this client protocol go into one beacon */
+    /**
+     * @brief Contains static information about a BP client protocol
+     *        (e.g. name, queueing mode etc).
+     */
+    BPStaticClientInfo static_info;
+
+
+    /**
+     * @brief Time stamp for registration
+     */
+    TimeStampT   timeStampRegistration;
 
 
     /**************************************************************
@@ -74,16 +75,16 @@ namespace dcp::bp {
     /**
      * @brief Pointer to shared memory area descriptor data structure
      */
-    std::shared_ptr<ShmBufferPool>   sharedMemoryAreaPtr;
+    std::shared_ptr<ShmStructureBase>    pSSB;
 
 
     /**
-     * @brief Points to the start of the shared memory control segment
-     *        in BP demon address space
-     *
-     * Initialized during successful protocol registration
+     * @brief Pointer to the memory address of shared memory
+     *        area. Valid after successful registration of client
+     *        protocol
      */
-    BPShmControlSegment* controlSegmentPtr = nullptr;
+    BPShmControlSegment*                 pSCS = nullptr;
+
     
     
     /**************************************************************
@@ -101,7 +102,15 @@ namespace dcp::bp {
     unsigned int cntReceivedPayloads         = 0;
     unsigned int cntDroppedOutgoingPayloads  = 0;
     unsigned int cntDroppedIncomingPayloads  = 0;
-    
-  } BPClientProtocolData;
+
+
+    BPClientProtocolData () {};
+
+    BPClientProtocolData (const char* area_name, BPStaticClientInfo static_info, bool gen_pld_confirms);
+
+
+    ~BPClientProtocolData ();
+
+  };
   
 };  // namespace dcp::bp
