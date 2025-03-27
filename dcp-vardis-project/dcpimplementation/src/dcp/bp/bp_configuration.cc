@@ -59,6 +59,7 @@ namespace dcp::bp {
      **********************************/
     if (interfaceName.empty()) throw ConfigurationException ("BP: no interface name given");
     if (mtuSize < minimumRequiredMTUSize) throw ConfigurationException ("BP: MTU size too small");
+    if (mtuSize > maxBeaconPayloadSize) throw ConfigurationException ("BP: MTU size too large");
     if (etherType < 0x0800) throw ConfigurationException ("BP: ether_type must be at least 0x0800");
     try {
       Tins::NetworkInterface iface (interfaceName);
