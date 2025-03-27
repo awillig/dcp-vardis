@@ -194,7 +194,7 @@ namespace dcp::srp {
       memory_start_address             = mem_start_addr;
       
       if (memory_start_address == nullptr)
-	throw SRPStoreException ("initialize_srp_store: Memory start address is null");
+	throw SRPStoreException ("initialize_srp_store", "memory start address is null");
 
       pContents = new (memory_start_address) FixedMemContents;
 
