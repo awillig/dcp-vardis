@@ -368,7 +368,7 @@ namespace dcp {
       length = area.deserialize_byte ();
       if (length > 0)
         {
-	  if (data) throw DisassemblyAreaException ("StringT::deserialize: already contains data");
+	  if (data) throw std::invalid_argument ("StringT::deserialize: already contains data");
 	  data = new byte [length];
 	  area.deserialize_byte_block (length, data);
         }
