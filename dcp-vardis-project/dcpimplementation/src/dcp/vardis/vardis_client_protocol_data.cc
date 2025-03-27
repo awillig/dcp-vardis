@@ -27,7 +27,8 @@ namespace dcp::vardis {
   {
     pSSB = std::make_shared<ShmStructureBase> (area_name, sizeof(VardisShmControlSegment), true);
     pSCS = (VardisShmControlSegment*) pSSB->get_memory_address ();
-    if (!pSCS) throw ShmException ("VardisClientProtocolData: cannot allocate BPShmControlSegment");
+    if (!pSCS)
+      throw ShmException ("VardisClientProtocolData", "cannot allocate BPShmControlSegment");
     new (pSCS) VardisShmControlSegment ();
   }
   
