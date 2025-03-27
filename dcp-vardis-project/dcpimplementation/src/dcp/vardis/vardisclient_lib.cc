@@ -57,28 +57,34 @@ namespace dcp {
 		      
   {
     if (shmSegmentName.empty())
-      throw VardisClientLibException ("Shared memory name is empty");
+      throw VardisClientLibException ("VardisClientRuntime",
+				      "Shared memory name is empty");
 
     if (std::strlen (shmSegmentName.c_str()) > maxShmAreaNameLength-1)
-      throw VardisClientLibException (std::format("Shared memory name {} is too long", shmSegmentName));
+      throw VardisClientLibException ("VardisClientRuntime",
+				      std::format("shared memory name {} is too long", shmSegmentName));
     
     const std::string& cmdsock_name = client_conf.cmdsock_conf.commandSocketFile;
 
     if (cmdsock_name.empty())
-      throw VardisClientLibException ("Command socket name is empty");
+      throw VardisClientLibException ("VardisClientRuntime",
+				      "command socket name is empty");
 
     if (std::strlen(cmdsock_name.c_str()) > CommandSocket::max_command_socket_name_length())
-      throw VardisClientLibException (std::format ("Command socket name {} is too long", cmdsock_name));
+      throw VardisClientLibException ("VardisClientRuntime",
+				      std::format ("command socket name {} is too long", cmdsock_name));
 
     if (do_register)
       {
 	DcpStatus reg_response = register_with_vardis();
 	if (reg_response != VARDIS_STATUS_OK)
-	  throw VardisClientLibException (std::format("Registration with Vardis failed, status code = {}", vardis_status_to_string(reg_response)));
+	  throw VardisClientLibException ("VardisClientRuntime",
+					  std::format("registration with Vardis failed, status code = {}", vardis_status_to_string(reg_response)));
 
 	pSSB = std::make_shared<ShmStructureBase> (client_conf.shm_conf_client.shmAreaName.c_str(), 0, false);
 	pSCS = (VardisShmControlSegment*) pSSB->get_memory_address ();
-	if (!pSCS) throw VardisClientLibException (std::format("Could not attach to shared memory area region {}", client_conf.shm_conf_client.shmAreaName));	
+	if (!pSCS) throw VardisClientLibException ("VardisClientRuntime",
+						   std::format("could not attach to shared memory area region {}", client_conf.shm_conf_client.shmAreaName));	
       }
   }
 
