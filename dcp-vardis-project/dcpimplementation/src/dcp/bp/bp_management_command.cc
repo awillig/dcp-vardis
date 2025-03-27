@@ -21,7 +21,6 @@
 #include <chrono>
 #include <exception>
 #include <functional>
-#include <iostream>
 #include <thread>
 extern "C" {
 #include <sys/socket.h>
