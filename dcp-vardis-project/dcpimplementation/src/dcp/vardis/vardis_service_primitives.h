@@ -24,7 +24,6 @@
 #include <iostream>
 #include <dcp/common/area.h>
 #include <dcp/common/services_status.h>
-#include <dcp/common/shared_mem_area.h>
 #include <dcp/common/transmissible_type.h>
 #include <dcp/vardis/vardis_constants.h>
 #include <dcp/vardis/vardis_protocol_statistics.h>
