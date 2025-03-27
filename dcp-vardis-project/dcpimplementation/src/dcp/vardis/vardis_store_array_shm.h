@@ -122,7 +122,7 @@ namespace dcp::vardis {
       : isServer (isServer)
     {
       if (area_name == nullptr)
-	throw VardisStoreException ("no area name");
+	throw VardisStoreException ("ArrayVariableStoreShm", "no area name");
 
       size_t array_contents_size = ShmArrayType::get_array_contents_size();
       
@@ -135,10 +135,16 @@ namespace dcp::vardis {
 	  }
 	  catch (const std::exception& e)
 	    {
-	      throw VardisStoreException (std::format ("Caught exception '{}' while attempting to create and initialize shared memory object named {}", e.what(), area_name));
+	      throw VardisStoreException ("ArrayVariableStoreShm",
+					  std::format ("caught exception '{}' while attempting to create and initialize shared memory object named {}",
+						       e.what(),
+						       area_name));
 	    }	  
 	  if (region.get_size() != array_contents_size)
-	    throw VardisStoreException (std::format("wrong region size {} where {} is required", region.get_size(), array_contents_size));
+	    throw VardisStoreException ("ArrayVariableStoreShm",
+					std::format("wrong region size {} where {} is required",
+						    region.get_size(),
+						    array_contents_size));
 	  ShmArrayType::initialize_array_store ((byte*) region.get_address(),
 						maxsumm,
 						maxdescrlen,
@@ -154,14 +160,21 @@ namespace dcp::vardis {
 	  }
 	  catch (const std::exception& e)
 	    {
-	      throw VardisStoreException (std::format ("Caught exception '{}' while attempting to attach to shared memory object named {}", e.what(), area_name));
+	      throw VardisStoreException ("ArrayVariableStoreShm",
+					  std::format ("Caught exception '{}' while attempting to attach to shared memory object named {}",
+						       e.what(),
+						       area_name));
 	    }
 	  if (region.get_size() != array_contents_size)
-	    throw VardisStoreException (std::format("wrong region size {} where {} is required", region.get_size(), array_contents_size));
+	    throw VardisStoreException ("ArrayVariableStoreShm",
+					std::format("wrong region size {} where {} is required",
+						    region.get_size(),
+						    array_contents_size));
 
 	  this->pContents = (ShmArrayContents*) region.get_address();
 	  if (this->pContents == nullptr)
-	    throw VardisStoreException ("illegal region pointer");
+	    throw VardisStoreException ("ArrayVariableStoreShm",
+					"illegal region pointer");
 
 	}
     };
