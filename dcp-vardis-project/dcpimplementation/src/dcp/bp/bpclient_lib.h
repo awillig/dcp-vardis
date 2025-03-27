@@ -21,14 +21,14 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <list>
+#include <memory>
 #include <sys/time.h>
 #include <dcp/common/command_socket.h>
 #include <dcp/common/foundation_types.h>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/common/services_status.h>
-#include <dcp/common/shared_mem_area.h>
+#include <dcp/common/sharedmem_structure_base.h>
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcp/bp/bp_service_primitives.h>
 #include <dcp/bp/bp_shm_control_segment.h>
@@ -38,16 +38,20 @@
 
 
 
-using dcp::DcpStatus;
 using dcp::BP_STATUS_OK;
 using dcp::bp_status_to_string;
-using dcp::ShmBufferPool;
+using dcp::DcpStatus;
 using dcp::ShmException;
-using dcp::bp::BPQueueingMode;
+using dcp::ShmStructureBase;
+using dcp::bp::BPDeregisterProtocol_Confirm;
+using dcp::bp::BPDeregisterProtocol_Request;
 using dcp::bp::BPLengthT;
+using dcp::bp::BPQueueingMode;
 using dcp::bp::BPRegisteredProtocolDataDescription;
+using dcp::bp::BPRegisterProtocol_Confirm;
+using dcp::bp::BPRegisterProtocol_Request;
 using dcp::bp::BPShmControlSegment;
-
+using dcp::bp::BPStaticClientInfo;
 
 /**
  * @brief This module collects the data and operations that a BP
@@ -58,6 +62,7 @@ using dcp::bp::BPShmControlSegment;
 
 namespace dcp {
 
+  
   /**
    * @brief Type collecting all runtime data and operations needed by
    *        a BP client protocol
@@ -65,14 +70,10 @@ namespace dcp {
   class BPClientRuntime : public BaseClientRuntime {
   protected:
 
-    BPProtocolIdT   protId;                              /*!< BP protocol identifier of client protocol */
-    std::string     protName;                            /*!< BP Protocol name */
-    std::string     shmAreaName;                         /*!< Name of shared memory area between BP and client protocol */
-    BPLengthT       maxPayloadSize;                      /*!< Maximum payload size of BP client protocol, only valid after call to registration */
-    BPQueueingMode  queueingMode;                        /*!< BP queueing mode for client protocol */
-    uint16_t        maxEntries;                          /*!< Maximum number of entries in BP queue */
-    bool            allowMultiplePayloads;               /*!< Can multiple payloads for this client protocol be included in one beacon */
-    bool            generateTransmitPayloadConfirms;     /*!< Does the client protocol expect confirms for BP-TransmitPayload.request primitives? */
+
+    
+    bp::BPStaticClientInfo  static_client_info;
+    std::string shmAreaName;
     
     /**
      * @brief DCP Node identifier of this node / station.
@@ -82,6 +83,16 @@ namespace dcp {
     NodeIdentifierT ownNodeIdentifier;
 
 
+
+    /**
+     * @brief Indicates whether client protocol expect confirms for
+     *        BP-TransmitPayload.request primitives.
+     *
+     * ISSUE: Generation of confirms is currently not supported!
+     */
+    bool generateTransmitPayloadConfirms;
+
+    
     /**
      * @brief The BPClientConfiguration structure
      */
@@ -89,13 +100,10 @@ namespace dcp {
 
 
     /**
-     * @brief Register BP client protocol with BP (service 'BP-RegisterProtocol')
+     * @brief Register BP client protocol with BP (service
+     *        'BP-RegisterProtocol'), using the stored
+     *        static_client_info for BP-related configuration
      *
-     * @param queueingMode: the BP queueing mode to use for this
-     *        client protocol
-     * @param maxEntries: max entries in the buffering queue
-     * @param allowMultiplePayloads: can BP include multiple payloads
-     *        of this client protocol in the same beacon
      * @param generateTransmitPayloadConfirms: specify whether client
      *        protocol expects BP demon to generate
      *        BP-TransmitPayload.confirm primitives
@@ -103,11 +111,7 @@ namespace dcp {
      * After successful registration, BP can process payloads related
        to this client protocol if it is active.
      */
-    DcpStatus register_with_bp (const BPQueueingMode queueingMode,
-				const uint16_t maxEntries,
-				const bool allowMultiplePayloads,
-				const bool generateTransmitPayloadConfirms
-				);
+    DcpStatus register_with_bp (const bool generateTransmitPayloadConfirms);
 
 
     /**
@@ -120,64 +124,56 @@ namespace dcp {
      */
     DcpStatus deregister_with_bp ();
 
-
+    
     /**
      * @brief Checks protocol and shared memory area names, throws if
      *        invalid
      */
-    void check_names (std::string protName, std::string shmAreaName)
-    {
-      if (protName.empty())
-	throw BPClientLibException ("BPClientRuntime: no protocol name given");
-      
-      if (protName.capacity() > dcp::bp::maximumProtocolNameLength - 1)
-	throw BPClientLibException ("BPClientRuntime: protocol name is too long");
-
-      if (shmAreaName.empty())
-	throw BPClientLibException ("BPClientRuntime: no shared memory area name given");
-
-      if (shmAreaName.capacity() > maxShmAreaNameLength - 1)
-	throw BPClientLibException ("BPClientRuntime: shared memory area name is too long");
-    };
+    void check_names (const char* protName, std::string shmAreaName);
 
 
     /**
+     * @brief Helper function for a BP client protocol to retrieve
+     *        (copy) a received payload from the BP demon. Can be
+     *        waiting/blocking or non-waiting/blocking.
      *
+     * @param result_length: output parameter giving the size of the
+     *        received payload in bytes. If this is zero, then no
+     *        payload has been received.
+     * @param result_buffer: memory address of the buffer into which
+     *        to copy the received payload
+     * @param more_payloads: output parameter indicating whether more
+     *        payloads are waiting
+     * @param waiting: indicates whether we should wait/block until a
+     *        payload arrives or not.
+     * @param exitFlag: if we are waiting to receive a payload, then
+     *        this flag is checked regularly and waiting is aborted if
+     *        it becomes true.
      */
-    template <class RT, class CT>
-    DcpStatus simple_bp_request_confirm_service (const std::string& methname, CT& conf)
-      {
-	ScopedClientSocket cl_sock (commandSock);
-	RT req;
-	req.protocolId = protId;
+    DcpStatus receive_payload_helper (BPLengthT& result_length,
+				      byte* result_buffer,
+				      bool& more_payloads,
+				      bool waiting,
+				      bool& exitFlag);
     
-	byte buffer [command_sock_buffer_size];
-	int nrcvd = cl_sock.sendRequestAndReadResponseBlock<RT> (req, buffer, command_sock_buffer_size);
-    
-	if (nrcvd != sizeof(CT)) cl_sock.abort (methname + ": response has wrong size");
-    
-	CT *pConf = (CT*) buffer;
-	conf = *pConf;
-    
-	if (pConf->s_type != req.s_type)
-	  cl_sock.abort (methname + ": response has wrong service type");
-
-	return pConf->status_code;
-      }
-
-
     
   public:
 
     /**
      * @brief Pointer to the shared memory area descriptor
      *
-     * The shared memory area is constructed in the constructor and
-     * used for payload exchange between client protocol and BP
+     * The shared memory area is constructed in the constructor of
+     * this class and used for payload exchange between client
+     * protocol and BP
      */
-    std::shared_ptr<ShmBufferPool>  bp_shm_area_ptr;
-    
-    
+    std::shared_ptr<ShmStructureBase>  pSSB;
+
+
+    /**
+     * @brief Pointer to the actual shared memory area. Set after
+     *        shared memory area access has been achieved.
+     */
+    BPShmControlSegment*               pSCS = nullptr;
 
     
 
@@ -187,97 +183,38 @@ namespace dcp {
     /**
      * @brief Constructor, which includes registration of a client protocol
      *
-     * @param pid: BP Protocol identifier of client protocol
-     * @param protocol_name: textual name of BP client protocol
-     * @param max_payload_size: maximum size of a payload generated by
-     *        BP client protocol, BP instance checks every payload
-     *        against this size
-     * @param qMode: queueing mode for client protocol
-     * @param max_entries: number of entries in the BP buffer queue
-     *        for this client protocol
-     * @param allow_multiple_payloads: whether or not multiple
-     *        payloads can be included in one beacon for this client
-     *        protocol
+     * @param client_conf: configuration data for BP client protocol
+     * @param static_client_info: contains all the static information about
+     *        a BP client protocol (e.g. protocol name, queueing mode etc)
      * @param gen_pld_conf: specify whether client protocol expects BP
      *        demon to generate BP-TransmitPayload.confirm primitives
-     * @param client_conf: configuration data for BP client protocol
      */
-    BPClientRuntime (const BPProtocolIdT pid,
-		     const std::string protocol_name,
-		     const BPLengthT max_payload_size,
-		     const BPQueueingMode qMode,
-		     const uint16_t max_entries,
-		     const bool allow_multiple_payloads,
-		     const bool gen_pld_conf,
-		     const BPClientConfiguration& client_conf)
-    : BaseClientRuntime (client_conf.bp_cmdsock_conf.commandSocketFile.c_str(), client_conf.bp_cmdsock_conf.commandSocketTimeoutMS)
-    , protId(pid)
-    , protName (protocol_name)
-    , shmAreaName (client_conf.bp_shm_conf.shmAreaName)
-    , maxPayloadSize (max_payload_size)
-    , queueingMode (qMode)
-    , maxEntries (max_entries)
-    , allowMultiplePayloads (allow_multiple_payloads)
-    , generateTransmitPayloadConfirms (gen_pld_conf)
-    , client_configuration (client_conf)
-    {
-      check_names (protName, shmAreaName);
-
-      DcpStatus reg_status = register_with_bp(queueingMode, maxEntries, allowMultiplePayloads, generateTransmitPayloadConfirms);
-      if (reg_status != BP_STATUS_OK)
-	throw BPClientLibException (std::format("BPClientRuntime: registration failed, status code = {}", reg_status));
-    };
+    BPClientRuntime (BPClientConfiguration client_conf, BPStaticClientInfo static_client_info, bool gen_pld_conf);
 
 
     /**
      * @brief Constructor without registration
      *
-     * @param pid: BP Protocol identifier of client protocol
-     * @param protocol_name: textual name of BP client protocol
-     * @param max_payload_size: maximum size of a payload generated by
-     *        BP client protocol, BP instance checks every payload
-     *        against this size
      * @param client_conf: configuration data for BP client protocol
+     *
+     * This is useful when a client protocol or application only needs
+     * the command socket
      */
-    BPClientRuntime (const BPProtocolIdT pid,
-		     const std::string protocol_name,
-		     const BPLengthT max_payload_size,
-		     const BPClientConfiguration& client_conf)
-    : BaseClientRuntime (client_conf.bp_cmdsock_conf.commandSocketFile.c_str(), client_conf.bp_cmdsock_conf.commandSocketTimeoutMS)
-    , protId(pid)
-    , protName (protocol_name)
-    , shmAreaName (client_conf.bp_shm_conf.shmAreaName)
-    , maxPayloadSize (max_payload_size)
-    , client_configuration (client_conf)
-    {
-      check_names (protName, shmAreaName);
-    };
+    BPClientRuntime (const BPClientConfiguration& client_conf);
 
+
+    ~BPClientRuntime ();
     
     
-    ~BPClientRuntime ()
-    {
-      if (_isRegistered)
-	deregister_with_bp();
-    };
-
-
     /********************************************************************************
      * Getters
      *******************************************************************************/
-    
-    /**
-     * @brief Returns own protocol id
-     */
-    inline BPProtocolIdT    get_protocol_id () const { return protId; };
 
-    
     /**
-     * @brief Returns own protocol name
+     * @brief Returns static BP client information
      */
-    inline std::string      get_protocol_name () const { return protName; };
-
-    
+    inline bp::BPStaticClientInfo get_static_client_info () const { return static_client_info; };
+        
     /**
      * @brief Returns name of shared memory area towards BP demon
      */
@@ -288,31 +225,6 @@ namespace dcp {
      * @brief Returns own node identifier
      */
     inline NodeIdentifierT  get_own_node_identifier () const { return ownNodeIdentifier; };
-
-
-    /**
-     * @brief Returns maximum payload size
-     */
-    inline BPLengthT        get_max_payload_size () const { return maxPayloadSize; };
-
-    
-    /**
-     * @brief Returns queueing mode
-     */
-    inline BPQueueingMode   get_queueing_mode () const { return queueingMode; };
-
-
-    /**
-     * @brief Returns number of entries in BP interface queue
-     */
-    inline uint16_t         get_max_entries () const { return maxEntries; };
-
-
-    /**
-     * @brief Returns flag indicating whether multiple payloads for
-     *        this client protocol in one beacon are allowed
-     */
-    inline bool             get_allow_multiple_payloads () const { return allowMultiplePayloads; };
 
 
     /**
@@ -415,15 +327,25 @@ namespace dcp {
      *
      * @return DcpStatus value
      *
+     * This method does not block to wait for an incoming payload when
+     * no payload is available
+     *
      * Throws upon processing errors (e.g. inability to access shared
      * memory area)
      *
      * Note: this method can only be used when the client protocol is
      * registered with BP, otherwise it throws.
      */
-    DcpStatus receive_payload (BPLengthT& result_length, byte* result_buffer, bool& more_payloads);
+    DcpStatus receive_payload_nowait (BPLengthT& result_length, byte* result_buffer, bool& more_payloads);
 
 
+    /**
+     * @brief Like receive_payload_nowait() but blocks caller until a
+     *        payload is available or the exitFlag is true
+     */
+    DcpStatus receive_payload_wait (BPLengthT& result_length, byte* result_buffer, bool& more_payloads, bool& exitFlag);
+
+    
     /**
      * @brief Delete all BP payloads for the client protocol
      *
@@ -448,6 +370,39 @@ namespace dcp {
      */
     DcpStatus query_number_buffered_payloads (unsigned long& num_payloads_buffered);
 
+
+    /*********************************************************************************
+     * End of public interface
+     ********************************************************************************/
+
+    
+  protected:
+    
+    /**
+     * @brief Support method to send a command request over a command
+     *        socket and retrieve a corresponding (fixed-size)
+     *        confirmation primitive
+     */
+    template <class RT, class CT>
+    DcpStatus simple_bp_request_confirm_service (const std::string& methname, CT& conf)
+    {
+      ScopedClientSocket cl_sock (commandSock);
+      RT req;
+      req.protocolId = static_client_info.protocolId;
+      
+      byte buffer [command_sock_buffer_size];
+      int nrcvd = cl_sock.sendRequestAndReadResponseBlock<RT> (req, buffer, command_sock_buffer_size);
+      
+	if (nrcvd != sizeof(CT)) cl_sock.abort (methname + ": response has wrong size");
+	
+	CT *pConf = (CT*) buffer;
+	conf = *pConf;
+	
+	if (pConf->s_type != req.s_type)
+	  cl_sock.abort (methname + ": response has wrong service type");
+	
+	return pConf->status_code;
+    }
     
   };
     
