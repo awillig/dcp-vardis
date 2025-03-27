@@ -18,8 +18,6 @@
  */
 
 
-#include <exception>
-#include <stdexcept>
 #include <dcp/bp/bp_service_primitives.h>
 #include <dcp/bp/bp_queueing_mode.h>
 
@@ -29,12 +27,7 @@ namespace dcp::bp {
   std::ostream& operator<<(std::ostream& os, const BPRegisterProtocol_Request& req)
   {
     os << "BPRegisterProtocol_Request{s_type = " << bp_service_type_to_string(req.s_type)
-       << ", protocolId=" << req.protocolId
-       << ", name=" << req.name
-       << ", maxPayloadSize=" << req.maxPayloadSize
-       << ", queueingMode=" << bp_queueing_mode_to_string(req.queueingMode)
-       << ", maxEntries=" << req.maxEntries
-       << ", allowMultiplePayloads=" << req.allowMultiplePayloads
+       << ", static_client_info=" << req.static_info
        << ", generatePayloadConfirms=" << req.generateTransmitPayloadConfirms
        << ", shm_area_name=" << req.shm_area_name
        << "}";
