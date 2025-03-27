@@ -38,24 +38,7 @@ namespace dcp::srp {
   {
     BOOST_LOG_SEV(log_tx, trivial::info) << "Starting transmit thread.";
 
-    if (runtime.bp_shm_area_ptr == nullptr)
-      {
-	BOOST_LOG_SEV(log_tx, trivial::fatal) << "Invalid BP shared memory handle. Exiting.";
-	runtime.srp_exitFlag = true;
-	return;
-      }
-	
-    BPShmControlSegment* control_seg_ptr = (BPShmControlSegment*) runtime.bp_shm_area_ptr->getControlSegmentPtr();
-    byte               * buffer_seg_ptr  = runtime.bp_shm_area_ptr->getBufferSegmentPtr();
-
-    if ((control_seg_ptr == nullptr) or (buffer_seg_ptr == nullptr))
-      {
-	BOOST_LOG_SEV(log_tx, trivial::fatal) << "Invalid BP shared memory area pointer(s). Exiting.";
-	runtime.srp_exitFlag = true;
-	return;
-      }
-      
-    BPShmControlSegment& CS = *control_seg_ptr;
+    BPShmControlSegment& CS = *runtime.pSCS;
     uint16_t          sleep_time         = runtime.srp_config.srp_conf.srpGenerationPeriodMS;
     uint16_t          keepalive_timeout  = runtime.srp_config.srp_conf.srpKeepaliveTimeoutMS;
     NodeIdentifierT   own_node_id        = runtime.srp_store.get_own_node_identifier ();
@@ -67,7 +50,6 @@ namespace dcp::srp {
 	if (not runtime.srp_store.get_srp_isactive())
 	  continue;
 
-	ScopedShmControlSegmentLock lock (CS);
 	ScopedOwnSDMutex own_sd_lock (runtime);
 
 	if (not runtime.srp_store.get_own_safety_data_written_flag ())
@@ -86,48 +68,27 @@ namespace dcp::srp {
 	    continue;
 	  }
 
-	// Find a free buffer in the shared memory to BP, construct
-	// the payload there in place, and either hand it back to the
-	// freeList in shared memory if the payload is empty, or
-	// submit a payload transmit request to BP
-
-	SharedMemBuffer shmBuff;
-	{
-
-	  if (CS.rbFree.isEmpty())
-	    {
-	      BOOST_LOG_SEV(log_tx, trivial::fatal) << "Cannot find free shared memory buffer. Exiting.";
-	      runtime.srp_exitFlag = true;
-	      return;
-	    }
-	  shmBuff = CS.rbFree.pop();
-	}
-
-	byte* buffer_ptr = buffer_seg_ptr + shmBuff.data_offs ();
-	BPTransmitPayload_Request*  pldReq_ptr = new (buffer_ptr) BPTransmitPayload_Request;
-	byte* pld_ptr = buffer_ptr + sizeof(BPTransmitPayload_Request);
-
+	byte pld_buffer [sizeof(BPTransmitPayload_Request) + sizeof(ExtendedSafetyDataT) + 16];
+	BPTransmitPayload_Request*  pldReq_ptr = new (pld_buffer) BPTransmitPayload_Request;
+	byte* pld_ptr = pld_buffer + sizeof(BPTransmitPayload_Request);
 	pldReq_ptr->protocolId = BP_PROTID_SRP;
 	pldReq_ptr->length     = sizeof(ExtendedSafetyDataT);
-	
 	ExtendedSafetyDataT* pESD = new (pld_ptr) ExtendedSafetyDataT;
 	pESD->safetyData = runtime.srp_store.get_own_safety_data ();
 	pESD->nodeId     = own_node_id;
 	pESD->timeStamp  = TimeStampT::get_current_system_time();
 	pESD->seqno      = runtime.srp_store.get_own_sequence_number ();
 	runtime.srp_store.set_own_sequence_number (pESD->seqno + 1);
-		
-	BOOST_LOG_SEV(log_tx, trivial::trace) << "preparing payload in buffer " << shmBuff;
-	    
-	shmBuff.set_used_length (sizeof(BPTransmitPayload_Request) + sizeof(ExtendedSafetyDataT));
 
-	if (CS.rbTransmitPayloadRequest.isFull())
+	DcpStatus retval = CS.transmit_payload (BPLengthT(sizeof(BPTransmitPayload_Request) + sizeof(ExtendedSafetyDataT)), pld_buffer);
+	if (retval != BP_STATUS_OK)
 	  {
-	    BOOST_LOG_SEV(log_tx, trivial::fatal) << "Shared memory buffer: transmit payload request buffer is full. Exiting.";
+	    BOOST_LOG_SEV(log_tx, trivial::fatal) << "transmit payload request failed, status = "
+						  << bp_status_to_string (retval)
+						  << ". Exiting.";
 	    runtime.srp_exitFlag = true;
 	    return;
-	  }
-	CS.rbTransmitPayloadRequest.push(shmBuff);
+	  }	
       }
     BOOST_LOG_SEV(log_tx, trivial::info) << "Exiting transmit thread.";
   }
