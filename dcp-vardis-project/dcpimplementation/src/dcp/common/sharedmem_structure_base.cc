@@ -71,11 +71,13 @@ namespace dcp {
   void ShmStructureBase::create_shm_area (const char* area_name, size_t struct_size)
   {
     if (!area_name)
-      throw ShmException  (std::format("create_shm_area: No area name"));
+      throw ShmException  ("create_shm_area", "no area name");
     if (std::strlen(area_name) > maxShmAreaNameLength)
-      throw ShmException  (std::format("create_shm_area: Area {}: name is too long", area_name));
+      throw ShmException  (std::format("{}.create_shm_area", area_name),
+			   "name is too long");
     if (structure_size == 0)
-      throw ShmException (std::format("create_shm_area: Area {}: structure size is zero", area_name));
+      throw ShmException (std::format("{}.create_shm_area", area_name),
+			  "structure size is zero");
         
     shm_obj = shared_memory_object (create_only, area_name, read_write);
     shm_obj.truncate (structure_size);
@@ -91,10 +93,12 @@ namespace dcp {
     
     region = mapped_region (shm_obj, read_write);
     if (region.get_size() != structure_size)
-      throw ShmException (std::format("create_shm_area: Area {}: wrong region size {} where {} is required", area_name, region.get_size(), structure_size));
+      throw ShmException (std::format("{}.create_shm_area", area_name),
+			  std::format("wrong region size {} where {} is required", region.get_size(), structure_size));
     memory_address = (byte*) region.get_address();
     if (!memory_address)
-      throw ShmException (std::format("create_shm_area: Area {}: illegal region pointer for creator", area_name));
+      throw ShmException (std::format("{}.create_shm_area", area_name),
+			  "illegal region pointer for creator");
     structure_size = struct_size;    
   }
   
@@ -102,21 +106,27 @@ namespace dcp {
   void ShmStructureBase::attach_to_shm_area (const char* area_name)
   {
     if (!area_name)
-      throw ShmException  (std::format("attach_to_shm_area: No area name"));
+      throw ShmException  ("attach_to_shm_area", "no area name");
     if (std::strlen(area_name) > maxShmAreaNameLength)
-      throw ShmException  (std::format("attach_to_shm_area: Area {}: name is too long", area_name));
+      throw ShmException  (std::format("{}.attach_to_shm_area", area_name), "name is too long");
     
     try {
       shm_obj = shared_memory_object (open_only, area_name, read_write);
       region  = mapped_region (shm_obj, read_write);
       memory_address = (byte*) region.get_address();
       if (!memory_address)
-	throw ShmException (std::format("attach_to_shm_area: Area {}: illegal region pointer for client", area_name));
+	throw ShmException (std::format("{}.attach_to_shm_area", area_name),
+			    "illegal region pointer for client");
       structure_size = region.get_size();
     }
+    catch (ShmException& se)
+      {
+	throw;
+      }
     catch (...)
       {
-	throw ShmException (std::format("attach_to_shm_area: cannot open shared memory region {}", area_name));
+	throw ShmException (std::format("{}.attach_to_shm_area", area_name),
+			    "cannot open shared memory region");
       }    
   } 
 };  // namespace dcp
