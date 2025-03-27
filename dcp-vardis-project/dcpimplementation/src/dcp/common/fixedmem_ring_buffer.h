@@ -84,13 +84,18 @@ namespace dcp {
       : maxCapacity (maxCap)
       {
 	if (!name)
-	  throw RingBufferException("invalid name");
+	  throw RingBufferException("FixedMemRingBuffer", "invalid name");
 
 	if (std::strlen(name) > maxRingBufferNameLength-1)
-	  throw RingBufferException(std::format("name is too long at {} bytes ({} bytes allowed)", std::strlen(name), maxRingBufferNameLength-1));
+	  throw RingBufferException("FixedMemRingBuffer",
+				    std::format("name {} is too long at {} bytes ({} bytes allowed)",
+						name,
+						std::strlen(name),
+						maxRingBufferNameLength-1));
 
 	if ((maxCap < 1) || (maxCap >= maxRingBufferElements))
-	  throw RingBufferException("illegal value for maxCapacity");
+	  throw RingBufferException(std::format("FixedMemRingBuffer {}", name),
+				    "illegal value for maxCapacity");
 
 	std::strcpy(rbName, name);
       };
@@ -139,7 +144,9 @@ namespace dcp {
      *        and returns the buffer.
      */
     inline ElemT pop () {
-      if (isEmpty()) throw RingBufferException ("pop(): trying to pop from empty ring buffer");
+      if (isEmpty())
+	throw RingBufferException (std::format("FixedMemRingBuffer {}.pop()", rbName),
+				   "trying to pop from empty ring buffer");
       uint64_t rvidx = out;
       out = (out + 1) % maxRingBufferElements;
       currentNumberElements--;
@@ -152,7 +159,9 @@ namespace dcp {
      *        removing it.
      */
     inline ElemT peek () const {
-      if (isEmpty()) throw RingBufferException ("peek(): trying to peek from empty ring buffer");
+      if (isEmpty())
+	throw RingBufferException (std::format("FixedMemRingBuffer {}.peek()", rbName),
+				   "trying to peek from empty ring buffer");
       return the_ring[out];
     };
 
@@ -161,7 +170,9 @@ namespace dcp {
      * @brief Pushes/adds new element / buffer into ring buffer.
      */
     inline void push(const ElemT& buf) {
-      if (isFull()) throw RingBufferException ("push(): trying to push onto full ring buffer");
+      if (isFull())
+	throw RingBufferException (std::format("FixedMemRingBuffer {}.push()", rbName),
+				   "trying to push onto full ring buffer");
       the_ring[in] = buf;
       in = (in + 1) % maxRingBufferElements;
       currentNumberElements++;
