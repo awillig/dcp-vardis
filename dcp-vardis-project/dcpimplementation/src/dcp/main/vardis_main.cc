@@ -29,6 +29,8 @@ using std::exception;
 using dcp::VardisClientRuntime;
 using dcp::VardisClientConfiguration;
 using dcp::vardis_status_to_string;
+using dcp::bp::BPStaticClientInfo;
+
 
 namespace po = boost::program_options;
 
@@ -71,8 +73,17 @@ int run_vardis_demon (const std::string cfg_filename)
   BOOST_LOG_SEV(log_main, trivial::info) << "Demon mode with config file " << cfg_filename; 
   BOOST_LOG_SEV(log_main, trivial::info) << "Configuration: " << vdconfig;
 
+  BPStaticClientInfo client_info;
+  client_info.protocolId      =  dcp::BP_PROTID_VARDIS;
+  std::strncpy (client_info.protocolName, get_protocol_name().c_str(), dcp::bp::maximumProtocolNameLength);
+  client_info.maxPayloadSize         =  vdconfig.vardis_conf.maxPayloadSize;
+  client_info.queueingMode           =  dcp::bp::BP_QMODE_QUEUE_DROPHEAD;
+  client_info.maxEntries             =  vdconfig.vardis_conf.queueMaxEntries;
+  client_info.allowMultiplePayloads  =  false;
+
+  
   try {
-    vd_rt_ptr = new VardisRuntimeData (dcp::BP_PROTID_VARDIS, get_protocol_name(), vdconfig);
+    vd_rt_ptr = new VardisRuntimeData (client_info, vdconfig);
 
     BOOST_LOG_SEV(log_main, trivial::info) << "BP registration successful, ownNodeIdentifier = " << vd_rt_ptr->get_own_node_identifier();
     
