@@ -25,11 +25,10 @@
 #include <memory>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/common/memblock.h>
-#include <dcp/common/shared_mem_area.h>
+#include <dcp/common/sharedmem_structure_base.h>
 #include <dcp/vardis/vardis_shm_control_segment.h>
 
 using std::ostream;
-using dcp::ShmBufferPool;
 
 /**
  * @brief The class VardisClientProtocolData holds the data that the
@@ -62,18 +61,25 @@ namespace dcp::vardis {
 
 
     /**
-     * @brief Pointer to the shared memory area between Vardis demon
-     *        and the client
+     * @brief Pointer to the shared memory area descriptor between
+     *        Vardis demon and the client
      */
-    std::shared_ptr<ShmBufferPool>   sharedMemoryAreaPtr;
+    std::shared_ptr<ShmStructureBase> pSSB;
 
 
     /**
-     * @brief Pointer to the control segment of the shared memory area
+     * @brief Pointer to the actual shared memory area for
+     *        client. Valid after successful registration
      */
-    VardisShmControlSegment* controlSegmentPtr = nullptr;
-        
+    VardisShmControlSegment*          pSCS = nullptr;
+    
 
+
+    VardisClientProtocolData () {};
+
+    VardisClientProtocolData (const char* area_name);
+
+    
     /**************************************************************
      * Auxiliary methods
      *************************************************************/
