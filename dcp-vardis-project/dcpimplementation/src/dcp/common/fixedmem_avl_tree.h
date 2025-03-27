@@ -24,12 +24,13 @@
 #include <functional>
 #include <list>
 #include <dcp/common/exceptions.h>
-#include <dcp/common/ring_buffer.h>
+#include <dcp/common/fixedmem_ring_buffer.h>
 
 
 /**
  * @brief This module provides an AVL tree (i.e. a balanced binary
- *        search tree) over a fixed-size array of entries.
+ *        search tree) operating in fixed memory, with entries stored
+ *        in an array of given size.
  *
  * Normal AVL tree implementations use pointers, which makes them
  * unsuitable for storing the tree in a shared memory segment. This
@@ -53,10 +54,10 @@ namespace dcp {
    *         maximum number of nodes in the tree.
    */
   template <typename KeyT, typename DataT, uint64_t arraySize>
-  class ArrayAVLTree {
+  class FixedMemAVLTree {
 
-    static_assert (std::totally_ordered<KeyT>, "ArrayAVLTree: KeyT must be totally ordered");
-    static_assert (arraySize >= 3, "ArrayAVLTree: arraySize must be at least three");
+    static_assert (std::totally_ordered<KeyT>, "FixedMemAVLTree: KeyT must be totally ordered");
+    static_assert (arraySize >= 3, "FixedMemAVLTree: arraySize must be at least three");
     
   protected:
     
@@ -88,10 +89,10 @@ namespace dcp {
     
 
     
-    RingBufferBase<int, arraySize+1>  freeList;    /*!< List, elements are indices of free array entries */
-    ANode      the_array [arraySize];              /*!< Array storing tree nodes */
-    uint64_t   number_elements = 0;                /*!< Number of current elements in the tree */
-    int        root            = A_NULL;           /*!< Index of tree root */
+    FixedMemRingBuffer<int, arraySize+1>  freeList;    /*!< List, elements are indices of free array entries */
+    ANode      the_array [arraySize];                  /*!< Array storing tree nodes */
+    uint64_t   number_elements = 0;                    /*!< Number of current elements in the tree */
+    int        root            = A_NULL;               /*!< Index of tree root */
 
 
 
@@ -568,7 +569,7 @@ namespace dcp {
     /**
      * @brief Constructor, initializes array, root and free list
      */
-    ArrayAVLTree ()
+    FixedMemAVLTree ()
       : freeList ("AVL", arraySize)
     {
       clear ();

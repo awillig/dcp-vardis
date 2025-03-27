@@ -28,9 +28,9 @@
 namespace dcp {
 
   /**
-   * @brief This template class provides a ring buffer with a fixed
-   *        number of elements (of parameterized type) in a fixed
-   *        amount of memory
+   * @brief This template class provides a ring buffer organised in a
+   *        fixed region of memory, with a fixed number of elements
+   *        (of parameterized type)
    *
    * @tparam ElemT: type of elements of a ring buffer. Should have
    *         a copy constructor
@@ -44,9 +44,9 @@ namespace dcp {
    */
 
   template <typename ElemT, size_t maxRingBufferElements>
-  class RingBufferBase {
+  class FixedMemRingBuffer {
 
-    static_assert (maxRingBufferElements >= 2, "RingBufferBase: maxRingBufferElements must be at least two");
+    static_assert (maxRingBufferElements >= 2, "FixedMemRingBuffer: maxRingBufferElements must be at least two");
     
   private:
 
@@ -68,7 +68,7 @@ namespace dcp {
     
   public:
 
-    RingBufferBase () = delete;
+    FixedMemRingBuffer () = delete;
 
     /**
      * @brief Constructor
@@ -80,7 +80,7 @@ namespace dcp {
      * long, or when maxCap is either zero or too large (larger than
      * maxRingBufferElements minus one)
      */
-    RingBufferBase (const char* name, uint64_t maxCap)
+    FixedMemRingBuffer (const char* name, uint64_t maxCap)
       : maxCapacity (maxCap)
       {
 	if (!name)
