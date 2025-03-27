@@ -171,9 +171,10 @@ namespace dcp {
       freeList ("freeList", numberBuffers)
     {
       if (!qname)
-	throw ShmException ("ShmFiniteQueue: no valid queue name");
+	throw ShmException ("ShmFiniteQueue", "no valid queue name");
       if (std::strlen(qname) > maxQueueNameLength)
-	throw ShmException (std::format("ShmFiniteQueue: queue name {} is too long", qname));
+	throw ShmException ("ShmFiniteQueue",
+			    std::format("queue name {} is too long", qname));
       std::strcpy (queue_name, qname);
 
       initialize_queue_and_freelist ();
@@ -265,7 +266,7 @@ namespace dcp {
 		    uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("ShmFiniteQueue {} -- push_wait", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.push_wait", get_queue_name()), "timeout is zero");
       
       timed_out        = false;
       
@@ -298,7 +299,8 @@ namespace dcp {
 	  return;
 	}
       if (descr.len > bufferSize)
-	throw ShmException (std::format("ShmFiniteQueue {} -- push_wait", get_queue_name()), "handler exceeded buffer length");
+	throw ShmException (std::format("{}.push_wait", get_queue_name()),
+			    "handler exceeded buffer length");
       queue.push (descr);
       cond_empty.notify_all ();
       has_data = true;
@@ -332,7 +334,7 @@ namespace dcp {
 		      uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("ShmFiniteQueue {} -- push_nowait", get_queue_name()), "timeout is zero");
+	throw ShmException (std::format("{}.push_nowait", get_queue_name()), "timeout is zero");
       
       timed_out  = false;
       is_full   = false;
@@ -362,7 +364,7 @@ namespace dcp {
 	  return;
 	}
       if (descr.len > bufferSize)
-	throw ShmException (std::format("ShmFiniteQueue {} -- push_nowait", get_queue_name()), "handler exceeded buffer length");
+	throw ShmException (std::format("{}.push_nowait", get_queue_name()), "handler exceeded buffer length");
       queue.push (descr);
       cond_empty.notify_all ();
       has_data = true;
@@ -393,7 +395,7 @@ namespace dcp {
 			  uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("ShmFiniteQueue {} -- push_wait_force", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.push_wait_force", get_queue_name(), "timeout is zero"));
       
       timed_out        = false;
       
@@ -416,7 +418,7 @@ namespace dcp {
 	  return;
 	}
       if (descr.len > bufferSize)
-	throw ShmException (std::format("ShmFiniteQueue {} -- push_wait_force", get_queue_name()), "handler exceeded buffer length");
+	throw ShmException (std::format("{}.push_wait_force", get_queue_name()), "handler exceeded buffer length");
       queue.push (descr);
       cond_empty.notify_all ();
       has_data = true;
@@ -450,7 +452,7 @@ namespace dcp {
 		   uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("ShmFiniteQueue {} -- pop_wait", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.pop_wait", get_queue_name(), "timeout is zero"));
       
       timed_out       = false;
       further_entries = false;
@@ -515,7 +517,7 @@ namespace dcp {
 		     uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("ShmFiniteQueue {} -- pop_nowait", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.pop_nowait", get_queue_name(), "timeout is zero"));
       
       timed_out       = false;
       
@@ -570,7 +572,7 @@ namespace dcp {
 		      uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("ShmFiniteQueue {} -- popall_wait", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.popall_wait", get_queue_name(), "timeout is zero"));
       
       timed_out       = false;
       
@@ -633,7 +635,7 @@ namespace dcp {
 			uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("ShmFiniteQueue {} -- popall_nowait", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.popall_nowait", get_queue_name(), "timeout is zero"));
       
       timed_out       = false;
       
@@ -690,7 +692,7 @@ namespace dcp {
 		    uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("ShmFiniteQueue {} -- peek_wait", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.peek_wait", get_queue_name(), "timeout is zero"));
       
       timed_out       = false;
       
@@ -747,7 +749,7 @@ namespace dcp {
 		      uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("ShmFiniteQueue {} -- peek_nowait", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.peek_nowait", get_queue_name(), "timeout is zero"));
       
       timed_out       = false;
       
