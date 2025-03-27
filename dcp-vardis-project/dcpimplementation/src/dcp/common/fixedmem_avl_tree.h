@@ -616,7 +616,7 @@ namespace dcp {
     {
       int idx = lookup (key);
       if (is_null (idx))
-	throw AVLTreeException ("lookup_data_ref: unknown key");
+	throw AVLTreeException ("lookup_data_ref", "unknown key");
       return the_array[idx].data;
     };
 
