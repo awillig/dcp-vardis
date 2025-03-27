@@ -33,7 +33,6 @@ extern "C" {
 #include <dcp/common/command_socket.h>
 #include <dcp/common/other_helpers.h>
 #include <dcp/common/services_status.h>
-#include <dcp/common/shared_mem_area.h>
 #include <dcp/bp/bp_management_command.h>
 #include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/bp/bp_service_primitives.h>
@@ -176,16 +175,17 @@ namespace dcp::bp {
       }
 
     BPRegisterProtocol_Request*  pReq = (BPRegisterProtocol_Request*) buffer;
+    BPStaticClientInfo& sci = pReq->static_info;
     BOOST_LOG_SEV(log_mgmt_command, trivial::info)
-      << "Processing request: RegisterProtocol, protocolId = " << pReq->protocolId
-      << " , name = " << pReq->name
-      << " , maxPayloadSize = " << pReq->maxPayloadSize
-      << " , queueingMode = " << bp_queueing_mode_to_string (pReq->queueingMode)
-      << " , maxEntries = " << pReq->maxEntries
-      << " , allowMultiplePayloads = " << pReq->allowMultiplePayloads;
+      << "Processing request: RegisterProtocol, protocolId = " << sci.protocolId
+      << " , name = " << sci.protocolName
+      << " , maxPayloadSize = " << sci.maxPayloadSize
+      << " , queueingMode = " << bp_queueing_mode_to_string (sci.queueingMode)
+      << " , maxEntries = " << sci.maxEntries
+      << " , allowMultiplePayloads = " << sci.allowMultiplePayloads;
 
     // check whether client protocol already exists
-    if (runtime.clientProtocols.contains (pReq->protocolId))
+    if (runtime.clientProtocols.contains (sci.protocolId))
       {
 	BOOST_LOG_SEV(log_mgmt_command, trivial::error)
 	  << "Processing BPRegisterProtocol request: protocol already exists";
@@ -195,7 +195,7 @@ namespace dcp::bp {
       }
 
     // check if maxPayloadSize is not strictly positive
-    if (pReq->maxPayloadSize <= 0)
+    if (sci.maxPayloadSize <= 0)
       {
 	BOOST_LOG_SEV(log_mgmt_command, trivial::error)
 	  << "Processing BPRegisterProtocol request: max payload size <= 0";
@@ -205,7 +205,7 @@ namespace dcp::bp {
       }
 
     // check if maxPayloadSize is too large
-    if (pReq->maxPayloadSize.val > runtime.bp_config.bp_conf.maxBeaconSize - (dcp::bp::BPHeaderT::fixed_size() + dcp::bp::BPPayloadHeaderT::fixed_size()))
+    if (sci.maxPayloadSize.val > runtime.bp_config.bp_conf.maxBeaconSize - (dcp::bp::BPHeaderT::fixed_size() + dcp::bp::BPPayloadHeaderT::fixed_size()))
       {
 	BOOST_LOG_SEV(log_mgmt_command, trivial::error)
 	  << "Processing BPRegisterProtocol request: max payload size exceeds allowed maximum";
@@ -215,9 +215,9 @@ namespace dcp::bp {
       }
 
     // check maxEntries value
-    if (    (    (pReq->queueingMode == BP_QMODE_QUEUE_DROPTAIL)
-	      || (pReq->queueingMode == BP_QMODE_QUEUE_DROPHEAD))
-	 && (pReq->maxEntries <= 0))
+    if (    (    (sci.queueingMode == BP_QMODE_QUEUE_DROPTAIL)
+	      || (sci.queueingMode == BP_QMODE_QUEUE_DROPHEAD))
+	 && (sci.maxEntries <= 0))
       {
 	BOOST_LOG_SEV(log_mgmt_command, trivial::error)
 	  << "Processing BPRegisterProtocol request: illegal dropping queue size";
@@ -227,71 +227,28 @@ namespace dcp::bp {
       }
 
     // Now create and initialize new client protocol data entry and add it to the list of registered protocols
-    BPClientProtocolData clientProt;
-    clientProt.protocolId                    =  pReq->protocolId;
-    clientProt.protocolName                  =  std::string (pReq->name);
-    clientProt.maxPayloadSize                =  pReq->maxPayloadSize;
-    clientProt.queueingMode                  =  pReq->queueingMode;
-    clientProt.maxEntries                    =  pReq->maxEntries;
+    BPClientProtocolData clientProt (pReq->shm_area_name, pReq->static_info, pReq->generateTransmitPayloadConfirms);
+    clientProt.static_info                   =  pReq->static_info;
     clientProt.timeStampRegistration         =  TimeStampT::get_current_system_time();
-    clientProt.bufferOccupied                =  false;
-    clientProt.allowMultiplePayloads         =  pReq->allowMultiplePayloads;
+    //clientProt.bufferOccupied                =  false;
 
     clientProt.cntOutgoingPayloads           =  0;
     clientProt.cntReceivedPayloads           =  0;
     clientProt.cntDroppedOutgoingPayloads    =  0;
     clientProt.cntDroppedIncomingPayloads    =  0;
 
-    
-    // attempt to create the shared memory region
-    uint64_t requestedBuffers = dcp::bp::BPShmControlSegment::get_minimum_number_buffers_required(pReq->maxEntries) + 20;
-    size_t   realPayloadSize  =
-      clientProt.maxPayloadSize.val +
-      std::max (sizeof(BPTransmitPayload_Request),
-		std::max (sizeof(BPTransmitPayload_Confirm), sizeof(BPReceivePayload_Indication)));
-
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace)
-      << "Processing BPRegisterProtocol request: setting up shared memory pool with "
-      << "requestedBuffers = " << requestedBuffers
-      << ", realPayloadSize = " << realPayloadSize;
-    
-    try {
-      clientProt.sharedMemoryAreaPtr = std::make_shared<ShmBufferPool>(
-								       pReq->shm_area_name,
-								       true,
-								       sizeof(BPShmControlSegment),
-								       realPayloadSize,
-								       requestedBuffers
-								       );
-    }
-    catch (ShmException& shme) {
-      BOOST_LOG_SEV(log_mgmt_command, trivial::info)
-	<< "Processing BPRegisterProtocol request: cannot allocate shared memory block, reason = "
-	<< shme.what();
-
-      sendRegisterConfirmation(runtime, BP_STATUS_INTERNAL_SHARED_MEMORY_ERROR);
-      return;
-    }
-
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info)
-      << "Processing BPRegisterProtocol request: registered shared memory"
-      << ", region size = " << clientProt.sharedMemoryAreaPtr->get_region().get_size()
-      << ", number buffers requested = " << requestedBuffers;
-    
-    // initialize control segment for shared memory segment    
-    clientProt.controlSegmentPtr = new (clientProt.sharedMemoryAreaPtr->getControlSegmentPtr())
-      BPShmControlSegment(*clientProt.sharedMemoryAreaPtr,
-			  requestedBuffers,
-			  pReq->maxEntries,
-			  pReq->generateTransmitPayloadConfirms);
-    
     // and add client protocol entry to the client protocols list    
-    runtime.clientProtocols[pReq->protocolId] = clientProt;
+    runtime.clientProtocols[sci.protocolId] = std::move(clientProt);
 
     BOOST_LOG_SEV(log_mgmt_command, trivial::info)
-      << "Processing BPRegisterProtocol request: completed successful registration";
-
+      << "Processing BPRegisterProtocol request: completed successful registration of protocolId "
+      << sci.protocolId
+      << ", runtime.clientProt.pSCS = " << (void*) runtime.clientProtocols[sci.protocolId].pSCS
+      ; 
     sendRegisterConfirmation(runtime, BP_STATUS_OK);
+
+    BOOST_LOG_SEV(log_mgmt_command, trivial::info)
+      << "Processing BPRegisterProtocol request: FINISHING";
   }
   
   // ------------------------------------------------------------------
@@ -311,18 +268,33 @@ namespace dcp::bp {
       }
 
     BPDeregisterProtocol_Request*  pReq = (BPDeregisterProtocol_Request*) buffer;
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "Processing request: DeregisterProtocol, protocolId = " << pReq->protocolId;
+    BOOST_LOG_SEV(log_mgmt_command, trivial::info)
+      << "Processing request: DeregisterProtocol, protocolId = " << pReq->protocolId;
 
     // check whether client protocol exists
     if (not runtime.clientProtocols.contains (pReq->protocolId))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "Processing BPDerregisterProtocol request: protocol is not registered";
+	BOOST_LOG_SEV(log_mgmt_command, trivial::info)
+	  << "Processing BPDerregisterProtocol request: protocol is not registered";
 	send_simple_confirmation<BPDeregisterProtocol_Confirm>(runtime, BP_STATUS_UNKNOWN_PROTOCOL);
 	return;
       }
-    
-    runtime.clientProtocols.erase(pReq->protocolId);
 
+    BPClientProtocolData& the_client_prot = runtime.clientProtocols[pReq->protocolId];
+    auto pSSB = the_client_prot.pSSB;
+    BOOST_LOG_SEV(log_mgmt_command, trivial::trace)
+      << "Processing BPDerregisterProtocol request: BEFORE erasing: "
+      << "this = " << (void*) (&the_client_prot)
+      << ", pSCS = " << (void*) the_client_prot.pSCS
+      << ", pSSB.use_count = " << pSSB.use_count()
+      << ", shm_memory_address() = " << (void*) pSSB->get_memory_address()
+      << ", shm_name() = " << pSSB->get_name()
+      << ", shm_structure_size = " << pSSB->get_structure_size()
+      << ", shm_is_creator = " << pSSB->get_is_creator()
+      << ", shm_has_valid_memory = " << pSSB->has_valid_memory()
+      ;
+    runtime.clientProtocols.erase(pReq->protocolId);
+    
     BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "Processing BPDeregisterProtocol request: erased registered protocol";
     send_simple_confirmation<BPDeregisterProtocol_Confirm>(runtime, BP_STATUS_OK);
   }
@@ -359,13 +331,14 @@ namespace dcp::bp {
     for (auto it = runtime.clientProtocols.begin(); it != runtime.clientProtocols.end(); ++it)
       {
 	BPRegisteredProtocolDataDescription  descr;
-	std::strcpy (descr.protocolName, (it->second).protocolName.c_str());
-	descr.protocolId             =  (it->second).protocolId;
-	descr.maxPayloadSize         =  (it->second).maxPayloadSize;
-	descr.queueingMode           =  (it->second).queueingMode;
+	BPStaticClientInfo& sci = (it->second).static_info;
+	std::strcpy (descr.protocolName, sci.protocolName);
+	descr.protocolId             =  sci.protocolId;
+	descr.maxPayloadSize         =  sci.maxPayloadSize;
+	descr.queueingMode           =  sci.queueingMode;
+	descr.maxEntries             =  sci.maxEntries;
+	descr.allowMultiplePayloads  =  sci.allowMultiplePayloads;
 	descr.timeStampRegistration  =  (it->second).timeStampRegistration;
-	descr.maxEntries             =  (it->second).maxEntries;
-	descr.allowMultiplePayloads  =  (it->second).allowMultiplePayloads;
 
 	descr.cntOutgoingPayloads         =  (it->second).cntOutgoingPayloads;
 	descr.cntReceivedPayloads         =  (it->second).cntReceivedPayloads;
@@ -426,25 +399,10 @@ namespace dcp::bp {
 
     BPClientProtocolData& clientProt = runtime.clientProtocols [pReq->protocolId];
 
-    // now find a valid pointer to the right Shm control segment
-    BPShmControlSegment* pCS = clientProt.controlSegmentPtr;
-    if (pCS == nullptr)
-      {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
-	    << "Processing "
-	    << servname
-	    << " request: no valid shared memory segment for protocolId = "
-	    << pReq->protocolId
-           ;
-	runtime.bp_exitFlag = true;
-	send_simple_confirmation<CT> (runtime, BP_STATUS_INTERNAL_ERROR);
-	return;
-      }
-
     // Perform action under lock
-    BPShmControlSegment& CS = *pCS;
+    BPShmControlSegment& CS = *(clientProt.pSCS);
     {
-      ScopedShmControlSegmentLock shmlock (CS);
+      //ScopedShmControlSegmentLock shmlock (CS);
       action (runtime, clientProt, CS);
     }
   }
@@ -458,35 +416,20 @@ namespace dcp::bp {
     std::function<void (BPRuntimeData&, BPClientProtocolData&, BPShmControlSegment&)> action_fn =
       [&] (BPRuntimeData& runtime, BPClientProtocolData& clientProt, BPShmControlSegment& CS)
 	{    
-	  switch(clientProt.queueingMode)
+	  switch(clientProt.static_info.queueingMode)
 	    {
 	    case BP_QMODE_ONCE:
 	    case BP_QMODE_REPEAT:
 	      {
-		clientProt.bufferOccupied = false;
+		CS.buffer.reset ();
+		//clientProt.bufferOccupied = false;
 		send_simple_confirmation<BPClearBuffer_Confirm> (runtime, BP_STATUS_OK);
 		return;
 	      }
 	    case BP_QMODE_QUEUE_DROPHEAD:
 	    case BP_QMODE_QUEUE_DROPTAIL:
 	      {
-		while (not CS.queue.isEmpty())
-		  {
-		    SharedMemBuffer buff = CS.queue.pop ();
-		    buff.clear();
-		    
-		    if (CS.rbFree.isFull())
-		      {
-			BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
-	                    << "Processing BPClearBuffer request: free list is full"
-		          ;
-			runtime.bp_exitFlag = true;
-			send_simple_confirmation<BPClearBuffer_Confirm> (runtime, BP_STATUS_INTERNAL_ERROR);
-			return;
-		      }
-		    
-		    CS.rbFree.push (buff);
-		  }
+		CS.queue.reset ();
 		send_simple_confirmation<BPClearBuffer_Confirm> (runtime, BP_STATUS_OK);
 		return;
 	      }
@@ -494,7 +437,7 @@ namespace dcp::bp {
 	      {
 		BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
 	            << "Processing BPClearBuffer request: unknown queueing mode = "
-   	            << clientProt.queueingMode;
+   	            << clientProt.static_info.queueingMode;
 		   ;
    	        runtime.bp_exitFlag = true;
 		send_simple_confirmation<BPClearBuffer_Confirm> (runtime, BP_STATUS_INTERNAL_ERROR);
@@ -516,12 +459,13 @@ namespace dcp::bp {
     std::function<void (BPRuntimeData&, BPClientProtocolData&, BPShmControlSegment&)> action_fn =
       [&] (BPRuntimeData& runtime, BPClientProtocolData& clientProt, BPShmControlSegment& CS)
 	{
-	  switch(clientProt.queueingMode)
+	  switch(clientProt.static_info.queueingMode)
 	    {
 	    case BP_QMODE_ONCE:
 	    case BP_QMODE_REPEAT:
 	      {
-		conf.num_payloads_buffered = clientProt.bufferOccupied ? 1 : 0;
+		//conf.num_payloads_buffered = clientProt.bufferOccupied ? 1 : 0;
+		conf.num_payloads_buffered = clientProt.pSCS->buffer.stored_elements ();
 		runtime.commandSocket.send_raw_confirmation (log_mgmt_command, conf, sizeof(conf), runtime.bp_exitFlag);
 		return;
 	      }
@@ -536,7 +480,7 @@ namespace dcp::bp {
 	      {
 		BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
 	            << "Processing BPQueryNumberBufferedPayloads request: unknown queueing mode = "
-   	            << clientProt.queueingMode;
+   	            << clientProt.static_info.queueingMode;
 		   ;
 		runtime.bp_exitFlag = true;
 		send_simple_confirmation<BPQueryNumberBufferedPayloads_Confirm> (runtime, BP_STATUS_INTERNAL_ERROR);
