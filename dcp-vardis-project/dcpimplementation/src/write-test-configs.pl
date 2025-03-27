@@ -123,7 +123,6 @@ areaName  =   shm-area-srp-store
 
 [SRP]
 generationPeriodMS  =  150
-receptionPeriodMS   =  100
 scrubbingPeriodMS   =  500
 keepaliveTimeoutMS  =  3000
 scrubbingTimeoutMS  =  3000
