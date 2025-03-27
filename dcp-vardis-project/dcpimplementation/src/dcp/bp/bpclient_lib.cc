@@ -55,17 +55,21 @@ namespace dcp {
       client_configuration (client_conf)
   {
     if (gen_pld_conf)
-      throw BPClientLibException (std::format("BPClientRuntime: generation of payload confirms not supported"));
+      throw BPClientLibException ("BPClientRuntime",
+				  "generation of payload confirms not supported");
     
     check_names (static_client_info.protocolName, shmAreaName);
     
     DcpStatus reg_status = register_with_bp (generateTransmitPayloadConfirms);
     if (reg_status != BP_STATUS_OK)
-      throw BPClientLibException (std::format("BPClientRuntime: registration failed, status code = {}", reg_status));
+      throw BPClientLibException ("BPClientRuntime, ",
+				  std::format("registration failed, status code = {}", bp_status_to_string(reg_status)));
     
     pSSB = std::make_shared<ShmStructureBase> (shmAreaName.c_str(), 0, false);
     pSCS = (BPShmControlSegment*) pSSB->get_memory_address ();
-    if (!pSCS) throw BPClientLibException ("BPClientRuntime: cannot attach to BPShmControlSegment");
+    if (!pSCS)
+      throw BPClientLibException ("BPClientRuntime",
+				  "cannot attach to BPShmControlSegment");
   }
   
   // -----------------------------------------------------------------------------------
@@ -90,16 +94,20 @@ namespace dcp {
   void BPClientRuntime::check_names (const char* protName, std::string shmAreaName)
   {
     if (std::strlen(protName) == 0)
-      throw BPClientLibException ("BPClientRuntime: no protocol name given");
+      throw BPClientLibException ("check_names",
+				  "no protocol name given");
     
     if (std::strlen(protName) > dcp::bp::maximumProtocolNameLength - 1)
-      throw BPClientLibException ("BPClientRuntime: protocol name is too long");
+      throw BPClientLibException ("check_names",
+				  std::format("protocol name {} is too long", protName));
     
     if (shmAreaName.empty())
-      throw BPClientLibException ("BPClientRuntime: no shared memory area name given");
+      throw BPClientLibException ("check_names",
+				  "no shared memory area name given");
     
     if (shmAreaName.capacity() > maxShmAreaNameLength - 1)
-      throw BPClientLibException ("BPClientRuntime: shared memory area name is too long");
+      throw BPClientLibException ("check_names",
+				  "shared memory area name is too long");
   };
   
   // -----------------------------------------------------------------------------------
@@ -161,7 +169,8 @@ namespace dcp {
     ownNodeIdentifier = pConf->ownNodeIdentifier;
     
     if (pConf->status_code != BP_STATUS_OK)
-      throw BPClientLibException (std::format("register_with_bp: registration failed, status code = {}", bp_status_to_string (pConf->status_code)));
+      throw BPClientLibException ("register_with_bp",
+				  std::format("registration failed, status code = {}", bp_status_to_string (pConf->status_code)));
     
     _isRegistered = true;
     
@@ -186,7 +195,8 @@ namespace dcp {
   DcpStatus BPClientRuntime::clear_buffer ()
   {
     if (not _isRegistered)
-      throw BPClientLibException ("clear_buffer: not registered with BP");
+      throw BPClientLibException ("clear_buffer",
+				  "not registered with BP");
     
     return simple_request_confirm_service<BPClearBuffer_Request, BPClearBuffer_Confirm> ("clear_buffer");
   }
@@ -227,7 +237,8 @@ namespace dcp {
   DcpStatus BPClientRuntime::query_number_buffered_payloads (unsigned long& num_payloads_buffered)
   {
     if (not _isRegistered)
-      throw BPClientLibException ("query_number_buffered_payloads: not registered with BP");
+      throw BPClientLibException ("query_number_buffered_payloads",
+				  "not registered with BP");
     
     BPQueryNumberBufferedPayloads_Confirm conf;
     DcpStatus stat = simple_bp_request_confirm_service<BPQueryNumberBufferedPayloads_Request, BPQueryNumberBufferedPayloads_Confirm> ("query_number_buffered_payloads", conf);
