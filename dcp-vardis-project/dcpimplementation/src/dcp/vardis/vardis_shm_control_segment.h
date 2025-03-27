@@ -20,21 +20,53 @@
 
 #pragma once
 
-#include <iostream>
-#include <dcp/common/shared_mem_area.h>
+#include <dcp/common/sharedmem_finite_queue.h>
+#include <dcp/vardis/vardis_constants.h>
+#include <dcp/vardis/vardis_service_primitives.h>
 
-using dcp::SharedMemBuffer;
 
 namespace dcp::vardis {
 
 
+  /**
+   * @brief Maximum length of any finite queue for RTDB service
+   * requests or confirms
+   */
   const uint64_t maxServicePrimitiveQueueLength = 30;
 
 
   /**
+   * @brief Maximum length of any possible RTDB service request (plus
+   *        some safety margin)
+   */
+  static const size_t    maxRTDBServiceBufferSize   = MAX_maxValueLength + MAX_maxDescriptionLength + VarCreateT::fixed_size() + 16;
+
+
+  /**
+   * @brief Maximum length of any possible RTDB service confirm
+   *        (outside RTDB-Read, which is handled elsewhere), plus some
+   *        safety margin
+   */
+  static const size_t    maxRTDBConfirmBufferSize   = sizeof(RTDB_Create_Confirm) + 16;
+
+
+  /**
+   * @brief Type for a RTDB serivce request finite queue
+   */
+  typedef ShmFiniteQueue<maxServicePrimitiveQueueLength, maxRTDBServiceBufferSize>   PayloadQueue;
+
+
+  /**
+   * @brief Type for a RTDB service confirm finite queue
+   */
+  typedef ShmFiniteQueue<maxServicePrimitiveQueueLength, maxRTDBConfirmBufferSize>   ConfirmQueue;
+
+
+  /**
    * @brief This type describes the shared memory structure used for
-   *        exchanging all service primitives related to variables as
-   *        such (RTDB-Create, -Read, -Update, -Delete).
+   *        exchanging most service primitives related to variables as
+   *        such (RTDB-Create, -Update, -Delete). RTDB-Reads are
+   *        handled through the VardisStore.
    *
    * For all of the four services two ring buffers / cyclic queues are
    * provided, the requests flow from the Vardis client to the Vardis
@@ -43,58 +75,29 @@ namespace dcp::vardis {
    * There is a separate shared memory area between the Vardis demon
    * and each Vardis client.
    */
-  typedef struct VardisShmControlSegment : public ShmControlSegmentBase {
-    
-    RingBufferFree rbFree;                               /*!< List of free buffers */
-    RingBufferNormal rbCreateRequest, rbCreateConfirm;   /*!< Request and confirm queues for RTDB-Create */
-    RingBufferNormal rbDeleteRequest, rbDeleteConfirm;   /*!< Request and confirm queues for RTDB-Delete */
-    RingBufferNormal rbUpdateRequest, rbUpdateConfirm;   /*!< Request and confirm queues for RTDB-Update */
-    
-    
-    
-    
-    VardisShmControlSegment () = delete;
-    
+  typedef struct VardisShmControlSegment {
 
+    PayloadQueue pqCreateRequest;   /*!< queue for create requests */
+    PayloadQueue pqDeleteRequest;   /*!< queue for delete requests */
+    PayloadQueue pqUpdateRequest;   /*!< queue for update requests */
+    ConfirmQueue pqCreateConfirm;   /*!< queue for create confirms */
+    ConfirmQueue pqDeleteConfirm;   /*!< queue for delete confirms */
+    ConfirmQueue pqUpdateConfirm;   /*!< queue for update confirms */
+    
+    
+    
     /**
      * @brief Constructor, initializes all the queues, and moves all
      *        the used SharedMemBuffers into the free list
      */
-    VardisShmControlSegment (ShmBufferPool& shmBuffPool,
-			     uint64_t numberBuffers)
-      : rbFree ("free list", numberBuffers),
-	rbCreateRequest ("RTDB-Create request", maxServicePrimitiveQueueLength),
-	rbCreateConfirm ("RTDB-Create confirm", maxServicePrimitiveQueueLength),
-	rbDeleteRequest ("RTDB-Delete request", maxServicePrimitiveQueueLength),
-	rbDeleteConfirm ("RTDB-Delete confirm", maxServicePrimitiveQueueLength),
-	rbUpdateRequest ("RTDB-Update request", maxServicePrimitiveQueueLength),
-	rbUpdateConfirm ("RTDB-Update confirm", maxServicePrimitiveQueueLength)
+    VardisShmControlSegment ()
+      : pqCreateRequest ("RTDB-Create request", maxServicePrimitiveQueueLength),
+	pqDeleteRequest ("RTDB-Delete request", maxServicePrimitiveQueueLength),
+	pqUpdateRequest ("RTDB-Update request", maxServicePrimitiveQueueLength),	
+	pqCreateConfirm ("RTDB-Create confirm", maxServicePrimitiveQueueLength),
+	pqDeleteConfirm ("RTDB-Delete confirm", maxServicePrimitiveQueueLength),
+	pqUpdateConfirm ("RTDB-Update confirm", maxServicePrimitiveQueueLength)
     {
-      // set up all buffers and put them into free list
-      size_t act_buffer_size    =  shmBuffPool.get_actual_buffer_size ();
-      byte*  buffer_start       =  shmBuffPool.getBufferSegmentPtr ();
-      uint64_t needed_buffers   =  get_minimum_number_buffers_required ();
-
-      if (act_buffer_size == 0)             throw ShmException ("VardisShmControlSegment::ctor: actual buffer size is zero");
-      if (buffer_start    == nullptr)       throw ShmException ("VardisShmControlSegment::ctor: invalid buffer start pointer");
-      if (needed_buffers  > numberBuffers)  throw ShmException ("VardisShmControlSegment::ctor: insufficient number of buffers");
-
-      // put all but one buffer into the free list
-      for (uint64_t i = 0; i<numberBuffers-1; i++)
-	{
-	  SharedMemBuffer buff (act_buffer_size, i, i * act_buffer_size);
-	  rbFree.push (buff);
-	}
-    };
-
-
-    /**
-     * @brief Computes the minimum number of SharedMemBuffers required
-     *        (including some slack)
-     */
-    static uint64_t get_minimum_number_buffers_required ()
-    {
-      return 7*maxServicePrimitiveQueueLength + 10;
     };
 
 
@@ -105,17 +108,12 @@ namespace dcp::vardis {
     {
       std::stringstream ss;
 
-      ss << "VardisShmControlSegment: rbFree.stored = " << rbFree.stored_elements ()
-
-	 << ", rbCreateRequest.stored = " << rbCreateRequest.stored_elements ()
-	 << ", rbCreateConfirm.stored = " << rbCreateConfirm.stored_elements ()
-
-	 << ", rbDeleteRequest.stored = " << rbDeleteRequest.stored_elements ()
-	 << ", rbCeleteConfirm.stored = " << rbDeleteConfirm.stored_elements ()
-
-	 << ", rbUpdateRequest.stored = " << rbUpdateRequest.stored_elements ()
-	 << ", rbUpdateConfirm.stored = " << rbUpdateConfirm.stored_elements ()
- 
+      ss << "pqCreateRequest.stored = " << pqCreateRequest.stored_elements ()
+	 << ", pqCreateConfirm.stored = " << pqCreateConfirm.stored_elements ()
+	 << ", pqDeleteRequest.stored = " << pqDeleteRequest.stored_elements ()
+	 << ", pqCeleteConfirm.stored = " << pqDeleteConfirm.stored_elements ()
+	 << ", pqUpdateRequest.stored = " << pqUpdateRequest.stored_elements ()
+	 << ", pqUpdateConfirm.stored = " << pqUpdateConfirm.stored_elements ()
 	;
       
       return ss.str();
