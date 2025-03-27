@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <iostream>
 #include <map>
 #include <queue>
 #include <mutex>
@@ -36,6 +35,7 @@
  *        locks for the SRP neighbour store shared memory area
  */
 
+using dcp::bp::BPStaticClientInfo;
 
 namespace dcp::srp {
 
@@ -54,31 +54,23 @@ namespace dcp::srp {
     /**
      * @brief Constructor
      *
-     * @param protocol_id: BP protocol id to be used for SRP
-     * @param protname: clear-text protocol name for SRPapp
+     * @param static_client_info: static BP client protocol data to
+     *        use (e.g. protocol name, queueing mode)
      * @param cfg: SRP configuration
      *
      * Initializes SRP as BP client (i.e. performs protocol
      * registration) and also initializes the SRP store (global shared
      * memory segment)
      */
-    SRPRuntimeData (const BPProtocolIdT protocol_id,
-		    const std::string protname,
-		    const SRPConfiguration& cfg)
-    : BPClientRuntime (protocol_id,
-		       protname,
-		       sizeof(ExtendedSafetyDataT),
-		       dcp::bp::BP_QMODE_ONCE,
-		       0,
-		       false,   // allowMultiplepayloads
-		       false,   // generateTransmitPayloadConfirms
-		       cfg),
-      srp_store (cfg.shm_conf.shmAreaName.c_str(),
-		 true,
-		 cfg.srp_conf.srpGapSizeEWMAAlpha,
-		 get_own_node_identifier()),
-      srp_config (cfg),
-      srp_exitFlag (false)
+    SRPRuntimeData (const BPStaticClientInfo static_client_info,
+		    const SRPConfiguration cfg)
+      : BPClientRuntime (cfg, static_client_info, false),   // generateTransmitPayloadConfirms
+	srp_store (cfg.shm_conf.shmAreaName.c_str(),
+		   true,
+		   cfg.srp_conf.srpGapSizeEWMAAlpha,
+		   get_own_node_identifier()),
+	srp_config (cfg),
+	srp_exitFlag (false)
     {
     };
 
