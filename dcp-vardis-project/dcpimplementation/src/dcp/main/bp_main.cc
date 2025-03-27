@@ -99,7 +99,7 @@ void run_bp_management_command (MgmtCommand cmd, const std::string cfg_filename)
   BPClientConfiguration bpconfig;
   bpconfig.read_from_config_file (cfg_filename, true);
   
-  BPClientRuntime cl_rt (0, "ephemeral", 100, bpconfig);
+  BPClientRuntime cl_rt (bpconfig);
   
   DcpStatus sd_status;
   switch (cmd)
@@ -138,7 +138,7 @@ void run_query_client_protocols (const std::string cfg_filename)
   BPClientConfiguration bpconfig;
   bpconfig.read_from_config_file (cfg_filename, true);
 
-  BPClientRuntime cl_rt (0, "ephemeral", 100, bpconfig);
+  BPClientRuntime cl_rt (bpconfig);
 
   std::list<BPRegisteredProtocolDataDescription> descr_list;
   DcpStatus qcp_status = cl_rt.list_registered_protocols (descr_list);
