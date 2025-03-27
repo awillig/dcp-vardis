@@ -75,24 +75,7 @@ namespace dcp::vardis {
   {
     BOOST_LOG_SEV(log_tx, trivial::info) << "Starting transmit thread.";
 
-    if (runtime.bp_shm_area_ptr == nullptr)
-      {
-	BOOST_LOG_SEV(log_tx, trivial::fatal) << "Invalid BP shared memory handle. Exiting.";
-	runtime.vardis_exitFlag = true;
-	return;
-      }
-	
-    BPShmControlSegment* control_seg_ptr = (BPShmControlSegment*) runtime.bp_shm_area_ptr->getControlSegmentPtr();
-    byte               * buffer_seg_ptr  = runtime.bp_shm_area_ptr->getBufferSegmentPtr();
-
-    if ((control_seg_ptr == nullptr) or (buffer_seg_ptr == nullptr))
-      {
-	BOOST_LOG_SEV(log_tx, trivial::fatal) << "Invalid BP shared memory area pointer(s). Exiting.";
-	runtime.vardis_exitFlag = true;
-	return;
-      }
-      
-    BPShmControlSegment& CS = *control_seg_ptr;
+    BPShmControlSegment& CS = *(runtime.pSCS);
     
     while (not runtime.vardis_exitFlag)
       {
@@ -101,69 +84,34 @@ namespace dcp::vardis {
 	if (not runtime.protocol_data.vardis_store.get_vardis_isactive())
 	  continue;
 
-	// Find a free buffer in the shared memory to BP, construct
-	// the payload there in place, and either hand it back to the
-	// freeList in shared memory if the payload is empty, or
-	// submit a payload transmit request to BP
-
-	SharedMemBuffer shmBuff;
+	PushHandler handler = [&] (byte* memaddr, size_t bufferSize)
 	{
-	  ScopedShmControlSegmentLock lock (CS);
-	  if (CS.rbFree.isEmpty())
-	    {
-	      BOOST_LOG_SEV(log_tx, trivial::fatal) << "Cannot find free shared memory buffer. Exiting.";
-	      runtime.vardis_exitFlag = true;
-	      return;
-	    }
+	  BPTransmitPayload_Request*  pldReq_ptr = new (memaddr) BPTransmitPayload_Request;
+	  byte* area_ptr = memaddr + sizeof(BPTransmitPayload_Request);
+	  MemoryChunkAssemblyArea area ("vd-tx", std::min((size_t) runtime.vardis_config.vardis_conf.maxPayloadSize, bufferSize), area_ptr);
+	  unsigned int containers_added = 0;
 
-	  if (CS.queue.stored_elements() >= CS.queue.get_max_capacity ())
-	    {
-	      BOOST_LOG_SEV(log_tx, trivial::trace) << "Queue towards BP demon is currently full. No payload generated.";
-	      continue;
-	    }
+	  construct_payload (runtime, area, containers_added);
+
+	  if (containers_added == 0)
+	    return (size_t) 0;
+
+	  BOOST_LOG_SEV(log_tx, trivial::trace) << "preparing payload of length " << area.used ();
 	  
-	  shmBuff = CS.rbFree.pop();
-	}
+	  pldReq_ptr->protocolId = BP_PROTID_VARDIS;
+	  pldReq_ptr->length     = area.used();
 
-	byte* data_ptr = buffer_seg_ptr + shmBuff.data_offs ();
-
-	BPTransmitPayload_Request*  pldReq_ptr = new (data_ptr) BPTransmitPayload_Request;
-	byte* area_ptr = data_ptr + sizeof(BPTransmitPayload_Request);
-
-	MemoryChunkAssemblyArea area ("vd-tx", runtime.vardis_config.vardis_conf.maxPayloadSize, area_ptr);
-	unsigned int containers_added = 0;
-	construct_payload (runtime, area, containers_added);
+	  return (area.used() + sizeof(BPTransmitPayload_Request));
+	};
 	
-	if (containers_added > 0)
+	bool timed_out;
+
+	CS.queue.push_wait (handler, timed_out);
+	if (timed_out)
 	  {
-	    BOOST_LOG_SEV(log_tx, trivial::trace) << "preparing payload in buffer " << shmBuff;
-	    
-	    pldReq_ptr->protocolId = BP_PROTID_VARDIS;
-	    pldReq_ptr->length     = area.used();
-
-	    shmBuff.set_used_length (area.used() + sizeof(BPTransmitPayload_Request));
-
-	    ScopedShmControlSegmentLock lock (CS);
-	    if (CS.rbTransmitPayloadRequest.isFull())
-	      {
-		BOOST_LOG_SEV(log_tx, trivial::fatal) << "Shared memory buffer: transmit payload request buffer is full. Exiting.";
-		runtime.vardis_exitFlag = true;
-		return;
-	      }
-	    CS.rbTransmitPayloadRequest.push(shmBuff);
+	    BOOST_LOG_SEV(log_tx, trivial::fatal) << "Shared memory timeout. Exiting.";
+	    runtime.vardis_exitFlag = true;
 	  }
-	else
-	  {
-	    ScopedShmControlSegmentLock lock (CS);
-	    if (CS.rbFree.isFull())
-	      {
-		BOOST_LOG_SEV(log_tx, trivial::fatal) << "Shared memory buffer free list is full. Exiting.";
-		runtime.vardis_exitFlag = true;
-		return;
-	      }
-	    shmBuff.clear();
-	    CS.rbFree.push(shmBuff);
-	  }	
       }
     BOOST_LOG_SEV(log_tx, trivial::info) << "Exiting transmit thread.";
   }
