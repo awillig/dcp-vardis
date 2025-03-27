@@ -25,6 +25,8 @@
 #include <dcp/vardis/vardis_service_primitives.h>
 #include <dcp/vardis/vardis_shm_control_segment.h>
 
+using dcp::vardis::DBEntry;
+using dcp::vardis::PayloadQueue;
 using dcp::vardis::RTDB_Create_Confirm;
 using dcp::vardis::RTDB_Create_Request;
 using dcp::vardis::RTDB_Delete_Confirm;
@@ -33,178 +35,98 @@ using dcp::vardis::RTDB_Read_Confirm;
 using dcp::vardis::RTDB_Read_Request;
 using dcp::vardis::RTDB_Update_Confirm;
 using dcp::vardis::RTDB_Update_Request;
-using dcp::vardis::DBEntry;
+using dcp::vardis::ConfirmQueue;
 
 
 namespace dcp {
 
-
-  // --------------------------------------
-
-
-  inline MemoryChunkAssemblyArea pop_buffer_and_setup_assembly_area (VardisShmControlSegment& CS,
-								     byte *buffer_seg_ptr,
-								     const std::string& methname,
-								     RingBufferNormal& rbRequest,
-								     const RingBufferNormal& rbConfirm,
-								     SharedMemBuffer& buff)
-  {
-    if (CS.rbFree.isEmpty())      throw VardisClientLibException (methname + ": " + "no free block in shared memory");
-    if (not rbRequest.isEmpty())  throw VardisClientLibException (methname + ": " + "shared memory request queue is not empty");
-    if (not rbConfirm.isEmpty())  throw VardisClientLibException (methname + ": " + "shared memory confirm queue is not empty");
-    
-    buff = CS.rbFree.pop ();
-    
-    byte* data_ptr = buffer_seg_ptr + buff.data_offs ();
-    return MemoryChunkAssemblyArea ("vdc-ass", buff.max_length(), data_ptr);
-  }
-
-  // --------------------------------------
-
-  inline MemoryChunkDisassemblyArea await_confirmation_and_setup_disassembly_area (VardisShmControlSegment& CS,
-										   byte* buffer_seg_ptr,
-										   RingBufferNormal& rbConfirm,
-										   SharedMemBuffer& buff)
-  {
-    buff = rbConfirm.wait_pop (CS);
-
-    byte* data_ptr = buffer_seg_ptr + buff.data_offs ();
-    return MemoryChunkDisassemblyArea ("vdc-dass", buff.used_length(), data_ptr);
-  }
-  
-  // --------------------------------------
-
-  inline void move_buffer_to_free (VardisShmControlSegment& CS,
-				   const std::string& methname,
-				   SharedMemBuffer& buff)
-  {
-    buff.clear();
-    ScopedShmControlSegmentLock lock (CS);
-    if (CS.rbFree.isFull())
-      throw VardisClientLibException (methname + ": " + "cannot move buffer back into free list");
-    CS.rbFree.push(buff);
-  }
-  
   // --------------------------------------
 
   template <typename CT>
-  inline DcpStatus await_and_deserialize_simple_confirmation (VardisShmControlSegment& CS,
-							      byte* buffer_seg_ptr,
-							      RingBufferNormal& rbConfirm,
-							      const std::string& methname)
+  DcpStatus rtdb_helper (PayloadQueue& requestQueue,
+			 ConfirmQueue& confirmQueue,
+			 PushHandler req_handler)
   {
-    SharedMemBuffer buff;
-    MemoryChunkDisassemblyArea area = await_confirmation_and_setup_disassembly_area (CS,
-										     buffer_seg_ptr,
-										     rbConfirm,
-										     buff);
+    confirmQueue.reset ();
+    
+    bool timed_out;
+    requestQueue.push_wait (req_handler, timed_out);
+    if (timed_out)
+      return VARDIS_STATUS_INTERNAL_SHARED_MEMORY_ERROR;
 
-    CT conf;
-    conf.deserialize (area);
-    move_buffer_to_free (CS, methname, buff); 
-    return conf.status_code;
+    DcpStatus retval;
+    bool      further_entries;
+
+    PopHandler conf_handler = [&] (byte* memaddr, size_t len)
+    {
+      MemoryChunkDisassemblyArea area ("vdcl-dass", len, memaddr);
+      
+      CT conf;
+      conf.deserialize (area);
+      retval = conf.status_code;
+    };
+    
+    confirmQueue.pop_wait (conf_handler, timed_out, further_entries);
+    if (timed_out)
+      return VARDIS_STATUS_INTERNAL_SHARED_MEMORY_ERROR;
+    if (further_entries)
+      return VARDIS_STATUS_INTERNAL_ERROR;
+    
+    return retval;
+
   }
-						   
   
   // --------------------------------------
   
   DcpStatus VardisClientRuntime::rtdb_create (const VarSpecT& spec, const VarValueT& value)
   {
-    if (not _isRegistered)
-      throw VardisClientLibException ("rtdb_create: not registered with Vardis");
-    
-    byte*    buffer_seg_ptr     = nullptr;
-    VardisShmControlSegment& CS = obtain_shm_refs (buffer_seg_ptr);
+    VardisShmControlSegment& CS = *pSCS;
 
-    // first block: submit create request primitive
+    PushHandler req_handler = [&] (byte* memaddr, size_t bufferSize)
     {
-      ScopedShmControlSegmentLock lock (CS);
-      
-      SharedMemBuffer buff;
-      MemoryChunkAssemblyArea area = pop_buffer_and_setup_assembly_area (CS,
-									 buffer_seg_ptr,
-									 "vardisclient_rtdb_create",
-									 CS.rbCreateRequest,
-									 CS.rbCreateConfirm,
-									 buff);
-
+      MemoryChunkAssemblyArea area ("vdcl-cr", bufferSize, memaddr);
       RTDB_Create_Request cr_req;
       cr_req.serialize (area, spec, value);
+      return area.used ();
+    };
 
-      buff.set_used_length (area.used());    
-      CS.rbCreateRequest.push (buff);
-    }
-
-    return await_and_deserialize_simple_confirmation<RTDB_Create_Confirm> (CS, buffer_seg_ptr, CS.rbCreateConfirm, "vardisclient_rtdb_create");
-
+    return rtdb_helper<RTDB_Create_Confirm> (CS.pqCreateRequest, CS.pqCreateConfirm, req_handler);    
   }
 
   // --------------------------------------
 
   DcpStatus VardisClientRuntime::rtdb_delete (VarIdT varId)
   {
-    if (not _isRegistered)
-      throw VardisClientLibException ("rtdb_delete: not registered with Vardis");
-    
-    byte*    buffer_seg_ptr     = nullptr;
-    VardisShmControlSegment& CS = obtain_shm_refs (buffer_seg_ptr);
-    
-    // first block: submit delete request primitive
-    {
-      ScopedShmControlSegmentLock lock (CS);
-      
-      SharedMemBuffer buff;
-      MemoryChunkAssemblyArea area = pop_buffer_and_setup_assembly_area (CS,
-									 buffer_seg_ptr,
-									 "vardisclient_rtdb_delete",
-									 CS.rbDeleteRequest,
-									 CS.rbDeleteConfirm,
-									 buff);
+    VardisShmControlSegment& CS = *pSCS;
 
+    PushHandler req_handler = [&] (byte* memaddr, size_t bufferSize)
+    {
+      MemoryChunkAssemblyArea area ("vdcl-cr", bufferSize, memaddr);
       RTDB_Delete_Request del_req;
       del_req.varId = varId;
       del_req.serialize (area);
+      return area.used ();
+    };
 
-      buff.set_used_length (area.used());    
-      CS.rbDeleteRequest.push (buff);
-    }
-
-    return await_and_deserialize_simple_confirmation<RTDB_Delete_Confirm> (CS, buffer_seg_ptr, CS.rbDeleteConfirm, "vardisclient_rtdb_delete");
-
+    return rtdb_helper<RTDB_Delete_Confirm> (CS.pqDeleteRequest, CS.pqDeleteConfirm, req_handler);
   }
 
   // --------------------------------------
 
   DcpStatus VardisClientRuntime::rtdb_update (VarIdT varId, const VarValueT& value)
   {
-    if (not _isRegistered)
-      throw VardisClientLibException ("rtdb_update: not registered with Vardis");
-    
-    byte*    buffer_seg_ptr     = nullptr;
-    VardisShmControlSegment& CS = obtain_shm_refs (buffer_seg_ptr);
+    VardisShmControlSegment& CS = *pSCS;
 
-    // first block: submit update request primitive
+    PushHandler req_handler = [&] (byte* memaddr, size_t bufferSize)
     {
-      ScopedShmControlSegmentLock lock (CS);
-      
-      SharedMemBuffer buff;
-      MemoryChunkAssemblyArea area = pop_buffer_and_setup_assembly_area (CS,
-									 buffer_seg_ptr,
-									 "vardisclient_rtdb_update",
-									 CS.rbUpdateRequest,
-									 CS.rbUpdateConfirm,
-									 buff);
-
+      MemoryChunkAssemblyArea area ("vdcl-cr", bufferSize, memaddr);
       RTDB_Update_Request upd_req;
       upd_req.varId = varId;
       upd_req.serialize (area, value);
+      return area.used ();
+    };
 
-      buff.set_used_length (area.used());    
-      CS.rbUpdateRequest.push (buff);
-    }
-
-    return await_and_deserialize_simple_confirmation<RTDB_Update_Confirm> (CS, buffer_seg_ptr, CS.rbUpdateConfirm, "vardisclient_rtdb_update");
-
+    return rtdb_helper<RTDB_Update_Confirm> (CS.pqUpdateRequest, CS.pqUpdateConfirm, req_handler);
   }
 
   // --------------------------------------
@@ -216,9 +138,6 @@ namespace dcp {
 					      size_t value_bufsize,
 					      byte* value_buffer)
   {
-    if (not _isRegistered)
-      throw VardisClientLibException ("rtdb_read: not registered with Vardis");
-    
     if ((value_buffer == nullptr) or (value_bufsize < dcp::vardis::MAX_maxValueLength))
       throw VardisClientLibException ("rtdb_read: illegal buffer information");
 
