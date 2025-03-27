@@ -18,7 +18,6 @@
  */
 
 
-#include <iostream>
 #include <exception>
 #include <tins/tins.h>
 #include <dcp/common/area.h>
@@ -50,7 +49,7 @@ namespace dcp::bp {
     BPClientProtocolData& clientProt = runtime.clientProtocols[pldHdr.protocolId];
     clientProt.cntReceivedPayloads += 1;
     
-    if (clientProt.protocolId != pldHdr.protocolId)
+    if (clientProt.static_info.protocolId != pldHdr.protocolId)
       {
 	BOOST_LOG_SEV(log_rx, trivial::error)
 	  << "deliver_payload: found internal consistency around protocol identifiers, dropping payload.";
@@ -60,89 +59,52 @@ namespace dcp::bp {
 	return;
       }
 
-    if (clientProt.sharedMemoryAreaPtr == nullptr)
-      {
-	BOOST_LOG_SEV(log_rx, trivial::fatal)
-	  << "deliver_payload: no shared memory available, exiting.";
-	
-	area.incr (pldHdr.length.val);
-	clientProt.cntDroppedIncomingPayloads += 1;
-	runtime.bp_exitFlag = true;	
-	return;
-      }
-
-    auto control_seg_ptr = (BPShmControlSegment*) clientProt.sharedMemoryAreaPtr->getControlSegmentPtr ();
-    auto buffer_seg_ptr  = clientProt.sharedMemoryAreaPtr->getBufferSegmentPtr ();
-
-    if ((control_seg_ptr == nullptr) or (buffer_seg_ptr == nullptr))
-      {
-	BOOST_LOG_SEV(log_rx, trivial::fatal)
-	  << "deliver_payload: cannot retrieve buffer pool from shared memory, exiting.";
-	
-	area.incr (pldHdr.length.val);
-	clientProt.cntDroppedIncomingPayloads += 1;
-	runtime.bp_exitFlag = true;	
-	return;
-      }
-
     // now we start working in the shared memory area proper
-    BPShmControlSegment& CS = *control_seg_ptr;
-
-    ScopedShmControlSegmentLock lock (CS);
+    BPShmControlSegment& CS = *(clientProt.pSCS);
     
-    if (CS.rbFree.isEmpty())
-      {
-	BOOST_LOG_SEV(log_rx, trivial::info)
-	  << "deliver_payload: no free buffer available in shared memory, dropping payload.";
-	
-	area.incr (pldHdr.length.val);
-	clientProt.cntDroppedIncomingPayloads += 1;
-	return;
-      }
-
-    if (CS.rbReceivePayloadIndication.isFull())
-      {
-	BOOST_LOG_SEV(log_rx, trivial::info)
-	  << "deliver_payload: payload indication buffer is full, dropping payload.";
-	
-	area.incr (pldHdr.length.val);
-	clientProt.cntDroppedIncomingPayloads += 1;
-	return;
-      }
-
-    SharedMemBuffer shmBuff = CS.rbFree.pop();
-
-    if (pldHdr.length.val + sizeof(BPReceivePayload_Indication) > shmBuff.max_length())
+    if (pldHdr.length.val + sizeof(BPReceivePayload_Indication) > CS.pqReceivePayloadIndication.get_buffer_size())
       {
 	BOOST_LOG_SEV(log_rx, trivial::error)
 	  << "deliver_payload: shared memory buffer is too small, dropping payload."
 	  << " pldHdr.length = " << pldHdr.length
 	  << ", sizeof(BPReceivePayloadIndication) = " << sizeof (BPReceivePayload_Indication)
-	  << ", shmBuff.max_length() = " << shmBuff.max_length();
+	  << ", buffer_size = " << CS.pqReceivePayloadIndication.get_buffer_size();
 	
 	area.incr (pldHdr.length.val);
-	CS.rbFree.push (shmBuff);
 	clientProt.cntDroppedIncomingPayloads += 1;
 	return;
       }
 
-    
-    // now put together the indication primitive in shmBuff, followed
-    // by copying the payload into it. It starts with an indication
-    // header followed by the payload
-    byte* base_ptr = buffer_seg_ptr + shmBuff.data_offs ();
-    BPReceivePayload_Indication pldIndication;
-    pldIndication.length = pldHdr.length;
-    std::memcpy (base_ptr, (void*) &pldIndication, sizeof(pldIndication));
-    area.deserialize_byte_block (pldHdr.length.val, base_ptr + sizeof(pldIndication));
-    shmBuff.set_used_length (sizeof(pldIndication) + pldHdr.length.val);
-    
-    CS.rbReceivePayloadIndication.push (shmBuff);
 
-    BOOST_LOG_SEV(log_rx, trivial::trace)
-      << "pushed the following payload into rbReceivePayloadIndication: "
-      << byte_array_to_string (base_ptr, 40)
-      << " and queue occupancy is " << CS.report_stored_buffers();
+
+    PushHandler handler = [&] (byte* memaddr, size_t)
+    {
+      BPReceivePayload_Indication pldIndication;
+      pldIndication.length = pldHdr.length;
+      std::memcpy (memaddr, (void*) &pldIndication, sizeof(pldIndication));
+      area.deserialize_byte_block (pldHdr.length.val, memaddr + sizeof(pldIndication));      
+      return (sizeof(pldIndication) + pldHdr.length.val);
+    };
+    bool timed_out;
+
+    // now try to push received payload into indication queue, but
+    // with only a short timeout, and dropping payload after timeout
+    // expiry
+    const uint16_t shortTimeoutMS = 5;
+    CS.pqReceivePayloadIndication.push_wait (handler, timed_out, shortTimeoutMS);
+    if (timed_out)
+      {
+	BOOST_LOG_SEV(log_rx, trivial::info)
+	  << "deliver_payload: no free buffer available in shared memory, dropping payload.";
+	area.incr (pldHdr.length.val);
+	clientProt.cntDroppedIncomingPayloads += 1;
+      }
+    else
+      {
+	BOOST_LOG_SEV(log_rx, trivial::trace)
+	  << "pushed payload of length " << pldHdr.length << " into pqReceivePayloadIndication"
+	  << ", queue occupancy is " << CS.report_stored_buffers();
+      }    
   }
   
   // ------------------------------------------------------------------
