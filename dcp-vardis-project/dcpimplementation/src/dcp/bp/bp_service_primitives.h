@@ -20,12 +20,11 @@
 
 #pragma once
 
-#include <iostream>
 #include <cstdint>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/common/services_status.h>
-#include <dcp/common/shared_mem_area.h>
 #include <dcp/bp/bp_queueing_mode.h>
+#include <dcp/bp/bp_client_static_info.h>
 #include <dcp/bp/bp_transmissible_types.h>
 
 
@@ -46,28 +45,17 @@ namespace dcp::bp {
    * Base classes and constants for primitives
    ************************************************************************/
 
-  /**
-   * @brief Maximum length of protocol name string buffer (including zero byte)
-   */
-  const size_t maximumProtocolNameLength = 128;
-
 
   /*************************************************************************
    * Service BPRegisterProtocol
    ************************************************************************/
-  
+
   
   typedef struct BPRegisterProtocol_Request : ServiceRequest {
     /**
      * @brief These are the parameters according to the protocol specification
      */
-    BPProtocolIdT     protocolId = 0;                    /*!< Client protocol identifier */
-    char              name[maximumProtocolNameLength];   /*!< Client protocol name (zero-terminated string) */
-    BPLengthT         maxPayloadSize =0;                 /*!< Maximum payload size of client protocol */
-    BPQueueingMode    queueingMode;                      /*!< Queueing mode to be used */
-    uint16_t          maxEntries = 0;                    /*!< Maximum number of entries in payload queue */
-    bool              allowMultiplePayloads = false;     /*!< Can multiple payloads be included in a beacon */
-    
+    BPStaticClientInfo  static_info;
     
     /**
      * @brief Additional implementation-dependent parameters
