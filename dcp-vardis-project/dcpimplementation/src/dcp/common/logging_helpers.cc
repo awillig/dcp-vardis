@@ -57,7 +57,8 @@ namespace dcp {
     if (str == "error")   return trivial::error;
     if (str == "fatal")   return trivial::fatal;
     
-    throw dcp::LoggingException ("unknown logging severity_level string");
+    throw dcp::LoggingException ("string_to_severity_level",
+				 std::format("unknown logging severity_level string {}", str));
     
     return trivial::fatal;
   }
@@ -72,7 +73,8 @@ namespace dcp {
     if (level == trivial::error)    return "error";
     if (level == trivial::fatal)    return "fatal";
     
-    throw dcp::LoggingException ("unknown logging severity_level value");
+    throw dcp::LoggingException ("severity_level_to_string",
+				 std::format("unknown logging severity_level value"));
     
     return "";
   }
@@ -147,14 +149,19 @@ namespace dcp {
      * checks for logging options
      **********************************/
     
-    if (logfileNamePrefix.empty()) throw ConfigurationException("no log file name prefix given");
+    if (logfileNamePrefix.empty())
+      throw ConfigurationException("LoggingConfigurationBlock",
+				   "no log file name prefix given");
     try {
       string_to_severity_level (minimumSeverityLevel);
     }
     catch (...) {
-      throw ConfigurationException ("unknown logging severity level");
+      throw ConfigurationException ("LoggingConfigurationBlock",
+				    "unknown logging severity level");
     }
-    if (rotationSize < 1024*1024) throw ConfigurationException("minimum rotation size of 1 MB expected");
+    if (rotationSize < 1024*1024)
+      throw ConfigurationException("LoggingConfigurationBlock",
+				   std::format("minimum rotation size of 1 MB expected, given is {}", rotationSize));
   }
 
   
