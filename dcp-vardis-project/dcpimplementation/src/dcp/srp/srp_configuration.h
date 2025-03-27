@@ -23,7 +23,7 @@
 #include <iostream>
 #include <boost/program_options.hpp>
 #include <dcp/common/command_socket.h>
-#include <dcp/common/shared_mem_area.h>
+#include <dcp/common/sharedmem_configuration.h>
 #include <dcp/bp/bpclient_configuration.h>
 #include <dcp/srp/srp_constants.h>
 
@@ -39,7 +39,6 @@ namespace dcp::srp {
 
   
   const uint16_t    defaultValueSrpGenerationPeriodMS   = 100;
-  const uint16_t    defaultValueSrpReceptionPeriodMS    = 100;
   const uint16_t    defaultValueSrpScrubbingPeriodMS    = 500;
   const uint16_t    defaultValueSrpKeepaliveTimeoutMS   = 5000;
   const uint16_t    defaultValueSrpScrubbingTimeoutMS   = 3000;
@@ -61,12 +60,6 @@ namespace dcp::srp {
      * @brief Period between submitting SRP payloads to BP in ms
      */
     uint16_t srpGenerationPeriodMS = defaultValueSrpGenerationPeriodMS;
-
-
-    /**
-     * @brief Period between attempting to retrieve received payloads in ms
-     */
-    uint16_t srpReceptionPeriodMS  = defaultValueSrpReceptionPeriodMS;
     
 
     /**
