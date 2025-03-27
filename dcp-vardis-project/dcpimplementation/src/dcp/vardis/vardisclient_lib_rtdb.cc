@@ -139,7 +139,7 @@ namespace dcp {
 					      byte* value_buffer)
   {
     if ((value_buffer == nullptr) or (value_bufsize < dcp::vardis::MAX_maxValueLength))
-      throw VardisClientLibException ("rtdb_read: illegal buffer information");
+      throw VardisClientLibException ("rtdb_read", "illegal buffer information");
 
     variable_store.lock ();
     DBEntry& entry = variable_store.get_db_entry_ref (varId);
