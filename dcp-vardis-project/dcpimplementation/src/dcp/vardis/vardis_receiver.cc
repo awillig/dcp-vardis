@@ -196,11 +196,12 @@ namespace dcp::vardis {
   {
     BOOST_LOG_SEV(log_rx, trivial::info) << "Starting receive thread.";
     while (not runtime.vardis_exitFlag)
-      {
-	std::this_thread::sleep_for (std::chrono::milliseconds (runtime.vardis_config.vardis_conf.pollReceivePayloadMS));
-				     
+      {				     
 	if (not runtime.protocol_data.vardis_store.get_vardis_isactive())
-	  continue;
+	  {
+	    std::this_thread::sleep_for (std::chrono::milliseconds (100));
+	    continue;
+	  }
 
 	// check if we have received a payload
 	BPLengthT result_length = 0;
@@ -209,7 +210,7 @@ namespace dcp::vardis {
 	bool more_payloads = false;
 
 	do {
-	  rx_stat = runtime.receive_payload (result_length, rx_buffer, more_payloads);
+	  rx_stat = runtime.receive_payload_wait (result_length, rx_buffer, more_payloads, runtime.vardis_exitFlag);
 
 	  if ((result_length > 0) && (rx_stat == BP_STATUS_OK))
 	    {
