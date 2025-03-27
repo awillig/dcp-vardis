@@ -44,7 +44,7 @@ namespace dcp::vardis {
     if (icHeader.icNumRecords == 0)
       {
 	BOOST_LOG_SEV(log_rx, trivial::info) << "extractInstructionContainerElements: number of records is zero";
-	throw VardisReceiveException ("extractInstructionContainerElements: number of records is zero");
+	throw VardisReceiveException ("extractInstructionContainerElements", "number of records is zero");
       }
     
     for (int i=0; i<icHeader.icNumRecords; i++)
@@ -110,7 +110,8 @@ namespace dcp::vardis {
 		BOOST_LOG_SEV(log_rx, trivial::info) << "Unknown type of instruction container: "
 						     << vardis_instruction_container_to_string (InstructionContainerT(area.peek_byte()))
 						     << ", stopping processing";
-		throw VardisReceiveException ("process_received_payload: wrong instruction container type ");
+		throw VardisReceiveException ("process_received_payload",
+					      std::format("wrong instruction container type {}", (int) icHeader.icType.val));
 	      }
 	    }
 	}
