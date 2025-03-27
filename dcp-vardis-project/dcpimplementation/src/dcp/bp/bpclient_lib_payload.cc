@@ -38,9 +38,15 @@ namespace dcp {
   
   DcpStatus BPClientRuntime::transmit_payload (BPLengthT length, byte* payload)
   {
-    if (not _isRegistered)  throw BPClientLibException ("transmit_payload: not registered with BP");
-    if (length == 0)        throw BPClientLibException ("transmit_payload: length is zero");
-    if (!payload)           throw BPClientLibException ("transmit_payload: no payload given");
+    if (not _isRegistered)
+      throw BPClientLibException ("transmit_payload",
+				  "not registered with BP");
+    if (length == 0)
+      throw BPClientLibException ("transmit_payload",
+				  "length is zero");
+    if (!payload)
+      throw BPClientLibException ("transmit_payload",
+				  "no payload given");
 
     BPShmControlSegment& CS = *pSCS;
 
@@ -61,9 +67,15 @@ namespace dcp {
     BPLengthT max_length = static_client_info.maxPayloadSize;
     DcpStatus retval     = BP_STATUS_OK;
     
-    if (not _isRegistered) throw BPClientLibException ("receive_payload: not registered with BP");
-    if (max_length == 0)   throw BPClientLibException ("receive_payload: max_length is zero");
-    if (!result_buffer)    throw BPClientLibException ("receive_payload: no result buffer given");
+    if (not _isRegistered)
+      throw BPClientLibException ("receive_payload",
+				  "not registered with BP");
+    if (max_length == 0)
+      throw BPClientLibException ("receive_payload",
+				  "max_length is zero");
+    if (!result_buffer)
+      throw BPClientLibException ("receive_payload",
+				  "no result buffer given");
 
     BPShmControlSegment& CS = *pSCS;
     bool timed_out;
@@ -74,10 +86,22 @@ namespace dcp {
 	  BPReceivePayload_Indication* pInd         = (BPReceivePayload_Indication*) memaddr;
 	  const byte*                  payload_ptr  = memaddr + sizeof(BPReceivePayload_Indication);              
 	  
-	  if (pInd->s_type != stBP_ReceivePayload) throw BPClientLibException ("receive_payload: incorrect service type");
-	  if (pInd->length == 0)                   throw BPClientLibException ("receive_payload: got payload of zero length");
-	  if (pInd->length > max_length)           { retval = BP_STATUS_PAYLOAD_TOO_LARGE; return; }
-	  if (pInd->length != len - sizeof(bp::BPReceivePayload_Indication)) { retval = BP_STATUS_INTERNAL_ERROR; return; }
+	  if (pInd->s_type != stBP_ReceivePayload)
+	    throw BPClientLibException ("receive_payload",
+					std::format("incorrect service type {}", pInd->s_type));
+	  if (pInd->length == 0)
+	    throw BPClientLibException ("receive_payload",
+					"got payload of zero length");
+	  if (pInd->length > max_length)
+	    {
+	      retval = BP_STATUS_PAYLOAD_TOO_LARGE;
+	      return;
+	    }
+	  if (pInd->length != len - sizeof(bp::BPReceivePayload_Indication))
+	    {
+	      retval = BP_STATUS_INTERNAL_ERROR;
+	      return;
+	    }
 
 	  result_length = pInd->length;
 	  std::memcpy (result_buffer, payload_ptr, result_length.val); 
