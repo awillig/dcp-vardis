@@ -17,11 +17,22 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 
-
+#include <iostream>
 #include <dcp/vardis/vardis_client_protocol_data.h>
 
 namespace dcp::vardis {
 
+
+  VardisClientProtocolData::VardisClientProtocolData (const char* area_name)
+  {
+    pSSB = std::make_shared<ShmStructureBase> (area_name, sizeof(VardisShmControlSegment), true);
+    pSCS = (VardisShmControlSegment*) pSSB->get_memory_address ();
+    if (!pSCS) throw ShmException ("VardisClientProtocolData: cannot allocate BPShmControlSegment");
+    new (pSCS) VardisShmControlSegment ();
+  }
+  
+
+  
   std::ostream& operator<<(std::ostream& os, const VardisClientProtocolData& cpd)
   {
     os << "VardisClientProtocolData{clientName = " << cpd.clientName
