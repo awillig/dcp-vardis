@@ -51,11 +51,11 @@ namespace dcp {
   VardisClientRuntime::VardisClientRuntime (const VardisClientConfiguration& client_conf,
 					    bool do_register)
     : BaseClientRuntime (client_conf.cmdsock_conf.commandSocketFile, client_conf.cmdsock_conf.commandSocketTimeoutMS),
-      variable_store (client_conf.shm_conf_global.shmAreaName.c_str(), false)
+      shmSegmentName (client_conf.shm_conf_client.shmAreaName),
+      variable_store (client_conf.shm_conf_global.shmAreaName.c_str(), false),
+      client_configuration (client_conf)
 		      
   {
-    shmSegmentName = client_conf.shm_conf_client.shmAreaName;
-
     if (shmSegmentName.empty())
       throw VardisClientLibException ("Shared memory name is empty");
 
@@ -75,6 +75,10 @@ namespace dcp {
 	DcpStatus reg_response = register_with_vardis();
 	if (reg_response != VARDIS_STATUS_OK)
 	  throw VardisClientLibException (std::format("Registration with Vardis failed, status code = {}", vardis_status_to_string(reg_response)));
+
+	pSSB = std::make_shared<ShmStructureBase> (client_conf.shm_conf_client.shmAreaName.c_str(), 0, false);
+	pSCS = (VardisShmControlSegment*) pSSB->get_memory_address ();
+	if (!pSCS) throw VardisClientLibException (std::format("Could not attach to shared memory area region {}", client_conf.shm_conf_client.shmAreaName));	
       }
   }
 
@@ -152,20 +156,6 @@ namespace dcp {
     
     if (pConf->s_type != stVardis_Register)
       cl_sock.abort (std::format("register_with_vardis: response has wrong service type {}", pConf->s_type));
-
-    // if response is ok, try to attach to shared memory block
-    try {
-      vardis_shm_area_ptr = std::make_shared<ShmBufferPool> (
-							     shmSegmentName.c_str(),
-							     false,
-							     sizeof(VardisShmControlSegment),
-							     0,
-							     0
-							     );
-    }
-    catch (ShmException& shme) {
-      cl_sock.abort (std::format("register_with_vardis: cannot attach to shared memory block {}", shmSegmentName));
-    }
 
     if (pConf->status_code == VARDIS_STATUS_OK)
       {
