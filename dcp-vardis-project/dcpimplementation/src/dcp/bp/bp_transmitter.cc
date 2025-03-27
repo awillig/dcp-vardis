@@ -30,7 +30,6 @@
 #include <tins/tins.h>
 #include <dcp/common/area.h>
 #include <dcp/common/memblock.h>
-#include <dcp/common/shared_mem_area.h>
 #include <dcp/bp/bp_client_protocol_data.h>
 #include <dcp/bp/bp_logging.h>
 #include <dcp/bp/bp_service_primitives.h>
@@ -50,109 +49,23 @@ namespace dcp::bp {
 
   void serialize_payload (BPClientProtocolData&  protEntry,
 			  AssemblyArea&          area,
-			  byte*                  buffer_seg_ptr,
-			  SharedMemBuffer&       fromBuff,
+			  const byte*            memaddr,
+			  BPLengthT              pld_len,
 			  unsigned int&          numPayloadsAdded)
   {
-    BPTransmitPayload_Request* pldReq_ptr   = (BPTransmitPayload_Request*) (buffer_seg_ptr + fromBuff.data_offs());
-    byte*                      payload_ptr  = buffer_seg_ptr + fromBuff.data_offs() + sizeof(BPTransmitPayload_Request);
-    
-    BOOST_LOG_SEV(log_tx, trivial::trace) << "serialize_payload: serializing payload for protocolId " << protEntry.protocolId
-					  << " of length " << pldReq_ptr->length;
+    BOOST_LOG_SEV(log_tx, trivial::trace) << "serialize_payload: serializing payload for protocolId "
+					  << protEntry.static_info.protocolId
+					  << " of length " << pld_len;
     
     BPPayloadHeaderT pldHdr;
-    pldHdr.protocolId = protEntry.protocolId;
-    pldHdr.length     = pldReq_ptr->length;
+    pldHdr.protocolId = protEntry.static_info.protocolId;
+    pldHdr.length     = pld_len;
     pldHdr.serialize (area);
     
-    area.serialize_byte_block (pldReq_ptr->length.val, payload_ptr);
+    area.serialize_byte_block (pld_len.val, memaddr);
 
     numPayloadsAdded++;
     protEntry.cntOutgoingPayloads++;
-  }
-  
-  
-  // ------------------------------------------------------------------
-
-  void transfer_and_free_payload_from_queue (BPRuntimeData&          runtime,
-					     BPClientProtocolData&   protEntry,
-					     BPShmControlSegment&    CS,
-					     byte*                   buffer_seg_ptr,
-					     AssemblyArea&           area,
-					     unsigned int&           numPayloadsAdded)
-  {
-    ScopedShmControlSegmentLock lock (CS);
-    if ((not CS.queue.isEmpty()) and (not CS.rbFree.isFull()))
-      {
-	SharedMemBuffer tmpShmBuff = CS.queue.peek ();
-
-	if (dcp::bp::BPPayloadHeaderT::fixed_size() + tmpShmBuff.used_length() - sizeof(BPTransmitPayload_Request)  <= area.available())
-	  {		
-	    SharedMemBuffer shmBuff = CS.queue.pop ();
-	    serialize_payload (protEntry, area, buffer_seg_ptr, shmBuff, numPayloadsAdded);
-	    shmBuff.clear();
-	    CS.rbFree.push(shmBuff);
-	  }
-	else
-	  {
-	    BOOST_LOG_SEV(log_tx, trivial::fatal) << "transfer_and_free_payload_from_queue: payload is too large, dropping it";
-	    runtime.bp_exitFlag = true;
-	  }
-      }
-  }
-
-
-  // ------------------------------------------------------------------
-
-  void transfer_and_free_payload_from_buffer (BPRuntimeData&           runtime,
-					      BPClientProtocolData&    protEntry,
-					      BPShmControlSegment&     CS,
-					      byte*                    buffer_seg_ptr,
-					      AssemblyArea&            area,
-					      unsigned int&            numPayloadsAdded)
-  {
-    ScopedShmControlSegmentLock lock (CS);
-    if (CS.buffer.used_length () > 0)
-      {
-	if (dcp::bp::BPPayloadHeaderT::fixed_size() + CS.buffer.used_length() - sizeof(BPTransmitPayload_Request)  <= area.available())
-	  {		
-	    serialize_payload (protEntry, area, buffer_seg_ptr, CS.buffer, numPayloadsAdded);
-	  }
-	else
-	  {
-	    BOOST_LOG_SEV(log_tx, trivial::fatal) << "transfer_and_free_payload_from_buffer: payload is too large, dropping it";
-	    runtime.bp_exitFlag = true;
-	  }
-	CS.buffer.clear();
-	CS.rbFree.push (CS.buffer);
-      }
-  }
-
-
-  // ------------------------------------------------------------------
-
-  void transfer_and_leave_payload_from_buffer (BPRuntimeData&                         runtime,
-					       BPClientProtocolData&                  protEntry,
-					       BPShmControlSegment&                   CS,
-					       byte*                                  buffer_seg_ptr,
-					       AssemblyArea&                          area,
-					       unsigned int&                          numPayloadsAdded)
-  {
-    ScopedShmControlSegmentLock lock (CS);
-    if (CS.buffer.used_length () > 0)
-      {
-	if (dcp::bp::BPPayloadHeaderT::fixed_size() + CS.buffer.used_length() - sizeof(BPTransmitPayload_Request)  <= area.available())
-	  {
-	    serialize_payload (protEntry, area, buffer_seg_ptr, CS.buffer, numPayloadsAdded);
-	  }
-	else
-	  {
-	    BOOST_LOG_SEV(log_tx, trivial::fatal) << "transfer_and_leave_payload_from_buffer: payload is too large, dropping it";
-	    CS.buffer.clear();
-	    CS.rbFree.push (CS.buffer);
-	    runtime.bp_exitFlag = true;
-	  }
-      }
   }
   
   // ------------------------------------------------------------------
@@ -163,48 +76,46 @@ namespace dcp::bp {
 			    AssemblyArea&           area,
 			    unsigned int&           numPayloadsAdded)
   {
-    if (protEntry.sharedMemoryAreaPtr == nullptr)
+    BPShmControlSegment& CS = *protEntry.pSCS;
+    BPQueueingMode queueingMode = protEntry.static_info.queueingMode;
+    bool timed_out;
+    bool more_payloads;
+    std::function<void (const byte*, size_t)> handler = [&] (const byte* memaddr, size_t len)
+    {
+      serialize_payload (protEntry, area, memaddr, BPLengthT(len), numPayloadsAdded);
+    };
+
+    switch (queueingMode)
       {
-	BOOST_LOG_SEV(log_tx, trivial::fatal) << "attempt_add_payload: shared memory area not accessible";
+      case BP_QMODE_QUEUE_DROPTAIL:
+      case BP_QMODE_QUEUE_DROPHEAD:
+	{
+	  CS.queue.pop_nowait (handler, timed_out, more_payloads);
+	  break;
+	}
+      case BP_QMODE_ONCE:
+	{
+	  CS.buffer.pop_nowait (handler, timed_out, more_payloads);
+	  break;
+	}
+      case BP_QMODE_REPEAT:
+	{
+	  CS.buffer.peek_nowait (handler, timed_out);
+	  break;
+	}
+      default:
+	{
+	  BOOST_LOG_SEV(log_tx, trivial::fatal) << "attempt_add_payload: unknown queueingMode " << (int) queueingMode;
+	  runtime.bp_exitFlag = true;
+	  return;
+	}
+      }
+
+    if (timed_out)
+      {
+	BOOST_LOG_SEV(log_tx, trivial::fatal) << "attempt_add_payload: timout when accessing payload in shared memory";
 	runtime.bp_exitFlag = true;
-	return;
       }
-
-    BPShmControlSegment* control_seg_ptr = (BPShmControlSegment*) protEntry.sharedMemoryAreaPtr->getControlSegmentPtr();
-    byte*                buffer_seg_ptr  = protEntry.sharedMemoryAreaPtr->getBufferSegmentPtr();
-    if ((control_seg_ptr == nullptr) or (buffer_seg_ptr == nullptr))
-      {
-	BOOST_LOG_SEV(log_tx, trivial::fatal) << "attempt_add_payload: invalid shared memory area references";
-	runtime.bp_exitFlag = true;
-	return;
-      }
-
-    BPShmControlSegment& CS = *control_seg_ptr;
-    
-    if ((protEntry.queueingMode == BP_QMODE_QUEUE_DROPTAIL) || (protEntry.queueingMode == BP_QMODE_QUEUE_DROPHEAD))
-      {
-	transfer_and_free_payload_from_queue (runtime, protEntry, CS, buffer_seg_ptr, area, numPayloadsAdded);
-	return;
-      }
-
-    if (not protEntry.bufferOccupied)
-      return;
-    
-    if (protEntry.queueingMode == BP_QMODE_ONCE)
-      {
-	transfer_and_free_payload_from_buffer (runtime, protEntry, CS, buffer_seg_ptr, area, numPayloadsAdded);
-	protEntry.bufferOccupied = false;
-	return;
-      }
-    
-    if (protEntry.queueingMode == BP_QMODE_REPEAT)
-      {
-	transfer_and_leave_payload_from_buffer (runtime, protEntry, CS, buffer_seg_ptr, area, numPayloadsAdded);
-	return;
-      }
-
-    BOOST_LOG_SEV(log_tx, trivial::fatal) << "attempt_add_payload: unknown queueing mode";
-    runtime.bp_exitFlag = true;
     return;
   }
 			    
