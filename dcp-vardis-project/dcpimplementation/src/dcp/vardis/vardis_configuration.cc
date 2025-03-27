@@ -104,7 +104,6 @@ namespace dcp::vardis {
        << " , maxSummaries = " << cfg.vardis_conf.maxSummaries
        << " , pollRTDBServiceIntervalMS = " << cfg.vardis_conf.pollRTDBServiceIntervalMS
        << " , payloadGenerationIntervalMS = " << cfg.vardis_conf.payloadGenerationIntervalMS
-       << " , pollReceivePayloadMS = " << cfg.vardis_conf.pollReceivePayloadMS
        << " , queueMaxEntries = " << cfg.vardis_conf.queueMaxEntries
        << " , lockingforindividualcontainers = " << cfg.vardis_conf.lockingForIndividualContainers
     
