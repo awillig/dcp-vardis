@@ -37,8 +37,12 @@
 
 #define DCP_EXCEPTION(name_) \
   class name_ : public DcpException { \
+  private: \
+  std::string _ename = #name_; \
   public: \
-  name_ (const std::string& message) : DcpException (std::format("{}: {}", #name_, message)) {}; \
+  name_ (const std::string& message) : DcpException (std::format("{}", message)) {}; \
+  name_ (const std::string& modname, const std::string& message) : DcpException (std::format("[{}]{}", modname ,message)) {}; \
+  std::string ename () const { return _ename; }; \
   };
 
 
