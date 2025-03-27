@@ -20,11 +20,11 @@
 
 #pragma once
 
-#include <iostream>
 #include <list>
 #include <dcp/common/command_socket.h>
 #include <dcp/common/exceptions.h>
 #include <dcp/common/services_status.h>
+#include <dcp/common/sharedmem_structure_base.h>
 #include <dcp/vardis/vardisclient_configuration.h>
 #include <dcp/vardis/vardis_constants.h>
 #include <dcp/vardis/vardis_protocol_statistics.h>
@@ -85,33 +85,16 @@ namespace dcp {
 
 
     /**
-     * @brief Internal function to obtain a reference to the shared
-     *        memory control segment
-     *
-     * @param bsptr: output value, will contain pointer to start of buffer segment
-     * @return Reference to Vardis shared memory control segment
-     */
-    inline VardisShmControlSegment& obtain_shm_refs (byte*& bsptr)
-    {
-      VardisShmControlSegment* csptr;
-      
-      if (vardis_shm_area_ptr == nullptr)
-	throw VardisClientLibException ("obtain_shm_refs: no valid shared memory reference");
-      
-      csptr  = (VardisShmControlSegment*) vardis_shm_area_ptr->getControlSegmentPtr();
-      bsptr  = vardis_shm_area_ptr->getBufferSegmentPtr();
-      
-      if ((csptr == nullptr) or (bsptr == nullptr))
-	throw VardisClientLibException ("obtain_shm_refs: no valid shared memory segment references");
-      
-      return *csptr;
-    };
-    
-
-    /**
      * @brief Pointer to the per-client shared memory segment descriptor
      */
-    std::shared_ptr<ShmBufferPool>  vardis_shm_area_ptr;
+    std::shared_ptr<ShmStructureBase> pSSB;
+
+
+    /**
+     * @brief Pointer to the actual shared memory region. Valid after
+     *        successful registration
+     */
+    VardisShmControlSegment*          pSCS = nullptr;
 
 
     /**
@@ -120,8 +103,18 @@ namespace dcp {
     NodeIdentifierT ownNodeIdentifier;
     
 
+    /**
+     * @brief The Vardis variable store -- contains all variables and
+     *        their descriptions
+     */
     VardisVariableStoreShm variable_store;
 
+
+    /**
+     * @brief Configuration data of Vardis client
+     */
+    VardisClientConfiguration client_configuration;
+    
     
   public:
 
