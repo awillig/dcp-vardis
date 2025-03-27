@@ -19,7 +19,6 @@
 
 
 
-#include <iostream>
 #include <format>
 #include <fstream>
 extern "C" {
@@ -43,6 +42,66 @@ using namespace dcp::bp;
 
 namespace dcp {
 
+  // -----------------------------------------------------------------------------------
+
+  BPClientRuntime::BPClientRuntime (BPClientConfiguration client_conf,
+				    BPStaticClientInfo static_client_info,
+				    bool gen_pld_conf
+				    )
+    : BaseClientRuntime (client_conf.bp_cmdsock_conf.commandSocketFile.c_str(), client_conf.bp_cmdsock_conf.commandSocketTimeoutMS),
+      static_client_info (static_client_info),
+      shmAreaName (client_conf.bp_shm_conf.shmAreaName),
+      generateTransmitPayloadConfirms (gen_pld_conf),
+      client_configuration (client_conf)
+  {
+    if (gen_pld_conf)
+      throw BPClientLibException (std::format("BPClientRuntime: generation of payload confirms not supported"));
+    
+    check_names (static_client_info.protocolName, shmAreaName);
+    
+    DcpStatus reg_status = register_with_bp (generateTransmitPayloadConfirms);
+    if (reg_status != BP_STATUS_OK)
+      throw BPClientLibException (std::format("BPClientRuntime: registration failed, status code = {}", reg_status));
+    
+    pSSB = std::make_shared<ShmStructureBase> (shmAreaName.c_str(), 0, false);
+    pSCS = (BPShmControlSegment*) pSSB->get_memory_address ();
+    if (!pSCS) throw BPClientLibException ("BPClientRuntime: cannot attach to BPShmControlSegment");
+  }
+  
+  // -----------------------------------------------------------------------------------
+  
+  BPClientRuntime::BPClientRuntime (const BPClientConfiguration& client_conf)
+    : BaseClientRuntime (client_conf.bp_cmdsock_conf.commandSocketFile.c_str(), client_conf.bp_cmdsock_conf.commandSocketTimeoutMS),
+      client_configuration (client_conf)
+  {
+    check_names (static_client_info.protocolName, shmAreaName);
+  }
+  
+  // -----------------------------------------------------------------------------------
+  
+  BPClientRuntime::~BPClientRuntime ()
+  {
+    if (_isRegistered)
+      deregister_with_bp ();
+  }
+  
+  // -----------------------------------------------------------------------------------
+  
+  void BPClientRuntime::check_names (const char* protName, std::string shmAreaName)
+  {
+    if (std::strlen(protName) == 0)
+      throw BPClientLibException ("BPClientRuntime: no protocol name given");
+    
+    if (std::strlen(protName) > dcp::bp::maximumProtocolNameLength - 1)
+      throw BPClientLibException ("BPClientRuntime: protocol name is too long");
+    
+    if (shmAreaName.empty())
+      throw BPClientLibException ("BPClientRuntime: no shared memory area name given");
+    
+    if (shmAreaName.capacity() > maxShmAreaNameLength - 1)
+      throw BPClientLibException ("BPClientRuntime: shared memory area name is too long");
+  };
+  
   // -----------------------------------------------------------------------------------
   
   DcpStatus BPClientRuntime::shutdown_bp ()
@@ -77,21 +136,13 @@ namespace dcp {
 
   // -----------------------------------------------------------------------------------
 
-  DcpStatus BPClientRuntime::register_with_bp (const BPQueueingMode  queueingMode,
-					       const uint16_t        maxEntries,
-					       const bool            allowMultiplePayloads,
-					       const bool            generateTransmitPayloadConfirms)
+  DcpStatus BPClientRuntime::register_with_bp (const bool generateTransmitPayloadConfirms)
   {
     ScopedClientSocket cl_sock (commandSock);
         
     BPRegisterProtocol_Request rpReq;
-    std::strcpy (rpReq.name, protName.c_str());
-    rpReq.protocolId                       = protId;
-    rpReq.maxPayloadSize                   = get_max_payload_size();
-    rpReq.queueingMode                     = queueingMode;
-    rpReq.maxEntries                       = maxEntries;
-    rpReq.allowMultiplePayloads            = allowMultiplePayloads;
-    rpReq.generateTransmitPayloadConfirms  = generateTransmitPayloadConfirms;
+    rpReq.static_info = static_client_info;
+    rpReq.generateTransmitPayloadConfirms              = generateTransmitPayloadConfirms;
     
     std::strcpy (rpReq.shm_area_name, shmAreaName.c_str());
 
@@ -100,11 +151,7 @@ namespace dcp {
 
     if (nrcvd != sizeof(BPRegisterProtocol_Confirm))
       {
-	std::cout << "register_with_bp: response has size " << nrcvd
-		  << " but I expected size " << sizeof(BPRegisterProtocol_Confirm)
-		  << std::endl;
-	
-	cl_sock.abort ("register_with_bp: response has wrong size");
+	cl_sock.abort (std::format("register_with_bp: response has wrong size {}, expected was {}", nrcvd, sizeof(BPRegisterProtocol_Confirm)));
       }
     
     BPRegisterProtocol_Confirm *pConf = (BPRegisterProtocol_Confirm*) buffer;
@@ -112,24 +159,12 @@ namespace dcp {
     if (pConf->s_type != stBP_RegisterProtocol) cl_sock.abort ("register_with_bp: response has wrong service type");
 
     ownNodeIdentifier = pConf->ownNodeIdentifier;
-
-    // if response is ok, try to attach to shared memory block
-    if (pConf->status_code == BP_STATUS_OK)
-      {
-	try {
-	  bp_shm_area_ptr = std::make_shared<ShmBufferPool> (
-							     shmAreaName.c_str(),
-							     false,
-							     sizeof(BPShmControlSegment),
-							     0,
-							     0
-							     );
-	}
-	catch (ShmException& shme) {
-	  cl_sock.abort ("register_with_bp: cannot attach to shared memory block");
-	}
-	_isRegistered = true;
-      }
+    
+    if (pConf->status_code != BP_STATUS_OK)
+      throw BPClientLibException (std::format("register_with_bp: registration failed, status code = {}", bp_status_to_string (pConf->status_code)));
+    
+    _isRegistered = true;
+    
     return pConf->status_code;
   }
   
