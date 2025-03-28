@@ -61,6 +61,17 @@ namespace dcp::vardis {
 	  pd.makeICTypeRequestVarUpdates (area, containers_added);
 	}
     }
+    catch (DcpException& e) {
+      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+	<< "Caught exception during payload construction. "
+	<< "Exception type: " << e.ename()
+	<< ", module: " << e.modname()
+	<< ", message: " << e.what()
+	<< "Exiting.";
+      runtime.vardis_exitFlag = true;
+      containers_added = 0;
+    }
+
     catch (std::exception& e)
       {
 	BOOST_LOG_SEV(log_tx, trivial::fatal) << "Caught exception during payload construction: " << e.what() << ". Exiting.";
