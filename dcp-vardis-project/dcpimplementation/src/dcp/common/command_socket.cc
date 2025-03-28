@@ -354,7 +354,7 @@ namespace dcp {
       {
 	close (the_client_sock);
 	throw SocketException ("open_client",
-			       std::format("cannot connect to socket, errno = {}", strerror (errno)));
+			       std::format("cannot connect to socket {}, errno = {}", socketName, strerror (errno)));
       }
     
     // set socket option to time out after configurable time
