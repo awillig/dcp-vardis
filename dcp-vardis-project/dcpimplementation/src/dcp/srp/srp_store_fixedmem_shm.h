@@ -115,7 +115,7 @@ namespace dcp::srp {
 	}
       else
 	{
-	  this->pContents = (ShmFixedMemContents*) region.get_address();
+	  this->pContents = (ShmFixedMemContents*) get_memory_address();
 	  if (this->pContents == nullptr)
 	    throw SRPStoreException ("FixedMemSRPStoreShm", "illegal region pointer");
 	}
