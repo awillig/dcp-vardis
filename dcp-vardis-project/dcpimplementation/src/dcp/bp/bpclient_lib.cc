@@ -57,8 +57,9 @@ namespace dcp {
     if (gen_pld_conf)
       throw BPClientLibException ("BPClientRuntime",
 				  "generation of payload confirms not supported");
-    
-    check_names (static_client_info.protocolName, shmAreaName);
+
+    check_protocol_name (static_client_info.protocolName);
+    check_shm_area_name (shmAreaName);
     
     DcpStatus reg_status = register_with_bp (generateTransmitPayloadConfirms);
     if (reg_status != BP_STATUS_OK)
@@ -78,7 +79,7 @@ namespace dcp {
     : BaseClientRuntime (client_conf.bp_cmdsock_conf.commandSocketFile.c_str(), client_conf.bp_cmdsock_conf.commandSocketTimeoutMS),
       client_configuration (client_conf)
   {
-    check_names (static_client_info.protocolName, shmAreaName);
+    check_protocol_name (static_client_info.protocolName);
   }
   
   // -----------------------------------------------------------------------------------
@@ -91,7 +92,7 @@ namespace dcp {
   
   // -----------------------------------------------------------------------------------
   
-  void BPClientRuntime::check_names (const char* protName, std::string shmAreaName)
+  void BPClientRuntime::check_protocol_name (const char* protName)
   {
     if (std::strlen(protName) == 0)
       throw BPClientLibException ("check_names",
@@ -99,8 +100,13 @@ namespace dcp {
     
     if (std::strlen(protName) > dcp::bp::maximumProtocolNameLength - 1)
       throw BPClientLibException ("check_names",
-				  std::format("protocol name {} is too long", protName));
-    
+				  std::format("protocol name {} is too long", protName));    
+  };
+
+    // -----------------------------------------------------------------------------------
+  
+  void BPClientRuntime::check_shm_area_name (std::string shmAreaName)
+  {
     if (shmAreaName.empty())
       throw BPClientLibException ("check_names",
 				  "no shared memory area name given");

@@ -126,11 +126,16 @@ namespace dcp {
 
     
     /**
-     * @brief Checks protocol and shared memory area names, throws if
-     *        invalid
+     * @brief Checks protocol name, throws if invalid
      */
-    void check_names (const char* protName, std::string shmAreaName);
+    void check_protocol_name (const char* protName);
 
+
+    /**
+     * @brief Checks shared memory area name, throws if invalid
+     */
+    void check_shm_area_name (std::string shmAreaName);
+    
 
     /**
      * @brief Helper function for a BP client protocol to retrieve
