@@ -21,10 +21,9 @@
 #pragma once
 
 #include <iostream>
-#include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
-#include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
+#include <dcp/common/sharedmem_structure_base.h>
 #include <dcp/vardis/vardis_store_array.h>
 
 
@@ -58,7 +57,7 @@ namespace dcp::vardis {
    * @tparam descrBufferSize: size of a memory buffer for storing variable description
    */
   template <size_t valueBufferSize, size_t descrBufferSize>
-  class ArrayVariableStoreShm : public ArrayVariableStoreBase<GlobalStateShm, valueBufferSize, descrBufferSize> {
+  class ArrayVariableStoreShm : public ArrayVariableStoreBase<GlobalStateShm, valueBufferSize, descrBufferSize>, ShmStructureBase {
     
   protected:
 
@@ -76,12 +75,8 @@ namespace dcp::vardis {
      * The server is responsible for allocating and de-allocating the
      * shared memory segment.
      */
-    bool                 isServer  = false;
+    bool                 isCreator  = false;
 
-
-    shared_memory_object shm_obj;  /*!< The shared memory object */
-    mapped_region        region;   /*!< Region information, e.g. containing memory address of shared memory segment */
-    
 
   public:
 
@@ -97,55 +92,35 @@ namespace dcp::vardis {
      *        store in there
      *
      * @param area_name: name of shared memory segment
-     * @param isServer: indicates whether caller is server
-     *        (Vardis demon) or not (Vardis client)
+     * @param isCreator: indicates whether caller is creating the
+     *        shared memory area for the Vardis store (Vardis demon)
+     *        or not (Vardis client)
      * @param maxsumm: value of maxSummaries configuration parameter
      * @param maxdescrlen: value of maxDescriptionLength configuration parameter
      * @param maxvallen: value of maxValueLength configuration parameter
      * @param maxrep: value of maxRepetitions configuration parameter
      * @param own_node_id: value of ownNodeIdentifier parameter
      *
-     * As a server, allocates shared memory object, and initializes
+     * As a creator, allocates shared memory object, and initializes
      * the array-based variable store there. As a client, attempts to
      * open and attach to the shared memory segment.
      *
      * Throws when shared memory allocation does not work.
      */
     ArrayVariableStoreShm (const char* area_name,
-			   bool isServer,
+			   bool isCreator,
 			   uint16_t maxsumm = 0,
 			   size_t maxdescrlen = 0,
 			   size_t maxvallen = 0,
 			   uint8_t maxrep = 0,
 			   NodeIdentifierT own_node_id = nullNodeIdentifier
 			   )
-      : isServer (isServer)
+      : ShmStructureBase (area_name, ShmArrayType::get_array_contents_size(), isCreator),
+	isCreator (isCreator)
     {
-      if (area_name == nullptr)
-	throw VardisStoreException ("ArrayVariableStoreShm", "no area name");
-
-      size_t array_contents_size = ShmArrayType::get_array_contents_size();
-      
-      if (isServer)
+      if (isCreator)
 	{
-	  try {
-	    shm_obj = shared_memory_object (create_only, area_name, read_write);
-	    shm_obj.truncate (array_contents_size);
-	    region = mapped_region (shm_obj, read_write);
-	  }
-	  catch (const std::exception& e)
-	    {
-	      throw VardisStoreException ("ArrayVariableStoreShm",
-					  std::format ("caught exception '{}' while attempting to create and initialize shared memory object named {}",
-						       e.what(),
-						       area_name));
-	    }	  
-	  if (region.get_size() != array_contents_size)
-	    throw VardisStoreException ("ArrayVariableStoreShm",
-					std::format("wrong region size {} where {} is required",
-						    region.get_size(),
-						    array_contents_size));
-	  ShmArrayType::initialize_array_store ((byte*) region.get_address(),
+	  ShmArrayType::initialize_array_store ((byte*) get_memory_address (),
 						maxsumm,
 						maxdescrlen,
 						maxvallen,
@@ -154,24 +129,7 @@ namespace dcp::vardis {
 	}
       else
 	{
-	  try {
-	    shm_obj = shared_memory_object (open_only, area_name, read_write);
-	    region  = mapped_region (shm_obj, read_write);
-	  }
-	  catch (const std::exception& e)
-	    {
-	      throw VardisStoreException ("ArrayVariableStoreShm",
-					  std::format ("Caught exception '{}' while attempting to attach to shared memory object named {}",
-						       e.what(),
-						       area_name));
-	    }
-	  if (region.get_size() != array_contents_size)
-	    throw VardisStoreException ("ArrayVariableStoreShm",
-					std::format("wrong region size {} where {} is required",
-						    region.get_size(),
-						    array_contents_size));
-
-	  this->pContents = (ShmArrayContents*) region.get_address();
+	  this->pContents = (ShmArrayContents*) get_memory_address();
 	  if (this->pContents == nullptr)
 	    throw VardisStoreException ("ArrayVariableStoreShm",
 					"illegal region pointer");
@@ -180,18 +138,7 @@ namespace dcp::vardis {
     };
     
 
-    /**
-     * @brief Destructor, deallocates shared memory when server
-     */
-    ~ArrayVariableStoreShm ()
-    {
-      if (isServer)
-	{
-	  shm_obj.remove(shm_obj.get_name());
-	}
-    };
     
-
     /**
      * @brief Acquires mutex for variable store in shared memory
      */
