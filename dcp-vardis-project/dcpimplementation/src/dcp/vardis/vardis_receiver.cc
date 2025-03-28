@@ -116,6 +116,15 @@ namespace dcp::vardis {
 	    }
 	}
     }
+    catch (DcpException& e) {
+      BOOST_LOG_SEV(log_rx, trivial::info)
+	<< "process_received_payload -- extracting elements: "
+	<< "Exception type: " << e.ename()
+	<< ", module: " << e.modname()
+	<< ", message: " << e.what();
+      return;
+    }
+
     catch (std::exception& e)
       {
 	BOOST_LOG_SEV(log_rx, trivial::info)
