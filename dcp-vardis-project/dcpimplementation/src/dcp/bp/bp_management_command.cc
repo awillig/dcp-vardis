@@ -570,6 +570,16 @@ namespace dcp::bp {
     try {      
       runtime.commandSocket.open_owner (log_mgmt_command);
     }
+    catch (DcpException& e) {
+      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+	<< "Could not establish BP command socket. "
+	<< "Exception type: " << e.ename()
+	<< ", module: " << e.modname()
+	<< ", message: " << e.what()
+	<< "Exiting.";
+      runtime.bp_exitFlag = true;
+      return;
+    }
     catch (std::exception& e) {
       BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Could not establish BP command socket, exiting.";
       runtime.bp_exitFlag = true;
