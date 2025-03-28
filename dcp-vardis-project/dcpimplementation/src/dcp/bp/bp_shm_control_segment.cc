@@ -113,7 +113,7 @@ namespace dcp::bp {
     if ((length == 0) or (!payload))
       return BP_STATUS_EMPTY_PAYLOAD;
     
-    if (length > (static_client_info.maxPayloadSize - (dcp::bp::BPHeaderT::fixed_size() + dcp::bp::BPPayloadHeaderT::fixed_size())))
+    if (length > (static_client_info.maxPayloadSize + sizeof(BPTransmitPayload_Request)))
       return  BP_STATUS_PAYLOAD_TOO_LARGE;
     
     PushHandler handler = [&] (byte* memaddr, size_t)
