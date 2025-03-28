@@ -6,10 +6,11 @@
 #include <thread>
 #include <chrono>
 #include <boost/program_options.hpp>
+#include <dcp/common/debug_helpers.h>
 #include <dcp/common/global_types_constants.h>
+#include <dcp/common/other_helpers.h>
 #include <dcp/common/services_status.h>
 #include <dcp/common/sharedmem_configuration.h>
-#include <dcp/common/debug_helpers.h>
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/srp/srp_configuration.h>
@@ -23,6 +24,7 @@
 using dcp::BP_STATUS_OK;
 using dcp::bp_status_to_string;
 using dcp::BPClientRuntime;
+using dcp::DcpException;
 using dcp::DcpStatus;
 using std::cerr;
 using std::cout;
@@ -176,7 +178,11 @@ int main (int argc, char* argv[])
     cerr << desc << endl;
     return EXIT_FAILURE;
   }
-  catch(std::exception& e) {
+  catch (DcpException& e) {
+    print_exiting_dcp_exception (e);
+    return EXIT_FAILURE;
+  }
+  catch (std::exception& e) {
     cerr << "Caught an exception: " << e.what() << endl;
     return EXIT_FAILURE;
   }

@@ -9,6 +9,7 @@
 #include <list>
 #include <boost/program_options.hpp>
 #include <dcp/common/global_types_constants.h>
+#include <dcp/common/other_helpers.h>
 #include <dcp/common/services_status.h>
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/vardis/vardis_configuration.h>
@@ -21,11 +22,12 @@
 #include <dcp/vardis/vardisclient_lib.h>
 
 
-using std::cout;
 using std::cerr;
+using std::cout;
 using std::endl;
-using std::size_t;
 using std::exception;
+using std::size_t;
+using dcp::DcpException;
 using dcp::VardisClientRuntime;
 using dcp::VardisClientConfiguration;
 using dcp::vardis_status_to_string;
@@ -252,6 +254,10 @@ int main (int argc, char* argv[])
     cerr << desc << endl;
     return EXIT_FAILURE;
 
+  }
+  catch (DcpException& e) {
+    print_exiting_dcp_exception (e);
+    return EXIT_FAILURE;
   }
   catch(exception& e) {
     cerr << e.what() << endl;
