@@ -20,9 +20,7 @@
 
 #pragma once
 
-#include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
-#include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <dcp/common/sharedmem_structure_base.h>
 #include <dcp/srp/srp_configuration.h>
