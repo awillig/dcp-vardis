@@ -18,7 +18,12 @@
  */
 
 
+#include <iostream>
+#include <dcp/common/exceptions.h>
 #include <dcp/common/other_helpers.h>
+
+using std::cout;
+using std::endl;
 
 namespace dcp {
 
@@ -28,6 +33,15 @@ namespace dcp {
     tv.tv_sec  =  ms / 1000;
     tv.tv_usec =  1000 * (ms % 1000);
     return tv;
+  }
+
+  void print_exiting_dcp_exception (const DcpException& e)
+  {
+    cout << "DCP ERROR [" << e.ename () << "]"
+	 << (*(e.modname ()) ? std::format ("({}): ", e.modname()) : std::string(": "))
+	 << e.what ()
+	 << endl;
+    cout << "Exiting." << endl;
   }
   
 };  // namespace dcp

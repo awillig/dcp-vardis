@@ -22,6 +22,7 @@
 
 #include <cstdint>
 #include <sys/time.h>
+#include <dcp/common/exceptions.h>
 #include <dcp/common/global_types_constants.h>
 
 namespace dcp {
@@ -34,4 +35,10 @@ namespace dcp {
    */
   struct timeval milliseconds_to_timeval (uint16_t ms);
 
+
+  /**
+   * @brief Standardized way of outputting DcpExceptions
+   */
+  void print_exiting_dcp_exception (const DcpException& e);
+  
 };  // namespace dcp
