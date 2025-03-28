@@ -326,8 +326,18 @@ namespace dcp::vardis {
     try {
       runtime.vardisCommandSock.open_owner (log_mgmt_command);
     }
+    catch (DcpException& e) {
+      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+	<< "Could not establish Vardis command socket. "
+	<< "Exception type: " << e.ename()
+	<< ", module: " << e.modname()
+	<< ", message: " << e.what()
+	<< "Exiting.";
+      runtime.vardis_exitFlag = true;
+      return;
+    }
     catch (std::exception& e) {
-      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Could not establish Vardis command socket, exiting.";
+      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Could not establish Vardis command socket. Exiting.";
       runtime.vardis_exitFlag = true;
       return;
     }
@@ -342,8 +352,17 @@ namespace dcp::vardis {
 	try {
 	  handle_command_socket (runtime);
 	}
+	catch (DcpException& e) {
+	  BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+	    << "Could not receive data from command socket. "
+	    << "Exception type: " << e.ename()
+	    << ", module: " << e.modname()
+	    << ", message: " << e.what()
+	    << "Exiting.";
+	  runtime.vardis_exitFlag = true;
+	}
 	catch (std::exception& e) {
-	  BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Caught exception " << e.what() << " while handling command, exiting.";
+	  BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Caught exception " << e.what() << " while handling command. Exiting.";
 	  runtime.vardis_exitFlag = true;
 	}
       }
