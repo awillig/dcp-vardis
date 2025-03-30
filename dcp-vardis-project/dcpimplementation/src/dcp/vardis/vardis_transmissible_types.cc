@@ -130,7 +130,7 @@ namespace dcp::vardis {
       case  ICTYPE_DELETE_VARIABLES:    return "ICTYPE_DELETE_VARIABLES";
       
       default:
-	throw std::invalid_argument("vardis_status_to_string: illegal status code");
+	throw std::invalid_argument(std::format("vardis_instruction_container_to_string: illegal instruction container code {}", (int) ic.val));
       }
     return "";
   }
