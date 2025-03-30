@@ -35,6 +35,8 @@ namespace dcp {
       case  stBP_ListRegisteredProtocols      :  return "stBP_ListRegisteredProtocols";
       case  stBP_ClearBuffer                  :  return "stBP_ClearBuffer";
       case  stBP_QueryNumberBufferedPayloads  :  return "stBP_QueryNumberBufferedPayloads";
+      case  stBP_ReceivePayload               :  return "stBP_ReceivePayload";
+      case  stBP_TransmitPayload              :  return "stBP_TransmitPayload";
 
 	// implementation-dependent services
       case  stBP_ShutDown                     :  return "stBP_ShutDown";
