@@ -22,6 +22,7 @@
 #include <thread>
 #include <chrono>
 #include <dcp/common/area.h>
+#include <dcp/common/debug_helpers.h>
 #include <dcp/common/services_status.h>
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/vardis/vardis_configuration.h>
@@ -224,7 +225,10 @@ namespace dcp::vardis {
 
 	  if ((result_length > 0) && (rx_stat == BP_STATUS_OK))
 	    {
-	      BOOST_LOG_SEV(log_rx, trivial::trace) << "Processing payload of length " << result_length;
+	      BOOST_LOG_SEV(log_rx, trivial::trace)
+		<< "Processing payload of length " << result_length
+		<< ", first bytes = " << byte_array_to_string (rx_buffer, 50)
+		;
 	      MemoryChunkDisassemblyArea area ("vd-rx", (size_t) result_length.val, rx_buffer);
 	      process_received_payload (runtime, area);
 	    }
