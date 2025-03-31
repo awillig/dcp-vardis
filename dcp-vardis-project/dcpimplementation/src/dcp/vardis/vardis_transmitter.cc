@@ -107,7 +107,11 @@ namespace dcp::vardis {
 	  if (containers_added == 0)
 	    return (size_t) 0;
 
-	  BOOST_LOG_SEV(log_tx, trivial::trace) << "preparing payload of length " << area.used ();
+	  BOOST_LOG_SEV(log_tx, trivial::trace)
+	    << "transmitter_thread::handler: preparing payload of length " << area.used ()
+	    << ", sizeof (BPTransmitPayload_Request) = " << sizeof (BPTransmitPayload_Request)
+	    << ", first few bytes = " << byte_array_to_string(memaddr, 50)
+	    ;
 	  
 	  pldReq_ptr->protocolId = BP_PROTID_VARDIS;
 	  pldReq_ptr->length     = area.used();
