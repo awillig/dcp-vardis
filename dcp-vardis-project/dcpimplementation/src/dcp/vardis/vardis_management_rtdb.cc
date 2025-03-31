@@ -79,6 +79,19 @@ namespace dcp::vardis {
 	}
     };
 
+
+    unsigned int req_qs, req_fs;
+    unsigned int conf_qs, conf_fs;
+    requestQueue.report_sizes (req_qs, req_fs);
+    confirmQueue.report_sizes(conf_qs, conf_fs);
+    BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace)
+      << "handle_request_queue: req_qs = " << req_qs
+      << ", req_fs = " << req_fs
+      << ", conf_qs = " << conf_qs
+      << ", conf_fs = " << conf_fs
+      ;
+
+    
     requestQueue.popall_nowait (req_handler, timed_out);
     if (timed_out)
       {
