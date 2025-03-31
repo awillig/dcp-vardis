@@ -74,8 +74,6 @@ namespace dcp::vardis {
 	{
 	  ICHeaderT icHeader;
 	  icHeader.deserialize(area);
-
-	  BOOST_LOG_SEV(log_rx, trivial::info) << "process_received_payload: icHeader.icType = " << (int) icHeader.icType.val;
 	  
 	  switch(icHeader.icType.val)
 	    {
@@ -111,9 +109,6 @@ namespace dcp::vardis {
 	      }
 	    default:
 	      {
-		BOOST_LOG_SEV(log_rx, trivial::info) << "Unknown type of instruction container: "
-						     << (int) icHeader.icType.val
-						     << ", stopping processing";
 		throw VardisReceiveException ("process_received_payload",
 					      std::format("wrong instruction container type {}", (int) icHeader.icType.val));
 	      }
@@ -128,7 +123,6 @@ namespace dcp::vardis {
 	<< ", message: " << e.what();
       return;
     }
-
     catch (std::exception& e)
       {
 	BOOST_LOG_SEV(log_rx, trivial::info)
@@ -230,7 +224,6 @@ namespace dcp::vardis {
 	    {
 	      BOOST_LOG_SEV(log_rx, trivial::trace)
 		<< "Processing payload of length " << result_length
-		<< ", first bytes = " << byte_array_to_string (rx_buffer, 50)
 		;
 	      MemoryChunkDisassemblyArea area ("vd-rx", (size_t) result_length.val, rx_buffer);
 	      process_received_payload (runtime, area);
