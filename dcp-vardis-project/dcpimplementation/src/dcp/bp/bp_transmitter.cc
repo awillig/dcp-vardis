@@ -78,7 +78,20 @@ namespace dcp::bp {
     bool more_payloads;
     std::function<void (const byte*, size_t)> handler = [&] (const byte* memaddr, size_t len)
     {
-      serialize_payload (protEntry, area, memaddr, BPLengthT(len), numPayloadsAdded);
+      BPTransmitPayload_Request* pReq = (BPTransmitPayload_Request*) memaddr;
+
+      if (len != sizeof(BPTransmitPayload_Request) + pReq->length)
+	{
+	  BOOST_LOG_SEV(log_tx, trivial::fatal)
+	    << "attempt_add_payload::handler: incorrect length field"
+	    << ", len = " << len
+	    << ", skippable size = " << sizeof(BPTransmitPayload_Request)
+	    << ", payload length = " << pReq->length
+	    ;
+	  runtime.bp_exitFlag = true;
+	}
+      else
+	serialize_payload (protEntry, area, memaddr + sizeof(BPTransmitPayload_Request), pReq->length, numPayloadsAdded);
     };
 
     switch (queueingMode)
