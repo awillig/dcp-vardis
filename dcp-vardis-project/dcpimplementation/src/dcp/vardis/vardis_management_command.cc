@@ -71,42 +71,8 @@ namespace dcp::vardis {
       }
 
     // Now create and initialize new client protocol data entry and add it to the list of registered protocols
-    VardisClientProtocolData clientProt;
-    
-    // attempt to create the shared memory region
-    uint64_t requestedBuffers = dcp::vardis::VardisShmControlSegment::get_minimum_number_buffers_required() + 20;
-    size_t   realPayloadSize  = runtime.vardis_config.vardis_conf.maxValueLength + runtime.vardis_config.vardis_conf.maxDescriptionLength + 256;
-
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Processing VardisRegister request: attempting to create shared memory area"
-						    << ", requestedBuffers = " << requestedBuffers
-						    << ", realPayloadSize = " << realPayloadSize
-						    << ", sizeof(ControlSeg) = " << sizeof(VardisShmControlSegment);
-    
-    try {
-      clientProt.sharedMemoryAreaPtr = std::make_shared<ShmBufferPool>(
-								       pReq->shm_area_name,
-								       true,
-								       sizeof(VardisShmControlSegment),
-								       realPayloadSize,
-								       requestedBuffers
-								       );
-    }
-    catch (ShmException& shme) {
-      BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "Processing VardisRegister request: cannot allocate shared memory block, reason = " << shme.what();
-      send_simple_confirmation<VardisRegister_Confirm> (runtime, VARDIS_STATUS_INTERNAL_SHARED_MEMORY_ERROR);
-      return;
-    }
-
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Processing VardisRegister request: registered shared memory"
-						    << ", buffer payload size = " << realPayloadSize
-						    << ", region size = " << clientProt.sharedMemoryAreaPtr->get_region().get_size()
-						    << ", number buffers requested = " << requestedBuffers
-						    << ", area name = " << clientProt.sharedMemoryAreaPtr->get_shm_area_name();
-    
-    // initialize control segment for shared memory segment    
-    clientProt.controlSegmentPtr = new (clientProt.sharedMemoryAreaPtr->getControlSegmentPtr()) VardisShmControlSegment(*clientProt.sharedMemoryAreaPtr,
-															requestedBuffers);
-    
+    VardisClientProtocolData clientProt (pReq->shm_area_name);
+															
     // initialize client protocol entry
     clientProt.clientName                    =  std::string (pReq->shm_area_name);
     
@@ -360,8 +326,18 @@ namespace dcp::vardis {
     try {
       runtime.vardisCommandSock.open_owner (log_mgmt_command);
     }
+    catch (DcpException& e) {
+      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+	<< "Could not establish Vardis command socket. "
+	<< "Exception type: " << e.ename()
+	<< ", module: " << e.modname()
+	<< ", message: " << e.what()
+	<< "Exiting.";
+      runtime.vardis_exitFlag = true;
+      return;
+    }
     catch (std::exception& e) {
-      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Could not establish Vardis command socket, exiting.";
+      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Could not establish Vardis command socket. Exiting.";
       runtime.vardis_exitFlag = true;
       return;
     }
@@ -376,8 +352,17 @@ namespace dcp::vardis {
 	try {
 	  handle_command_socket (runtime);
 	}
+	catch (DcpException& e) {
+	  BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+	    << "Could not receive data from command socket. "
+	    << "Exception type: " << e.ename()
+	    << ", module: " << e.modname()
+	    << ", message: " << e.what()
+	    << "Exiting.";
+	  runtime.vardis_exitFlag = true;
+	}
 	catch (std::exception& e) {
-	  BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Caught exception " << e.what() << " while handling command, exiting.";
+	  BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Caught exception " << e.what() << " while handling command. Exiting.";
 	  runtime.vardis_exitFlag = true;
 	}
       }

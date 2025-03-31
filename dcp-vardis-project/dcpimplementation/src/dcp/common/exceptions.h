@@ -23,7 +23,6 @@
 
 #include <exception>
 #include <format>
-#include <iostream>
 
 /**
  * @brief This module defines various types of exceptions used in the
@@ -38,7 +37,8 @@
 #define DCP_EXCEPTION(name_) \
   class name_ : public DcpException { \
   public: \
-  name_ (const std::string& message) : DcpException (std::format("{}: {}", #name_, message)) {}; \
+  name_ (std::string message) : DcpException (#name_, std::string(), message) {}; \
+  name_ (std::string modname, std::string message) : DcpException (#name_, modname, message) {}; \
   };
 
 
@@ -46,10 +46,20 @@ namespace dcp {
 
   class DcpException : public std::exception {
   private:
+    std::string ename_;
+    std::string modname_;
     std::string message_;
   public:
-    DcpException (const std::string& message) : message_(message) {};
+    DcpException (std::string exname,
+		  std::string modname,
+		  std::string& message)
+      : ename_ (exname),
+	modname_ (modname),
+	message_ (message)
+    {};
     const char* what() const throw() { return message_.c_str(); };
+    const char* ename() const throw() { return ename_.c_str(); };
+    const char* modname() const throw() { return modname_.c_str(); };
   };
 
   DCP_EXCEPTION(RingBufferException)

@@ -36,7 +36,33 @@ extern "C" {
 namespace dcp {
 
   static const int commandSocketListenBufferBacklog = 20;
+
+  // -----------------------------------------------------------------------------------------
+
+  CommandSocket::CommandSocket (std::string name, uint16_t timeout)
+    : the_command_socket(-1),
+      data_socket(-1),
+      socketName (name),
+      socketTimeoutMS (timeout)
+  {
+    if (name.empty())
+      throw SocketException ("CommandSocket::ctor", "name must be nonempty");
+    if (timeout <= 0)
+      throw SocketException (std::format("{}.CommandSocket::ctor", name),
+			     "timeout must be strictly positive");
+  }
+
+  // -----------------------------------------------------------------------------------------
+
+  CommandSocket::~CommandSocket ()
+    {
+      if (the_command_socket >= 0)
+	close_owner();
+    };
+
   
+  // -----------------------------------------------------------------------------------------
+
   void CommandSocket::open_owner (logger_type& log)
   {
     // check whether socket name exists
@@ -44,14 +70,16 @@ namespace dcp {
     if (!socket_name)
       {
 	BOOST_LOG_SEV(log, trivial::fatal) << "No name for command socket given.";
-	throw SocketException ("open_owner: No name for command socket given");
+	throw SocketException ("open_owner",
+			       "no name for command socket given");
       }
     
     // check whether socket name is too long
     if (std::strlen(socket_name) > max_command_socket_name_length())
       {
 	BOOST_LOG_SEV(log, trivial::fatal) << "Path name of command socket is too long";
-	throw SocketException ("open_owner: Path name of command socket is too long");
+	throw SocketException ("open_owner",
+			       "path name of command socket is too long");
       }
 
     // unlink / remove socket file in case there is a leftover from previous invocation 
@@ -62,7 +90,8 @@ namespace dcp {
     if (the_command_socket < 0)
       {
 	BOOST_LOG_SEV(log, trivial::fatal) << "Cannot open command socket, errno = " << errno << " , text = " << strerror(errno);
-	throw SocketException ("open_owner: Cannot open command socket");
+	throw SocketException ("open_owner",
+			       std::format("cannot open command socket, errno = {}", strerror (errno)));
       }
 
 
@@ -74,15 +103,16 @@ namespace dcp {
 
     auto curr_umask = umask (0);
     int ret = bind (the_command_socket, (const struct sockaddr *) &addr, sizeof(struct sockaddr_un));
-    umask (curr_umask);
     if (ret < 0)
       {
 	BOOST_LOG_SEV(log, trivial::fatal) << "Cannot bind command socket, errno = " << errno << " , text = " << strerror(errno);
 	close (the_command_socket);
 	unlink (socket_name);
-	throw SocketException ("open_owner: Cannot bind command socket");
+	throw SocketException ("open_owner",
+			       std::format("cannot bind command socket, errno = {}", strerror (errno)));
       }
-
+    umask (curr_umask);
+    
     
     // set socket option to time out after configurable time
     struct timeval tv = milliseconds_to_timeval (socketTimeoutMS);
@@ -92,7 +122,8 @@ namespace dcp {
 	BOOST_LOG_SEV(log, trivial::fatal) << "Cannot set socket option on command socket, errno = " << errno << " , text = " << strerror(errno);
 	close (the_command_socket);
 	unlink (socket_name);
-	throw SocketException ("open_owner: Cannot set socket option on command socket");
+	throw SocketException ("open_owner",
+			       std::format("cannot set socket option on command socket, errno = {}", strerror (errno)));
       }
     BOOST_LOG_SEV(log, trivial::info) << "Set receive timeout of command socket to " << tv.tv_sec << " seconds and " << tv.tv_usec << " microseconds";
 
@@ -104,11 +135,12 @@ namespace dcp {
 	BOOST_LOG_SEV(log, trivial::fatal) << "Cannot call listen on command socket, errno = " << errno << " , text = " << strerror(errno);
 	close (the_command_socket);
 	unlink (socket_name);
-	throw SocketException ("open_owner: Cannot call listen on command socket");
+	throw SocketException ("open_owner",
+			       std::format("cannot call listen on command socket, errno = {}", strerror (errno)));
       }
 
     if (the_command_socket < 0)
-      throw SocketException ("open_owner: command socket inexplicably not open");
+      throw SocketException ("open_owner", "command socket inexplicably not open");
   }
 
   // -----------------------------------------------------------------------------------------
@@ -299,14 +331,15 @@ namespace dcp {
         // check whether socket name is too long
     if (std::strlen(socketName.c_str()) > max_command_socket_name_length())
       {
-	throw SocketException ("CommandSocket::open_client: socket file name is too long");
+	throw SocketException ("open_client", "socket file name is too long");
       }
 
     // open the command socket
     int the_client_sock = socket(AF_UNIX, SOCK_STREAM, 0);
     if (the_client_sock < 0)
       {
-	throw SocketException ("CommandSocket::open_client: cannot open socket");
+	throw SocketException ("open_client",
+			       std::format("cannot open socket, errno = {}", strerror (errno)));
       }
     
     
@@ -320,7 +353,8 @@ namespace dcp {
     if (ret < 0)
       {
 	close (the_client_sock);
-	throw SocketException ("CommandSocket::open_client: cannot connect to socket");
+	throw SocketException ("open_client",
+			       std::format("cannot connect to socket {}, errno = {}", socketName, strerror (errno)));
       }
     
     // set socket option to time out after configurable time
@@ -330,11 +364,63 @@ namespace dcp {
     if (ret < 0)
       {
 	close (the_client_sock);
-	throw SocketException ("CommandSocket::open_client: cannot set receive timeout");
+	throw SocketException ("open_client",
+			       std::format("cannot set receive timeout, errno = {}", strerror (errno)));
       }
     
     return the_client_sock;
 
+  }
+
+  // -----------------------------------------------------------------------------------------
+  
+  int ScopedClientSocket::read_whole_response (byte* buffer, size_t buffer_len, int max_attempts)
+  {
+    if (the_sock < 0)
+      {
+	throw SocketException ("read_whole_response", "invalid socket");
+	return -1;
+      }
+    
+    size_t bytes_read = 0;
+    int    attempts   = 0;
+    
+    while (true)
+      {
+	fd_set set;
+	struct timeval timeout;
+	FD_ZERO (&set);
+	FD_SET (the_sock, &set);
+	timeout.tv_sec   = 0;
+	timeout.tv_usec  = 500000;
+	
+	attempts++;
+	
+	int rv = select (the_sock + 1, &set, NULL, NULL, &timeout);
+	if (rv == -1)
+	  throw SocketException ("read_whole_response",
+				 std::format("select() returns errno = {}", strerror (errno)));
+	
+	if ((rv == 0) and (attempts >= max_attempts))
+	  throw SocketException ("read_whole_response", "exhausted all attempts to read from socket");
+	
+	int nrcvd = read (the_sock, (void*) (buffer + bytes_read), buffer_len - bytes_read);
+	
+	if (nrcvd < 0)
+	  throw SocketException ("read_whole_response",
+				 std::format("read() returns errno = {}", strerror (errno)));
+	
+	if (nrcvd == 0)
+	  {
+	    return bytes_read;
+	  }
+	
+	bytes_read += nrcvd;
+	
+	if (bytes_read > buffer_len)
+	  throw SocketException ("read_whole_response",
+				 std::format("buffer provided ({} B) is too small (req: {} B", buffer_len, bytes_read));
+      }
   }
   
 
@@ -358,9 +444,15 @@ namespace dcp {
      * checks for command socket options
      **********************************/
     
-    if (commandSocketFile.empty()) throw ConfigurationException("no command socket (UNIX domain socket) file name given");
-    if (commandSocketFile.capacity() > CommandSocket::max_command_socket_name_length()) throw ConfigurationException("file name of command socket (UNIX domain socket) exceeds the maximum allowed length");
-    if (commandSocketTimeoutMS <= 0) throw ConfigurationException("command socket timeout (in ms) must be strictly positive");
+    if (commandSocketFile.empty())
+      throw ConfigurationException("CommandSocketConfigurationBlock",
+				   "no command socket (UNIX domain socket) file name given");
+    if (commandSocketFile.capacity() > CommandSocket::max_command_socket_name_length())
+      throw ConfigurationException("CommandSocketConfigurationBlock",
+				   "file name of command socket (UNIX domain socket) exceeds the maximum allowed length");
+    if (commandSocketTimeoutMS <= 0)
+      throw ConfigurationException("CommandSocketConfigurationBlock",
+				   "command socket timeout (in ms) must be strictly positive");
   }
 
   

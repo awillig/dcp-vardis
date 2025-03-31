@@ -86,6 +86,12 @@ namespace dcp {
    * @brief Timeout value for command sockets in ms
    */
   const uint16_t    defaultValueCommandSocketTimeoutMS   = 500;
+
+
+  /**
+   * @brief Maximum size of a beacon payload in bytes
+   */
+  const size_t maxBeaconPayloadSize  = 1500;
   
 
   /****************************************************************
@@ -362,7 +368,7 @@ namespace dcp {
       length = area.deserialize_byte ();
       if (length > 0)
         {
-	  if (data) throw DisassemblyAreaException ("StringT::deserialize: already contains data");
+	  if (data) throw std::invalid_argument ("StringT::deserialize: already contains data");
 	  data = new byte [length];
 	  area.deserialize_byte_block (length, data);
         }

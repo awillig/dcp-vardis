@@ -114,7 +114,10 @@ namespace dcp {
      */
     inline void incr (size_t by = 1)
     {
-      if (bytes_available < by) throw AreaException(std::format("area {}: incr: insufficient bytes available, by = {}, available = {}", _name, by, bytes_available));
+      if (bytes_available < by)
+	throw AreaException (std::format ("{}.incr", _name),
+			     std::format ("insufficient bytes available, by = {}, available = {}", by, bytes_available));
+
       bytes_used       += by;
       bytes_available  -= by;
     };
@@ -125,8 +128,12 @@ namespace dcp {
      */
     inline void assert_block (size_t size, const byte* pb) const
     {
-      if ((size == 0) || (pb == nullptr)) throw AreaException(std::format("area {}: assert_block: size or buffer are null, size is {}", _name, size));
-      if (bytes_available < size)         throw AreaException(std::format("area {}: assert_block: not enough space available: requested = {}, available = {}", _name, size, bytes_available));
+      if ((size == 0) || (pb == nullptr))
+	throw AreaException(std::format ("{}.assert_block", _name),
+			    std::format ("size or buffer are null, size is {}", size));
+      if (bytes_available < size)
+	throw AreaException(std::format ("{}.assert_block", _name),
+			    std::format ("not enough space available: requested = {}, available = {}", size, bytes_available));
     }
 
     
@@ -146,7 +153,9 @@ namespace dcp {
      */
     inline void resize (size_t new_initial)
     {
-      if ((new_initial == 0) || (bytes_used > new_initial)) throw AreaException(std::format("area {}: resize: new_initial {} is zero or larger than number of already used bytes", _name, new_initial));
+      if ((new_initial == 0) || (bytes_used > new_initial))
+	throw AreaException(std::format ("{}.resize", _name),
+			    std::format ("new_initial {} is zero or larger than number of already used bytes", new_initial));
       
       initial_available  =  new_initial;
       bytes_available    =  new_initial - bytes_used;
@@ -203,7 +212,9 @@ namespace dcp {
      */
     virtual void serialize_uint16_n (uint16_t val)
     {
-      if (available() < sizeof(uint16_t)) throw AssemblyAreaException(std::format("area {}: AssemblyArea::serialize_uint16_n: insufficient space, available = {}", _name, available()));
+      if (available() < sizeof(uint16_t))
+	throw AssemblyAreaException(std::format ("{}.serialize_uint16_n", _name),
+				    std::format ("insufficient space, available = {}", available()));
       serialize_byte ((byte) (val >> 8));
       serialize_byte ((byte) (val & 0x00FF));
     };
@@ -214,7 +225,9 @@ namespace dcp {
      */
     virtual void serialize_uint32_n (uint32_t val)
     {
-      if (available() < sizeof(uint32_t)) throw AssemblyAreaException(std::format("area {}: AssemblyArea::serialize_uint32_n: insufficient space, available = {}", _name, available()));
+      if (available() < sizeof(uint32_t))
+	throw AssemblyAreaException(std::format ("{}.serialize_uint32_n", _name),
+				    std::format ("insufficient space, available = {}", available()));
       serialize_byte ((byte) (val >> 24));
       serialize_byte ((byte) ((val & 0x00FF0000)>>16));
       serialize_byte ((byte) ((val & 0x0000FF00)>>8));
@@ -227,8 +240,9 @@ namespace dcp {
      */
     virtual void serialize_uint64_n (uint64_t val)
     {
-      if (available() < sizeof(uint32_t)) throw AssemblyAreaException(std::format("area {}: AssemblyArea::serialize_uint64_n: insufficient space, available = {}", _name, available()));
-      
+      if (available() < sizeof(uint32_t))
+	throw AssemblyAreaException(std::format ("{}.serialize_uint64_n", _name),
+				    std::format ("insufficient space, available = {}", available()));      
       serialize_byte ((byte) (val >> 56));
       serialize_byte ((byte) ((val & 0x00FF000000000000) >> 48));
       serialize_byte ((byte) ((val & 0x0000FF0000000000) >> 40));
@@ -292,7 +306,9 @@ namespace dcp {
      */
     virtual void deserialize_uint16_n (uint16_t& val)
     {
-      if (available() < sizeof(uint16_t)) throw DisassemblyAreaException(std::format("area {}: DisassemblyArea::deserialize_uint16_n: insufficient space, available = {}", _name, available()));
+      if (available() < sizeof(uint16_t))
+	throw DisassemblyAreaException(std::format ("{}.deserialize_uint16_n", _name),
+				       std::format ("insufficient space, available = {}", available()));
       byte b1 = deserialize_byte();
       byte b2 = deserialize_byte();
       val = (((uint16_t) b1) << 8) + ((uint16_t) b2);
@@ -304,8 +320,9 @@ namespace dcp {
      */
     virtual void deserialize_uint32_n (uint32_t& val)
     {
-      if (available() < sizeof(uint16_t)) throw DisassemblyAreaException(std::format("area {}: DisassemblyArea::deserialize_uint32_n: insufficient space, available = {}", _name, available()));
-      
+      if (available() < sizeof(uint16_t))
+	throw DisassemblyAreaException(std::format ("{}.deserialize_uint32_n", _name),
+				       std::format ("insufficient space, available = {}", available()));
       byte b1 = deserialize_byte();
       byte b2 = deserialize_byte();
       byte b3 = deserialize_byte();
@@ -323,8 +340,9 @@ namespace dcp {
      */
     virtual void deserialize_uint64_n (uint64_t& val)
     {
-      if (available() < sizeof(uint16_t)) throw DisassemblyAreaException(std::format("area {}: DisassemblyArea::deserialize_uint64_n: insufficient space, available = {}", _name, available()));
-      
+      if (available() < sizeof(uint16_t))
+	throw DisassemblyAreaException(std::format ("{}.deserialize_uint64_n", _name),
+				       std::format ("insufficient space, available = {}", available()));
       byte b1 = deserialize_byte();
       byte b2 = deserialize_byte();
       byte b3 = deserialize_byte();
@@ -378,7 +396,9 @@ namespace dcp {
     MemoryChunkAssemblyArea (std::string name, size_t size)
       : AssemblyArea (name, size)
     {
-      if (size == 0) throw AssemblyAreaException (std::format("area {}: MemoryChunkAssemblyArea: zero buffer size", _name));
+      if (size == 0)
+	throw AssemblyAreaException(std::format ("{}.MemoryChunkAssemblyArea", _name),
+				    std::format ("zero buffer size"));
       
       buffer      = new byte [size];
       pointer     = buffer;
@@ -396,8 +416,12 @@ namespace dcp {
       , buffer (memblock)
       , pointer (memblock)
     {
-      if (size == 0) throw AssemblyAreaException (std::format("area {}: MemoryChunkAssemblyArea: zero buffer size", _name));
-      if (!memblock) throw AssemblyAreaException (std::format("area {}: MemoryChunkAssemblyArea: memblock is null", _name));
+      if (size == 0)
+	throw AssemblyAreaException(std::format ("{}.MemoryChunkAssemblyArea", _name),
+				    std::format ("zero buffer size"));
+      if (!memblock)
+	throw AssemblyAreaException(std::format ("{}.MemoryChunkAssemblyArea", _name),
+				    std::format ("memblock is null"));
       
       deallocate = false;
     };
@@ -415,7 +439,7 @@ namespace dcp {
     /**
      * @brief Getter for buffer pointer
      */
-    byte* getBufferPtr () const { return buffer; };
+    byte* get_buffer_ptr () const { return buffer; };
 
 
     /**
@@ -423,7 +447,9 @@ namespace dcp {
      */
     virtual void serialize_byte (byte b)
     {
-      if (available() == 0) throw AssemblyAreaException (std::format("area {}: MemoryChunkAssemblyArea::serialize_byte: no byte available", _name));
+      if (available() == 0)
+	throw AssemblyAreaException(std::format ("{}.MemoryChunkAssemblyArea.serialize_byte", _name),
+				    std::format ("no byte available"));
       *pointer = b;
       pointer++;
       incr();
@@ -489,7 +515,9 @@ namespace dcp {
      */
     virtual byte deserialize_byte ()
     {
-      if (available() == 0) throw DisassemblyAreaException (std::format("area {}:MemoryChunkDisassemblyArea::deserialize_byte: no byte available", _name));
+      if (available() == 0)
+	throw DisassemblyAreaException(std::format ("{}.MemoryChunkDisassemblyArea.deserialize_byte", _name),
+				       std::format ("no byte available"));
       byte rv = *pointer;
       pointer++;
       incr();
@@ -502,7 +530,10 @@ namespace dcp {
      */
     virtual byte peek_byte ()
     {
-      if (available() == 0) throw DisassemblyAreaException (std::format("area {}: MemoryChunkDisassemblyArea::deserialize_byte: no byte available", _name));
+      if (available() == 0)
+	throw DisassemblyAreaException(std::format ("{}.MemoryChunkDisassemblyArea.peek_byte", _name),
+				       std::format ("no byte available"));
+
       return *pointer;
     };
 
@@ -561,7 +592,9 @@ namespace dcp {
     ByteVectorAssemblyArea (std::string name, size_t size)
       : AssemblyArea (name, size)
     {
-      if (size == 0) throw AssemblyAreaException (std::format("area {}: ByteVectorAssemblyArea: zero buffer size", _name));
+      if (size == 0)
+	throw AssemblyAreaException(std::format ("{}.ByteVectorAssemblyArea", _name),
+				    std::format ("zero buffer size"));
       pvector = new std::vector<byte> (size);
       deallocate = true;
     }
@@ -577,7 +610,9 @@ namespace dcp {
     ByteVectorAssemblyArea (std::string name, size_t size, std::vector<byte>& vect)
       : AssemblyArea (name, size)
     {
-      if (size == 0) throw AssemblyAreaException (std::format("area {}: ByteVectorAssemblyArea: zero buffer size", _name));
+      if (size == 0)
+	throw AssemblyAreaException(std::format ("{}.ByteVectorAssemblyArea", _name),
+				    std::format ("zero buffer size"));
       pvector    = &vect;
       deallocate = false;
     };
@@ -595,7 +630,7 @@ namespace dcp {
     /**
      * @brief Returns a pointer to the current byte vector in use
      */
-    const std::vector<byte>* getVectorPtr () const { return pvector; };
+    const std::vector<byte>* get_vector_ptr () const { return pvector; };
 
 
     /**
@@ -603,7 +638,9 @@ namespace dcp {
      */
     virtual void serialize_byte (byte b)
     {
-      if (available() == 0) throw AssemblyAreaException (std::format("area {}: ByteVectorAssemblyArea: no space left", _name));
+      if (available() == 0)
+	throw AssemblyAreaException(std::format ("{}.ByteVectorAssemblyArea.serialize_byte", _name),
+				    std::format ("no space left"));
       (*pvector)[used()] = b;
       incr();
     };
@@ -658,7 +695,9 @@ namespace dcp {
      */
     virtual byte deserialize_byte ()
     {
-      if (available() == 0) throw DisassemblyAreaException (std::format("area {}: ByteVectorAssemblyArea::deserialize_byte: no space left", _name));
+      if (available() == 0)
+	throw DisassemblyAreaException(std::format ("{}.ByteVectorDisassemblyArea.deserialize_byte", _name),
+				    std::format ("no space left"));
       byte rv = (*pvector)[used()];
       incr();
       return rv;
@@ -670,7 +709,9 @@ namespace dcp {
      */
     virtual byte peek_byte ()
     {
-      if (available() == 0) throw DisassemblyAreaException (std::format("area {}: ByteVectorAssemblyArea::peek_byte: no space left", _name));
+      if (available() == 0)
+	throw DisassemblyAreaException(std::format ("{}.ByteVectorDisassemblyArea.peek_byte", _name),
+				    std::format ("no space left"));
       byte rv = (*pvector)[used()];
       return rv;
     };

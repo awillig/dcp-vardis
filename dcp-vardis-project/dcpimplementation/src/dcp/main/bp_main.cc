@@ -9,6 +9,7 @@
 #include <boost/program_options.hpp>
 #include <dcp/common/exceptions.h>
 #include <dcp/common/global_types_constants.h>
+#include <dcp/common/other_helpers.h>
 #include <dcp/common/services_status.h>
 #include <dcp/bp/bpclient_configuration.h>
 #include <dcp/bp/bp_configuration.h>
@@ -99,7 +100,7 @@ void run_bp_management_command (MgmtCommand cmd, const std::string cfg_filename)
   BPClientConfiguration bpconfig;
   bpconfig.read_from_config_file (cfg_filename, true);
   
-  BPClientRuntime cl_rt (0, "ephemeral", 100, bpconfig);
+  BPClientRuntime cl_rt (bpconfig);
   
   DcpStatus sd_status;
   switch (cmd)
@@ -138,7 +139,7 @@ void run_query_client_protocols (const std::string cfg_filename)
   BPClientConfiguration bpconfig;
   bpconfig.read_from_config_file (cfg_filename, true);
 
-  BPClientRuntime cl_rt (0, "ephemeral", 100, bpconfig);
+  BPClientRuntime cl_rt (bpconfig);
 
   std::list<BPRegisteredProtocolDataDescription> descr_list;
   DcpStatus qcp_status = cl_rt.list_registered_protocols (descr_list);
@@ -224,8 +225,7 @@ int main (int argc, char* argv[])
   }
   catch (DcpException& e)
     {
-      cout << "DCP ERROR - " << e.what() << endl;
-      cout << "Exiting." << endl;
+      print_exiting_dcp_exception (e);
       return EXIT_FAILURE;
     }
   catch (exception& e) {

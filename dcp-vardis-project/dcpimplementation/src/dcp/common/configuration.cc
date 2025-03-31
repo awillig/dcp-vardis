@@ -19,13 +19,9 @@
 
 
 
-#include <iostream>
 #include <dcp/common/configuration.h>
 #include <dcp/common/exceptions.h>
 #include <dcp/common/logging_helpers.h>
-
-using std::cerr;
-using std::endl;
 
 namespace dcp {
 
@@ -38,9 +34,7 @@ namespace dcp {
       po::notify(vm);
     }
     catch (std::exception& e) {
-      cerr << "read_from_config_file: " << e.what() << endl;
-      cerr << cfgdesc << endl;
-      throw ConfigurationException (e.what());
+      throw ConfigurationException ("DcpConfiguration::read_from_config_file", e.what());
     }
   }
 

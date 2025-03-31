@@ -2,10 +2,10 @@
 #include <list>
 #include <random>
 #include <gtest/gtest.h>
-#include <dcp/common/array_avl_tree.h>
+#include <dcp/common/fixedmem_avl_tree.h>
 #include <dcp/common/global_types_constants.h>
 
-using dcp::ArrayAVLTree;
+using dcp::FixedMemAVLTree;
 using dcp::NodeIdentifierT;
 using dcp::nullNodeIdentifier;
 
@@ -42,7 +42,7 @@ const uint64_t iterations = 500;
 
 
 TEST (AVLTest, initialTest) {
-  ArrayAVLTree<int, std::string, arraySize>  avl_tree;
+  FixedMemAVLTree<int, std::string, arraySize>  avl_tree;
 
   for (uint64_t i=0; i<iterations; i++)
     {
@@ -78,7 +78,7 @@ TEST (AVLTest, initialTest) {
 }
 
 TEST (AVLTest, find_matching_data_test) {
-  ArrayAVLTree<int, int, arraySize>  avl_tree;
+  FixedMemAVLTree<int, int, arraySize>  avl_tree;
 
   for (int j = 0; j < 20; j++)
     {

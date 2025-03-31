@@ -17,29 +17,34 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 
-#include <iostream>
-#include <dcp/vardis/vardis_client_protocol_data.h>
 
-namespace dcp::vardis {
+#include <dcp/bp/bp_client_protocol_data.h>
 
 
-  VardisClientProtocolData::VardisClientProtocolData (const char* area_name)
+namespace dcp::bp {
+
+  BPClientProtocolData::BPClientProtocolData (const char* area_name,
+					      BPStaticClientInfo static_info,
+					      bool gen_pld_confirms)
+    : static_info (static_info)
   {
-    pSSB = std::make_shared<ShmStructureBase> (area_name, sizeof(VardisShmControlSegment), true);
-    pSCS = (VardisShmControlSegment*) pSSB->get_memory_address ();
+    pSSB = std::make_shared<ShmStructureBase> (area_name, sizeof(BPShmControlSegment), true);
+    pSCS = (BPShmControlSegment*) pSSB->get_memory_address ();
     if (!pSCS)
-      throw ShmException ("VardisClientProtocolData", "cannot allocate BPShmControlSegment");
-    new (pSCS) VardisShmControlSegment ();
+      throw ShmException ("BPClientProtocolData",
+			  "cannot allocate BPShmControlSegment");
+    
+    new (pSCS) BPShmControlSegment (static_info, gen_pld_confirms);
   }
   
 
-  
-  std::ostream& operator<<(std::ostream& os, const VardisClientProtocolData& cpd)
+  BPClientProtocolData::~BPClientProtocolData ()
   {
-    os << "VardisClientProtocolData{clientName = " << cpd.clientName
-       << " }";
-    return os;
   }
+  
+  
+};  // namespace dcp::bp
+
 
   
-};  // namespace dcp::vardis
+

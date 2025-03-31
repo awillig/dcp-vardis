@@ -117,7 +117,7 @@ TEST (AreaTest, MemoryChunkTest) {
   area2.serialize_byte (0xFF);
   EXPECT_EQ (area2.available(), 0);
   EXPECT_EQ (area2.used(), 1);
-  MemoryChunkDisassemblyArea darea2 ("darea2", 1, area2.getBufferPtr());
+  MemoryChunkDisassemblyArea darea2 ("darea2", 1, area2.get_buffer_ptr());
   EXPECT_EQ (darea2.used(), 0);
   EXPECT_EQ (darea2.available(), 1);
   EXPECT_EQ (darea2.peek_byte(), 0xFF);
@@ -188,7 +188,7 @@ TEST (AreaTest, ByteVectorTest) {
   area2.serialize_byte (0xFF);
   EXPECT_EQ (area2.available(), 0);
   EXPECT_EQ (area2.used(), 1);
-  ByteVectorDisassemblyArea darea2 ("darea2", *area2.getVectorPtr());
+  ByteVectorDisassemblyArea darea2 ("darea2", *area2.get_vector_ptr());
   EXPECT_EQ (darea2.used(), 0);
   EXPECT_EQ (darea2.available(), 1);
   EXPECT_EQ (darea2.peek_byte(), 0xFF);

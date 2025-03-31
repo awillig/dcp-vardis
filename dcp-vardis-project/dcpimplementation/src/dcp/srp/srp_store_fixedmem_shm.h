@@ -20,11 +20,9 @@
 
 #pragma once
 
-#include <iostream>
-#include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
-#include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
+#include <dcp/common/sharedmem_structure_base.h>
 #include <dcp/srp/srp_configuration.h>
 #include <dcp/srp/srp_store_fixedmem.h>
 
@@ -63,7 +61,7 @@ namespace dcp::srp {
    *         stored
    */
   template <uint64_t maxNeighbours>
-  class FixedMemSRPStoreShm : public FixedMemSRPStoreBase<GlobalStateShm, maxNeighbours> {
+  class FixedMemSRPStoreShm : public FixedMemSRPStoreBase<GlobalStateShm, maxNeighbours>, ShmStructureBase {
     
   protected:
 
@@ -73,19 +71,6 @@ namespace dcp::srp {
      */
     typedef FixedMemSRPStoreBase<GlobalStateShm, maxNeighbours>  ShmSRPStoreType;
     typedef FixedMemSRPStoreBase<GlobalStateShm, maxNeighbours>::FixedMemContents  ShmFixedMemContents;
-
-
-    /**
-     * @brief Indicates whether the owner of current object is server of not.
-     *
-     * The server is responsible for allocating and de-allocating the
-     * shared memory segment.
-     */
-    bool                 isServer  = false;
-
-    shared_memory_object shm_obj;  /*!< The shared memory object */
-    mapped_region        region;   /*!< Region information, e.g. containing memory address of shared memory segment */
-    
 
   public:
 
@@ -101,8 +86,8 @@ namespace dcp::srp {
      *        store structure in there
      *
      * @param area_name: name of shared memory segment
-     * @param isServer: indicates whether caller is server
-     *        (SRP demon) or not (SRP client)
+     * @param isCreator: indicates whether caller is creator of shared
+     *        memory area (SRP demon) or not (SRP client)
      * @param alpha_gapsize_ewma: alpha value to be used for EWMA estimator
      *        for average sequence number gap size of a neighbour 
      * @param own_node_id: value of ownNodeIdentifier parameter
@@ -114,62 +99,25 @@ namespace dcp::srp {
      * Throws when shared memory allocation does not work.
      */
     FixedMemSRPStoreShm (const char* area_name,
-			 bool isServer,
+			 bool isCreator,
 			 double alpha_gapsize_ewma = defaultValueSrpGapSizeEWMAAlpha,
 			 NodeIdentifierT own_node_id = nullNodeIdentifier
 			 )
-      : isServer (isServer)
+      : ShmStructureBase (area_name, ShmSRPStoreType::get_fixedmem_contents_size(), isCreator)
+	//isCreator (isCreator)
     {
-      if (area_name == nullptr) throw SRPStoreException ("no area name");
-
-      size_t store_contents_size = ShmSRPStoreType::get_fixedmem_contents_size();
       
-      if (isServer)
+      if (isCreator)
 	{
-	  try {
-	    shm_obj = shared_memory_object (create_only, area_name, read_write);
-	    shm_obj.truncate (store_contents_size);
-	    region = mapped_region (shm_obj, read_write);
-	  }
-	  catch (const std::exception& e)
-	    {
-	      throw SRPStoreException (std::format ("Caught exception '{}' while attempting to create and initialize shared memory object named {}", e.what(), area_name));
-	    }
-	  if (region.get_size() != store_contents_size)
-	    throw SRPStoreException (std::format("wrong region size {} where {} is required", region.get_size(), store_contents_size));
-	  ShmSRPStoreType::initialize_srp_store ((byte*) region.get_address(),
+	  ShmSRPStoreType::initialize_srp_store ((byte*) get_memory_address(),
 						 own_node_id,
 						 alpha_gapsize_ewma);
 	}
       else
 	{
-	  try {
-	    shm_obj = shared_memory_object (open_only, area_name, read_write);
-	    region  = mapped_region (shm_obj, read_write);
-	  }
-	  catch (const std::exception& e)
-	    {
-	      throw SRPStoreException (std::format ("Caught exception '{}' while attempting to attach to shared memory object named {}", e.what(), area_name));
-	    }
-	  if (region.get_size() != store_contents_size)
-	    throw SRPStoreException (std::format("wrong region size {} where {} is required", region.get_size(), store_contents_size));
-
-	  this->pContents = (ShmFixedMemContents*) region.get_address();
+	  this->pContents = (ShmFixedMemContents*) get_memory_address();
 	  if (this->pContents == nullptr)
-	    throw SRPStoreException ("illegal region pointer");
-
-	}
-    };
-    
-
-    /**
-     * @brief Destructor, deallocates shared memory when server
-     */
-    ~FixedMemSRPStoreShm ()
-    {
-      if (isServer)
-	{
-	  shm_obj.remove(shm_obj.get_name());
+	    throw SRPStoreException ("FixedMemSRPStoreShm", "illegal region pointer");
 	}
     };
     

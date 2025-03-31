@@ -203,7 +203,8 @@ namespace dcp::vardis {
       length = len.val;
       if (length > 0)
         {
-	  if (data) throw DisassemblyAreaException ("VarValueT::deserialize: already contains data");
+	  if (data)
+	    throw DisassemblyAreaException ("VarValueT::deserialize", "already contains data");
 	  
 	  data = new byte [length];
 	  area.deserialize_byte_block (length, data);
@@ -223,8 +224,10 @@ namespace dcp::vardis {
     {
       len.deserialize (area);
       length = len.val;
-      if (data_buffer == nullptr) throw DisassemblyAreaException ("VarValueT::deserialize[buffer]: invalid data buffer");
-      if (data)                   throw DisassemblyAreaException ("VarValueT::deserialize[buffer]: already contains data");
+      if (data_buffer == nullptr)
+	throw DisassemblyAreaException ("VarValueT::deserialize[buffer]", "invalid data buffer");
+      if (data)
+	throw DisassemblyAreaException ("VarValueT::deserialize[buffer]", "already contains data");
 
       if (len > 0)
 	area.deserialize_byte_block (len.val, data_buffer);

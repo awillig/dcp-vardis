@@ -28,9 +28,9 @@
 namespace dcp {
 
   /**
-   * @brief This template class provides a ring buffer with a fixed
-   *        number of elements (of parameterized type) in a fixed
-   *        amount of memory
+   * @brief This template class provides a ring buffer organised in a
+   *        fixed region of memory, with a fixed number of elements
+   *        (of parameterized type)
    *
    * @tparam ElemT: type of elements of a ring buffer. Should have
    *         a copy constructor
@@ -44,9 +44,9 @@ namespace dcp {
    */
 
   template <typename ElemT, size_t maxRingBufferElements>
-  class RingBufferBase {
+  class FixedMemRingBuffer {
 
-    static_assert (maxRingBufferElements >= 2, "RingBufferBase: maxRingBufferElements must be at least two");
+    static_assert (maxRingBufferElements >= 2, "FixedMemRingBuffer: maxRingBufferElements must be at least two");
     
   private:
 
@@ -68,7 +68,7 @@ namespace dcp {
     
   public:
 
-    RingBufferBase () = delete;
+    FixedMemRingBuffer () = delete;
 
     /**
      * @brief Constructor
@@ -80,17 +80,22 @@ namespace dcp {
      * long, or when maxCap is either zero or too large (larger than
      * maxRingBufferElements minus one)
      */
-    RingBufferBase (const char* name, uint64_t maxCap)
+    FixedMemRingBuffer (const char* name, uint64_t maxCap)
       : maxCapacity (maxCap)
       {
 	if (!name)
-	  throw RingBufferException("invalid name");
+	  throw RingBufferException("FixedMemRingBuffer", "invalid name");
 
 	if (std::strlen(name) > maxRingBufferNameLength-1)
-	  throw RingBufferException(std::format("name is too long at {} bytes ({} bytes allowed)", std::strlen(name), maxRingBufferNameLength-1));
+	  throw RingBufferException("FixedMemRingBuffer",
+				    std::format("name {} is too long at {} bytes ({} bytes allowed)",
+						name,
+						std::strlen(name),
+						maxRingBufferNameLength-1));
 
 	if ((maxCap < 1) || (maxCap >= maxRingBufferElements))
-	  throw RingBufferException("illegal value for maxCapacity");
+	  throw RingBufferException(std::format("FixedMemRingBuffer {}", name),
+				    "illegal value for maxCapacity");
 
 	std::strcpy(rbName, name);
       };
@@ -139,7 +144,9 @@ namespace dcp {
      *        and returns the buffer.
      */
     inline ElemT pop () {
-      if (isEmpty()) throw RingBufferException ("pop(): trying to pop from empty ring buffer");
+      if (isEmpty())
+	throw RingBufferException (std::format("FixedMemRingBuffer {}.pop()", rbName),
+				   "trying to pop from empty ring buffer");
       uint64_t rvidx = out;
       out = (out + 1) % maxRingBufferElements;
       currentNumberElements--;
@@ -152,7 +159,9 @@ namespace dcp {
      *        removing it.
      */
     inline ElemT peek () const {
-      if (isEmpty()) throw RingBufferException ("peek(): trying to peek from empty ring buffer");
+      if (isEmpty())
+	throw RingBufferException (std::format("FixedMemRingBuffer {}.peek()", rbName),
+				   "trying to peek from empty ring buffer");
       return the_ring[out];
     };
 
@@ -161,7 +170,9 @@ namespace dcp {
      * @brief Pushes/adds new element / buffer into ring buffer.
      */
     inline void push(const ElemT& buf) {
-      if (isFull()) throw RingBufferException ("push(): trying to push onto full ring buffer");
+      if (isFull())
+	throw RingBufferException (std::format("FixedMemRingBuffer {}.push()", rbName),
+				   "trying to push onto full ring buffer");
       the_ring[in] = buf;
       in = (in + 1) % maxRingBufferElements;
       currentNumberElements++;

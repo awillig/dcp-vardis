@@ -156,7 +156,7 @@ namespace dcp::vardis {
     
     if (numberRecordsToAdd <= 0)
       {
-	throw VardisTransmitException ("makeICTypeCreateVariables: numberRecordsToAdd is zero");
+	throw VardisTransmitException ("makeICTypeCreateVariables", "numberRecordsToAdd is zero");
       }
     
     // initialize and serialize ICHeader
@@ -174,7 +174,7 @@ namespace dcp::vardis {
 	
 	if (nextVar.countCreate.val <= 0)
 	  {
-	    throw VardisTransmitException ("makeICTypeCreateVariables: nextVar.countCreate is zero");
+	    throw VardisTransmitException ("makeICTypeCreateVariables", "nextVar.countCreate is zero");
 	  }
 	
         nextVar.countCreate--;
@@ -214,7 +214,7 @@ namespace dcp::vardis {
     
     if (numberRecordsToAdd <= 0)
       {
-	throw VardisTransmitException ("makeICTypeSummaries: numberRecordsToAdd is zero");
+	throw VardisTransmitException ("makeICTypeSummaries", "numberRecordsToAdd is zero");
       }
     
     // initialize and serialize ICHeader
@@ -260,7 +260,7 @@ namespace dcp::vardis {
     
     if (numberRecordsToAdd <= 0)
       {
-	throw VardisTransmitException ("makeICTypeUpdates: numberRecordsToAdd is zero");
+	throw VardisTransmitException ("makeICTypeUpdates", "numberRecordsToAdd is zero");
       }
     
     // initialize and serialize ICHeader
@@ -278,7 +278,7 @@ namespace dcp::vardis {
 
 	if (nextVar.countUpdate.val <= 0)
 	  {
-	    throw VardisTransmitException ("makeICTypeUpdates: nextVar.countUpdate is zero");
+	    throw VardisTransmitException ("makeICTypeUpdates", "nextVar.countUpdate is zero");
 	  }
 	
         nextVar.countUpdate--;
@@ -316,7 +316,7 @@ namespace dcp::vardis {
 
     if (numberRecordsToAdd <= 0)
       {
-	throw VardisTransmitException ("makeICTypeDeleteVariables: numberRecordsToAdd is zero");
+	throw VardisTransmitException ("makeICTypeDeleteVariables", "numberRecordsToAdd is zero");
       }
 
     // initialize and serialize ICHeader
@@ -333,14 +333,14 @@ namespace dcp::vardis {
 
 	if (not variableExists(nextVarId))
 	  {
-	    throw VardisTransmitException ("makeICTypeDeleteVariables: variable does not exist");
+	    throw VardisTransmitException ("makeICTypeDeleteVariables", "variable does not exist");
 	  }
 	
         DBEntry& nextVar = vardis_store.get_db_entry_ref(nextVarId);
 
 	if (nextVar.countDelete.val <= 0)
 	  {
-	    throw VardisTransmitException ("makeICTypeDeleteVariables: nextVar.countDelete is zero");
+	    throw VardisTransmitException ("makeICTypeDeleteVariables", "nextVar.countDelete is zero");
 	  }
 
         nextVar.countDelete--;
@@ -385,7 +385,7 @@ namespace dcp::vardis {
 
     if (numberRecordsToAdd <= 0)
       {
-	throw VardisTransmitException ("makeICTypeRequestVarUpdates: numberRecordsToAdd is zero");
+	throw VardisTransmitException ("makeICTypeRequestVarUpdates", "numberRecordsToAdd is zero");
       }
 
     // initialize and serialize ICHeader
@@ -430,7 +430,7 @@ namespace dcp::vardis {
 
     if (numberRecordsToAdd <= 0)
       {
-	throw VardisTransmitException ("makeICTypeRequestVarCreates: numberRecordsToAdd is zero");
+	throw VardisTransmitException ("makeICTypeRequestVarCreates", "numberRecordsToAdd is zero");
       }
 
     // initialize and serialize ICHeader

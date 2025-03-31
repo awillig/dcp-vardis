@@ -1,6 +1,7 @@
 #include <iostream>
 #include <dcp/common/debug_helpers.h>
 #include <dcp/common/exceptions.h>
+#include <dcp/common/other_helpers.h>
 #include <dcp/common/services_status.h>
 #include <dcp/vardis/vardisclient_configuration.h>
 #include <dcp/vardis/vardisclient_lib.h>
@@ -126,8 +127,7 @@ int main (int argc, char* argv [])
   }
   catch (DcpException& e)
     {
-      cout << "DCP ERROR - " << e.what() << endl;
-      cout << "Exiting." << endl;
+      print_exiting_dcp_exception (e);
       return EXIT_FAILURE;
     }
   catch (std::exception& e)

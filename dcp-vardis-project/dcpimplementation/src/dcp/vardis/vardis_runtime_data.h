@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <iostream>
 #include <map>
 #include <queue>
 #include <mutex>
@@ -40,6 +39,7 @@
  *        locks for certain parts of the runtime data
  */
 
+using dcp::bp::BPStaticClientInfo;
 
 namespace dcp::vardis {
 
@@ -60,36 +60,29 @@ namespace dcp::vardis {
      *        command socket, and initializes Vardis shared memory
      *        variable store and runtime data
      *
-     * @param protocol_id: BPProtocolIdT value to use for Vardis
-     * @param protname: clear text protocol name for Vardis protocol
+     * @param static_client_info: holds all the configuration data the
+     *        BP demon needs to know about Vardis demon (e.g. name of
+     *        protocol, queueing mode), needs to be filled in by caller
      * @param cfg: Vardis configuration data
      *
      * Note: Vardis does not allow multiple payloads in one beacon and
      * the demon does not request or process
      * BP-TransmitPayload.confirm primitives
      */
-    VardisRuntimeData (const BPProtocolIdT protocol_id,
-		       const std::string protname,
-		       const VardisConfiguration& cfg)
-    : BPClientRuntime (protocol_id,
-		       protname,
-		       cfg.vardis_conf.maxPayloadSize,
-		       dcp::bp::BP_QMODE_QUEUE_DROPHEAD,
-		       cfg.vardis_conf.queueMaxEntries,
-		       false,   // allowMultiplepayloads
-		       false,   // generateTransmitPayloadConfirms
-		       cfg),
-      variable_store (cfg.vardis_shm_vardb_conf.shmAreaName.c_str(),
-		      true,
-		      cfg.vardis_conf.maxSummaries,
-		      cfg.vardis_conf.maxDescriptionLength,
-		      cfg.vardis_conf.maxValueLength,
-		      cfg.vardis_conf.maxRepetitions,
-		      get_own_node_identifier()),
-      vardisCommandSock(cfg.vardis_cmdsock_conf.commandSocketFile, cfg.vardis_cmdsock_conf.commandSocketTimeoutMS),
-      vardis_config (cfg),
-      vardis_exitFlag (false),
-      protocol_data (variable_store)
+    VardisRuntimeData (const BPStaticClientInfo static_client_info,
+		       const VardisConfiguration cfg)
+      : BPClientRuntime (cfg, static_client_info, false),
+	variable_store (cfg.vardis_shm_vardb_conf.shmAreaName.c_str(),
+			true,
+			cfg.vardis_conf.maxSummaries,
+			cfg.vardis_conf.maxDescriptionLength,
+			cfg.vardis_conf.maxValueLength,
+			cfg.vardis_conf.maxRepetitions,
+			get_own_node_identifier()),
+	vardisCommandSock(cfg.vardis_cmdsock_conf.commandSocketFile, cfg.vardis_cmdsock_conf.commandSocketTimeoutMS),
+	vardis_config (cfg),
+	vardis_exitFlag (false),
+	protocol_data (variable_store)
     {
     };
 

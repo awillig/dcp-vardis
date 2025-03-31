@@ -53,28 +53,28 @@ namespace dcp::vardis {
   
   void VardisConfigurationBlock::validate ()
   {
-    if (maxValueLength <= 0) throw ConfigurationException ("Vardis config: maxValueLength <= 0");
-    if (maxValueLength > MAX_maxValueLength) throw ConfigurationException ("Vardis config: maxValueLength too large");
-    if (maxValueLength > (maxPayloadSize - InstructionContainerT::fixed_size()))  throw ConfigurationException ("Vardis config: maxValueLength too large");
+    if (maxValueLength <= 0) throw ConfigurationException ("VardisConfigurationBlock", "maxValueLength <= 0");
+    if (maxValueLength > MAX_maxValueLength) throw ConfigurationException ("VardisConfigurationBlock", "maxValueLength too large");
+    if (maxValueLength > (maxPayloadSize - InstructionContainerT::fixed_size()))  throw ConfigurationException ("VardisConfigurationBlock", "maxValueLength too large");
 
-    if (maxDescriptionLength <= 0) throw ConfigurationException ("Vardis config: maxDescriptionLength <= 0");
-    if (maxDescriptionLength > MAX_maxDescriptionLength) throw ConfigurationException ("Vardis config: maxDescriptionLength too large");
+    if (maxDescriptionLength <= 0) throw ConfigurationException ("VardisConfigurationBlock", "maxDescriptionLength <= 0");
+    if (maxDescriptionLength > MAX_maxDescriptionLength) throw ConfigurationException ("VardisConfigurationBlock", "maxDescriptionLength too large");
     if (maxDescriptionLength > maxPayloadSize - (InstructionContainerT::fixed_size() + VarSpecT::fixed_size() + VarUpdateT::fixed_size() + maxValueLength))
-      throw ConfigurationException ("Vardis config: maxDescriptionLength too large");
+      throw ConfigurationException ("VardisConfigurationBlock", "maxDescriptionLength too large");
 
-    if (maxRepetitions <= 0) throw ConfigurationException ("Vardis config: maxRepetitions <= 0");
-    if (maxRepetitions > 15) throw ConfigurationException ("Vardis config: maxRepetitions > 15");
+    if (maxRepetitions <= 0) throw ConfigurationException ("VardisConfigurationBlock", "maxRepetitions <= 0");
+    if (maxRepetitions > 15) throw ConfigurationException ("VardisConfigurationBlock", "maxRepetitions > 15");
 
-    if (maxPayloadSize <= 0) throw ConfigurationException ("Vardis config: maxPayloadSize <= 0");
+    if (maxPayloadSize <= 0) throw ConfigurationException ("VardisConfigurationBlock", "maxPayloadSize <= 0");
     /* upper bound on maxPayloadSize is checked by BP upon registration */
 
     if (maxSummaries > ((maxPayloadSize - InstructionContainerT::fixed_size())/(VarSummT::fixed_size())))
-      throw ConfigurationException ("Vardis config: maxSumaries too large");
+      throw ConfigurationException ("VardisConfigurationBlock", "maxSumaries too large");
     
-    if (pollRTDBServiceIntervalMS <= 0) throw ConfigurationException ("Vardis config: period for checking RTDB service requests in shared memory must be strictly positive");
-    if (payloadGenerationIntervalMS <= 0) throw ConfigurationException ("Vardis config: payload generation interval must be strictly positive");
+    if (pollRTDBServiceIntervalMS <= 0) throw ConfigurationException ("VardisConfigurationBlock", "period for checking RTDB service requests in shared memory must be strictly positive");
+    if (payloadGenerationIntervalMS <= 0) throw ConfigurationException ("VardisConfigurationBlock", "payload generation interval must be strictly positive");
 
-    if (queueMaxEntries <= 0) throw ConfigurationException ("Vardis config: maximum entries in BP queue for Vardis must be strictly positive");
+    if (queueMaxEntries <= 0) throw ConfigurationException ("VardisConfigurationBlock", "maximum entries in BP queue for Vardis must be strictly positive");
   }
 
   
@@ -104,7 +104,6 @@ namespace dcp::vardis {
        << " , maxSummaries = " << cfg.vardis_conf.maxSummaries
        << " , pollRTDBServiceIntervalMS = " << cfg.vardis_conf.pollRTDBServiceIntervalMS
        << " , payloadGenerationIntervalMS = " << cfg.vardis_conf.payloadGenerationIntervalMS
-       << " , pollReceivePayloadMS = " << cfg.vardis_conf.pollReceivePayloadMS
        << " , queueMaxEntries = " << cfg.vardis_conf.queueMaxEntries
        << " , lockingforindividualcontainers = " << cfg.vardis_conf.lockingForIndividualContainers
     

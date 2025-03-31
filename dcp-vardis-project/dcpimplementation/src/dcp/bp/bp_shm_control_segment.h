@@ -20,43 +20,75 @@
 
 #pragma once
 
-#include <iostream>
-#include <dcp/common/shared_mem_area.h>
+#include <dcp/common/global_types_constants.h>
+#include <dcp/common/sharedmem_finite_queue.h>
+#include <dcp/bp/bp_service_primitives.h>
 
-using dcp::SharedMemBuffer;
 
 
 /**
  * @brief This module defines the structure of a shared memory control
  *        segment between the BP demon and a BP client protocol
  *
- * The control segment contains a list of free SharedMemBuffer buffers
- * ('free list'), an input queue (from client protocol to BP demon),
- * an output queue (from BP demon to client protocol) and the actual
- * payload queue / buffer associated to a client protocol.
+ * The control segment contains some finite queues: one for the BP
+ * queue associated with a client, one for the buffer associated with
+ * a client, and two queues for transmit payload confirmations and
+ * receive payload indications.
+ *
+ * All the queues are realized as shared memory finite queues.
  *
  */
 
 
+using dcp::PushHandler;
+
 namespace dcp::bp {
 
-  /**
-   * @brief Maximum length of input and output queues
-   */
-  const uint64_t maxServicePrimitiveQueueLength = 10;
   
-  typedef struct BPShmControlSegment : public ShmControlSegmentBase {
-    
-    RingBufferFree     rbFree;                        /*!< free list of shared mem buffers */
-    RingBufferNormal   rbTransmitPayloadRequest;      /*!< Input queue of BPTransmitPayload requests from client protocol */
-    RingBufferNormal   rbTransmitPayloadConfirm;      /*!< Output queue of BPTransmitPayload confirms */
-    RingBufferNormal   rbReceivePayloadIndication;    /*!< Output queue with BPReceivePayload indications */
+  typedef struct BPShmControlSegment {
+
+    /**
+     * @brief Maximum length of any of the queues in this class
+     */
+    static const uint64_t maxQueueLength     = 10;
+
+
+    /**
+     * @brief Maximum size of a payload buffer, given as maximum
+     *        payload size plus some margin
+     */
+    static const size_t   maxBufferSize      = maxBeaconPayloadSize + 128;
+
+
+    /**
+     * @brief Maximum size of a confirmation buffer, given by
+     *        confirmation size plus some safety margin
+     */
+    static const size_t   confirmBufferSize  = sizeof(BPTransmitPayload_Confirm) + 128;
+
+
+    /**
+     * @brief Type representing finite queue holding a payload
+     */
+    typedef ShmFiniteQueue<maxQueueLength, maxBufferSize>      PayloadQueue;
+
+
+    /**
+     * @brief Type representing a finite queue holding a confirmation
+     */
+    typedef ShmFiniteQueue<maxQueueLength, confirmBufferSize>  ConfirmQueue;
 
     
-    RingBufferNormal queue;    /*!< This is where buffers for the queue-based queueing modes are stored */
-    SharedMemBuffer buffer;    /*!< This is the buffer for QMODE_ONCE and QMODE_REPEAT */
+    ConfirmQueue  pqTransmitPayloadConfirm;      /*!< Output queue of BPTransmitPayload confirms */
+    PayloadQueue  pqReceivePayloadIndication;    /*!< Output queue with BPReceivePayload indications */
+    
+    PayloadQueue  queue;     /*!< This is where buffers for the queue-based queueing modes are stored */
+    PayloadQueue  buffer;    /*!< This is the buffer for QMODE_ONCE and QMODE_REPEAT */
 
     bool generateTransmitPayloadConfirms; /*!< Indicate whether payload confirmations should be generated */
+
+    
+    BPStaticClientInfo static_client_info; /*!< Static information about BP client protocol (e.g. name, queueing mode) */
 
     
     BPShmControlSegment () = delete;
@@ -65,77 +97,54 @@ namespace dcp::bp {
     /**
      * @brief Constructor, initializes control segment in shared memory area
      *
-     * @param shmBuffPool: contains description of shared memory area,
-     *        including pointers to control and buffer segment
-     * @param numberBuffers: number of SharedMemBuffers to allocate
-     * @param maxEntries: number of entries in the payload queue
+     * @param static_ci: contains static BP client protocol parameters
+     *        (e.g. name, queueing mode etc)
      * @param gen_pld_confirms: specify whether or not the client
      *        protocol wants BP instance to generate payload confirm
      *        primitives
      *
      * This assumes that the shared memory area is already available
      */
-    BPShmControlSegment (ShmBufferPool& shmBuffPool,
-			 uint64_t  numberBuffers,
-			 uint16_t  maxEntries,
-			 bool      gen_pld_confirms)
-      : rbFree ("free list", numberBuffers),
-	rbTransmitPayloadRequest ("transmit-payload-requests", maxServicePrimitiveQueueLength),
-	rbTransmitPayloadConfirm ("transmit-payload-confirms", maxServicePrimitiveQueueLength),
-	rbReceivePayloadIndication ("receive-payload-indications", maxServicePrimitiveQueueLength),
-	queue("payload-queue", std::max((uint16_t) 1, maxEntries)),
-	generateTransmitPayloadConfirms (gen_pld_confirms)
-    {
-      // set up all buffers and put them into free list
-      size_t   act_buffer_size   = shmBuffPool.get_actual_buffer_size ();
-      byte*    buffer_start      = shmBuffPool.getBufferSegmentPtr ();
-      uint64_t needed_buffers    = get_minimum_number_buffers_required ((uint64_t) maxEntries);
-
-      if (act_buffer_size == 0)             throw ShmException ("BPShmControlSegment: actual buffer size is zero");
-      if (buffer_start    == nullptr)       throw ShmException ("BPShmControlSegment: invalid buffer start pointer");
-      if (needed_buffers  > numberBuffers)  throw ShmException ("BPShmControlSegment: insufficient number of buffers");
-      if (maxEntries > maxRingBufferElements_Normal - 1) throw ShmException ("BPShmControlSegment: maxEntries is too large");
-
-      // put all but one buffer into the free list
-      for (uint64_t i = 0; i<numberBuffers-1; i++)
-	{
-	  SharedMemBuffer buff (act_buffer_size, i, i * act_buffer_size);
-	  rbFree.push (buff);
-	}
-
-      // and reserve the last ShmBuffer for, well, the buffer
-      // (according to the BP specification)
-      buffer = SharedMemBuffer (act_buffer_size, numberBuffers-1, (numberBuffers-1) * act_buffer_size);
-    };
-
-
-    /**
-     * @brief Calculates minimum number of SharedMemBuffers required
-     */
-    static uint64_t get_minimum_number_buffers_required (uint64_t queue_len)
-    {
-      return queue_len + 1 + 3*maxServicePrimitiveQueueLength;
-    };
+    BPShmControlSegment (BPStaticClientInfo  static_ci, bool gen_pld_confirms);
 
 
     /**
      * @brief Report current state of control segment as a string (for
      *        logging/debugging purposes)
      */
-    std::string report_stored_buffers ()
-    {
-      std::stringstream ss;
+    std::string report_stored_buffers ();
 
-      ss << "BPShmControlSegment: rbFree.stored = " << rbFree.stored_elements ()
-	 << ", rbTransmitPayloadRequest.stored = " << rbTransmitPayloadRequest.stored_elements ()
-	 << ", rbTransmitPayloadConfirm.stored = " << rbTransmitPayloadConfirm.stored_elements ()
-	 << ", rbReceivePayloadIndication.stored = " << rbReceivePayloadIndication.stored_elements ()
-	 << ", queue.stored = " << queue.stored_elements ()
-	 << ", buffer.used_length = " << buffer.used_length ();
+
+
+    /**
+     * @brief Method for transmitting a payload by providing a
+     *        PushHandler (from the finite queue module)
+     *
+     * @param handler: push handler constructing the payload in
+     *        place. When the push handler returns zero, no payload is
+     *        placed.
+     *
+     * This is useful for a BP client protocol to request transmission
+     * of a payload from the BP, it essentially implements the
+     * BP-TransmitPayload service.
+     */
+    DcpStatus transmit_payload (PushHandler handler);
       
-      return ss.str();
-    };
+
+    /**
+     * @brief Method for transmitting a payload by providing the
+     *        payload directly as a buffer
+     *
+     * @param length: size of the payload to be transmitted
+     * @param payload: pointer to the actual payload
+     *
+     * This is useful for a BP client protocol to request transmission
+     * of a payload from the BP, it essentially implements the
+     * BP-TransmitPayload service.
+     */
+    DcpStatus transmit_payload (BPLengthT length, byte* payload);
+
     
-  } BPShmControlSegment;
-  
+    
+  } BPShmControlSegment;  
 }

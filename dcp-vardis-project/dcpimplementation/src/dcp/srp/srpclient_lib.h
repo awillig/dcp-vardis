@@ -139,6 +139,20 @@ namespace dcp {
      *        NodeInformation records of all current neighbours
      */
     DcpStatus get_all_neighbours_node_information (std::list<NodeInformation>& neighbour_list);
+
+
+    /**
+     * @brief Return list of NodeInformation records for which their
+     *        ExtendedSafetyDataT matches a predicate
+     *
+     * @param predicate: predicate function checking whether an entry
+     *        for a given ExtendedSafetyDataT record is to be included
+     *        in the output list or not
+     * @param neighbour_list: output parameter collecting NodeInformation
+     *        records for all neighbours for whom the predicate matches
+     */
+    DcpStatus get_matching_neighbours_node_information (std::function<bool (const ExtendedSafetyDataT&)> predicate,
+							std::list<NodeInformation>& neighbour_list);
     
   };
   

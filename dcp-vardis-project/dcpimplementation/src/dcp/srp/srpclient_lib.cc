@@ -68,6 +68,19 @@ namespace dcp {
     
     return SRP_STATUS_OK;
   }
+
+  
+  // -----------------------------------------------------------------------------------
+
+  DcpStatus SRPClientRuntime::get_matching_neighbours_node_information (std::function<bool (const ExtendedSafetyDataT&)> predicate,
+									std::list<NodeInformation>& neighbour_list)
+  {
+    srp_store.lock_neighbour_table ();
+    neighbour_list = srp_store.list_matching_node_information (predicate);
+    srp_store.unlock_neighbour_table ();
+    
+    return SRP_STATUS_OK;
+  }
   
   
   // -----------------------------------------------------------------------------------

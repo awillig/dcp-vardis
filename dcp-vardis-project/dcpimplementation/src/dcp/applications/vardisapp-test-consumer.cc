@@ -9,6 +9,7 @@
 #include <dcp/applications/vardisapp-test-variabletype.h>
 #include <dcp/common/exceptions.h>
 #include <dcp/common/global_types_constants.h>
+#include <dcp/common/other_helpers.h>
 #include <dcp/vardis/vardis_service_primitives.h>
 #include <dcp/vardis/vardis_transmissible_types.h>
 #include <dcp/vardis/vardisclient_configuration.h>
@@ -273,9 +274,7 @@ int main (int argc, char* argv [])
   }
   catch (DcpException& e)
     {
-      endwin();
-      cout << "DCP ERROR - " << e.what() << endl;
-      cout << "Exiting." << endl;
+      print_exiting_dcp_exception (e);
       return EXIT_FAILURE;
     }
   catch (std::exception& e)

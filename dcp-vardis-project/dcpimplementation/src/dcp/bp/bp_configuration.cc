@@ -57,32 +57,33 @@ namespace dcp::bp {
     /***********************************
      * checks for interface data
      **********************************/
-    if (interfaceName.empty()) throw ConfigurationException ("BP: no interface name given");
-    if (mtuSize < minimumRequiredMTUSize) throw ConfigurationException ("BP: MTU size too small");
-    if (etherType < 0x0800) throw ConfigurationException ("BP: ether_type must be at least 0x0800");
+    if (interfaceName.empty()) throw ConfigurationException ("BPConfigurationBlock", "no interface name given");
+    if (mtuSize < minimumRequiredMTUSize) throw ConfigurationException ("BPConfigurationBlock", "MTU size too small");
+    if (mtuSize > maxBeaconPayloadSize) throw ConfigurationException ("BPConfigurationBlock", "MTU size too large");
+    if (etherType < 0x0800) throw ConfigurationException ("BPConfigurationBlock", "ether_type must be at least 0x0800");
     try {
       Tins::NetworkInterface iface (interfaceName);
     }
     catch (...) {
-      throw ConfigurationException("BP: invalid or unknown interface name given");
+      throw ConfigurationException("BPConfigurationBlock", "invalid or unknown interface name given");
     }
     
     /***********************************
      * checks for BP options
      **********************************/
-    if (maxBeaconSize <= dcp::bp::BPHeaderT::fixed_size() + dcp::bp::BPPayloadHeaderT::fixed_size()) throw ConfigurationException ("BP: maximum beacon size is too small");
-    if (maxBeaconSize > mtuSize) throw ConfigurationException ("BP: maximum beacon size exceeds MTU size");
-    if (avgBeaconPeriodMS <= 0) throw ConfigurationException ("BP: beacon period must be strictly positive");
-    if ((jitterFactor <= 0) || (jitterFactor >= 1)) throw ConfigurationException ("BP: jitter factor must be strictly between zero and one");
+    if (maxBeaconSize <= dcp::bp::BPHeaderT::fixed_size() + dcp::bp::BPPayloadHeaderT::fixed_size()) throw ConfigurationException ("BPConfigurationBlock", "maximum beacon size is too small");
+    if (maxBeaconSize > mtuSize) throw ConfigurationException ("BPConfigurationBlock", "maximum beacon size exceeds MTU size");
+    if (avgBeaconPeriodMS <= 0) throw ConfigurationException ("BPConfigurationBlock", "beacon period must be strictly positive");
+    if ((jitterFactor <= 0) || (jitterFactor >= 1)) throw ConfigurationException ("BPConfigurationBlock", "jitter factor must be strictly between zero and one");
 
     /***********************************
      * checks for other options
      **********************************/
 
-    if (interBeaconTimeEWMAAlpha < 0) throw ConfigurationException ("BP: alpha value for EWMA inter beacon time estimator must be non-negative");
-    if (interBeaconTimeEWMAAlpha > 1) throw ConfigurationException ("BP: alpha value for EWMA inter beacon time estimator must not exceed one");
-    if (beaconSizeEWMAAlpha < 0) throw ConfigurationException ("BP: alpha value for EWMA beacon size estimator must be non-negative");
-    if (beaconSizeEWMAAlpha > 1) throw ConfigurationException ("BP: alpha value for EWMA beacon size estimator must not exceed one");
+    if (interBeaconTimeEWMAAlpha < 0) throw ConfigurationException ("BPConfigurationBlock", "alpha value for EWMA inter beacon time estimator must be non-negative");
+    if (interBeaconTimeEWMAAlpha > 1) throw ConfigurationException ("BPConfigurationBlock", "alpha value for EWMA inter beacon time estimator must not exceed one");
+    if (beaconSizeEWMAAlpha < 0) throw ConfigurationException ("BPConfigurationBlock", "alpha value for EWMA beacon size estimator must be non-negative");
+    if (beaconSizeEWMAAlpha > 1) throw ConfigurationException ("BPConfigurationBlock", "alpha value for EWMA beacon size estimator must not exceed one");
 
     
   }

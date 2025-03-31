@@ -20,9 +20,8 @@
 
 #pragma once
 
-#include <iostream>
 #include <dcp/common/command_socket.h>
-#include <dcp/common/shared_mem_area.h>
+#include <dcp/common/sharedmem_configuration.h>
 
 namespace dcp {
 

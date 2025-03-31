@@ -9,6 +9,7 @@
 #include <list>
 #include <boost/program_options.hpp>
 #include <dcp/common/global_types_constants.h>
+#include <dcp/common/other_helpers.h>
 #include <dcp/common/services_status.h>
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/vardis/vardis_configuration.h>
@@ -21,14 +22,17 @@
 #include <dcp/vardis/vardisclient_lib.h>
 
 
-using std::cout;
 using std::cerr;
+using std::cout;
 using std::endl;
-using std::size_t;
 using std::exception;
+using std::size_t;
+using dcp::DcpException;
 using dcp::VardisClientRuntime;
 using dcp::VardisClientConfiguration;
 using dcp::vardis_status_to_string;
+using dcp::bp::BPStaticClientInfo;
+
 
 namespace po = boost::program_options;
 
@@ -71,8 +75,17 @@ int run_vardis_demon (const std::string cfg_filename)
   BOOST_LOG_SEV(log_main, trivial::info) << "Demon mode with config file " << cfg_filename; 
   BOOST_LOG_SEV(log_main, trivial::info) << "Configuration: " << vdconfig;
 
+  BPStaticClientInfo client_info;
+  client_info.protocolId      =  dcp::BP_PROTID_VARDIS;
+  std::strncpy (client_info.protocolName, get_protocol_name().c_str(), dcp::bp::maximumProtocolNameLength);
+  client_info.maxPayloadSize         =  vdconfig.vardis_conf.maxPayloadSize;
+  client_info.queueingMode           =  dcp::bp::BP_QMODE_QUEUE_DROPHEAD;
+  client_info.maxEntries             =  vdconfig.vardis_conf.queueMaxEntries;
+  client_info.allowMultiplePayloads  =  false;
+
+  
   try {
-    vd_rt_ptr = new VardisRuntimeData (dcp::BP_PROTID_VARDIS, get_protocol_name(), vdconfig);
+    vd_rt_ptr = new VardisRuntimeData (client_info, vdconfig);
 
     BOOST_LOG_SEV(log_main, trivial::info) << "BP registration successful, ownNodeIdentifier = " << vd_rt_ptr->get_own_node_identifier();
     
@@ -241,6 +254,10 @@ int main (int argc, char* argv[])
     cerr << desc << endl;
     return EXIT_FAILURE;
 
+  }
+  catch (DcpException& e) {
+    print_exiting_dcp_exception (e);
+    return EXIT_FAILURE;
   }
   catch(exception& e) {
     cerr << e.what() << endl;

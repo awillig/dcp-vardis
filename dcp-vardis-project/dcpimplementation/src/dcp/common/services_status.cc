@@ -35,6 +35,8 @@ namespace dcp {
       case  stBP_ListRegisteredProtocols      :  return "stBP_ListRegisteredProtocols";
       case  stBP_ClearBuffer                  :  return "stBP_ClearBuffer";
       case  stBP_QueryNumberBufferedPayloads  :  return "stBP_QueryNumberBufferedPayloads";
+      case  stBP_ReceivePayload               :  return "stBP_ReceivePayload";
+      case  stBP_TransmitPayload              :  return "stBP_TransmitPayload";
 
 	// implementation-dependent services
       case  stBP_ShutDown                     :  return "stBP_ShutDown";
@@ -100,7 +102,7 @@ namespace dcp {
 
 	// implementation-dependent status codes
       case VARDIS_STATUS_INTERNAL_ERROR:                  return "VARDIS_STATUS_INTERNAL_ERROR";
-      case VARDIS_STATUS_APPLICATION_ALREADY_REGISTERED:  return "VARDIS_STATUS_APPLICATION_ALREAD_REGISTERED";
+      case VARDIS_STATUS_APPLICATION_ALREADY_REGISTERED:  return "VARDIS_STATUS_APPLICATION_ALREADY_REGISTERED";
       case VARDIS_STATUS_INTERNAL_SHARED_MEMORY_ERROR:    return "VARDIS_STATUS_INTERNAL_SHARED_MEMORY_ERROR";
       case VARDIS_STATUS_UNKNOWN_APPLICATION:             return "VARDIS_STATUS_UNKNOWN_APPLICATION";
 	

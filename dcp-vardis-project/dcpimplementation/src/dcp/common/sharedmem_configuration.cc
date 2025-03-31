@@ -17,29 +17,25 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 
-#include <iostream>
-#include <dcp/vardis/vardis_client_protocol_data.h>
-
-namespace dcp::vardis {
+#include <dcp/common/exceptions.h>
+#include <dcp/common/sharedmem_configuration.h>
 
 
-  VardisClientProtocolData::VardisClientProtocolData (const char* area_name)
-  {
-    pSSB = std::make_shared<ShmStructureBase> (area_name, sizeof(VardisShmControlSegment), true);
-    pSCS = (VardisShmControlSegment*) pSSB->get_memory_address ();
-    if (!pSCS)
-      throw ShmException ("VardisClientProtocolData", "cannot allocate BPShmControlSegment");
-    new (pSCS) VardisShmControlSegment ();
-  }
-  
+namespace dcp {
 
   
-  std::ostream& operator<<(std::ostream& os, const VardisClientProtocolData& cpd)
+  void SharedMemoryConfigurationBlock::add_options (po::options_description& cfgdesc, std::string default_area_name)
   {
-    os << "VardisClientProtocolData{clientName = " << cpd.clientName
-       << " }";
-    return os;
+    cfgdesc.add_options()
+      (opt("areaName").c_str(),  po::value<std::string>(&shmAreaName)->default_value(default_area_name), txt("shared memory area name").c_str())
+      ;
   }
 
+  void SharedMemoryConfigurationBlock::validate ()
+  {
+    if (shmAreaName.empty())
+      throw ConfigurationException("SharedMemoryConfigurationBlock",
+				   "no shared memory name given");
+  }
   
-};  // namespace dcp::vardis
+};  // namespace dcp

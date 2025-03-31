@@ -85,25 +85,13 @@ namespace dcp {
      *
      * No socket is opened yet.
      */
-    CommandSocket (std::string name, uint16_t timeout)
-      : the_command_socket(-1),
-	data_socket(-1),
-	socketName (name),
-        socketTimeoutMS (timeout)
-      {
-	if (timeout <= 0) throw SocketException ("CommandSocket::ctor: timeout must be strictly positive");
-	if (name.empty()) throw SocketException ("CommandSocket::ctor: name must be nonempty");
-      };
+    CommandSocket (std::string name, uint16_t timeout);
 
 
     /**
      * @brief Destructor, closes the command socket if it is open.
      */
-    ~CommandSocket ()
-    {
-      if (the_command_socket >= 0)
-	close_owner();
-    };
+    ~CommandSocket ();
 
     
     /**
@@ -258,7 +246,7 @@ namespace dcp {
     {
       the_sock = cmdsock.open_client ();
       if (the_sock < 0)
-	throw ManagementException ("ScopedClientSocket: invalid socket");
+	throw ManagementException ("ScopedClientSocket", "invalid socket");
     };
 
 
@@ -291,50 +279,7 @@ namespace dcp {
      * system call occurs or when the provided buffer is not large
      * enough
      */
-    int read_whole_response (byte* buffer, size_t buffer_len, int max_attempts = 5)
-    {
-      if (the_sock < 0)
-	{
-	  throw SocketException ("read_whole_response: invalid socket");
-	  return -1;
-	}
-      
-      size_t bytes_read = 0;
-      int    attempts   = 0;
-
-      while (true)
-	{
-	  fd_set set;
-	  struct timeval timeout;
-	  FD_ZERO (&set);
-	  FD_SET (the_sock, &set);
-	  timeout.tv_sec   = 0;
-	  timeout.tv_usec  = 500000;
-
-	  attempts++;
-	  
-	  int rv = select (the_sock + 1, &set, NULL, NULL, &timeout);
-	  if (rv == -1)
-	    throw SocketException ("read_whole_response: select() returns error");
-
-	  if ((rv == 0) and (attempts >= max_attempts))
-	    throw SocketException ("read_whole_response: exhausted all attempts to read from socket");
-
-	  int nrcvd = read (the_sock, (void*) (buffer + bytes_read), buffer_len - bytes_read);
-
-	  if (nrcvd < 0) throw SocketException (std::format("read_whole_response: read() returns error code {}", strerror (errno)));
-
-	  if (nrcvd == 0)
-	    {
-	      return bytes_read;
-	    }
-
-	  bytes_read += nrcvd;
-
-	  if (bytes_read >= buffer_len)
-	    throw SocketException ("read_whole_response: buffer provided is too small");
-	}
-    };
+    int read_whole_response (byte* buffer, size_t buffer_len, int max_attempts = 5);
     
 
     /**
@@ -389,7 +334,7 @@ namespace dcp {
       if (the_sock >= 0)
 	close (the_sock);
       the_sock = -1;
-      throw SocketException (std::format ("ScopedClientSocket::abort: {}", msg));
+      throw SocketException ("ScopedClientSocket::abort", msg);
     };
     
   };

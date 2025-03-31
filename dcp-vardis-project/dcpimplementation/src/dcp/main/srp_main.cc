@@ -6,10 +6,11 @@
 #include <thread>
 #include <chrono>
 #include <boost/program_options.hpp>
-#include <dcp/common/global_types_constants.h>
-#include <dcp/common/services_status.h>
-#include <dcp/common/shared_mem_area.h>
 #include <dcp/common/debug_helpers.h>
+#include <dcp/common/global_types_constants.h>
+#include <dcp/common/other_helpers.h>
+#include <dcp/common/services_status.h>
+#include <dcp/common/sharedmem_configuration.h>
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/srp/srp_configuration.h>
@@ -20,15 +21,17 @@
 #include <dcp/srp/srp_transmissible_types.h>
 #include <dcp/srp/srp_transmitter.h>
 
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::size_t;
-using std::exception;
-using dcp::DcpStatus;
 using dcp::BP_STATUS_OK;
-using dcp::BPClientRuntime;
 using dcp::bp_status_to_string;
+using dcp::BPClientRuntime;
+using dcp::DcpException;
+using dcp::DcpStatus;
+using std::cerr;
+using std::cout;
+using std::endl;
+using std::exception;
+using std::size_t;
+using dcp::bp::BPStaticClientInfo;
 
 using namespace std::chrono_literals;
 
@@ -72,10 +75,17 @@ int run_srp_demon (const std::string cfg_filename)
   BOOST_LOG_SEV(log_main, trivial::info) << "Demon mode with config file " << cfg_filename;
   BOOST_LOG_SEV(log_main, trivial::info) << "Configuration: " << srpconfig;
 
+  BPStaticClientInfo client_info;
+  client_info.protocolId      =  dcp::BP_PROTID_SRP;
+  std::strncpy (client_info.protocolName, get_protocol_name().c_str(), dcp::bp::maximumProtocolNameLength);
+  client_info.maxPayloadSize         =  sizeof(ExtendedSafetyDataT);
+  client_info.queueingMode           =  dcp::bp::BP_QMODE_ONCE;
+  client_info.maxEntries             =  0;
+  client_info.allowMultiplePayloads  =  false;
 
   
   try {
-    srp_rt_ptr = new SRPRuntimeData (dcp::BP_PROTID_SRP, get_protocol_name(), srpconfig);
+    srp_rt_ptr = new SRPRuntimeData (client_info, srpconfig);
 
     BOOST_LOG_SEV(log_main, trivial::info) << "BP registration successful, ownNodeIdentifier = " << srp_rt_ptr->get_own_node_identifier();
 
@@ -168,7 +178,11 @@ int main (int argc, char* argv[])
     cerr << desc << endl;
     return EXIT_FAILURE;
   }
-  catch(std::exception& e) {
+  catch (DcpException& e) {
+    print_exiting_dcp_exception (e);
+    return EXIT_FAILURE;
+  }
+  catch (std::exception& e) {
     cerr << "Caught an exception: " << e.what() << endl;
     return EXIT_FAILURE;
   }

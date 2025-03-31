@@ -22,6 +22,7 @@
 #include <thread>
 #include <chrono>
 #include <dcp/common/area.h>
+#include <dcp/common/debug_helpers.h>
 #include <dcp/common/services_status.h>
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/vardis/vardis_configuration.h>
@@ -44,7 +45,7 @@ namespace dcp::vardis {
     if (icHeader.icNumRecords == 0)
       {
 	BOOST_LOG_SEV(log_rx, trivial::info) << "extractInstructionContainerElements: number of records is zero";
-	throw VardisReceiveException ("extractInstructionContainerElements: number of records is zero");
+	throw VardisReceiveException ("extractInstructionContainerElements", "number of records is zero");
       }
     
     for (int i=0; i<icHeader.icNumRecords; i++)
@@ -73,6 +74,7 @@ namespace dcp::vardis {
 	{
 	  ICHeaderT icHeader;
 	  icHeader.deserialize(area);
+	  
 	  switch(icHeader.icType.val)
 	    {
 	    case ICTYPE_SUMMARIES:
@@ -107,13 +109,19 @@ namespace dcp::vardis {
 	      }
 	    default:
 	      {
-		BOOST_LOG_SEV(log_rx, trivial::info) << "Unknown type of instruction container: "
-						     << vardis_instruction_container_to_string (InstructionContainerT(area.peek_byte()))
-						     << ", stopping processing";
-		throw VardisReceiveException ("process_received_payload: wrong instruction container type ");
+		throw VardisReceiveException ("process_received_payload",
+					      std::format("wrong instruction container type {}", (int) icHeader.icType.val));
 	      }
 	    }
 	}
+    }
+    catch (DcpException& e) {
+      BOOST_LOG_SEV(log_rx, trivial::info)
+	<< "process_received_payload -- extracting elements: "
+	<< "Exception type: " << e.ename()
+	<< ", module: " << e.modname()
+	<< ", message: " << e.what();
+      return;
     }
     catch (std::exception& e)
       {
@@ -196,11 +204,12 @@ namespace dcp::vardis {
   {
     BOOST_LOG_SEV(log_rx, trivial::info) << "Starting receive thread.";
     while (not runtime.vardis_exitFlag)
-      {
-	std::this_thread::sleep_for (std::chrono::milliseconds (runtime.vardis_config.vardis_conf.pollReceivePayloadMS));
-				     
+      {				     
 	if (not runtime.protocol_data.vardis_store.get_vardis_isactive())
-	  continue;
+	  {
+	    std::this_thread::sleep_for (std::chrono::milliseconds (100));
+	    continue;
+	  }
 
 	// check if we have received a payload
 	BPLengthT result_length = 0;
@@ -209,11 +218,13 @@ namespace dcp::vardis {
 	bool more_payloads = false;
 
 	do {
-	  rx_stat = runtime.receive_payload (result_length, rx_buffer, more_payloads);
+	  rx_stat = runtime.receive_payload_wait (result_length, rx_buffer, more_payloads, runtime.vardis_exitFlag);
 
 	  if ((result_length > 0) && (rx_stat == BP_STATUS_OK))
 	    {
-	      BOOST_LOG_SEV(log_rx, trivial::trace) << "Processing payload of length " << result_length;
+	      BOOST_LOG_SEV(log_rx, trivial::trace)
+		<< "Processing payload of length " << result_length
+		;
 	      MemoryChunkDisassemblyArea area ("vd-rx", (size_t) result_length.val, rx_buffer);
 	      process_received_payload (runtime, area);
 	    }

@@ -25,7 +25,7 @@
 #include <functional>
 #include <list>
 #include <type_traits>
-#include <dcp/common/array_avl_tree.h>
+#include <dcp/common/fixedmem_avl_tree.h>
 #include <dcp/common/exceptions.h>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/srp/srp_store_interface.h>
@@ -132,10 +132,10 @@ namespace dcp::srp {
      */
     class FixedMemContents {
     public:
-      GlobalState   global_state;                                                      /*!< Global state (own safety data etc) */
-      ExtendedSafetyDataT    neighbour_ESD [maxNeighbours];                            /*!< Buffers for ExtendedSafetyDataT records of neighbours */
-      RingBufferBase<FreeListEntry, get_max_neighbours()+1>  freeList;                 /*!< Ring buffer of free ExtendedSafetyDataT buffers */
-      ArrayAVLTree<NodeIdentifierT, NeighbourState, maxNeighbours> neighbour_table;    /*!< AVL tree containing neighbour table (with per-neighbour metadata) */
+      GlobalState   global_state;                                                         /*!< Global state (own safety data etc) */
+      ExtendedSafetyDataT    neighbour_ESD [maxNeighbours];                               /*!< Buffers for ExtendedSafetyDataT records of neighbours */
+      FixedMemRingBuffer<FreeListEntry, get_max_neighbours()+1>  freeList;                /*!< Ring buffer of free ExtendedSafetyDataT buffers */
+      FixedMemAVLTree<NodeIdentifierT, NeighbourState, maxNeighbours> neighbour_table;    /*!< AVL tree containing neighbour table (with per-neighbour metadata) */
       
       /**
        * @brief Constructor, initializes free list
@@ -194,7 +194,7 @@ namespace dcp::srp {
       memory_start_address             = mem_start_addr;
       
       if (memory_start_address == nullptr)
-	throw SRPStoreException ("initialize_srp_store: Memory start address is null");
+	throw SRPStoreException ("initialize_srp_store", "memory start address is null");
 
       pContents = new (memory_start_address) FixedMemContents;
 

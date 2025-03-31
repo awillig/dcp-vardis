@@ -39,7 +39,6 @@ namespace dcp::vardis {
   const uint8_t    defaultValueMaxRepetitions                   =  1;
   const uint16_t   defaultValueMaxPayloadSize                   =  1000;
   const uint16_t   defaultValueMaxSummaries                     =  20;
-  const uint16_t   defaultValuePollReceivedPayloadMS            =  25;
   const uint16_t   defaultValueQueueMaxEntries                  =  20;
   const uint16_t   defaultValuePayloadGenerationIntervalMS      =  30;
   const uint16_t   defaultValuePollRTDBServiceIntervalMS        =  25;
@@ -89,12 +88,6 @@ namespace dcp::vardis {
     /**************************************************
      * Implementation options
      *************************************************/
-
-    /**
-     * @brief Time between polls of the shared memory towards BP to
-     *        check for received payloads (in ms)
-     */
-    uint16_t pollReceivePayloadMS  =  defaultValuePollReceivedPayloadMS;
 
 
     /**

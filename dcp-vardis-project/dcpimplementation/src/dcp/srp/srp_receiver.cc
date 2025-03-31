@@ -40,11 +40,12 @@ namespace dcp::srp {
   {
     BOOST_LOG_SEV(log_rx, trivial::info) << "Starting receive thread.";
     while (not runtime.srp_exitFlag)
-      {
-	std::this_thread::sleep_for (std::chrono::milliseconds (runtime.srp_config.srp_conf.srpReceptionPeriodMS));
-				     
+      {				     
 	if (not runtime.srp_store.get_srp_isactive())
-	  continue;
+	  {
+	    std::this_thread::sleep_for (std::chrono::milliseconds (100));
+	    continue;
+	  }
 
 	// check if we have received a payload
 	BPLengthT result_length = 0;
@@ -53,7 +54,7 @@ namespace dcp::srp {
 	bool more_payloads = false;
 
 	do {
-	  rx_stat = runtime.receive_payload (result_length, rx_buffer, more_payloads);
+	  rx_stat = runtime.receive_payload_wait (result_length, rx_buffer, more_payloads, runtime.srp_exitFlag);
 
 	  if ((rx_stat == BP_STATUS_OK) and (result_length == sizeof(ExtendedSafetyDataT)))
 	    {

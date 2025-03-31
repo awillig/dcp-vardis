@@ -35,15 +35,9 @@ namespace dcp::srp {
       
       // SRP parameters
       (opt("generationPeriodMS").c_str(),   po::value<uint16_t>(&srpGenerationPeriodMS)->default_value(defaultValueSrpGenerationPeriodMS), txt("generation period for SRP payloads (in ms)").c_str())
-
-      (opt("receptionPeriodMS").c_str(),   po::value<uint16_t>(&srpReceptionPeriodMS)->default_value(defaultValueSrpReceptionPeriodMS), txt("reception period for retrieving SRP payloads (in ms)").c_str())
-
       (opt("scrubbingPeriodMS").c_str(),   po::value<uint16_t>(&srpScrubbingPeriodMS)->default_value(defaultValueSrpScrubbingPeriodMS), txt("scrubbing period for the neighbour table (in ms)").c_str())
-
       (opt("keepaliveTimeoutMS").c_str(),   po::value<uint16_t>(&srpKeepaliveTimeoutMS)->default_value(defaultValueSrpKeepaliveTimeoutMS), txt("timeout for generating own payloads (in ms)").c_str())
-
       (opt("scrubbingTimeoutMS").c_str(),   po::value<uint16_t>(&srpScrubbingTimeoutMS)->default_value(defaultValueSrpScrubbingTimeoutMS), txt("timeout for neighbour entries in the scrubbing process (in ms)").c_str())
-
       (opt("gapSizeEWMAAlpha").c_str(),     po::value<double>(&srpGapSizeEWMAAlpha)->default_value(defaultValueSrpGapSizeEWMAAlpha), txt("Alpha value for the EWMA estimator for average sequence number gap size").c_str())
       ;
     
@@ -54,13 +48,12 @@ namespace dcp::srp {
     /***********************************
      * checks for SRP options
      **********************************/
-    if (srpGenerationPeriodMS <= 0) throw ConfigurationException("generation period (in ms) must be strictly positive");
-    if (srpReceptionPeriodMS <= 0) throw ConfigurationException("reception period (in ms) must be strictly positive");
-    if (srpScrubbingPeriodMS <= 0) throw ConfigurationException("scrubbing period (in ms) must be strictly positive");
-    if (srpKeepaliveTimeoutMS <= 0) throw ConfigurationException("keepalive timeout (in ms) must be strictly positive");
-    if (srpScrubbingTimeoutMS <= 0) throw ConfigurationException("scrubbing timeout (in ms) must be strictly positive");
-    if (srpGapSizeEWMAAlpha < 0) throw ConfigurationException("EWMA alpha value must be non-negative");
-    if (srpGapSizeEWMAAlpha > 1) throw ConfigurationException("EWMA alpha value must not exceed one");
+    if (srpGenerationPeriodMS <= 0) throw ConfigurationException("SRPConfigurationBlock", "generation period (in ms) must be strictly positive");
+    if (srpScrubbingPeriodMS <= 0) throw ConfigurationException("SRPConfigurationBlock", "scrubbing period (in ms) must be strictly positive");
+    if (srpKeepaliveTimeoutMS <= 0) throw ConfigurationException("SRPConfigurationBlock", "keepalive timeout (in ms) must be strictly positive");
+    if (srpScrubbingTimeoutMS <= 0) throw ConfigurationException("SRPConfigurationBlock", "scrubbing timeout (in ms) must be strictly positive");
+    if (srpGapSizeEWMAAlpha < 0) throw ConfigurationException("SRPConfigurationBlock", "EWMA alpha value must be non-negative");
+    if (srpGapSizeEWMAAlpha > 1) throw ConfigurationException("SRPConfigurationBlock", "EWMA alpha value must not exceed one");
   }
 
   std::ostream& operator<< (std::ostream& os, const dcp::srp::SRPConfiguration& cfg)
@@ -78,7 +71,6 @@ namespace dcp::srp {
        << " , shmAreaNameNeighbourStore = " << cfg.shm_conf.shmAreaName
       
        << " , generationPeriodMS = " << cfg.srp_conf.srpGenerationPeriodMS
-       << " , receptionPeriodMS = " << cfg.srp_conf.srpReceptionPeriodMS
        << " , scrubbingPeriodMS = " << cfg.srp_conf.srpScrubbingPeriodMS
        << " , keepaliveTimeoutMS = " << cfg.srp_conf.srpKeepaliveTimeoutMS
        << " , scrubbingTimeoutMS = " << cfg.srp_conf.srpScrubbingTimeoutMS
