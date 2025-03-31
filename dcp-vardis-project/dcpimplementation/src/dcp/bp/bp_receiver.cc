@@ -84,14 +84,6 @@ namespace dcp::bp {
       std::memcpy (memaddr, (void*) &pldIndication, sizeof(pldIndication));
       area.deserialize_byte_block (pldHdr.length.val, memaddr + sizeof(pldIndication));
 
-      BOOST_LOG_SEV(log_rx, trivial::trace)
-	<< "deliver_payload::handler: pldHdr.length = " << pldHdr.length
-	<< ", pldIndication = " << pldIndication
-	<< ", sizeof(BPReceivePayload_Indication) = " << sizeof(BPReceivePayload_Indication)
-	<< ", return size = " << sizeof(pldIndication) + pldHdr.length.val
-	<< ", memaddr contents [PldInd+pld] = " << byte_array_to_string (memaddr, 50)
-	;
-      
       return (sizeof(pldIndication) + pldHdr.length.val);
     };
     bool timed_out;
