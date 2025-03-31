@@ -11,10 +11,9 @@ let AVERAGEX="$SHORTHAND * 1000 + 150"
 let AVERAGEY="$SHORTHAND * 1000 + 300"
 let AVERAGEZ="$SHORTHAND * 1000 + 450"
 
-echo "Numerical short hand is $SHORTHAND and average is $AVERAGE"
-
 sudo rm /tmp/dcp-* > /dev/null 2>&1
 sudo rm /dev/shm/shm-area* > /dev/null 2>&1
+sudo rm /dev/shm/shm-vardis* > /dev/null 2>&1
 sudo rm log-dcp-* > /dev/null 2>&1
 
 start_bp() {
@@ -77,6 +76,7 @@ stop_pos_gen() {
 cleanup() {
     sudo rm /tmp/dcp-* > /dev/null 2>&1
     sudo rm /dev/shm/shm-area* > /dev/null 2>&1
+    sudo rm /dev/shm/shm-vardis* > /dev/null 2>&1
 }
 
 
