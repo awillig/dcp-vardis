@@ -74,6 +74,9 @@ namespace dcp::vardis {
 	{
 	  ICHeaderT icHeader;
 	  icHeader.deserialize(area);
+
+	  BOOST_LOG_SEV(log_rx, trivial::info) << "process_received_payload: icHeader.icType = " << (int) icHeader.icType.val;
+	  
 	  switch(icHeader.icType.val)
 	    {
 	    case ICTYPE_SUMMARIES:
@@ -109,7 +112,7 @@ namespace dcp::vardis {
 	    default:
 	      {
 		BOOST_LOG_SEV(log_rx, trivial::info) << "Unknown type of instruction container: "
-						     << vardis_instruction_container_to_string (InstructionContainerT(area.peek_byte()))
+						     << (int) icHeader.icType.val
 						     << ", stopping processing";
 		throw VardisReceiveException ("process_received_payload",
 					      std::format("wrong instruction container type {}", (int) icHeader.icType.val));
