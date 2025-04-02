@@ -67,7 +67,7 @@ namespace dcp {
   /**
    * @brief Default timeout for a shared memory lock in ms
    */
-  const uint16_t   defaultSharedMemoryLockTimeoutMS = 500;
+  const uint16_t   defaultSharedMemoryLockTimeoutMS = 1000;
 
 
   /**
