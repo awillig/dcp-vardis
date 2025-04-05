@@ -263,7 +263,7 @@ namespace dcp {
      */
     void push_wait (PushHandler handler,
 		    bool& timed_out,
-		    uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
+		    uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
 	throw ShmException (std::format("{}.push_wait", get_queue_name()), "timeout is zero");
@@ -331,7 +331,7 @@ namespace dcp {
     void push_nowait (PushHandler handler,
 		      bool& timed_out,
 		      bool& is_full,
-		      uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
+		      uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
 	throw ShmException (std::format("{}.push_nowait", get_queue_name()), "timeout is zero");
@@ -392,7 +392,7 @@ namespace dcp {
      */
     void push_wait_force (PushHandler handler,
 			  bool& timed_out,
-			  uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
+			  uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
 	throw ShmException (std::format("{}.push_wait_force", get_queue_name(), "timeout is zero"));
@@ -449,7 +449,7 @@ namespace dcp {
     void pop_wait (PopHandler handler,
 		   bool& timed_out,
 		   bool& further_entries,
-		   uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
+		   uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
 	throw ShmException (std::format("{}.pop_wait", get_queue_name(), "timeout is zero"));
@@ -514,7 +514,7 @@ namespace dcp {
     void pop_nowait (PopHandler handler,
 		     bool& timed_out,
 		     bool& further_entries,
-		     uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
+		     uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
 	throw ShmException (std::format("{}.pop_nowait", get_queue_name(), "timeout is zero"));
@@ -569,7 +569,7 @@ namespace dcp {
      */
     void popall_wait (PopHandler handler,
 		      bool& timed_out,
-		      uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
+		      uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
 	throw ShmException (std::format("{}.popall_wait", get_queue_name(), "timeout is zero"));
@@ -632,7 +632,7 @@ namespace dcp {
 
     void popall_nowait (PopHandler handler,
 			bool& timed_out,
-			uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
+			uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
 	throw ShmException (std::format("{}.popall_nowait", get_queue_name(), "timeout is zero"));
@@ -689,7 +689,7 @@ namespace dcp {
      */    
     void peek_wait (PopHandler handler,
 		    bool& timed_out,
-		    uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
+		    uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
 	throw ShmException (std::format("{}.peek_wait", get_queue_name(), "timeout is zero"));
@@ -746,7 +746,7 @@ namespace dcp {
      */    
     void peek_nowait (PopHandler handler,
 		      bool& timed_out,
-		      uint16_t timeoutMS = defaultSharedMemoryLockTimeoutMS)
+		      uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
 	throw ShmException (std::format("{}.peek_nowait", get_queue_name(), "timeout is zero"));
