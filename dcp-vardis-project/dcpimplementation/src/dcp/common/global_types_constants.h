@@ -65,11 +65,20 @@ namespace dcp {
 
 
   /**
-   * @brief Default timeout for a shared memory lock in ms
+   * @brief Default timeout for a shared memory lock in ms, expiry
+   *        suggests an error
    */
-  const uint16_t   defaultSharedMemoryLockTimeoutMS = 1000;
+  const uint16_t   defaultLongSharedMemoryLockTimeoutMS = 1000;
 
 
+  /**
+   * @brief Default timeout for a shared memory lock in ms, expiry
+   *        does not suggest error, but perhaps allows for checking
+   *        exit conditions
+   */
+  const uint16_t   defaultShortSharedMemoryLockTimeoutMS = 20;
+
+  
   /**
    * @brief Maximum length of a shared memory area name
    */
