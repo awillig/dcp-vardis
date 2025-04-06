@@ -111,11 +111,11 @@ namespace dcp {
     if (waiting)
       {
 	do {
-	  CS.pqReceivePayloadIndication.pop_wait (handler, timed_out, more_payloads, 10);
+	  CS.pqReceivePayloadIndication.pop_wait (handler, timed_out, more_payloads, defaultShortSharedMemoryLockTimeoutMS);
 	} while ((not exitFlag) and timed_out);
       }
     else
-      CS.pqReceivePayloadIndication.pop_nowait (handler, timed_out, more_payloads, 10);
+      CS.pqReceivePayloadIndication.pop_nowait (handler, timed_out, more_payloads, defaultShortSharedMemoryLockTimeoutMS);
     return retval;
     
   }
