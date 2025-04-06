@@ -69,67 +69,49 @@ namespace dcp::vardis {
     std::deque<VarDeleteT>     icDeleteVariables;
 
     // Dispatch on ICType
-    try {
-      while (area.used() < area.available())
-	{
-	  ICHeaderT icHeader;
-	  icHeader.deserialize(area);
-	  
-	  switch(icHeader.icType.val)
-	    {
-	    case ICTYPE_SUMMARIES:
-	      {
-		extractInstructionContainerElements<VarSummT> (area, icHeader, icSummaries);
-		break;
-	      }
-	    case ICTYPE_UPDATES:
-	      {
-		extractInstructionContainerElements<VarUpdateT> (area, icHeader, icUpdates);
-		break;
-	      }
-	    case ICTYPE_REQUEST_VARUPDATES:
-	      {
-		extractInstructionContainerElements<VarReqUpdateT> (area, icHeader, icRequestVarUpdates);
-		break;
-	      }
-	    case ICTYPE_REQUEST_VARCREATES:
-	      {
-		extractInstructionContainerElements<VarReqCreateT> (area, icHeader, icRequestVarCreates);
-		break;
-	      }
-	    case ICTYPE_CREATE_VARIABLES:
-	      {
-		extractInstructionContainerElements<VarCreateT> (area, icHeader, icCreateVariables);
-		break;
-	      }
-	    case ICTYPE_DELETE_VARIABLES:
-	      {
-		extractInstructionContainerElements<VarDeleteT> (area, icHeader, icDeleteVariables);
-		break;
-	      }
-	    default:
-	      {
-		throw VardisReceiveException ("process_received_payload",
-					      std::format("wrong instruction container type {}", (int) icHeader.icType.val));
-	      }
-	    }
-	}
-    }
-    catch (DcpException& e) {
-      BOOST_LOG_SEV(log_rx, trivial::info)
-	<< "process_received_payload -- extracting elements: "
-	<< "Exception type: " << e.ename()
-	<< ", module: " << e.modname()
-	<< ", message: " << e.what();
-      return;
-    }
-    catch (std::exception& e)
+    while (area.used() < area.available())
       {
-	BOOST_LOG_SEV(log_rx, trivial::info)
-	  << "process_received_payload -- extracting elements: caught exception " << e.what()
-	  << ", stopping processing";
-
-        return;
+	ICHeaderT icHeader;
+	icHeader.deserialize(area);
+	
+	switch(icHeader.icType.val)
+	  {
+	  case ICTYPE_SUMMARIES:
+	    {
+	      extractInstructionContainerElements<VarSummT> (area, icHeader, icSummaries);
+	      break;
+	    }
+	  case ICTYPE_UPDATES:
+	    {
+	      extractInstructionContainerElements<VarUpdateT> (area, icHeader, icUpdates);
+	      break;
+	    }
+	  case ICTYPE_REQUEST_VARUPDATES:
+	    {
+	      extractInstructionContainerElements<VarReqUpdateT> (area, icHeader, icRequestVarUpdates);
+	      break;
+	    }
+	  case ICTYPE_REQUEST_VARCREATES:
+	    {
+	      extractInstructionContainerElements<VarReqCreateT> (area, icHeader, icRequestVarCreates);
+	      break;
+	    }
+	  case ICTYPE_CREATE_VARIABLES:
+	    {
+	      extractInstructionContainerElements<VarCreateT> (area, icHeader, icCreateVariables);
+	      break;
+	    }
+	  case ICTYPE_DELETE_VARIABLES:
+	    {
+	      extractInstructionContainerElements<VarDeleteT> (area, icHeader, icDeleteVariables);
+	      break;
+	    }
+	  default:
+	    {
+	      throw VardisReceiveException ("process_received_payload",
+					    std::format("wrong instruction container type {}", (int) icHeader.icType.val));
+	    }
+	  }
       }
 
 
@@ -140,61 +122,53 @@ namespace dcp::vardis {
     // acquire a lock just once and process all containers in one go,
     // or do them separately. The current do-both solution is not
     // really elegant
-    try {
-      if (runtime.vardis_config.vardis_conf.lockingForIndividualContainers)
-	{
-	  { ScopedVariableStoreMutex mtx (runtime);
-	    for (auto it = icCreateVariables.begin(); it != icCreateVariables.end(); ++it)
-	      runtime.protocol_data.process_var_create (*it);
-	  }
-
-	  { ScopedVariableStoreMutex mtx (runtime);
-	    for (auto it = icDeleteVariables.begin(); it != icDeleteVariables.end(); ++it)
-	      runtime.protocol_data.process_var_delete (*it);
-	  }
-	  
-	  { ScopedVariableStoreMutex mtx (runtime);
-	    for (auto it = icUpdates.begin(); it != icUpdates.end(); ++it)
-	      runtime.protocol_data.process_var_update (*it);
-	  }
-	  
-	  { ScopedVariableStoreMutex mtx (runtime);
-	    for (auto it = icSummaries.begin(); it != icSummaries.end(); ++it)
-	      runtime.protocol_data.process_var_summary (*it);
-	  }
-	  
-	  { ScopedVariableStoreMutex mtx (runtime);
-	    for (auto it = icRequestVarUpdates.begin(); it != icRequestVarUpdates.end(); ++it)
-	      runtime.protocol_data.process_var_requpdate (*it);
-	  }
-
-	  { ScopedVariableStoreMutex mtx (runtime);
-	    for (auto it = icRequestVarCreates.begin(); it != icRequestVarCreates.end(); ++it)
-	      runtime.protocol_data.process_var_reqcreate (*it);
-	  }
-	}
-      else
-	{
-	  ScopedVariableStoreMutex mtx (runtime);
+    if (runtime.vardis_config.vardis_conf.lockingForIndividualContainers)
+      {
+	{ ScopedVariableStoreMutex mtx (runtime);
 	  for (auto it = icCreateVariables.begin(); it != icCreateVariables.end(); ++it)
 	    runtime.protocol_data.process_var_create (*it);
+	}
+	
+	{ ScopedVariableStoreMutex mtx (runtime);
 	  for (auto it = icDeleteVariables.begin(); it != icDeleteVariables.end(); ++it)
 	    runtime.protocol_data.process_var_delete (*it);
+	}
+	
+	{ ScopedVariableStoreMutex mtx (runtime);
 	  for (auto it = icUpdates.begin(); it != icUpdates.end(); ++it)
 	    runtime.protocol_data.process_var_update (*it);
+	}
+	
+	{ ScopedVariableStoreMutex mtx (runtime);
 	  for (auto it = icSummaries.begin(); it != icSummaries.end(); ++it)
 	    runtime.protocol_data.process_var_summary (*it);
+	}
+	
+	{ ScopedVariableStoreMutex mtx (runtime);
 	  for (auto it = icRequestVarUpdates.begin(); it != icRequestVarUpdates.end(); ++it)
 	    runtime.protocol_data.process_var_requpdate (*it);
+	}
+	
+	{ ScopedVariableStoreMutex mtx (runtime);
 	  for (auto it = icRequestVarCreates.begin(); it != icRequestVarCreates.end(); ++it)
 	    runtime.protocol_data.process_var_reqcreate (*it);
 	}
-    }
-    catch (std::exception& e)
+      }
+    else
       {
-	BOOST_LOG_SEV(log_rx, trivial::info) << "process_received_payload -- applying changes: caught exception " << e.what()
-					     << ", stopping processing";
-	return;
+	ScopedVariableStoreMutex mtx (runtime);
+	for (auto it = icCreateVariables.begin(); it != icCreateVariables.end(); ++it)
+	  runtime.protocol_data.process_var_create (*it);
+	for (auto it = icDeleteVariables.begin(); it != icDeleteVariables.end(); ++it)
+	  runtime.protocol_data.process_var_delete (*it);
+	for (auto it = icUpdates.begin(); it != icUpdates.end(); ++it)
+	  runtime.protocol_data.process_var_update (*it);
+	for (auto it = icSummaries.begin(); it != icSummaries.end(); ++it)
+	  runtime.protocol_data.process_var_summary (*it);
+	for (auto it = icRequestVarUpdates.begin(); it != icRequestVarUpdates.end(); ++it)
+	  runtime.protocol_data.process_var_requpdate (*it);
+	for (auto it = icRequestVarCreates.begin(); it != icRequestVarCreates.end(); ++it)
+	  runtime.protocol_data.process_var_reqcreate (*it);
       }
   }
 
@@ -203,39 +177,62 @@ namespace dcp::vardis {
   void receiver_thread (VardisRuntimeData& runtime)
   {
     BOOST_LOG_SEV(log_rx, trivial::info) << "Starting receive thread.";
-    while (not runtime.vardis_exitFlag)
-      {				     
-	if (not runtime.protocol_data.vardis_store.get_vardis_isactive())
-	  {
-	    std::this_thread::sleep_for (std::chrono::milliseconds (100));
-	    continue;
-	  }
 
-	// check if we have received a payload
-	BPLengthT result_length = 0;
-	DcpStatus rx_stat;
-	byte rx_buffer [rx_buffer_length];
-	bool more_payloads = false;
-
-	do {
-	  rx_stat = runtime.receive_payload_wait (result_length, rx_buffer, more_payloads, runtime.vardis_exitFlag);
-
-	  if ((result_length > 0) && (rx_stat == BP_STATUS_OK))
+    try {
+      while (not runtime.vardis_exitFlag)
+	{				     
+	  if (not runtime.protocol_data.vardis_store.get_vardis_isactive())
 	    {
-	      BOOST_LOG_SEV(log_rx, trivial::trace)
-		<< "Processing payload of length " << result_length
-		;
-	      MemoryChunkDisassemblyArea area ("vd-rx", (size_t) result_length.val, rx_buffer);
-	      process_received_payload (runtime, area);
+	      std::this_thread::sleep_for (std::chrono::milliseconds (100));
+	      continue;
 	    }
-	  else
-	    {
-	      if (rx_stat != BP_STATUS_OK)
-		BOOST_LOG_SEV(log_rx, trivial::info) << "Retrieving received payload issued error " << bp_status_to_string (rx_stat);
-	    }
-	} while (more_payloads);
+	  
+	  // check if we have received a payload
+	  BPLengthT result_length = 0;
+	  DcpStatus rx_stat;
+	  byte rx_buffer [rx_buffer_length];
+	  bool more_payloads = false;
+	  
+	  do {
+	    rx_stat = runtime.receive_payload_wait (result_length, rx_buffer, more_payloads, runtime.vardis_exitFlag);
+	    
+	    if ((result_length > 0) && (rx_stat == BP_STATUS_OK))
+	      {
+		BOOST_LOG_SEV(log_rx, trivial::trace)
+		  << "Processing payload of length " << result_length
+		  ;
+		MemoryChunkDisassemblyArea area ("vd-rx", (size_t) result_length.val, rx_buffer);
+		process_received_payload (runtime, area);
+	      }
+	    else
+	      {
+		if (rx_stat != BP_STATUS_OK)
+		  BOOST_LOG_SEV(log_rx, trivial::info) << "Retrieving received payload issued error " << bp_status_to_string (rx_stat);
+	      }
+	  } while (more_payloads);
+	}
+    }
+    catch (DcpException& e)
+      {
+	BOOST_LOG_SEV(log_rx, trivial::fatal)
+	  << "Caught DCP exception in Vardis receiver main loop. "
+	  << "Exception type: " << e.ename()
+	  << ", module: " << e.modname()
+	  << ", message: " << e.what()
+	  << "Exiting.";
+	runtime.vardis_exitFlag = true;
       }
+    catch (std::exception& e)
+      {
+	BOOST_LOG_SEV(log_rx, trivial::fatal)
+	  << "Caught other exception in Vardis receiver main loop. "
+	  << "Message: " << e.what()
+	  << "Exiting.";
+	runtime.vardis_exitFlag = true;
+      }
+
+    
     BOOST_LOG_SEV(log_rx, trivial::info) << "Exiting receive thread.";
   }
-  
+    
 };  // namespace dcp::vardis

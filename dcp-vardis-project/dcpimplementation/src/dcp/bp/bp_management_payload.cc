@@ -20,6 +20,7 @@
 
 
 #include <chrono>
+#include <exception>
 #include <functional>
 #include <thread>
 extern "C" {
@@ -113,14 +114,35 @@ namespace dcp::bp {
   void management_thread_payload (BPRuntimeData& runtime)
   {
     BOOST_LOG_SEV(log_mgmt_payload, trivial::info) << "Starting payload management thread.";
-    
-    while (not runtime.bp_exitFlag)
+
+    try {
+      while (not runtime.bp_exitFlag)
+	{
+	  std::this_thread::sleep_for (20ms);
+	  runtime.clientProtocols_mutex.lock();
+	  handle_payload_from_client (runtime);
+	  runtime.clientProtocols_mutex.unlock();
+	}
+    }
+    catch (DcpException& e)
       {
-	std::this_thread::sleep_for (20ms);
-	runtime.clientProtocols_mutex.lock();
-	handle_payload_from_client (runtime);
-	runtime.clientProtocols_mutex.unlock();
+	BOOST_LOG_SEV(log_mgmt_payload, trivial::fatal)
+	  << "Caught DCP exception in BP payload handler loop. "
+	  << "Exception type: " << e.ename()
+	  << ", module: " << e.modname()
+	  << ", message: " << e.what()
+	  << "Exiting.";
+	runtime.bp_exitFlag = true;
       }
+    catch (std::exception& e)
+      {
+	BOOST_LOG_SEV(log_mgmt_payload, trivial::fatal)
+	  << "Caught other exception in BP payload handler loop. "
+	  << "Message: " << e.what()
+	  << "Exiting.";
+	runtime.bp_exitFlag = true;
+      }
+
     
     BOOST_LOG_SEV(log_mgmt_payload, trivial::info) << "Stopping payload management thread.";
   }

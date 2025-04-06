@@ -40,7 +40,9 @@ namespace dcp::bp {
     if (not runtime.clientProtocols.contains(pldHdr.protocolId))
       {
 	BOOST_LOG_SEV(log_rx, trivial::info)
-	  << "deliver_payload: payload for unregistered protocol, dropping payload.";
+	  << "deliver_payload: payload for unregistered protocol identifier "
+	  << pldHdr.protocolId
+	  << ", dropping payload.";
 	
 	area.incr (pldHdr.length.val);  // skip actual payload
 	return;
@@ -207,72 +209,92 @@ namespace dcp::bp {
       return;
     }
 
-    while ((not runtime.bp_exitFlag) && pSniffer)
+    try {
+      while ((not runtime.bp_exitFlag) && pSniffer)
+	{
+	  PDU* rx_pdu = pSniffer->next_packet();
+	  
+	  if (rx_pdu)
+	    {
+	      const EthernetII& eth_frame = rx_pdu->rfind_pdu<EthernetII>();
+	      
+	      BOOST_LOG_SEV(log_rx, trivial::trace)
+		<< "Got frame with srcaddr = " << eth_frame.src_addr()
+		<< ", dstaddr = " << eth_frame.dst_addr()
+		<< ", payload-type = " << eth_frame.payload_type()
+		<< ", size = " << eth_frame.size();
+	      
+	      
+	      if ((eth_frame.dst_addr() == EthernetII::BROADCAST) && (eth_frame.payload_type() == runtime.bp_config.bp_conf.etherType))
+		{
+		  const RawPDU& raw_pdu = rx_pdu->rfind_pdu<RawPDU>();
+		  bytevect payload      = raw_pdu.payload();
+		  ByteVectorDisassemblyArea area ("bp-rx", payload);
+		  
+		  TimeStampT current_time = TimeStampT::get_current_system_time();
+		  auto ib_time = current_time.milliseconds_passed_since(last_beacon_reception_time);
+		  
+		  // update beacon size statistics
+		  if (runtime.cntBPPayloads == 0)
+		    {
+		      runtime.avg_received_beacon_size = (double) payload.size ();
+		    }
+		  else
+		    {
+		      runtime.avg_received_beacon_size =
+			bcnSizeAlpha * runtime.avg_received_beacon_size
+			+ (1 - bcnSizeAlpha) * ((double) payload.size());		    
+		    }
+		  
+		  // update inter beacon time statistics
+		  if (runtime.cntBPPayloads == 1)
+		    {
+		      runtime.avg_inter_beacon_reception_time = (double) ib_time;
+		    }
+		  else if (runtime.cntBPPayloads > 1)
+		    {
+		      runtime.avg_inter_beacon_reception_time =
+			ibTimeAlpha * runtime.avg_inter_beacon_reception_time
+			+ (1 - ibTimeAlpha) * ((double) ib_time);
+		    }
+		  
+		  last_beacon_reception_time = TimeStampT::get_current_system_time();
+		  runtime.cntBPPayloads++;
+		  
+		  BOOST_LOG_SEV(log_rx, trivial::trace) << "process_received_payload: avg inter beacon time (ms) = " << runtime.avg_inter_beacon_reception_time
+							<< ", avg beacon size (B) = " << runtime.avg_received_beacon_size;
+		  
+		  if (runtime.bp_isActive)
+		    {
+		      process_received_payload (runtime, area);
+		    }
+		  
+		}
+	    
+	      delete rx_pdu;
+	    }
+	}
+      if (pSniffer) delete pSniffer;
+    }
+    catch (DcpException& e)
       {
-	PDU* rx_pdu = pSniffer->next_packet();
-
-	if (rx_pdu)
-	  {
-	    const EthernetII& eth_frame = rx_pdu->rfind_pdu<EthernetII>();
-
-	    BOOST_LOG_SEV(log_rx, trivial::trace)
-	      << "Got frame with srcaddr = " << eth_frame.src_addr()
-	      << ", dstaddr = " << eth_frame.dst_addr()
-	      << ", payload-type = " << eth_frame.payload_type()
-	      << ", size = " << eth_frame.size();
-	    
-	    
-	    if ((eth_frame.dst_addr() == EthernetII::BROADCAST) && (eth_frame.payload_type() == runtime.bp_config.bp_conf.etherType))
-	      {
-		const RawPDU& raw_pdu = rx_pdu->rfind_pdu<RawPDU>();
-		bytevect payload      = raw_pdu.payload();
-		ByteVectorDisassemblyArea area ("bp-rx", payload);
-
-		TimeStampT current_time = TimeStampT::get_current_system_time();
-		auto ib_time = current_time.milliseconds_passed_since(last_beacon_reception_time);
-
-		// update beacon size statistics
-		if (runtime.cntBPPayloads == 0)
-		  {
-		    runtime.avg_received_beacon_size = (double) payload.size ();
-		  }
-		else
-		  {
-		    runtime.avg_received_beacon_size =
-		      bcnSizeAlpha * runtime.avg_received_beacon_size
-		      + (1 - bcnSizeAlpha) * ((double) payload.size());		    
-		  }
-
-		// update inter beacon time statistics
-		if (runtime.cntBPPayloads == 1)
-		  {
-		    runtime.avg_inter_beacon_reception_time = (double) ib_time;
-		  }
-		else if (runtime.cntBPPayloads > 1)
-		  {
-		    runtime.avg_inter_beacon_reception_time =
-		      ibTimeAlpha * runtime.avg_inter_beacon_reception_time
-		      + (1 - ibTimeAlpha) * ((double) ib_time);
-		  }
-		
-		last_beacon_reception_time = TimeStampT::get_current_system_time();
-		runtime.cntBPPayloads++;
-
-		BOOST_LOG_SEV(log_rx, trivial::trace) << "process_received_payload: avg inter beacon time (ms) = " << runtime.avg_inter_beacon_reception_time
-						      << ", avg beacon size (B) = " << runtime.avg_received_beacon_size;
-
-		if (runtime.bp_isActive)
-		  {
-		    process_received_payload (runtime, area);
-		  }
-		
-	      }
-	    
-	    delete rx_pdu;
-	  }
+	BOOST_LOG_SEV(log_rx, trivial::fatal)
+	  << "Caught DCP exception in BP receiver main loop. "
+	  << "Exception type: " << e.ename()
+	  << ", module: " << e.modname()
+	  << ", message: " << e.what()
+	  << "Exiting.";
+	runtime.bp_exitFlag = true;
       }
-    if (pSniffer) delete pSniffer;
-
+    catch (std::exception& e)
+      {
+	BOOST_LOG_SEV(log_rx, trivial::fatal)
+	  << "Caught other exception in BP receiver main loop. "
+	  << "Message: " << e.what()
+	  << "Exiting.";
+	runtime.bp_exitFlag = true;
+      }
+      
     BOOST_LOG_SEV(log_rx, trivial::info) << "Stopping receiver thread.";
   }
   

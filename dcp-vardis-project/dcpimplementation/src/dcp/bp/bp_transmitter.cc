@@ -19,6 +19,7 @@
 
 
 #include <chrono>
+#include <exception>
 #include <list>
 #include <thread>
 #include <boost/random/mersenne_twister.hpp>
@@ -207,16 +208,37 @@ namespace dcp::bp {
     unsigned int upper_bound = (unsigned int) upper_bound_int;
 
     boost::random::uniform_int_distribution<> dist (lower_bound, upper_bound); 
-    
-    while (not runtime.bp_exitFlag)
-      {
-	unsigned int wait_time_ms = dist (randgen);
-	std::this_thread::sleep_for (std::chrono::milliseconds (wait_time_ms));
 
-	runtime.clientProtocols_mutex.lock();
-	generate_beacon (runtime);
-	runtime.clientProtocols_mutex.unlock();
+    try {
+      while (not runtime.bp_exitFlag)
+	{
+	  unsigned int wait_time_ms = dist (randgen);
+	  std::this_thread::sleep_for (std::chrono::milliseconds (wait_time_ms));
+	  
+	  runtime.clientProtocols_mutex.lock();
+	  generate_beacon (runtime);
+	  runtime.clientProtocols_mutex.unlock();
+	}
+    }
+    catch (DcpException& e)
+      {
+	BOOST_LOG_SEV(log_tx, trivial::fatal)
+	  << "Caught DCP exception in BP transmitter main loop. "
+	  << "Exception type: " << e.ename()
+	  << ", module: " << e.modname()
+	  << ", message: " << e.what()
+	  << "Exiting.";
+	runtime.bp_exitFlag = true;
       }
+    catch (std::exception& e)
+      {
+	BOOST_LOG_SEV(log_tx, trivial::fatal)
+	  << "Caught other exception in BP transmitter main loop. "
+	  << "Message: " << e.what()
+	  << "Exiting.";
+	runtime.bp_exitFlag = true;
+      }
+
     BOOST_LOG_SEV(log_tx, trivial::info) << "Stopping transmit thread.";
   }
 

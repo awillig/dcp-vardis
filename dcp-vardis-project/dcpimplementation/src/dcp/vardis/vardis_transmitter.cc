@@ -87,41 +87,62 @@ namespace dcp::vardis {
     BOOST_LOG_SEV(log_tx, trivial::info) << "Starting transmit thread.";
 
     BPShmControlSegment& CS = *(runtime.pSCS);
-    
-    while (not runtime.vardis_exitFlag)
-      {
-	std::this_thread::sleep_for (std::chrono::milliseconds (runtime.vardis_config.vardis_conf.payloadGenerationIntervalMS));
-				     
-	if (not runtime.protocol_data.vardis_store.get_vardis_isactive())
-	  continue;
 
-	PushHandler handler = [&] (byte* memaddr, size_t bufferSize)
+    try {
+      while (not runtime.vardis_exitFlag)
 	{
-	  BPTransmitPayload_Request*  pldReq_ptr = new (memaddr) BPTransmitPayload_Request;
-	  byte* area_ptr = memaddr + sizeof(BPTransmitPayload_Request);
-	  MemoryChunkAssemblyArea area ("vd-tx", std::min((size_t) runtime.vardis_config.vardis_conf.maxPayloadSize, bufferSize), area_ptr);
-	  unsigned int containers_added = 0;
-
-	  construct_payload (runtime, area, containers_added);
-
-	  if (containers_added == 0)
-	    return (size_t) 0;
-
-	  pldReq_ptr->protocolId = BP_PROTID_VARDIS;
-	  pldReq_ptr->length     = area.used();
-
-	  return (area.used() + sizeof(BPTransmitPayload_Request));
-	};
-	
-	bool timed_out;
-
-	CS.queue.push_wait (handler, timed_out);
-	if (timed_out)
+	  std::this_thread::sleep_for (std::chrono::milliseconds (runtime.vardis_config.vardis_conf.payloadGenerationIntervalMS));
+	  
+	  if (not runtime.protocol_data.vardis_store.get_vardis_isactive())
+	    continue;
+	  
+	  PushHandler handler = [&] (byte* memaddr, size_t bufferSize)
 	  {
-	    BOOST_LOG_SEV(log_tx, trivial::fatal) << "Shared memory timeout. Exiting.";
-	    runtime.vardis_exitFlag = true;
-	  }
+	    BPTransmitPayload_Request*  pldReq_ptr = new (memaddr) BPTransmitPayload_Request;
+	    byte* area_ptr = memaddr + sizeof(BPTransmitPayload_Request);
+	    MemoryChunkAssemblyArea area ("vd-tx", std::min((size_t) runtime.vardis_config.vardis_conf.maxPayloadSize, bufferSize), area_ptr);
+	    unsigned int containers_added = 0;
+	    
+	    construct_payload (runtime, area, containers_added);
+	    
+	    if (containers_added == 0)
+	      return (size_t) 0;
+	    
+	    pldReq_ptr->protocolId = BP_PROTID_VARDIS;
+	    pldReq_ptr->length     = area.used();
+	    
+	    return (area.used() + sizeof(BPTransmitPayload_Request));
+	  };
+	  
+	  bool timed_out;
+	  
+	  CS.queue.push_wait (handler, timed_out);
+	  if (timed_out)
+	    {
+	      BOOST_LOG_SEV(log_tx, trivial::fatal) << "Shared memory timeout. Exiting.";
+	      runtime.vardis_exitFlag = true;
+	    }
+	}
+    }
+    catch (DcpException& e)
+      {
+	BOOST_LOG_SEV(log_tx, trivial::fatal)
+	  << "Caught DCP exception in Vardis transmitter main loop. "
+	  << "Exception type: " << e.ename()
+	  << ", module: " << e.modname()
+	  << ", message: " << e.what()
+	  << "Exiting.";
+	runtime.vardis_exitFlag = true;
       }
+    catch (std::exception& e)
+      {
+	BOOST_LOG_SEV(log_tx, trivial::fatal)
+	  << "Caught other exception in Vardis transmitter main loop. "
+	  << "Message: " << e.what()
+	  << "Exiting.";
+	runtime.vardis_exitFlag = true;
+      }
+    
     BOOST_LOG_SEV(log_tx, trivial::info) << "Exiting transmit thread.";
   }
   

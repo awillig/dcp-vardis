@@ -147,19 +147,39 @@ namespace dcp::vardis {
   {
     BOOST_LOG_SEV(log_mgmt_rtdb, trivial::info) << "Starting to interact with client via shared memory";
 
-    while (not runtime.vardis_exitFlag)
-      {
-	std::this_thread::sleep_for (std::chrono::milliseconds (runtime.vardis_config.vardis_conf.pollRTDBServiceIntervalMS));
-
-	// run over all client protocols / applications, using lock
+    try {
+      while (not runtime.vardis_exitFlag)
 	{
-	  ScopedClientApplicationsMutex ca_mtx (runtime);
-
-	  for (auto& clapp : runtime.clientApplications)
-	    {
-	      handle_client_shared_memory (runtime, clapp.second);
-	    }
+	  std::this_thread::sleep_for (std::chrono::milliseconds (runtime.vardis_config.vardis_conf.pollRTDBServiceIntervalMS));
+	  
+	  // run over all client protocols / applications, using lock
+	  {
+	    ScopedClientApplicationsMutex ca_mtx (runtime);
+	    
+	    for (auto& clapp : runtime.clientApplications)
+	      {
+		handle_client_shared_memory (runtime, clapp.second);
+	      }
+	  }
 	}
+    }
+    catch (DcpException& e)
+      {
+	BOOST_LOG_SEV(log_mgmt_rtdb, trivial::fatal)
+	  << "Caught DCP exception in Vardis RTDB management main loop. "
+	  << "Exception type: " << e.ename()
+	  << ", module: " << e.modname()
+	  << ", message: " << e.what()
+	  << "Exiting.";
+	runtime.vardis_exitFlag = true;
+      }
+    catch (std::exception& e)
+      {
+	BOOST_LOG_SEV(log_mgmt_rtdb, trivial::fatal)
+	  << "Caught other exception in Vardis RTDB management main loop. "
+	  << "Message: " << e.what()
+	  << "Exiting.";
+	runtime.vardis_exitFlag = true;
       }
 
     BOOST_LOG_SEV(log_mgmt_rtdb, trivial::info) << "Stopping to interact with client via shared memory, cleanup";    

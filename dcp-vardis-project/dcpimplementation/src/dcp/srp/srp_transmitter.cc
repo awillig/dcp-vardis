@@ -42,54 +42,75 @@ namespace dcp::srp {
     uint16_t          sleep_time         = runtime.srp_config.srp_conf.srpGenerationPeriodMS;
     uint16_t          keepalive_timeout  = runtime.srp_config.srp_conf.srpKeepaliveTimeoutMS;
     NodeIdentifierT   own_node_id        = runtime.srp_store.get_own_node_identifier ();
-    
-    while (not runtime.srp_exitFlag)
-      {
-	std::this_thread::sleep_for (std::chrono::milliseconds (sleep_time));
-				     
-	if (not runtime.srp_store.get_srp_isactive())
-	  continue;
 
-	ScopedOwnSDMutex own_sd_lock (runtime);
-
-	if (not runtime.srp_store.get_own_safety_data_written_flag ())
-	  continue;
-	
-	TimeStampT curr_time = TimeStampT::get_current_system_time();
-	TimeStampT past_time = runtime.srp_store.get_own_safety_data_timestamp();
-
-	// do not generate payload if there has been no new safety
-	// data for a while
-	if (curr_time.milliseconds_passed_since(past_time) >= keepalive_timeout)
-	  {
-	    if (runtime.srp_store.get_own_safety_data_written_flag ())
-	      BOOST_LOG_SEV(log_tx, trivial::info) << "Stop sending own safety data after not being updated for a while.";
-	    runtime.srp_store.set_own_safety_data_written_flag (false);
+    try {
+      while (not runtime.srp_exitFlag)
+	{
+	  std::this_thread::sleep_for (std::chrono::milliseconds (sleep_time));
+	  
+	  if (not runtime.srp_store.get_srp_isactive())
 	    continue;
-	  }
-
-	byte pld_buffer [sizeof(BPTransmitPayload_Request) + sizeof(ExtendedSafetyDataT) + 16];
-	BPTransmitPayload_Request*  pldReq_ptr = new (pld_buffer) BPTransmitPayload_Request;
-	byte* pld_ptr = pld_buffer + sizeof(BPTransmitPayload_Request);
-	pldReq_ptr->protocolId = BP_PROTID_SRP;
-	pldReq_ptr->length     = sizeof(ExtendedSafetyDataT);
-	ExtendedSafetyDataT* pESD = new (pld_ptr) ExtendedSafetyDataT;
-	pESD->safetyData = runtime.srp_store.get_own_safety_data ();
-	pESD->nodeId     = own_node_id;
-	pESD->timeStamp  = TimeStampT::get_current_system_time();
-	pESD->seqno      = runtime.srp_store.get_own_sequence_number ();
-	runtime.srp_store.set_own_sequence_number (pESD->seqno + 1);
-
-	DcpStatus retval = CS.transmit_payload (BPLengthT(sizeof(BPTransmitPayload_Request) + sizeof(ExtendedSafetyDataT)), pld_buffer);
-	if (retval != BP_STATUS_OK)
-	  {
-	    BOOST_LOG_SEV(log_tx, trivial::fatal) << "transmit payload request failed, status = "
-						  << bp_status_to_string (retval)
-						  << ". Exiting.";
-	    runtime.srp_exitFlag = true;
-	    return;
-	  }	
+	  
+	  ScopedOwnSDMutex own_sd_lock (runtime);
+	  
+	  if (not runtime.srp_store.get_own_safety_data_written_flag ())
+	    continue;
+	  
+	  TimeStampT curr_time = TimeStampT::get_current_system_time();
+	  TimeStampT past_time = runtime.srp_store.get_own_safety_data_timestamp();
+	  
+	  // do not generate payload if there has been no new safety
+	  // data for a while
+	  if (curr_time.milliseconds_passed_since(past_time) >= keepalive_timeout)
+	    {
+	      if (runtime.srp_store.get_own_safety_data_written_flag ())
+		BOOST_LOG_SEV(log_tx, trivial::info) << "Stop sending own safety data after not being updated for a while.";
+	      runtime.srp_store.set_own_safety_data_written_flag (false);
+	      continue;
+	    }
+	  
+	  byte pld_buffer [sizeof(BPTransmitPayload_Request) + sizeof(ExtendedSafetyDataT) + 16];
+	  BPTransmitPayload_Request*  pldReq_ptr = new (pld_buffer) BPTransmitPayload_Request;
+	  byte* pld_ptr = pld_buffer + sizeof(BPTransmitPayload_Request);
+	  pldReq_ptr->protocolId = BP_PROTID_SRP;
+	  pldReq_ptr->length     = sizeof(ExtendedSafetyDataT);
+	  ExtendedSafetyDataT* pESD = new (pld_ptr) ExtendedSafetyDataT;
+	  pESD->safetyData = runtime.srp_store.get_own_safety_data ();
+	  pESD->nodeId     = own_node_id;
+	  pESD->timeStamp  = TimeStampT::get_current_system_time();
+	  pESD->seqno      = runtime.srp_store.get_own_sequence_number ();
+	  runtime.srp_store.set_own_sequence_number (pESD->seqno + 1);
+	  
+	  DcpStatus retval = CS.transmit_payload (BPLengthT(sizeof(BPTransmitPayload_Request) + sizeof(ExtendedSafetyDataT)), pld_buffer);
+	  if (retval != BP_STATUS_OK)
+	    {
+	      BOOST_LOG_SEV(log_tx, trivial::fatal) << "transmit payload request failed, status = "
+						    << bp_status_to_string (retval)
+						    << ". Exiting.";
+	      runtime.srp_exitFlag = true;
+	      return;
+	    }	
+	}
+    }
+    catch (DcpException& e)
+      {
+	BOOST_LOG_SEV(log_tx, trivial::fatal)
+	  << "Caught DCP exception in SRP transmitter main loop. "
+	  << "Exception type: " << e.ename()
+	  << ", module: " << e.modname()
+	  << ", message: " << e.what()
+	  << "Exiting.";
+	runtime.srp_exitFlag = true;
       }
+    catch (std::exception& e)
+      {
+	BOOST_LOG_SEV(log_tx, trivial::fatal)
+	  << "Caught other exception in SRP transmitter main loop. "
+	  << "Message: " << e.what()
+	  << "Exiting.";
+	runtime.srp_exitFlag = true;
+      }
+    
     BOOST_LOG_SEV(log_tx, trivial::info) << "Exiting transmit thread.";
   }
   
