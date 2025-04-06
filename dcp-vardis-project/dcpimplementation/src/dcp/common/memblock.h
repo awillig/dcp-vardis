@@ -112,6 +112,8 @@ namespace dcp {
       if ((data != nullptr) and do_delete)
 	{
 	  delete [] data;
+	  data    = nullptr;
+	  length  = 0;
 	}      
     };
     
