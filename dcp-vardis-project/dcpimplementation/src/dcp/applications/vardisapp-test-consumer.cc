@@ -237,7 +237,7 @@ int main (int argc, char* argv [])
 		      {
 			endwin ();
 			cout << "Reading varId " << descr.varId << " failed with status " << vardis_status_to_string (read_status) << endl;
-			continue;
+			return EXIT_FAILURE;
 		      }
 		    
 		    if (respVarId != descr.varId)
