@@ -99,7 +99,7 @@ namespace dcp::srp {
 	  << "Exception type: " << e.ename()
 	  << ", module: " << e.modname()
 	  << ", message: " << e.what()
-	  << "Exiting.";
+	  << ". Exiting.";
 	runtime.srp_exitFlag = true;
       }
     catch (std::exception& e)
@@ -107,7 +107,7 @@ namespace dcp::srp {
 	BOOST_LOG_SEV(log_tx, trivial::fatal)
 	  << "Caught other exception in SRP transmitter main loop. "
 	  << "Message: " << e.what()
-	  << "Exiting.";
+	  << ". Exiting.";
 	runtime.srp_exitFlag = true;
       }
     
