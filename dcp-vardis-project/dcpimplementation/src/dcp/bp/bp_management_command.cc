@@ -576,7 +576,7 @@ namespace dcp::bp {
 	<< "Exception type: " << e.ename()
 	<< ", module: " << e.modname()
 	<< ", message: " << e.what()
-	<< "Exiting.";
+	<< ". Exiting.";
       runtime.bp_exitFlag = true;
       return;
     }

@@ -227,7 +227,7 @@ namespace dcp::bp {
 	  << "Exception type: " << e.ename()
 	  << ", module: " << e.modname()
 	  << ", message: " << e.what()
-	  << "Exiting.";
+	  << ". Exiting.";
 	runtime.bp_exitFlag = true;
       }
     catch (std::exception& e)
@@ -235,7 +235,7 @@ namespace dcp::bp {
 	BOOST_LOG_SEV(log_tx, trivial::fatal)
 	  << "Caught other exception in BP transmitter main loop. "
 	  << "Message: " << e.what()
-	  << "Exiting.";
+	  << ". Exiting.";
 	runtime.bp_exitFlag = true;
       }
 
