@@ -477,6 +477,9 @@ namespace dcp {
 	      return;
 	    }
 	}
+
+      if (queue.isEmpty())
+	throw ShmException (std::format("{}.pop_wait", get_queue_name(), "queue is empty, but has_data is true"));
       
       DescrT descr = queue.pop ();
       byte* effective_address = buffer_space + descr.offs;
@@ -520,6 +523,7 @@ namespace dcp {
 	throw ShmException (std::format("{}.pop_nowait", get_queue_name(), "timeout is zero"));
       
       timed_out       = false;
+      further_entries = false;
       
       const boost::posix_time::ptime timeout (boost::get_system_time() + boost::posix_time::milliseconds(timeoutMS));
       
@@ -535,6 +539,9 @@ namespace dcp {
 	{
 	  return;
 	}
+
+      if (queue.isEmpty())
+	throw ShmException (std::format("{}.pop_nowait", get_queue_name(), "queue is empty, but has_data is true"));
       
       DescrT descr = queue.pop ();
       byte* effective_address = buffer_space + descr.offs;
