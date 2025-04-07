@@ -395,7 +395,7 @@ namespace dcp {
 			  uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("{}.push_wait_force", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.push_wait_force", get_queue_name()), "timeout is zero");
       
       timed_out        = false;
       
@@ -452,7 +452,7 @@ namespace dcp {
 		   uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("{}.pop_wait", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.pop_wait", get_queue_name()), "timeout is zero");
       
       timed_out       = false;
       further_entries = false;
@@ -479,7 +479,7 @@ namespace dcp {
 	}
 
       if (queue.isEmpty())
-	throw ShmException (std::format("{}.pop_wait", get_queue_name(), "queue is empty, but has_data is true"));
+	throw ShmException (std::format("{}.pop_wait", get_queue_name()), "queue is empty, but has_data is true");
       
       DescrT descr = queue.pop ();
       byte* effective_address = buffer_space + descr.offs;
@@ -520,7 +520,7 @@ namespace dcp {
 		     uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("{}.pop_nowait", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.pop_nowait", get_queue_name()), "timeout is zero");
       
       timed_out       = false;
       further_entries = false;
@@ -541,7 +541,7 @@ namespace dcp {
 	}
 
       if (queue.isEmpty())
-	throw ShmException (std::format("{}.pop_nowait", get_queue_name(), "queue is empty, but has_data is true"));
+	throw ShmException (std::format("{}.pop_nowait", get_queue_name()), "queue is empty, but has_data is true");
       
       DescrT descr = queue.pop ();
       byte* effective_address = buffer_space + descr.offs;
@@ -579,7 +579,7 @@ namespace dcp {
 		      uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("{}.popall_wait", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.popall_wait", get_queue_name()), "timeout is zero");
       
       timed_out       = false;
       
@@ -642,7 +642,7 @@ namespace dcp {
 			uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("{}.popall_nowait", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.popall_nowait", get_queue_name()), "timeout is zero");
       
       timed_out       = false;
       
@@ -699,7 +699,7 @@ namespace dcp {
 		    uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("{}.peek_wait", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.peek_wait", get_queue_name()), "timeout is zero");
       
       timed_out       = false;
       
@@ -756,7 +756,7 @@ namespace dcp {
 		      uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
       if (timeoutMS==0)
-	throw ShmException (std::format("{}.peek_nowait", get_queue_name(), "timeout is zero"));
+	throw ShmException (std::format("{}.peek_nowait", get_queue_name()), "timeout is zero");
       
       timed_out       = false;
       
