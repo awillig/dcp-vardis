@@ -358,7 +358,7 @@ namespace dcp::vardis {
 	    << "Exception type: " << e.ename()
 	    << ", module: " << e.modname()
 	    << ", message: " << e.what()
-	    << "Exiting.";
+	    << ". Exiting.";
 	  runtime.vardis_exitFlag = true;
 	}
 	catch (std::exception& e) {

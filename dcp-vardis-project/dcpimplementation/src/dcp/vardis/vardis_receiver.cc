@@ -219,7 +219,7 @@ namespace dcp::vardis {
 	  << "Exception type: " << e.ename()
 	  << ", module: " << e.modname()
 	  << ", message: " << e.what()
-	  << "Exiting.";
+	  << ". Exiting.";
 	runtime.vardis_exitFlag = true;
       }
     catch (std::exception& e)
@@ -227,7 +227,7 @@ namespace dcp::vardis {
 	BOOST_LOG_SEV(log_rx, trivial::fatal)
 	  << "Caught other exception in Vardis receiver main loop. "
 	  << "Message: " << e.what()
-	  << "Exiting.";
+	  << ". Exiting.";
 	runtime.vardis_exitFlag = true;
       }
 
