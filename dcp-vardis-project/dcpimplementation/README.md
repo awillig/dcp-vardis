@@ -21,11 +21,11 @@ defaults under Ubuntu 24.04. For unit testing currently GoogleTest in
 version 1.15.2 is used.
 
 The implementation furthermore makes use of additional libraries:
-  The C++ Boost library ([link](https://www.boost.org/)) in Version
+- The C++ Boost library ([link](https://www.boost.org/)) in Version
   1.83 for logging, command line argument processing, random number
   generation and inter-process communication (including shared-memory
   management).
-  The `libtins` library ([link](https://libtins.github.io/)) in
+- The `libtins` library ([link](https://libtins.github.io/)) in
   version 4.5 for convenient sending and receiving / filtering packets
   over an interface. Libtins relies on `libpcap`.
 - The `ncurses` library for some of the applications.
