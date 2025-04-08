@@ -212,7 +212,7 @@ namespace dcp {
     
     if (data_socket != (-1))
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::start_read_command: socket still in use, exiting.";
+	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::start_read_command: socket still in use. Exiting.";
 	exitFlag = true;
 	return -1;
       }
@@ -221,7 +221,7 @@ namespace dcp {
     
     if (nbytes < 0)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::start_read_command: Error reading from socket, exiting.";
+	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::start_read_command: Error reading from socket. Exiting.";
 	exitFlag = true;
 	if (data_socket >= 0)
 	  {
