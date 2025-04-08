@@ -144,19 +144,91 @@ TEST (ShmTest, FixedMemRingBufferTest_SimpleCircular) {
  * locking.
  *********************************************************************/
 
-typedef ShmFiniteQueue<20, sizeof(int)> ShmRBType;
+const char shm_area_name [100] = "testing-shm-area-name";
 
-const char shm_area_name [] = "testing-shm-area-name";
-const int number_values = 10000;
-
-typedef struct TestControlSegment {
+template <uint64_t numBuffers>
+class TestControlSegment {
+  typedef ShmFiniteQueue<numBuffers, sizeof(int)> ShmRBType;
+  const int number_values = 300000;
+  
   ShmRBType rbQueue;
-
+  
+public:
+  
   TestControlSegment ()
-    : rbQueue ("rbQueue", 19)
+    : rbQueue ("rbQueue", numBuffers)
   { 
   };
-} TestControlSegment;
+  
+  void producer_thread ()
+  {
+    int write_counter = 0;
+    
+    for (int i=0; i<number_values; i++)
+      {
+	bool timed_out;
+	PushHandler handler = [&] (byte* memaddr, size_t)
+	{
+	  *((int*)memaddr) = write_counter++;
+	  return sizeof(int);
+	};
+	rbQueue.push_wait (handler, timed_out, 1000);
+	EXPECT_FALSE (timed_out);
+      }
+  };
+  
+  
+  void consumer_thread_wait ()
+  {
+      int read_counter = 0;
+
+      for (int i=0; i<number_values; i++)
+	{
+	  int  read_val;
+	  bool timed_out;
+	  bool further_entries;
+	  PopHandler handler = [&] (byte* memaddr, size_t len)
+	  {
+	    EXPECT_EQ (len, sizeof(int));
+	    read_val = * ((int*) memaddr);
+	  };
+	  
+	  rbQueue.pop_wait (handler, timed_out, further_entries, 1000);
+	  EXPECT_FALSE(timed_out);
+	  EXPECT_EQ(read_val, read_counter++);
+	}  
+  };
+
+
+  void consumer_thread_nowait ()
+  {
+      int read_counter = 0;
+
+      for (int i=0; i<number_values; i++)
+	{
+	  int  read_val;
+	  bool timed_out       = false;
+	  bool further_entries = false;
+	  bool got_data        = false;
+	  PopHandler handler = [&] (byte* memaddr, size_t len)
+	  {
+	    got_data = true;
+	    EXPECT_EQ (len, sizeof(int));
+	    read_val = * ((int*) memaddr);
+	  };
+
+	  do {
+	    rbQueue.pop_nowait (handler, timed_out, further_entries, 10);
+	  } while (not got_data);
+	  EXPECT_FALSE(timed_out);
+	  EXPECT_TRUE(got_data);
+	  EXPECT_FALSE(further_entries);
+	  EXPECT_EQ(read_val, read_counter++);
+	}
+      
+  };
+  
+};
 
 
 /**********************************************************************
@@ -165,56 +237,53 @@ typedef struct TestControlSegment {
  * wait_push methods of ShmRingBuffer.
  *********************************************************************/
 
-void producer_thread (TestControlSegment& CS)
-{
-  int write_counter = 0;
-  
-  for (int i=0; i<number_values; i++)
-    {
-      cout << "!" << flush;
-      bool timed_out;
-      PushHandler handler = [&] (byte* memaddr, size_t)
-      {
-	*((int*)memaddr) = write_counter++;
-	return sizeof(int);
-      };
-      CS.rbQueue.push_wait (handler, timed_out, 1000);
-      EXPECT_FALSE (timed_out);
-    }
-}
 
 
-TEST (ShmTest, ShmRingBufferTest_ConcurrentCircular) {
+TEST (ShmTest, ShmRingBufferTest_ConcurrentCircular20) {
 
-  auto shmAreaPtr            = std::make_shared<ShmStructureBase> (shm_area_name, sizeof(TestControlSegment), true);
+  auto shmAreaPtr            = std::make_shared<ShmStructureBase> (shm_area_name, sizeof(TestControlSegment<20>), true);
   auto shmAreaPtrProducer    = std::make_shared<ShmStructureBase> (shm_area_name, 0, false);
-  new (shmAreaPtr->get_memory_address()) TestControlSegment;
-  TestControlSegment& CS     = * ((TestControlSegment*) shmAreaPtr->get_memory_address());
-  TestControlSegment& CSProd = * ((TestControlSegment*) shmAreaPtrProducer->get_memory_address());
-  std::thread thread_prod (producer_thread, std::ref(CSProd));
+  new (shmAreaPtr->get_memory_address()) TestControlSegment<20>;
+  TestControlSegment<20>* pCSCons = ((TestControlSegment<20>*) shmAreaPtr->get_memory_address());
+  TestControlSegment<20>* pCSProd = ((TestControlSegment<20>*) shmAreaPtrProducer->get_memory_address());
 
-  int read_counter = 0;
-
-  for (int i=0; i<number_values; i++)
-    {
-      cout << "?" << flush;
-      int  read_val;
-      bool timed_out;
-      bool further_entries;
-      PopHandler handler = [&] (byte* memaddr, size_t len)
-      {
-	EXPECT_EQ (len, sizeof(int));
-	read_val = * ((int*) memaddr);
-      };
-      
-      CS.rbQueue.pop_wait (handler, timed_out, further_entries, 1000);
-      EXPECT_FALSE(timed_out);
-      EXPECT_EQ(read_val, read_counter++);
-    }
+  std::thread thread_prod ([&] () {pCSProd->producer_thread(); });
+  std::thread thread_cons ([&] () {pCSCons->consumer_thread_wait ();});
   
   thread_prod.join();
-  
+  thread_cons.join();  
 }
 
+
+
+TEST (ShmTest, ShmRingBufferTest_ConcurrentCircular1Wait) {
+
+  auto shmAreaPtr            = std::make_shared<ShmStructureBase> (shm_area_name, sizeof(TestControlSegment<1>), true);
+  auto shmAreaPtrProducer    = std::make_shared<ShmStructureBase> (shm_area_name, 0, false);
+  new (shmAreaPtr->get_memory_address()) TestControlSegment<1>;
+  TestControlSegment<1>* pCSCons = ((TestControlSegment<1>*) shmAreaPtr->get_memory_address());
+  TestControlSegment<1>* pCSProd = ((TestControlSegment<1>*) shmAreaPtrProducer->get_memory_address());
+
+  std::thread thread_prod ([&] () {pCSProd->producer_thread(); });
+  std::thread thread_cons ([&] () {pCSCons->consumer_thread_wait ();});
+    
+  thread_prod.join();
+  thread_cons.join();
+}
+
+TEST (ShmTest, ShmRingBufferTest_ConcurrentCircular1Nowait) {
+
+  auto shmAreaPtr            = std::make_shared<ShmStructureBase> (shm_area_name, sizeof(TestControlSegment<1>), true);
+  auto shmAreaPtrProducer    = std::make_shared<ShmStructureBase> (shm_area_name, 0, false);
+  new (shmAreaPtr->get_memory_address()) TestControlSegment<1>;
+  TestControlSegment<1>* pCSCons = ((TestControlSegment<1>*) shmAreaPtr->get_memory_address());
+  TestControlSegment<1>* pCSProd = ((TestControlSegment<1>*) shmAreaPtrProducer->get_memory_address());
+
+  std::thread thread_prod ([&] () {pCSProd->producer_thread(); });
+  std::thread thread_cons ([&] () {pCSCons->consumer_thread_nowait ();});
+    
+  thread_prod.join();
+  thread_cons.join();  
+}
 
 
