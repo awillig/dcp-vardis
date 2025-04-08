@@ -117,7 +117,7 @@ int run_srp_demon (const std::string cfg_filename)
   }
   catch (std::exception& e)
     {
-      BOOST_LOG_SEV(log_main, trivial::fatal) << "Caught an exception, got " << e.what() << ", exiting.";
+      BOOST_LOG_SEV(log_main, trivial::fatal) << "Caught an exception, got " << e.what() << ". Exiting.";
 
       if (srp_rt_ptr)
 	delete srp_rt_ptr;
