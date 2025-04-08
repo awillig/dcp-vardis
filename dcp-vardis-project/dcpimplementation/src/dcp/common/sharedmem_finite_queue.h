@@ -96,8 +96,8 @@ namespace dcp {
      * Protected part
      *********************************************************************/
     
-    static const size_t maxQueueNameLength = 255;   /*!< maximum length of the name of the queue */
-
+    static const size_t maxQueueNameLength = 255;                 /*!< maximum length of the name of the queue */
+    static const uint64_t defaultMagicNo   = 0x497E471112349876;  /*!< magicno at start of segment */
 
     /**
      * @brief Calculates the actual size of a buffer in memory
@@ -124,7 +124,8 @@ namespace dcp {
       size_t   len;     /*!< number of user data bytes stored in this buffer */
     } DescrT;
 
-    
+
+    uint64_t  magicNo = defaultMagicNo;
     char queue_name [maxQueueNameLength+1];                          /*!< storing the user-given name of the finite queue */
     FixedMemRingBuffer<DescrT, numberBuffers+1>  queue;              /*!< ring buffer with current queue elements / buffers */
     FixedMemRingBuffer<DescrT, numberBuffers+1>  freeList;           /*!< ring buffer with list of free elements / buffers */
@@ -154,6 +155,19 @@ namespace dcp {
 	  freeList.push (descr);
 	}
     };
+
+
+    /**
+     * @brief Checks that the magicno has still the right value, throws if not
+     *
+     * @param modname: module name to include in exception 
+     */
+    inline void assert_magicno (std::string modname)
+    {
+      if (magicNo != defaultMagicNo)
+	throw ShmException (std::format("{}.{}", get_queue_name (), modname), "check for magic number failed");
+    };
+    
     
   public:
 
@@ -519,6 +533,7 @@ namespace dcp {
 		     bool& further_entries,
 		     uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
+      //assert_magicno ("pop_nowait");
       if (timeoutMS==0)
 	throw ShmException (std::format("{}.pop_nowait", get_queue_name()), "timeout is zero");
       
