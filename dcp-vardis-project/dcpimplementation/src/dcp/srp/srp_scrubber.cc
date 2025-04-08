@@ -40,23 +40,44 @@ namespace dcp::srp {
     BOOST_LOG_SEV(log_scrub, trivial::info) << "Starting scrubbing thread.";
 
     uint16_t timeoutMS = runtime.srp_config.srp_conf.srpScrubbingTimeoutMS;
-    
-    while (not runtime.srp_exitFlag)
+
+    try {
+      while (not runtime.srp_exitFlag)
+	{
+	  std::this_thread::sleep_for (std::chrono::milliseconds (runtime.srp_config.srp_conf.srpScrubbingPeriodMS));
+	  
+	  if (not runtime.srp_store.get_srp_isactive())
+	    continue;
+	  
+	  TimeStampT current_time = TimeStampT::get_current_system_time();
+	  
+	  ScopedNeighbourTableMutex lock (runtime);
+	  std::list<NodeIdentifierT> nodes_to_remove = runtime.srp_store.find_nodes_to_scrub (current_time, timeoutMS);
+	  
+	  for (const auto& nodeId : nodes_to_remove)
+	    runtime.srp_store.remove_esd_entry (nodeId);
+	}
+    }
+    catch (DcpException& e)
       {
-	std::this_thread::sleep_for (std::chrono::milliseconds (runtime.srp_config.srp_conf.srpScrubbingPeriodMS));
-
-	if (not runtime.srp_store.get_srp_isactive())
-	  continue;
-
-	TimeStampT current_time = TimeStampT::get_current_system_time();
-        	
-	ScopedNeighbourTableMutex lock (runtime);
-	std::list<NodeIdentifierT> nodes_to_remove = runtime.srp_store.find_nodes_to_scrub (current_time, timeoutMS);
-
-	for (const auto& nodeId : nodes_to_remove)
-	  runtime.srp_store.remove_esd_entry (nodeId);
+	BOOST_LOG_SEV(log_scrub, trivial::fatal)
+	  << "Caught DCP exception in SRP scrubber main loop. "
+	  << "Exception type: " << e.ename()
+	  << ", module: " << e.modname()
+	  << ", message: " << e.what()
+	  << ". Exiting.";
+	runtime.srp_exitFlag = true;
       }
-    
+    catch (std::exception& e)
+      {
+	BOOST_LOG_SEV(log_scrub, trivial::fatal)
+	  << "Caught other exception in SRP scrubber main loop. "
+	  << "Message: " << e.what()
+	  << ". Exiting.";
+	runtime.srp_exitFlag = true;
+      }
+
+      
     BOOST_LOG_SEV(log_scrub, trivial::info) << "Exiting scrubbing thread.";
   }
   
