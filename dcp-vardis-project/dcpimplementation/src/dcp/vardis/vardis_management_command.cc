@@ -44,7 +44,7 @@ namespace dcp::vardis {
   {
     if (nbytes != sizeof(RT))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << methname << ": request has wrong data size = " << nbytes << ", exiting.";
+	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << methname << ": request has wrong data size = " << nbytes << ". Exiting.";
 	runtime.vardis_exitFlag = true;
 	send_simple_confirmation <CT> (runtime, VARDIS_STATUS_INTERNAL_ERROR);
 	return true;
@@ -332,7 +332,7 @@ namespace dcp::vardis {
 	<< "Exception type: " << e.ename()
 	<< ", module: " << e.modname()
 	<< ", message: " << e.what()
-	<< "Exiting.";
+	<< ". Exiting.";
       runtime.vardis_exitFlag = true;
       return;
     }
