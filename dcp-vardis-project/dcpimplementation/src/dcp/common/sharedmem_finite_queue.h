@@ -162,7 +162,7 @@ namespace dcp {
      *
      * @param modname: module name to include in exception 
      */
-    inline void assert_magicno (std::string modname)
+    inline void assert_magicno (const char* modname)
     {
       if (magicNo != defaultMagicNo)
 	throw ShmException (std::format("{}.{}", get_queue_name (), modname), "check for magic number failed");
@@ -533,7 +533,7 @@ namespace dcp {
 		     bool& further_entries,
 		     uint16_t timeoutMS = defaultLongSharedMemoryLockTimeoutMS)
     {
-      //assert_magicno ("pop_nowait");
+      assert_magicno ("pop_nowait");
       if (timeoutMS==0)
 	throw ShmException (std::format("{}.pop_nowait", get_queue_name()), "timeout is zero");
       
