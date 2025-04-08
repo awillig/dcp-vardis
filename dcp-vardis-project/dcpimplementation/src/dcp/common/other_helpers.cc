@@ -41,7 +41,7 @@ namespace dcp {
 	 << (*(e.modname ()) ? std::format ("({}): ", e.modname()) : std::string(": "))
 	 << e.what ()
 	 << endl;
-    cout << "Exiting." << endl;
+    cout << ". Exiting." << endl;
   }
   
 };  // namespace dcp
