@@ -234,7 +234,7 @@ int main (int argc, char* argv [])
   catch (std::exception& e)
     {
       endwin();
-      cout << "Caught an exception, got " << e.what() << ", exiting." << endl;
+      cout << "Caught an exception, got " << e.what() << ". Exiting." << endl;
       return EXIT_FAILURE;
     }
 }

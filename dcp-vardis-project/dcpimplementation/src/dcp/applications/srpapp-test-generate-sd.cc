@@ -174,7 +174,7 @@ int main (int argc, char* argv [])
 	DcpStatus update_status = cl_rt.set_own_safety_data(new_sd);
 	if (update_status != SRP_STATUS_OK)
 	  {
-	    cout << "Update of own safety data failed with status " << srp_status_to_string (update_status) << ", exiting." << endl;
+	    cout << "Update of own safety data failed with status " << srp_status_to_string (update_status) << ". Exiting." << endl;
 	    exitFlag = true;
 	  }
       }    
@@ -188,7 +188,7 @@ int main (int argc, char* argv [])
     }
   catch (std::exception& e)
     {
-      cout << "Caught an exception, got " << e.what() << ", exiting." << endl;
+      cout << "Caught an exception, got " << e.what() << ". Exiting." << endl;
       return EXIT_FAILURE;
     }
 }

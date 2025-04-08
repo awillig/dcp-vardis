@@ -105,11 +105,11 @@ int main (int argc, char* argv [])
     DcpStatus delete_status = cl_rt.rtdb_delete (varId);
     if (delete_status != VARDIS_STATUS_OK)
       {
-	cout << "Deleting variable " << varId << " failed with status " << vardis_status_to_string (delete_status) << ", Exiting." << endl;
+	cout << "Deleting variable " << varId << " failed with status " << vardis_status_to_string (delete_status) << ". Exiting." << endl;
 	return EXIT_FAILURE;
       }
 
-    cout << "Deleted variable " << varId << " successfully, exiting." << endl;
+    cout << "Deleted variable " << varId << " successfully. Exiting." << endl;
   }
   catch (DcpException& e)
     {
@@ -118,7 +118,7 @@ int main (int argc, char* argv [])
     }
   catch (std::exception& e)
     {
-      cout << "Caught an exception, got " << e.what() << ", exiting." << endl;
+      cout << "Caught an exception, got " << e.what() << ". Exiting." << endl;
       return EXIT_FAILURE;
     }  
     

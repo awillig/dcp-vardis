@@ -188,7 +188,7 @@ int main (int argc, char* argv [])
     DcpStatus create_status = cl_rt.rtdb_create (spec, initial_value);
     if (create_status != VARDIS_STATUS_OK)
       {
-	cout << "Creation of Vardis variable failed with status " << vardis_status_to_string (create_status) << ", exiting." << endl;
+	cout << "Creation of Vardis variable failed with status " << vardis_status_to_string (create_status) << ". Exiting." << endl;
 	return EXIT_FAILURE;
       }
   
@@ -208,7 +208,7 @@ int main (int argc, char* argv [])
 	DcpStatus update_status = cl_rt.rtdb_update (varId, value);
 	if (update_status != VARDIS_STATUS_OK)
 	  {
-	    cout << "Update of Vardis variable failed with status " << vardis_status_to_string (update_status) << ", exiting." << endl;
+	    cout << "Update of Vardis variable failed with status " << vardis_status_to_string (update_status) << ". Exiting." << endl;
 	    exitFlag = true;
 	  }
       }
@@ -221,7 +221,7 @@ int main (int argc, char* argv [])
     DcpStatus delete_status = cl_rt.rtdb_delete (varId);
     if (delete_status != VARDIS_STATUS_OK)
       {
-	cout << "Deleting variable failed with status " << vardis_status_to_string (delete_status) << ", exiting." << endl;
+	cout << "Deleting variable failed with status " << vardis_status_to_string (delete_status) << ". Exiting." << endl;
 	return EXIT_FAILURE;
       }
     
@@ -235,7 +235,7 @@ int main (int argc, char* argv [])
     }
   catch (std::exception& e)
     {
-      cout << "Caught an exception, got " << e.what() << ", exiting." << endl;
+      cout << "Caught an exception, got " << e.what() << ". Exiting." << endl;
       return EXIT_FAILURE;
     }
 }

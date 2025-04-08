@@ -104,7 +104,7 @@ int main (int argc, char* argv [])
     DcpStatus describe_status = cl_rt.describe_variable (varId, var_descr, buffer);
     if (describe_status != VARDIS_STATUS_OK)
       {
-	cout << "Describing variable " << varId << " failed with status " << vardis_status_to_string (describe_status) << ", Exiting." << endl;
+	cout << "Describing variable " << varId << " failed with status " << vardis_status_to_string (describe_status) << ". Exiting." << endl;
 	return EXIT_FAILURE;
       }
 
@@ -132,7 +132,7 @@ int main (int argc, char* argv [])
     }
   catch (std::exception& e)
     {
-      cout << "Caught an exception, got " << e.what() << ", exiting." << endl;
+      cout << "Caught an exception, got " << e.what() << ". Exiting." << endl;
       return EXIT_FAILURE;
     }  
     

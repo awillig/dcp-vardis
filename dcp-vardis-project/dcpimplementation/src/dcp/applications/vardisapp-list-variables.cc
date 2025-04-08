@@ -89,7 +89,7 @@ int main (int argc, char* argv [])
     DcpStatus dd_status = cl_rt.describe_database (db_list);
     if (dd_status != VARDIS_STATUS_OK)
       {
-	cout << "Obtaining database description failed with status " << vardis_status_to_string (dd_status) << ", Exiting." << endl;
+	cout << "Obtaining database description failed with status " << vardis_status_to_string (dd_status) << ". Exiting." << endl;
 	return EXIT_FAILURE;
       }
     
@@ -111,7 +111,7 @@ int main (int argc, char* argv [])
     }
   catch (std::exception& e)
     {
-      cout << "Caught an exception, got " << e.what() << ", exiting." << endl;
+      cout << "Caught an exception, got " << e.what() << ". Exiting." << endl;
       return EXIT_FAILURE;
     }  
 
