@@ -97,7 +97,7 @@ namespace dcp::bp {
 	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
 	    << "Processing BPActivate request: wrong data size = "
 	    << nbytes
-	    << ", exiting"
+	    << ". Exiting"
           ;
 	runtime.bp_exitFlag = true;
 	send_simple_confirmation<BPActivate_Confirm>(runtime, BP_STATUS_INTERNAL_ERROR);
@@ -119,7 +119,7 @@ namespace dcp::bp {
 	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
 	    << "Processing BPDeactivate request: wrong data size = "
 	    << nbytes
-	    << ", exiting."
+	    << ". Exiting."
            ;
 	runtime.bp_exitFlag = true;
 	send_simple_confirmation<BPDeactivate_Confirm>(runtime, BP_STATUS_INTERNAL_ERROR);
@@ -141,7 +141,7 @@ namespace dcp::bp {
 	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
 	    << "Processing BPGetStatistics request: wrong data size = "
 	    << nbytes
-	    << ", exiting."
+	    << ". Exiting."
            ;
 	runtime.bp_exitFlag = true;
 	send_simple_confirmation<BPGetStatistics_Confirm>(runtime, BP_STATUS_INTERNAL_ERROR);
@@ -166,7 +166,7 @@ namespace dcp::bp {
 	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
 	    << "Processing BPRegisterProtocol request: wrong data size = "
 	    << nbytes
-	    << ", exiting"
+	    << ". Exiting"
            ;
 	runtime.bp_exitFlag = true;
 	sendRegisterConfirmation(runtime, BP_STATUS_INTERNAL_ERROR);
@@ -259,7 +259,7 @@ namespace dcp::bp {
 	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
 	    << "Processing BPDeregisterProtocol request: wrong data size = "
 	    << nbytes
-	    << ", exiting."
+	    << ". Exiting."
            ;
 	runtime.bp_exitFlag = true;
 	send_simple_confirmation<BPDeregisterProtocol_Confirm>(runtime, BP_STATUS_INTERNAL_ERROR);
@@ -581,7 +581,7 @@ namespace dcp::bp {
       return;
     }
     catch (std::exception& e) {
-      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Could not establish BP command socket, exiting.";
+      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Could not establish BP command socket. Exiting.";
       runtime.bp_exitFlag = true;
       return;
     }
