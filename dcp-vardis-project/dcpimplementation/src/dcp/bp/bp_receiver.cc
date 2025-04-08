@@ -204,7 +204,7 @@ namespace dcp::bp {
       pSniffer = new Sniffer (runtime.bp_config.bp_conf.interfaceName, sniff_config);
     }
     catch (std::exception& e) {
-      BOOST_LOG_SEV(log_rx, trivial::fatal) << "Could not listen on network interface. Wrong interface or permissions missing? Caught exception " << e.what() << ". exiting.";
+      BOOST_LOG_SEV(log_rx, trivial::fatal) << "Could not listen on network interface. Wrong interface or permissions missing? Caught exception " << e.what() << ". Exiting.";
       runtime.bp_exitFlag = true;
       return;
     }
