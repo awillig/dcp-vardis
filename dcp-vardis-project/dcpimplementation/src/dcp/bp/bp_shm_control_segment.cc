@@ -64,7 +64,7 @@ namespace dcp::bp {
     BPQueueingMode queueingMode = static_client_info.queueingMode;
     
     if (   (queueingMode == BP_QMODE_ONCE)
-	   or (queueingMode == BP_QMODE_REPEAT))
+        or (queueingMode == BP_QMODE_REPEAT))
       {
 	buffer.reset ();
 	buffer.push_wait (handler, timed_out);
@@ -77,7 +77,7 @@ namespace dcp::bp {
     
     
     if (   (queueingMode == BP_QMODE_QUEUE_DROPTAIL)
-	   or (queueingMode == BP_QMODE_QUEUE_DROPHEAD))
+	or (queueingMode == BP_QMODE_QUEUE_DROPHEAD))
       {
 	
 	if (queueingMode == BP_QMODE_QUEUE_DROPHEAD)
@@ -91,7 +91,7 @@ namespace dcp::bp {
 	
 	
 	if (    (queueingMode == BP_QMODE_QUEUE_DROPTAIL)
-		and (queue.stored_elements () >= static_client_info.maxEntries))
+	    and (queue.stored_elements () >= static_client_info.maxEntries))
 	  {
 	    return BP_STATUS_OK;
 	  }
