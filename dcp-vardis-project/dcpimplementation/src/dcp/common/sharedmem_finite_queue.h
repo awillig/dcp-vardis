@@ -316,8 +316,8 @@ namespace dcp {
 	throw ShmException (std::format("{}.push_wait", get_queue_name()),
 			    "handler exceeded buffer length");
       queue.push (descr);
-      cond_empty.notify_all ();
       has_data = true;
+      cond_empty.notify_all ();
     };
     
     // -----------------------------------------
@@ -380,8 +380,8 @@ namespace dcp {
       if (descr.len > bufferSize)
 	throw ShmException (std::format("{}.push_nowait", get_queue_name()), "handler exceeded buffer length");
       queue.push (descr);
-      cond_empty.notify_all ();
       has_data = true;
+      cond_empty.notify_all ();
     };
 
     // -----------------------------------------
@@ -434,8 +434,8 @@ namespace dcp {
       if (descr.len > bufferSize)
 	throw ShmException (std::format("{}.push_wait_force", get_queue_name()), "handler exceeded buffer length");
       queue.push (descr);
-      cond_empty.notify_all ();
       has_data = true;
+      cond_empty.notify_all ();
     };
     
 
