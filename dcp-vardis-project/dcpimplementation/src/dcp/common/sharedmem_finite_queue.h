@@ -748,10 +748,6 @@ namespace dcp {
     // -----------------------------------------
 
     /**
-     * @brief Lets you do stuff with the oldest element in the queue
-     *        without removing it. Does not wait until a packet is in the queue
-     */
-    /**
      * @brief Retrieves the head-of-line element of the queue, lets
      *        the user process it and leaves it in the queue without
      *        modifying it. Returns immediately without any further
