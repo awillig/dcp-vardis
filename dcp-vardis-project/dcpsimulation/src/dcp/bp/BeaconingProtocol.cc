@@ -319,6 +319,7 @@ void BeaconingProtocol::constructAndTransmitBeacon (std::list< Ptr<const Chunk> 
     bpHdr.version     =  bpProtocolVersion;
     bpHdr.magicNo     =  bpMagicNo;
     bpHdr.senderId    =  getOwnNodeId();
+    bpHdr.length      =  BPHeaderT::fixed_size();   /* ISSUE: Just so that well-formedness check does not fail, but is otherwise ignored for now */
     bpHdr.numPayloads =  beaconChunks.size() / 2;
     bpHdr.seqno       =  _seqno++;
     bpHdr.serialize (area);
@@ -405,46 +406,46 @@ void BeaconingProtocol::handleGenerateBeaconMsg ()
  */
 bool BeaconingProtocol::bpHeaderWellFormed (DisassemblyArea& area, BPHeaderT& bpHdr)
 {
-    dbg_enter("bpHeaderWellFormed");
+    dbg_enter ("bpHeaderWellFormed");
 
     bpHdr.deserialize (area);
 
     if (bpHdr.magicNo != bpMagicNo)
     {
-        DBG_PVAR1("did not find magicno", bpHdr.magicNo);
-        dbg_leave();
+        DBG_PVAR1 ("did not find magicno", bpHdr.magicNo);
+        dbg_leave ();
         return false;
     }
 
     if (bpHdr.senderId == getOwnNodeId())
     {
-        dbg_string("got my own packet");
-        dbg_leave();
+        dbg_string ("got my own packet");
+        dbg_leave ();
         return false;
     }
 
     if (bpHdr.version != bpProtocolVersion)
     {
-        DBG_PVAR1("wrong protocol version", bpHdr.version);
-        dbg_leave();
+        DBG_PVAR1 ("wrong protocol version", bpHdr.version);
+        dbg_leave ();
         return false;
     }
 
     if (bpHdr.numPayloads == 0)
     {
-        DBG_PVAR1("numPayloads is zero", bpHdr.version);
+        dbg_string("numPayloads is zero");
         dbg_leave();
         return false;
     }
 
     if (bpHdr.length == 0)
     {
-        DBG_PVAR1("length is zero", bpHdr.version);
-        dbg_leave();
+        dbg_string ("length is zero");
+        dbg_leave ();
         return false;
     }
 
-    dbg_leave();
+    dbg_leave ();
     return true;
 }
 
