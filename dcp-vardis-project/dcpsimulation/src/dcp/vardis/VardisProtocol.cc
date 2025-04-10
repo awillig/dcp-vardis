@@ -160,7 +160,7 @@ void VardisProtocol::registerAsBPClient()
 
     DBG_VAR1(maxPayloadSize);
 
-    sendRegisterProtocolRequest(BP_PROTID_VARDIS, "VarDis -- Variable Dissemination Protocol V1.2", maxPayloadSize, BP_QMODE_QUEUE_DROPHEAD, false, 10);
+    sendRegisterProtocolRequest(BP_PROTID_VARDIS, "VarDis -- Variable Dissemination Protocol V1.3", maxPayloadSize, BP_QMODE_QUEUE_DROPHEAD, false, 10);
 
     dbg_leave();
 }
