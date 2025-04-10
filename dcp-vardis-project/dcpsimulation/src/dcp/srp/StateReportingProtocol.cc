@@ -319,7 +319,7 @@ void StateReportingProtocol::registerAsBPClient(void)
     dbg_enter("registerAsBPClient");
 
     // register ourselves directly as a client protocol with BP
-    sendRegisterProtocolRequest(BP_PROTID_SRP, "SRP -- State Reporting Protocol V1.2", maximumSRPPayloadLength, BP_QMODE_ONCE, false, 0);
+    sendRegisterProtocolRequest(BP_PROTID_SRP, "SRP -- State Reporting Protocol V1.3", maximumSRPPayloadLength, BP_QMODE_ONCE, false, 0);
 
     dbg_leave();
 }
