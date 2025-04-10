@@ -492,8 +492,6 @@ namespace dcp {
 	    }
 	}
 
-      if (queue.isEmpty())
-	throw ShmException (std::format("{}.pop_wait", get_queue_name()), "queue is empty, but has_data is true");
       
       DescrT descr = queue.pop ();
       byte* effective_address = buffer_space + descr.offs;
@@ -554,9 +552,6 @@ namespace dcp {
 	{
 	  return;
 	}
-
-      if (queue.isEmpty())
-	throw ShmException (std::format("{}.pop_nowait", get_queue_name()), std::format("queue is empty, but has_data is true. queue.size = {}, freelist.size = {}", queue.stored_elements(), freeList.stored_elements()));
       
       DescrT descr = queue.pop ();
       byte* effective_address = buffer_space + descr.offs;
