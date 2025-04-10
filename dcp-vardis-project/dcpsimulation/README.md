@@ -29,9 +29,10 @@ Versions
 ========
 
 Presently, the code is developed under Linux on an AARCH64
-platform. It works together with OMNeT++ in version 6.0.1 and builds
-on the INET framework in version 4.5. Both OMNeT++ and the INET
-framework have been built with the `gcc` toolchain in version 11.4.
+platform. It works together with OMNeT++ in version 6.1 and builds on
+the INET framework in version 4.5.3. Both OMNeT++ and the INET
+framework have been built with the `gcc` toolchain in version
+13.3. The code itself uses features of the C++20 standard.
 
 
 Build process
@@ -83,7 +84,7 @@ the generated executable with the provided example simulation:
 
 ## Setting up in the OMNeT++ IDE
 This should be as simple as pointing the IDE at the project directories.
-Currently it is not setup to compile and run examples through the IDE.
+Currently it is not set up to compile and run examples through the IDE.
 
 
 
