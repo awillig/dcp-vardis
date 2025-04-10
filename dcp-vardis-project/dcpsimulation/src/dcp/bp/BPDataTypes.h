@@ -27,12 +27,13 @@ namespace dcp {
 
 typedef uint16_t      BPLengthT;         // length of a payload block
 
-class BPHeaderT : public TransmissibleType<sizeof(byte)+sizeof(uint16_t)+MAC_ADDRESS_SIZE+sizeof(byte)+sizeof(uint32_t)>
+  class BPHeaderT : public TransmissibleType<sizeof(byte)+sizeof(uint16_t)+MAC_ADDRESS_SIZE+sizeof(BPLengthT)+sizeof(byte)+sizeof(uint32_t)>
 {
 public:
     uint8_t          version;
     uint16_t         magicNo;
     NodeIdentifierT  senderId;
+    BPLengthT        length;
     uint8_t          numPayloads;
     uint32_t         seqno;
 
