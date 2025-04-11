@@ -77,7 +77,11 @@ namespace dcp {
    * The queue elements are simply memory blocks, referenced by an
    * offset relative to the start of the buffer memory. The finite
    * queue also contains mutexes and condition variables for proper
-   * synchronization across processes.
+   * synchronization across processes. This class itself is not
+   * concerned with the allocation or release of a shared memory
+   * segment, that happens elsewhere. An instance of this class is
+   * supposed to be placed and initialized in shared memory, for
+   * example using a placement new operation.
    *
    * The buffers themselves are just byte blocks which user code can
    * tinker without further checks.
