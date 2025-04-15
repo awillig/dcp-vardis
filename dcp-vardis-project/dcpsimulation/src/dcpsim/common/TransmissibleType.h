@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <dcp/common/AssemblyArea.h>
+#include <dcpsim/common/AssemblyArea.h>
 
 namespace dcp {
 

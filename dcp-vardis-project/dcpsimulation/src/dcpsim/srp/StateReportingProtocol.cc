@@ -15,12 +15,12 @@
 
 
 #include <inet/common/IProtocolRegistrationListener.h>
-#include <dcp/srp/StateReportingProtocol.h>
-#include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/bp/BPQueueingMode_m.h>
-#include <dcp/bp/BPTransmitPayload_m.h>
-#include <dcp/bp/BPPayloadTransmitted_m.h>
-#include <dcp/bp/BPReceivePayload_m.h>
+#include <dcpsim/srp/StateReportingProtocol.h>
+#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcpsim/bp/BPQueueingMode_m.h>
+#include <dcpsim/bp/BPTransmitPayload_m.h>
+#include <dcpsim/bp/BPPayloadTransmitted_m.h>
+#include <dcpsim/bp/BPReceivePayload_m.h>
 
 // ========================================================================================
 // ========================================================================================

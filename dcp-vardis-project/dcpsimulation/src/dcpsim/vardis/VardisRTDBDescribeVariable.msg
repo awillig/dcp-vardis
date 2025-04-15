@@ -17,7 +17,7 @@
 //
 
 import inet.common.packet.Message;
-import dcp.common.NodeIdentifierT;
+import dcpsim.common.NodeIdentifierT;
 import VardisRTDBConfirmation;
 
 class RTDBDescribeVariable_Request extends inet::Message

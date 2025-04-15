@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <dcp/vardis/VardisDatatypes.h>
+#include <dcpsim/vardis/VardisDatatypes.h>
 
 // -----------------------------------------
 

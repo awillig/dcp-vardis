@@ -18,7 +18,7 @@
 
 #include <omnetpp.h>
 #include <inet/common/IProtocolRegistrationListener.h>
-#include <dcp/common/DcpTypesGlobals.h>
+#include <dcpsim/common/DcpTypesGlobals.h>
 
 
 namespace dcp {

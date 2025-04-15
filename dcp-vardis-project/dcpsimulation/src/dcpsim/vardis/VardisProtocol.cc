@@ -16,13 +16,13 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#include <dcp/vardis/VardisProtocol.h>
 
 #include <algorithm>
 #include <inet/common/IProtocolRegistrationListener.h>
-#include <dcp/bp/BPQueueingMode_m.h>
-#include <dcp/bp/BPTransmitPayload_m.h>
-#include <dcp/bp/BPPayloadTransmitted_m.h>
+#include <dcpsim/bp/BPQueueingMode_m.h>
+#include <dcpsim/bp/BPTransmitPayload_m.h>
+#include <dcpsim/bp/BPPayloadTransmitted_m.h>
+#include <dcpsim/vardis/VardisProtocol.h>
 
 // ========================================================================================
 // ========================================================================================

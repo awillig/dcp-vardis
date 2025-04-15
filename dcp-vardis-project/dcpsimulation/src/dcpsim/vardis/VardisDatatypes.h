@@ -20,9 +20,9 @@
 
 #include <limits>
 #include <inet/linklayer/common/MacAddress.h>
-#include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/common/MemBlockT.h>
-#include <dcp/common/TransmissibleType.h>
+#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcpsim/common/MemBlockT.h>
+#include <dcpsim/common/TransmissibleType.h>
 
 // -----------------------------------------
 

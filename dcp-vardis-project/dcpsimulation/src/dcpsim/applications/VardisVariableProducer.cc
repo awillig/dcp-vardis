@@ -20,11 +20,11 @@
 #include <inet/common/IProtocolRegistrationListener.h>
 #include <inet/common/Protocol.h>
 
-#include <dcp/applications/VardisVariableProducer.h>
-#include <dcp/vardis/VardisRTDBCreate_m.h>
-#include <dcp/vardis/VardisRTDBDelete_m.h>
-#include <dcp/vardis/VardisRTDBUpdate_m.h>
-#include <dcp/applications/VardisVariableExample.h>
+#include <dcpsim/applications/VardisVariableProducer.h>
+#include <dcpsim/vardis/VardisRTDBCreate_m.h>
+#include <dcpsim/vardis/VardisRTDBDelete_m.h>
+#include <dcpsim/vardis/VardisRTDBUpdate_m.h>
+#include <dcpsim/applications/VardisVariableExample.h>
 
 
 using namespace dcp;

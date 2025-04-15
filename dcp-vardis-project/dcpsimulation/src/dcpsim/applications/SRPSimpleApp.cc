@@ -18,7 +18,7 @@
 
 #include <inet/common/IProtocolRegistrationListener.h>
 #include <inet/common/Protocol.h>
-#include <dcp/applications/SRPSimpleApp.h>
+#include <dcpsim/applications/SRPSimpleApp.h>
 
 
 using namespace dcp;

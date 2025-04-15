@@ -20,10 +20,10 @@
 
 #include <inet/common/packet/Message.h>
 #include <inet/common/packet/Packet.h>
-#include <dcp/common/DcpApplication.h>
-#include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/vardis/VardisRTDBConfirmation_m.h>
-#include <dcp/vardis/VardisStatus_m.h>
+#include <dcpsim/common/DcpApplication.h>
+#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcpsim/vardis/VardisRTDBConfirmation_m.h>
+#include <dcpsim/vardis/VardisStatus_m.h>
 
 // --------------------------------------------------------------------------
 

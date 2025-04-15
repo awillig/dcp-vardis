@@ -18,7 +18,7 @@
 
 
 import inet.common.packet.Message;
-import dcp.common.NodeIdentifierT;
+import dcpsim.common.NodeIdentifierT;
 import BPStatus;
 
 

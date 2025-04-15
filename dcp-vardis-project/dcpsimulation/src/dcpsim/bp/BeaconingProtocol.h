@@ -23,16 +23,16 @@
 #include <inet/common/InitStages.h>
 #include <inet/common/Protocol.h>
 #include <inet/networklayer/common/InterfaceTable.h>
-#include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/bp/BPDataTypes.h>
-#include <dcp/bp/BPDeregisterProtocol_m.h>
-#include <dcp/bp/BPRegisterProtocol_m.h>
-#include <dcp/bp/BPTransmitPayload_m.h>
-#include <dcp/bp/BPClearBuffer_m.h>
-#include <dcp/bp/BPConfirmation_m.h>
-#include <dcp/bp/BPQueryNumberBufferedPayloads_m.h>
-#include <dcp/bp/BPClientProtocolData.h>
-#include <dcp/common/DcpProtocol.h>
+#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcpsim/bp/BPDataTypes.h>
+#include <dcpsim/bp/BPDeregisterProtocol_m.h>
+#include <dcpsim/bp/BPRegisterProtocol_m.h>
+#include <dcpsim/bp/BPTransmitPayload_m.h>
+#include <dcpsim/bp/BPClearBuffer_m.h>
+#include <dcpsim/bp/BPConfirmation_m.h>
+#include <dcpsim/bp/BPQueryNumberBufferedPayloads_m.h>
+#include <dcpsim/bp/BPClientProtocolData.h>
+#include <dcpsim/common/DcpProtocol.h>
 
 
 using namespace omnetpp;

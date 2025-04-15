@@ -20,7 +20,7 @@
 import inet.common.packet.Message;
 
 cplusplus {{
-#include <dcp/srp/SafetyDataT.h>
+#include <dcpsim/srp/SafetyDataT.h>
 typedef dcp::SafetyDataT SafetyDataT;
 }}
 

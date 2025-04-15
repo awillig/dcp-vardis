@@ -23,10 +23,10 @@
 
 #include <inet/common/packet/chunk/Chunk.h>
 #include <inet/common/Ptr.h>
-#include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/bp/BPDataTypes.h>
-#include <dcp/bp/BPQueueingMode_m.h>
-#include <dcp/common/DcpTypesGlobals.h>
+#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcpsim/bp/BPDataTypes.h>
+#include <dcpsim/bp/BPQueueingMode_m.h>
+#include <dcpsim/common/DcpTypesGlobals.h>
 
 
 // -----------------------------------------------------------------

@@ -21,7 +21,7 @@
 #include <stack>
 #include <omnetpp.h>
 #include <inet/networklayer/common/InterfaceTable.h>
-#include <dcp/common/DcpTypesGlobals.h>
+#include <dcpsim/common/DcpTypesGlobals.h>
 
 using namespace omnetpp;
 using namespace inet;

@@ -17,8 +17,7 @@
 //
 
 #include <inet/common/IProtocolRegistrationListener.h>
-
-#include <dcp/srp/SRPApplication.h>
+#include <dcpsim/srp/SRPApplication.h>
 
 // ========================================================================================
 // ========================================================================================

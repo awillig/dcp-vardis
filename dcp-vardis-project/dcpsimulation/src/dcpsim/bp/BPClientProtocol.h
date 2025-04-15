@@ -20,13 +20,13 @@
 
 #include <inet/common/packet/Message.h>
 #include <inet/common/packet/Packet.h>
-#include <dcp/common/DcpProtocol.h>
-#include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/bp/BPDataTypes.h>
-#include <dcp/bp/BPQueueingMode_m.h>
-#include <dcp/bp/BPRegisterProtocol_m.h>
-#include <dcp/bp/BPDeregisterProtocol_m.h>
-#include <dcp/bp/BPConfirmation_m.h>
+#include <dcpsim/common/DcpProtocol.h>
+#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcpsim/bp/BPDataTypes.h>
+#include <dcpsim/bp/BPQueueingMode_m.h>
+#include <dcpsim/bp/BPRegisterProtocol_m.h>
+#include <dcpsim/bp/BPDeregisterProtocol_m.h>
+#include <dcpsim/bp/BPConfirmation_m.h>
 
 // --------------------------------------------------------------------
 

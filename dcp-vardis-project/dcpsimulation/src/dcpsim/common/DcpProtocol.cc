@@ -16,8 +16,8 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
+#include <dcpsim/common/DcpProtocol.h>
 #include <inet/common/ModuleAccess.h>
-#include <dcp/common/DcpProtocol.h>
 #include <inet/networklayer/common/InterfaceTable.h>
 
 

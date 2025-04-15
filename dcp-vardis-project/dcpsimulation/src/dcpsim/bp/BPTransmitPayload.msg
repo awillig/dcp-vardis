@@ -19,7 +19,7 @@
 
 import inet.common.packet.Message;
 import inet.common.packet.Packet;
-import dcp.common.ByteVect;
+import dcpsim.common.ByteVect;
 import BPStatus;
 
 

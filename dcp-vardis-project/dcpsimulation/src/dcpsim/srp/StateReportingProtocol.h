@@ -23,14 +23,14 @@
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
 #include <inet/mobility/contract/IMobility.h>
-#include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/bp/BPRegisterProtocol_m.h>
-#include <dcp/bp/BPDeregisterProtocol_m.h>
-#include <dcp/bp/BPReceivePayload_m.h>
-#include <dcp/srp/SafetyDataT.h>
-#include <dcp/srp/NeighbourTableEntry.h>
-#include <dcp/srp/SRPUpdateSafetyData_m.h>
-#include <dcp/bp/BPClientProtocol.h>
+#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcpsim/bp/BPRegisterProtocol_m.h>
+#include <dcpsim/bp/BPDeregisterProtocol_m.h>
+#include <dcpsim/bp/BPReceivePayload_m.h>
+#include <dcpsim/srp/SafetyDataT.h>
+#include <dcpsim/srp/NeighbourTableEntry.h>
+#include <dcpsim/srp/SRPUpdateSafetyData_m.h>
+#include <dcpsim/bp/BPClientProtocol.h>
 
 
 using namespace omnetpp;

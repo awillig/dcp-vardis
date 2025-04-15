@@ -25,10 +25,10 @@
 #include <omnetpp.h>
 #include <inet/linklayer/common/MacAddress.h>
 #include <inet/common/Protocol.h>
-#include <dcp/common/MemBlockT.h>
-#include <dcp/common/FoundationTypes.h>
-#include <dcp/common/TransmissibleType.h>
-// #include <dcp/bp/BPDataTypes.h>
+#include <dcpsim/common/MemBlockT.h>
+#include <dcpsim/common/FoundationTypes.h>
+#include <dcpsim/common/TransmissibleType.h>
+
 
 using namespace omnetpp;
 using namespace inet;

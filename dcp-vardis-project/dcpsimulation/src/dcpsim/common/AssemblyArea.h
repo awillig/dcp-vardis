@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <dcp/common/FoundationTypes.h>
+#include <dcpsim/common/FoundationTypes.h>
 
 namespace dcp {
 

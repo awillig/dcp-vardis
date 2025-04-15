@@ -23,12 +23,12 @@
 #include <inet/linklayer/common/MacAddress.h>
 #include <inet/linklayer/common/InterfaceTag_m.h>
 #include <inet/linklayer/common/MacAddressTag_m.h>
-#include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/bp/BeaconingProtocol.h>
-#include <dcp/bp/BPConfirmation_m.h>
-#include <dcp/bp/BPClientProtocolData.h>
-#include <dcp/bp/BPPayloadTransmitted_m.h>
-#include <dcp/bp/BPReceivePayload_m.h>
+#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcpsim/bp/BeaconingProtocol.h>
+#include <dcpsim/bp/BPConfirmation_m.h>
+#include <dcpsim/bp/BPClientProtocolData.h>
+#include <dcpsim/bp/BPPayloadTransmitted_m.h>
+#include <dcpsim/bp/BPReceivePayload_m.h>
 
 // ========================================================================================
 // ========================================================================================

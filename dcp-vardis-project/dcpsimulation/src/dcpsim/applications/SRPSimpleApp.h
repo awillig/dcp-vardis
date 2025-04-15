@@ -20,8 +20,8 @@
 
 #include <omnetpp.h>
 #include <inet/mobility/contract/IMobility.h>
-#include <dcp/srp/SRPApplication.h>
-#include <dcp/srp/SRPUpdateSafetyData_m.h>
+#include <dcpsim/srp/SRPApplication.h>
+#include <dcpsim/srp/SRPUpdateSafetyData_m.h>
 
 using namespace omnetpp;
 using namespace inet;

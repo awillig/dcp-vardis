@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include <dcp/common/FoundationTypes.h>
-#include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/common/TransmissibleType.h>
+#include <dcpsim/common/FoundationTypes.h>
+#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcpsim/common/TransmissibleType.h>
 
 
 namespace dcp {

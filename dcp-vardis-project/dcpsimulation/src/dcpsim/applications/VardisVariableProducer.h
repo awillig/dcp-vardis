@@ -21,9 +21,9 @@
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
 
-#include <dcp/vardis/VardisRTDBConfirmation_m.h>
-#include <dcp/vardis/VardisApplication.h>
-#include <dcp/vardis/VardisDatatypes.h>
+#include <dcpsim/vardis/VardisRTDBConfirmation_m.h>
+#include <dcpsim/vardis/VardisApplication.h>
+#include <dcpsim/vardis/VardisDatatypes.h>
 
 using namespace omnetpp;
 

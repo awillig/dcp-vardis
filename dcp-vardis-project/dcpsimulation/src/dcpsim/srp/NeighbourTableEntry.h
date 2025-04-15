@@ -19,8 +19,8 @@
 #pragma once
 
 #include <omnetpp.h>
-#include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/srp/SafetyDataT.h>
+#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcpsim/srp/SafetyDataT.h>
 
 // --------------------------------------------------------------------------
 

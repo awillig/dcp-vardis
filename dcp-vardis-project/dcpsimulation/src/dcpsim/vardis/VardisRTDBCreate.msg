@@ -17,7 +17,7 @@
 //
 
 import inet.common.packet.Message;
-import dcp.common.NodeIdentifierT;
+import dcpsim.common.NodeIdentifierT;
 
 
 class RTDBCreate_Request extends inet::Message

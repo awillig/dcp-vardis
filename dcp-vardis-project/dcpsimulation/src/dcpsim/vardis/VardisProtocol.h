@@ -21,21 +21,21 @@
 #include <queue>
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
-#include <dcp/common/AssemblyArea.h>
-#include <dcp/bp/BPClientProtocol.h>
-#include <dcp/bp/BPReceivePayload_m.h>
-#include <dcp/bp/BPPayloadTransmitted_m.h>
-#include <dcp/bp/BPQueryNumberBufferedPayloads_m.h>
-#include <dcp/vardis/VardisDatatypes.h>
-#include <dcp/vardis/VardisDBEntry.h>
-#include <dcp/vardis/VardisRTDBConfirmation_m.h>
-#include <dcp/vardis/VardisRTDBCreate_m.h>
-#include <dcp/vardis/VardisRTDBDelete_m.h>
-#include <dcp/vardis/VardisRTDBDescribeDatabase_m.h>
-#include <dcp/vardis/VardisRTDBDescribeVariable_m.h>
-#include <dcp/vardis/VardisRTDBRead_m.h>
-#include <dcp/vardis/VardisRTDBUpdate_m.h>
-#include <dcp/vardis/VardisStatus_m.h>
+#include <dcpsim/common/AssemblyArea.h>
+#include <dcpsim/bp/BPClientProtocol.h>
+#include <dcpsim/bp/BPReceivePayload_m.h>
+#include <dcpsim/bp/BPPayloadTransmitted_m.h>
+#include <dcpsim/bp/BPQueryNumberBufferedPayloads_m.h>
+#include <dcpsim/vardis/VardisDatatypes.h>
+#include <dcpsim/vardis/VardisDBEntry.h>
+#include <dcpsim/vardis/VardisRTDBConfirmation_m.h>
+#include <dcpsim/vardis/VardisRTDBCreate_m.h>
+#include <dcpsim/vardis/VardisRTDBDelete_m.h>
+#include <dcpsim/vardis/VardisRTDBDescribeDatabase_m.h>
+#include <dcpsim/vardis/VardisRTDBDescribeVariable_m.h>
+#include <dcpsim/vardis/VardisRTDBRead_m.h>
+#include <dcpsim/vardis/VardisRTDBUpdate_m.h>
+#include <dcpsim/vardis/VardisStatus_m.h>
 
 using namespace omnetpp;
 using namespace inet;

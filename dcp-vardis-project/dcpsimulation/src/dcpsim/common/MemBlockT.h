@@ -20,7 +20,7 @@
 
 #include <cstdint>
 #include <cstring>
-#include <dcp/common/FoundationTypes.h>
+#include <dcpsim/common/FoundationTypes.h>
 
 namespace dcp {
 

@@ -20,9 +20,9 @@
 
 #include <inet/common/packet/Message.h>
 #include <inet/common/packet/Packet.h>
-#include <dcp/common/DcpApplication.h>
-#include <dcp/common/DcpTypesGlobals.h>
-#include <dcp/srp/SRPUpdateSafetyData_m.h>
+#include <dcpsim/common/DcpApplication.h>
+#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcpsim/srp/SRPUpdateSafetyData_m.h>
 
 // --------------------------------------------------------------------------
 

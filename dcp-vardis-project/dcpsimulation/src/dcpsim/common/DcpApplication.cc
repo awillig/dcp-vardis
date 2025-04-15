@@ -17,7 +17,7 @@
 //
 
 #include <inet/common/IProtocolRegistrationListener.h>
-#include <dcp/common/DcpApplication.h>
+#include <dcpsim/common/DcpApplication.h>
 
 // ========================================================================================
 // ========================================================================================
