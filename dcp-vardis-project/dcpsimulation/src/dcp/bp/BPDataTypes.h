@@ -42,6 +42,7 @@ public:
       area.serialize_byte (version);
       area.serialize_byte_block (sizeof(uint16_t), (byte*) &magicNo);
       senderId.serialize (area);
+      area.serialize_byte_block (sizeof(uint16_t), (byte*) &length);
       area.serialize_byte (numPayloads);
       area.serialize_byte_block(sizeof(uint32_t), (byte*) &seqno);
     };
@@ -51,6 +52,7 @@ public:
       version = area.deserialize_byte ();
       area.deserialize_byte_block (sizeof(uint16_t), (byte*) &magicNo);
       senderId.deserialize (area);
+      area.deserialize_byte_block (sizeof(uint16_t), (byte*) &length);
       numPayloads = area.deserialize_byte ();
       area.deserialize_byte_block(sizeof(uint32_t), (byte*) &seqno);
     };
