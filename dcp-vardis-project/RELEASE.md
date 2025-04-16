@@ -1,3 +1,12 @@
+Version 1.3, March 2025
+=======================
+
+This release does not introduce any changes to the specification or
+the simulator. The implementation has been revised, in particular the
+shared-memory management and the SRP and Vardis receive path
+processing. These do not use polling anymore.
+
+
 Version 1.2, February 2025
 ==========================
 
