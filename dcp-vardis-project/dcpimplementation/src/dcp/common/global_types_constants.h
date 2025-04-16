@@ -149,10 +149,10 @@ namespace dcp {
   class NodeIdentifierT : public TransmissibleType<6> {
   private:
     
-    static const size_t MAC_ADDRESS_SIZE = 6; /*!< Corresponding to the 48-bit size of IEEE 802.x MAC addresses */
+    static const size_t IEEE_MAC_ADDRESS_SIZE = 6; /*!< Corresponding to the 48-bit size of IEEE 802.x MAC addresses */
 
   public:
-    byte nodeId[MAC_ADDRESS_SIZE] = {0, 0, 0, 0, 0, 0};
+    byte nodeId[IEEE_MAC_ADDRESS_SIZE] = {0, 0, 0, 0, 0, 0};
 
     NodeIdentifierT () {};
 
@@ -167,7 +167,7 @@ namespace dcp {
     NodeIdentifierT (byte* pb)
     {
       if (pb == nullptr) throw std::invalid_argument ("NodeIdentifierT: invalid buffer");
-      std::memcpy (nodeId, pb, MAC_ADDRESS_SIZE);
+      std::memcpy (nodeId, pb, IEEE_MAC_ADDRESS_SIZE);
     };
 
 
@@ -182,14 +182,14 @@ namespace dcp {
     {
       struct ether_addr *paddr = ether_aton (addr);
       if (paddr == nullptr) throw std::invalid_argument ("NodeIdentifierT: cannot convert address string");
-      std::memcpy (nodeId, paddr->ether_addr_octet, MAC_ADDRESS_SIZE);
+      std::memcpy (nodeId, paddr->ether_addr_octet, IEEE_MAC_ADDRESS_SIZE);
     };
 
 
     /**
      * @brief Making NodeIdentifierT a totally ordered type
      */
-    friend inline bool operator== (const NodeIdentifierT& lhs, const NodeIdentifierT& rhs) { return (0 == std::memcmp(lhs.nodeId, rhs.nodeId, MAC_ADDRESS_SIZE)); };
+    friend inline bool operator== (const NodeIdentifierT& lhs, const NodeIdentifierT& rhs) { return (0 == std::memcmp(lhs.nodeId, rhs.nodeId, IEEE_MAC_ADDRESS_SIZE)); };
     friend inline bool operator!= (const NodeIdentifierT& lhs, const NodeIdentifierT& rhs) { return not (rhs == lhs); };
     friend inline bool operator< (const NodeIdentifierT& lhs, const NodeIdentifierT& rhs)  { return (lhs.to_uint64_t() < rhs.to_uint64_t()); };
     friend inline bool operator> (const NodeIdentifierT& lhs, const NodeIdentifierT& rhs)  { return (rhs < lhs); };
@@ -226,8 +226,8 @@ namespace dcp {
     /**
      * @brief Serialization methods
      */
-    virtual void serialize (AssemblyArea& area) const { area.serialize_byte_block(MAC_ADDRESS_SIZE, nodeId); };
-    virtual void deserialize (DisassemblyArea& area)  { area.deserialize_byte_block(MAC_ADDRESS_SIZE, nodeId); };
+    virtual void serialize (AssemblyArea& area) const { area.serialize_byte_block(IEEE_MAC_ADDRESS_SIZE, nodeId); };
+    virtual void deserialize (DisassemblyArea& area)  { area.deserialize_byte_block(IEEE_MAC_ADDRESS_SIZE, nodeId); };
   };
 
 

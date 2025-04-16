@@ -37,9 +37,9 @@ namespace dcp {
     std::stringstream ss;
     ss << std::hex;
     
-    for (size_t i=0; i<MAC_ADDRESS_SIZE-1; i++)
+    for (size_t i=0; i<IEEE_MAC_ADDRESS_SIZE-1; i++)
       ss << std::setw(2) << std::setfill('0') << (int) nodeId[i] << ":";
-    ss << std::setw(2) << std::setfill('0') << (int) nodeId[MAC_ADDRESS_SIZE-1];
+    ss << std::setw(2) << std::setfill('0') << (int) nodeId[IEEE_MAC_ADDRESS_SIZE-1];
     
     return ss.str();
   };
