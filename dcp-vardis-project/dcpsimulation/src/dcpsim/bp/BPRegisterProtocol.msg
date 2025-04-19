@@ -18,7 +18,6 @@
 
 
 import inet.common.packet.Message;
-import BPStatus;
 
 
 class BPRegisterProtocol_Request extends inet::Request
