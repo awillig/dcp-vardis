@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <dcpsim/common/FoundationTypes.h>
+#include <dcp/common/foundation_types.h>
 #include <dcpsim/common/DcpTypesGlobals.h>
 #include <dcpsim/common/TransmissibleType.h>
 

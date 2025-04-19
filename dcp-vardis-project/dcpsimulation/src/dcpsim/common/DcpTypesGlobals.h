@@ -25,8 +25,8 @@
 #include <omnetpp.h>
 #include <inet/linklayer/common/MacAddress.h>
 #include <inet/common/Protocol.h>
+#include <dcp/common/foundation_types.h>
 #include <dcp/common/memblock.h>
-#include <dcpsim/common/FoundationTypes.h>
 #include <dcpsim/common/TransmissibleType.h>
 
 

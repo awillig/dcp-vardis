@@ -18,7 +18,8 @@
 
 
 cplusplus {{
-#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcp/common/foundation_types.h>
+typedef dcp::bytevect bytevect;
 }}
 
 class bytevect {
