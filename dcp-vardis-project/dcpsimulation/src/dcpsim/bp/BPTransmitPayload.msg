@@ -20,7 +20,6 @@
 import inet.common.packet.Message;
 import inet.common.packet.Packet;
 import dcpsim.common.ByteVect;
-import BPStatus;
 
 
 class BPTransmitPayload_Request extends inet::Message
