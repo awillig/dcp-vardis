@@ -11,13 +11,13 @@
 // 
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
-// 
+//
 
 
 #include <inet/common/IProtocolRegistrationListener.h>
+#include <dcp/bp/bp_queueing_mode.h>
 #include <dcpsim/srp/StateReportingProtocol.h>
 #include <dcpsim/common/DcpTypesGlobals.h>
-#include <dcpsim/bp/BPQueueingMode_m.h>
 #include <dcpsim/bp/BPTransmitPayload_m.h>
 #include <dcpsim/bp/BPPayloadTransmitted_m.h>
 #include <dcpsim/bp/BPReceivePayload_m.h>
@@ -30,6 +30,7 @@ using namespace omnetpp;
 using namespace inet;
 using namespace dcp;
 
+using dcp::bp::BP_QMODE_ONCE;
 
 Define_Module(StateReportingProtocol);
 
