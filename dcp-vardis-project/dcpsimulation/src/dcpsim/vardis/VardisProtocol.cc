@@ -22,6 +22,7 @@
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcpsim/bp/BPTransmitPayload_m.h>
 #include <dcpsim/bp/BPPayloadTransmitted_m.h>
+#include <dcpsim/common/DcpSimGlobals.h>
 #include <dcpsim/vardis/VardisProtocol.h>
 
 // ========================================================================================
@@ -339,7 +340,7 @@ void VardisProtocol::handleBufferCheckMsg()
 
     // query number of buffered payloads from BP
     BPQueryNumberBufferedPayloads_Request  *qbpReq = new BPQueryNumberBufferedPayloads_Request;
-    qbpReq->setProtId(BP_PROTID_VARDIS);
+    qbpReq->setProtId(BP_PROTID_VARDIS.val);
     sendToBP(qbpReq);
 
     dbg_leave();
@@ -1555,7 +1556,7 @@ void VardisProtocol::constructPayload(bytevect& bv)
 
     dbg_comprehensive("constructPayload/enter");
 
-    ByteVectorAssemblyArea area ("vardis-constructPayload", maxPayloadSize, bv);
+    ByteVectorAssemblyArea area ("vardis-constructPayload", maxPayloadSize.val, bv);
 
     makeICTypeCreateVariables (area);
     makeICTypeDeleteVariables (area);
@@ -1588,8 +1589,8 @@ void VardisProtocol::generatePayload ()
 
         BPTransmitPayload_Request  *pldReq = new BPTransmitPayload_Request ("VardisPayload");
         bytevect& bv = pldReq->getBvdataForUpdate();
-        bv.resize (maxPayloadSize);
-        bv.reserve (2*maxPayloadSize);
+        bv.resize (maxPayloadSize.val);
+        bv.reserve (2*maxPayloadSize.val);
 
         constructPayload(bv);
 
@@ -1598,7 +1599,7 @@ void VardisProtocol::generatePayload ()
             DBG_PVAR1("SENDING payload", bv.size());
 
             dbg_string("constructing the packet");
-            pldReq->setProtId(BP_PROTID_VARDIS);
+            pldReq->setProtId(BP_PROTID_VARDIS.val);
 
             dbg_string("sending the packet/payload to BP");
             sendToBP(pldReq);
