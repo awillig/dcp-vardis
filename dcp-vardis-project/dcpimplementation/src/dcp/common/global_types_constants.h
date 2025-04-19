@@ -24,6 +24,9 @@
 #include <cstring>
 #include <cstdint>
 #include <chrono>
+#ifdef __DCPSIMULATION__
+#include <omnetpp.h>
+#endif
 #include <netinet/ether.h>
 #include <boost/chrono/duration.hpp>
 #include <dcp/common/foundation_types.h>
@@ -241,6 +244,7 @@ namespace dcp {
    * TimeStampT
    ***************************************************************/
 
+#ifndef __DCPSIMULATION__
 
   /**
    * @brief Type for encapsulating timestamps
@@ -296,7 +300,62 @@ namespace dcp {
       return (uint32_t) (duration.count() / 1000000);
     };
   };
+#endif
 
+
+#ifdef __DCPSIMULATION__
+
+  /**
+   * @brief Type for encapsulating timestamps
+   *
+   * Allows other code to be independent of timestamp representation
+   */
+  class TimeStampT : public TransmissibleType<sizeof(omnetpp::SimTime)> {
+  public:
+    omnetpp::SimTime tStamp;
+
+    TimeStampT () {};
+    TimeStampT (const TimeStampT& other) : tStamp (other.tStamp) {};
+    
+    friend std::ostream& operator<<(std::ostream& os, const TimeStampT& tstamp);
+    TimeStampT& operator= (const TimeStampT& other) { tStamp = other.tStamp; return *this; };
+
+    
+    /**
+     * @brief Serialization methods
+     *
+     * ISSUE: Be careful: these methods may fail if the involved nodes
+     * run on different architectures with different endianness
+     */
+    virtual void serialize (AssemblyArea& area) const { area.serialize_byte_block(fixed_size(), (byte*) &tStamp); };
+    virtual void deserialize (DisassemblyArea& area) { area.deserialize_byte_block(fixed_size(), (byte*) &tStamp); };
+
+
+    /**
+     * @brief Returns current system time in our chosen representation
+     */
+    static TimeStampT get_current_system_time ()
+    {
+      TimeStampT ts;
+      ts.tStamp = omnetpp::simTime();
+      return ts;
+    };
+
+
+    /**
+     * @brief Returns number of whole milliseconds passed since reference time
+     *
+     * @param past_time: The reference time
+     */
+    inline uint32_t milliseconds_passed_since (const TimeStampT& past_time) const
+    {
+      auto duration = tStamp - past_time.tStamp;
+      return (uint32_t) duration.inUnit (omnetpp::SIMTIME_MS);
+    };
+  };
+
+  
+#endif
 
   /****************************************************************
    * StringT
