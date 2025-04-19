@@ -18,7 +18,6 @@
 
 import inet.common.packet.Message;
 import dcpsim.common.ByteVect;
-import BPStatus;
 
 class BPReceivePayload_Indication extends inet::Message
 {
