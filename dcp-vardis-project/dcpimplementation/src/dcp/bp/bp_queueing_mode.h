@@ -32,12 +32,12 @@ namespace dcp::bp {
    */
 
   
-  enum BPQueueingMode {
-    BP_QMODE_ONCE             = 0,
-    BP_QMODE_REPEAT           = 1,
-    BP_QMODE_QUEUE_DROPTAIL   = 2,
-    BP_QMODE_QUEUE_DROPHEAD   = 3
-  };
+  typedef uint16_t BPQueueingMode;
+
+  const BPQueueingMode BP_QMODE_ONCE             = 0;
+  const BPQueueingMode BP_QMODE_REPEAT           = 1;
+  const BPQueueingMode BP_QMODE_QUEUE_DROPTAIL   = 2;
+  const BPQueueingMode BP_QMODE_QUEUE_DROPHEAD   = 3;
 
   /**
    * @brief Converts queueing mode to string
