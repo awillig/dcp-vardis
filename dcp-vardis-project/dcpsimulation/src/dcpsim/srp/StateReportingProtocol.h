@@ -23,7 +23,7 @@
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
 #include <inet/mobility/contract/IMobility.h>
-#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcp/common/global_types_constants.h>
 #include <dcpsim/bp/BPRegisterProtocol_m.h>
 #include <dcpsim/bp/BPDeregisterProtocol_m.h>
 #include <dcpsim/bp/BPReceivePayload_m.h>
