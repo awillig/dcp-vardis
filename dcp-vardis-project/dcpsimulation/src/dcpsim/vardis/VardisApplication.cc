@@ -75,52 +75,19 @@ void VardisApplication::sendToVardis (Packet* packet)
     dbg_leave();
 }
 
-// ----------------------------------------------------
-
-static const std::map<VardisStatus, std::string> status_texts = {
-        {VARDIS_STATUS_OK, "VARDIS_STATUS_OK"},
-        {VARDIS_STATUS_VARIABLE_EXISTS, "VARDIS_STATUS_VARIABLE_EXISTS"},
-        {VARDIS_STATUS_VARIABLE_DESCRIPTION_TOO_LONG, "VARDIS_STATUS_VARIABLE_DESCRIPTION_TOO_LONG"},
-        {VARDIS_STATUS_VALUE_TOO_LONG, "VARDIS_STATUS_VALUE_TOO_LONG"},
-        {VARDIS_STATUS_EMPTY_VALUE, "VARDIS_STATUS_EMPTY_VALUE"},
-        {VARDIS_STATUS_ILLEGAL_REPCOUNT, "VARDIS_STATUS_ILLEGAL_REPCOUNT"},
-        {VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST, "VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST"},
-        {VARDIS_STATUS_NOT_PRODUCER, "VARDIS_STATUS_NOT_PRODUCER"},
-        {VARDIS_STATUS_VARIABLE_BEING_DELETED, "VARDIS_STATUS_VARIABLE_BEING_DELETED"},
-        {VARDIS_STATUS_INACTIVE, "VARDIS_STATUS_INACTIVE"}
-};
-
-/**
- * Convert VarDis status value to string
- */
-std::string VardisApplication::getVardisStatusString(VardisStatus status)
-{
-    auto search = status_texts.find(status);
-    if (search != status_texts.end())
-    {
-        return search->second;
-    }
-    else
-    {
-        error("VardisApplication::getVardisStatusString: received status value not in status_texts");
-    }
-    return "";
-}
 
 // ----------------------------------------------------
 
 /**
  * prints VarDis status value in a log message
  */
-void VardisApplication::printStatus (VardisStatus status)
+void VardisApplication::printStatus (DcpStatus status)
 {
     dbg_enter("VardisApplication::printStatus");
 
-    auto statstr = getVardisStatusString(status);
+    auto statstr = vardis_status_to_string (status);
     dbg_prefix();
-    EV << "status value is "
-       << status
-       << " , text is "
+    EV << "status is "
        << statstr
        << endl;
 
