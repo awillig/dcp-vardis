@@ -19,7 +19,7 @@
 
 #include <algorithm>
 #include <inet/common/IProtocolRegistrationListener.h>
-#include <dcpsim/bp/BPQueueingMode_m.h>
+#include <dcp/bp/bp_queueing_mode.h>
 #include <dcpsim/bp/BPTransmitPayload_m.h>
 #include <dcpsim/bp/BPPayloadTransmitted_m.h>
 #include <dcpsim/vardis/VardisProtocol.h>
@@ -31,6 +31,7 @@ using namespace omnetpp;
 using namespace inet;
 using namespace dcp;
 
+using dcp::bp::BP_QMODE_QUEUE_DROPHEAD;
 
 Define_Module(VardisProtocol);
 
