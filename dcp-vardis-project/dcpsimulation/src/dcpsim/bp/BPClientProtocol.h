@@ -21,15 +21,14 @@
 #include <inet/common/packet/Message.h>
 #include <inet/common/packet/Packet.h>
 #include <dcp/bp/bp_queueing_mode.h>
+#include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/common/services_status.h>
 #include <dcpsim/common/DcpProtocol.h>
-#include <dcpsim/common/DcpTypesGlobals.h>
-#include <dcpsim/bp/BPDataTypes.h>
 #include <dcpsim/bp/BPRegisterProtocol_m.h>
 #include <dcpsim/bp/BPDeregisterProtocol_m.h>
 #include <dcpsim/bp/BPConfirmation_m.h>
 
-
+using dcp::bp::BPLengthT;
 using dcp::bp::BPQueueingMode;
 
 // --------------------------------------------------------------------
