@@ -18,40 +18,10 @@
 
 #include <omnetpp.h>
 #include <inet/common/IProtocolRegistrationListener.h>
-#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcpsim/common/DcpSimGlobals.h>
 
 
 namespace dcp {
-
-
-std::string bv_to_str (const bytevect& bv, size_t numbytes)
-{
-    if (numbytes == 0) return std::string("");
-
-    std::stringstream ss;
-    ss << std::hex;
-
-    ss << "{";
-    for (unsigned int i=0; i<numbytes-1; i++)
-        ss << std::setw(2) << std::setfill('0') << (int) bv[i] << ",";
-    ss << std::setw(2) << std::setfill('0') << (int) bv[numbytes-1];
-    ss << "}";
-
-    return ss.str();
-}
-
-
-std::ostream& operator<<(std::ostream& os, const NodeIdentifierT& nodeid)
-{
-    os << nodeid.to_str();
-    return os;
-}
-
-
-bool operator< (const NodeIdentifierT& left, const NodeIdentifierT& right)
-{
-    return (left.to_macaddr() < right.to_macaddr());
-}
 
 
 static DcpSimGlobals theSimulationGlobals;
@@ -84,15 +54,12 @@ DcpSimGlobals::~DcpSimGlobals()
 
 Protocol *convertProtocolIdToProtocol(BPProtocolIdT protId)
 {
-    switch(protId)
-    {
-    case BP_PROTID_SRP:     return DcpSimGlobals::protocolDcpSRP;
-    case BP_PROTID_VARDIS:  return DcpSimGlobals::protocolDcpVardis;
-    default:
-        cSimpleModule cs;
-        cs.error("convertProtocolIdToProtocol: unknown protocol id");
-        return nullptr;
-    }
+  if (protId == BP_PROTID_SRP)     return DcpSimGlobals::protocolDcpSRP;
+  if (protId == BP_PROTID_VARDIS)  return DcpSimGlobals::protocolDcpVardis;
+
+  cSimpleModule cs;
+  cs.error("convertProtocolIdToProtocol: unknown protocol id");
+  return nullptr;
 }
 
 };  // namespace dcp
