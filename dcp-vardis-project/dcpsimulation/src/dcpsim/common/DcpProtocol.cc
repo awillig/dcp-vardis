@@ -74,10 +74,12 @@ void DcpProtocol::determineOwnNodeId (std::string interfaceName)
 
         if (sfst.compare(interfaceName) == 0)
         {
-            _ownNodeId     = iface->getMacAddress();
-            _wlanInterface = iface;
-            dbg_leave();
-            return;
+	  byte addr_bytes [MAC_ADDRESS_SIZE];
+          iface->getMacAddress().getAddressBytes (addr_bytes);
+	  _ownNodeId     = NodeIdentifierT (addr_bytes);
+	  _wlanInterface = iface;
+	  dbg_leave();
+	  return;
         }
     }
 
