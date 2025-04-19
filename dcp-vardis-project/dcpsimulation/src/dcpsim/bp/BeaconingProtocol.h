@@ -23,9 +23,9 @@
 #include <inet/common/InitStages.h>
 #include <inet/common/Protocol.h>
 #include <inet/networklayer/common/InterfaceTable.h>
+#include <dcp/bp/bp_transmissible_types.h>
+#include <dcp/common/global_types_constants.h>
 #include <dcp/common/services_status.h>
-#include <dcpsim/common/DcpTypesGlobals.h>
-#include <dcpsim/bp/BPDataTypes.h>
 #include <dcpsim/bp/BPDeregisterProtocol_m.h>
 #include <dcpsim/bp/BPRegisterProtocol_m.h>
 #include <dcpsim/bp/BPTransmitPayload_m.h>
@@ -38,6 +38,9 @@
 
 using namespace omnetpp;
 using namespace inet;
+
+using dcp::bp::BPHeaderT;
+using dcp::bp::BPPayloadHeaderT;
 
 // -------------------------------------------------------------------
 
