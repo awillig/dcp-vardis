@@ -37,6 +37,7 @@
 using namespace omnetpp;
 using namespace inet;
 using namespace dcp;
+using namespace dcp::bp;
 
 Define_Module(BeaconingProtocol);
 
