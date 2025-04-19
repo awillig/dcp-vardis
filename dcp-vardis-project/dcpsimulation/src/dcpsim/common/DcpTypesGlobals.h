@@ -25,7 +25,7 @@
 #include <omnetpp.h>
 #include <inet/linklayer/common/MacAddress.h>
 #include <inet/common/Protocol.h>
-#include <dcpsim/common/MemBlockT.h>
+#include <dcp/common/memblock.h>
 #include <dcpsim/common/FoundationTypes.h>
 #include <dcpsim/common/TransmissibleType.h>
 
@@ -104,11 +104,11 @@ const BPProtocolIdT BP_PROTID_VARDIS  =  0x0002;
 // --------------------------------------------------------------------
 
 
-class StringT : public MemBlockT<byte>, public TransmissibleType<sizeof(byte)> {
+class StringT : public MemBlock, public TransmissibleType<sizeof(byte)> {
 public:
-    StringT () : MemBlockT<byte>() {};
-    StringT (const char* str) : MemBlockT<byte>((byte) std::strlen(str), (byte*) str) {};
-    StringT (const std::string& str) : MemBlockT<byte>((byte) str.size(), (byte*) str.c_str()) {};
+    StringT () : MemBlock() {};
+    StringT (const char* str) : MemBlock((byte) std::strlen(str), (byte*) str) {};
+    StringT (const std::string& str) : MemBlock((byte) str.size(), (byte*) str.c_str()) {};
 
     std::string to_str() const
     {

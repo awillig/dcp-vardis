@@ -20,8 +20,8 @@
 
 #include <limits>
 #include <inet/linklayer/common/MacAddress.h>
+#include <dcp/common/memblock.h>
 #include <dcpsim/common/DcpTypesGlobals.h>
-#include <dcpsim/common/MemBlockT.h>
 #include <dcpsim/common/TransmissibleType.h>
 
 // -----------------------------------------
@@ -70,11 +70,11 @@ const size_t maxVarSeqno  = 256;
  * Type representing a VarDis value, made up of one field indicating the
  * length, and a byte array of that exact length
  */
-class VarValueT : public MemBlockT<VarLenT>, public TransmissibleType<sizeof(VarLenT)> {
+class VarValueT : public MemBlock, public TransmissibleType<sizeof(VarLenT)> {
  public:
 
-    VarValueT () : MemBlockT<VarLenT>() {};
-    VarValueT (VarLenT size, byte* data) : MemBlockT<VarLenT>(size, data) {};
+    VarValueT () : MemBlock() {};
+    VarValueT (VarLenT size, byte* data) : MemBlock(size, data) {};
 
     virtual size_t total_size () const { return fixed_size() + length; };
 
