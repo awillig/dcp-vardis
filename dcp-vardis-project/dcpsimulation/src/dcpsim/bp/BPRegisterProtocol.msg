@@ -18,9 +18,7 @@
 
 
 import inet.common.packet.Message;
-import BPQueueingMode;
 import BPStatus;
-
 
 
 class BPRegisterProtocol_Request extends inet::Request
@@ -28,7 +26,7 @@ class BPRegisterProtocol_Request extends inet::Request
     int               protId;
     string            protName;
     int               maxPayloadSizeB;
-    BPQueueingMode    queueingMode;
+    uint16_t          queueingMode;
     int               maxEntries;
     bool              allowMultiplePayloads;
 };
