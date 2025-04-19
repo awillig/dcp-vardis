@@ -21,6 +21,7 @@
 #include <queue>
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
+#include <dcp/common/services_status.h>
 #include <dcpsim/common/AssemblyArea.h>
 #include <dcpsim/bp/BPClientProtocol.h>
 #include <dcpsim/bp/BPReceivePayload_m.h>
@@ -35,7 +36,6 @@
 #include <dcpsim/vardis/VardisRTDBDescribeVariable_m.h>
 #include <dcpsim/vardis/VardisRTDBRead_m.h>
 #include <dcpsim/vardis/VardisRTDBUpdate_m.h>
-#include <dcpsim/vardis/VardisStatus_m.h>
 
 using namespace omnetpp;
 using namespace inet;
@@ -326,18 +326,18 @@ protected:
      * Sends the given confirmation with given return status to the indicated
      * application through INET message dispatcher
      */
-    void sendConfirmation(VardisConfirmation *confMsg, VardisStatus status, Protocol* theProtocol);
+    void sendConfirmation(VardisConfirmation *confMsg, DcpStatus status, Protocol* theProtocol);
 
     /**
      * Creates RTDBCreate.confirm message with given status and hands it over
      * to 'sendConfirmation' for sending to given protocol
      */
-    void sendRTDBCreateConfirm (VardisStatus status, VarIdT varId, Protocol* theProtocol);
+    void sendRTDBCreateConfirm (DcpStatus status, VarIdT varId, Protocol* theProtocol);
 
     /**
      * Creates RTDBUpdate.confirm message
      */
-    void sendRTDBUpdateConfirm (VardisStatus status, VarIdT varId, Protocol* theProtocol);
+    void sendRTDBUpdateConfirm (DcpStatus status, VarIdT varId, Protocol* theProtocol);
 
 
     // ---------------------------------------------------------------------
