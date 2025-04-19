@@ -447,7 +447,7 @@ void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indicati
     std::deque<VarCreateT>     icCreateVariables;
     std::deque<VarDeleteT>     icDeleteVariables;
 
-    ByteVectorDisassemblyArea area (bvpayload);
+    ByteVectorDisassemblyArea area ("vardis-handleBPReceivedPayloadIndication", bvpayload);
 
     // Dispatch on ICType
     while (area.used() < area.available())
@@ -1555,7 +1555,7 @@ void VardisProtocol::constructPayload(bytevect& bv)
 
     dbg_comprehensive("constructPayload/enter");
 
-    ByteVectorAssemblyArea area (maxPayloadSize, bv);
+    ByteVectorAssemblyArea area ("vardis-constructPayload", maxPayloadSize, bv);
 
     makeICTypeCreateVariables (area);
     makeICTypeDeleteVariables (area);

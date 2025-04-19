@@ -185,7 +185,7 @@ void StateReportingProtocol::handleUpdateSafetyDataRequestMsg (SRPUpdateSafetyDa
         pldReq->setProtId(BP_PROTID_SRP);
         bytevect& bv = pldReq->getBvdataForUpdate();
         bv.reserve(2*extSD.total_size());
-        ByteVectorAssemblyArea area (extSD.total_size(), bv);
+        ByteVectorAssemblyArea area ("srp-handleUpdateSafetyDataRequestMsg", extSD.total_size(), bv);
         extSD.serialize(area);
         bv.resize (area.used ());
 
@@ -283,7 +283,7 @@ void StateReportingProtocol::handleReceivedPayload(BPReceivePayload_Indication* 
     assert(payload);
     assert(payload->getProtId() == BP_PROTID_SRP);
 
-    ByteVectorDisassemblyArea area (payload->getPayload());
+    ByteVectorDisassemblyArea area ("srp-handleReceivedPayloadxs", payload->getPayload());
     ExtendedSafetyDataT esd;
     esd.deserialize(area);
     delete payload;

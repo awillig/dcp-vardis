@@ -21,8 +21,8 @@
 #include <queue>
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
+#include <dcp/common/area.h>
 #include <dcp/common/services_status.h>
-#include <dcpsim/common/AssemblyArea.h>
 #include <dcpsim/bp/BPClientProtocol.h>
 #include <dcpsim/bp/BPReceivePayload_m.h>
 #include <dcpsim/bp/BPPayloadTransmitted_m.h>
