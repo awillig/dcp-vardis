@@ -20,8 +20,8 @@
 
 #include <inet/common/packet/Message.h>
 #include <inet/common/packet/Packet.h>
+#include <dcp/common/global_types_constants.h>
 #include <dcpsim/common/DcpProtocol.h>
-#include <dcpsim/common/DcpTypesGlobals.h>
 #include <dcpsim/srp/SRPUpdateSafetyData_m.h>
 
 // --------------------------------------------------------------------------
