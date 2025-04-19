@@ -17,6 +17,7 @@
 //
 
 #include <inet/common/IProtocolRegistrationListener.h>
+#include <dcpsim/common/DcpSimGlobals.h>
 #include <dcpsim/vardis/VardisApplication.h>
 
 
