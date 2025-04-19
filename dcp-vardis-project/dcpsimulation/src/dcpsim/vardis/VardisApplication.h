@@ -20,10 +20,10 @@
 
 #include <inet/common/packet/Message.h>
 #include <inet/common/packet/Packet.h>
+#include <dcp/common/services_status.h>
 #include <dcpsim/common/DcpApplication.h>
 #include <dcpsim/common/DcpTypesGlobals.h>
 #include <dcpsim/vardis/VardisRTDBConfirmation_m.h>
-#include <dcpsim/vardis/VardisStatus_m.h>
 
 // --------------------------------------------------------------------------
 
@@ -48,15 +48,11 @@ protected:
     // helpers
     // --------------------------------------------
 
-    /**
-     * Translate VarDis status value into string
-     */
-    std::string getVardisStatusString(VardisStatus status);
 
     /**
      * Prints received VarDis status as string to logging output
      */
-    void printStatus (VardisStatus status);
+    void printStatus (DcpStatus status);
 
     /**
      * Default reaction to any received status value from a VarDis confirm
