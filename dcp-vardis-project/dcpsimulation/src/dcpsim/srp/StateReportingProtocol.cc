@@ -16,11 +16,12 @@
 
 #include <inet/common/IProtocolRegistrationListener.h>
 #include <dcp/bp/bp_queueing_mode.h>
+#include <dcp/common/global_types_constants.h>
 #include <dcpsim/srp/StateReportingProtocol.h>
-#include <dcpsim/common/DcpTypesGlobals.h>
 #include <dcpsim/bp/BPTransmitPayload_m.h>
 #include <dcpsim/bp/BPPayloadTransmitted_m.h>
 #include <dcpsim/bp/BPReceivePayload_m.h>
+#include <dcpsim/common/DcpSimGlobals.h>
 
 // ========================================================================================
 // ========================================================================================
@@ -182,7 +183,7 @@ void StateReportingProtocol::handleUpdateSafetyDataRequestMsg (SRPUpdateSafetyDa
         extSD.seqno      = _seqno++;
 
         BPTransmitPayload_Request  *pldReq = new BPTransmitPayload_Request ("SRPPayload");
-        pldReq->setProtId(BP_PROTID_SRP);
+        pldReq->setProtId(BP_PROTID_SRP.val);
         bytevect& bv = pldReq->getBvdataForUpdate();
         bv.reserve(2*extSD.total_size());
         ByteVectorAssemblyArea area ("srp-handleUpdateSafetyDataRequestMsg", extSD.total_size(), bv);
