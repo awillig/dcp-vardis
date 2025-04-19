@@ -259,7 +259,7 @@ void BeaconingProtocol::addPayload(RegisteredProtocol& rp,
         // construct payload header
         bytevect bv (dcp::BPPayloadHeaderT::fixed_size());
         bv.reserve(2*dcp::BPPayloadHeaderT::fixed_size());
-        ByteVectorAssemblyArea area (dcp::BPPayloadHeaderT::fixed_size(), bv);
+        ByteVectorAssemblyArea area ("bp-addPayload", dcp::BPPayloadHeaderT::fixed_size(), bv);
         BPPayloadHeaderT pldHeader;
         pldHeader.protocolId = protId;
         pldHeader.length     = payloadSizeB;
@@ -315,7 +315,7 @@ void BeaconingProtocol::constructAndTransmitBeacon (std::list< Ptr<const Chunk> 
     // construct BPHeader
     bytevect bv (dcp::BPHeaderT::fixed_size());
     bv.reserve (2*dcp::BPHeaderT::fixed_size());
-    ByteVectorAssemblyArea area (dcp::BPHeaderT::fixed_size(), bv);
+    ByteVectorAssemblyArea area ("bp-constructAndTransmitBeacon", dcp::BPHeaderT::fixed_size(), bv);
     BPHeaderT bpHdr;
     bpHdr.version     =  bpProtocolVersion;
     bpHdr.magicNo     =  bpMagicNo;
@@ -484,7 +484,7 @@ void BeaconingProtocol::handleReceivedPacket (Packet* packet)
     assert(tmpBC);
 
     const bytevect& bvPacket = tmpBC->getBytes();
-    ByteVectorDisassemblyArea area (bvPacket);
+    ByteVectorDisassemblyArea area ("bp-handleReceivedPacket", bvPacket);
 
     DBG_PVAR1("got packet with size", bvPacket.size());
 
