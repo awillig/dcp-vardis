@@ -18,6 +18,7 @@
 
 
 #include <map>
+#include <dcpsim/common/DcpSimGlobals.h>
 #include <dcpsim/bp/BPClientProtocol.h>
 #include <inet/common/IProtocolRegistrationListener.h>
 
@@ -153,9 +154,9 @@ void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolIdT protId,
     dbg_enter("sendRegisterProtocolRequest");
 
     BPRegisterProtocol_Request  *reqMsg = new BPRegisterProtocol_Request;
-    reqMsg->setProtId(protId);
+    reqMsg->setProtId(protId.val);
     reqMsg->setProtName(protName.c_str());
-    reqMsg->setMaxPayloadSizeB(maxPayloadLenB);
+    reqMsg->setMaxPayloadSizeB(maxPayloadLenB.val);
     reqMsg->setQueueingMode(queueingMode);
     reqMsg->setAllowMultiplePayloads(allowMultiplePayloads);
     reqMsg->setMaxEntries(maxEntries);
@@ -172,7 +173,7 @@ void BPClientProtocol::sendDeregisterProtocolRequest (BPProtocolIdT protId)
     dbg_enter("sendDeregisterProtocolRequest");
 
     BPDeregisterProtocol_Request  *reqMsg = new BPDeregisterProtocol_Request;
-    reqMsg->setProtId(protId);
+    reqMsg->setProtId(protId.val);
     sendToBP(reqMsg);
 
     dbg_leave();
