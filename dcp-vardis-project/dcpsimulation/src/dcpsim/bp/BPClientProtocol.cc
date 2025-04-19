@@ -265,35 +265,12 @@ bool BPClientProtocol::handleBPTransmitPayload_Confirm (BPTransmitPayload_Confir
 // ========================================================================================
 
 
-const std::map<BPStatus, std::string> status_texts = {
-        {BP_STATUS_OK, "BP_STATUS_OK"},
-        {BP_STATUS_PROTOCOL_ALREADY_REGISTERED, "BP_STATUS_PROTOCOL_ALREADY_REGISTERED"},
-        {BP_STATUS_ILLEGAL_MAX_PAYLOAD_SIZE, "BP_STATUS_ILLEGAL_MAX_PAYLOAD_SIZE"},
-        {BP_STATUS_UNKNOWN_PROTOCOL, "BP_STATUS_UNKNOWN_PROTOCOL"},
-        {BP_STATUS_PAYLOAD_TOO_LARGE, "BP_STATUS_PAYLOAD_TOO_LARGE"},
-        {BP_STATUS_EMPTY_PAYLOAD, "BP_STATUS_EMPTY_PAYLOAD"}
-};
-
-
-void BPClientProtocol::handleStatus (BPStatus status)
+void BPClientProtocol::handleStatus (DcpStatus status)
 {
     dbg_enter("BPClientProtocol::handleStatus");
 
-    auto search = status_texts.find(status);
-    if (search != status_texts.end())
-    {
-        dbg_prefix();
-        EV << "status value is "
-           << status
-           << " , text is "
-           << search->second
-           << endl;
-    }
-    else
-    {
-        error("BPClientProtocol::handleStatus: received status value not in status_texts");
-    }
-
+    dbg_prefix();
+    EV << "status is " << bp_status_to_string (status) << endl;
     dbg_leave();
 
 }
