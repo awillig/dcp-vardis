@@ -19,13 +19,12 @@
 
 import inet.common.packet.Message;
 import dcpsim.common.NodeIdentifierT;
-import BPStatus;
 
 
 
 class BPConfirmation extends inet::Message
 {
-    BPStatus   status;
+    uint16_t   status;
 }
 
 
