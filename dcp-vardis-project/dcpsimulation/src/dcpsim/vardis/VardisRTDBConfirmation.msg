@@ -18,13 +18,12 @@
 
 
 import inet.common.packet.Message;
-import VardisStatus;
 
 
 class VardisConfirmation extends inet::Message
 {
-    VardisStatus   status;
-    uint8_t        varId;
+    uint16_t  status;
+    uint8_t   varId;
 }
 
 
