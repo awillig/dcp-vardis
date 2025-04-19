@@ -271,8 +271,8 @@ void VardisVariableProducer::handleRTDBCreateConfirm(RTDBCreate_Confirm* createC
 
     // extract information
     handleVardisConfirmation(createConf);
-    VardisStatus status = createConf->getStatus();
-    VarIdT       varId  = createConf->getVarId();
+    DcpStatus status = createConf->getStatus();
+    VarIdT    varId  = createConf->getVarId();
     delete createConf;
 
     DBG_PVAR2("got confirm", (int) varId, status);
@@ -303,7 +303,7 @@ void VardisVariableProducer::handleRTDBDeleteConfirm(RTDBDelete_Confirm* deleteC
 
     // extract information
     handleVardisConfirmation(deleteConf);
-    VardisStatus status = deleteConf->getStatus();
+    DcpStatus status = deleteConf->getStatus();
     delete deleteConf;
 
     // check outcome
@@ -327,7 +327,7 @@ void VardisVariableProducer::handleRTDBUpdateConfirm(RTDBUpdate_Confirm* updateC
 
     // extract information
     handleVardisConfirmation(updateConf);
-    VardisStatus status  = updateConf->getStatus();
+    DcpStatus status     = updateConf->getStatus();
     VarIdT       cVarId  = updateConf->getVarId();
     delete updateConf;
 
