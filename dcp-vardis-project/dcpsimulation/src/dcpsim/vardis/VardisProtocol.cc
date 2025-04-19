@@ -2245,7 +2245,7 @@ void VardisProtocol::extractVarReqCreateList(DisassemblyArea& area, std::deque<V
 // Helpers for sending standard confirmations to higher layers
 // ========================================================================================
 
-void VardisProtocol::sendConfirmation(VardisConfirmation *confMsg, VardisStatus status, Protocol* theProtocol)
+void VardisProtocol::sendConfirmation(VardisConfirmation *confMsg, DcpStatus status, Protocol* theProtocol)
 {
     dbg_enter("sendConfirmation");
     assert(theProtocol);
@@ -2264,7 +2264,7 @@ void VardisProtocol::sendConfirmation(VardisConfirmation *confMsg, VardisStatus 
 
 // ----------------------------------------------------
 
-void VardisProtocol::sendRTDBCreateConfirm(VardisStatus status, VarIdT varId, Protocol* theProtocol)
+void VardisProtocol::sendRTDBCreateConfirm(DcpStatus status, VarIdT varId, Protocol* theProtocol)
 {
     dbg_enter("sendRTDBCreateConfirm");
 
@@ -2277,7 +2277,7 @@ void VardisProtocol::sendRTDBCreateConfirm(VardisStatus status, VarIdT varId, Pr
 
 // ----------------------------------------------------
 
-void VardisProtocol::sendRTDBUpdateConfirm(VardisStatus status, VarIdT varId, Protocol* theProtocol)
+void VardisProtocol::sendRTDBUpdateConfirm(DcpStatus status, VarIdT varId, Protocol* theProtocol)
 {
     dbg_enter("sendRTDBUpdateConfirm");
 
