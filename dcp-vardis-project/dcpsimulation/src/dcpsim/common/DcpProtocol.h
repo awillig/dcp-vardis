@@ -21,7 +21,7 @@
 #include <stack>
 #include <omnetpp.h>
 #include <inet/networklayer/common/InterfaceTable.h>
-#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcp/common/global_types_constants.h>
 
 using namespace omnetpp;
 using namespace inet;
@@ -55,7 +55,7 @@ private:
     // --------------------------------------------
 
     // Node id of this node
-    NodeIdentifierT          _ownNodeId      = nullIdentifier;
+    NodeIdentifierT          _ownNodeId      = nullNodeIdentifier;
 
     // Identifying the network interface to be used, needed for packet transmission
     inet::NetworkInterface  *_wlanInterface  = nullptr;
