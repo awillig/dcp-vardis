@@ -17,7 +17,6 @@
 //
 
 import inet.common.packet.Message;
-import BPStatus;
 
 
 class BPDeregisterProtocol_Request extends inet::Request
