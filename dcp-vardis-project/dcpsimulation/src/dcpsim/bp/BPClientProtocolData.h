@@ -20,14 +20,15 @@
 
 #include <queue>
 #include <list>
-
 #include <inet/common/packet/chunk/Chunk.h>
 #include <inet/common/Ptr.h>
 #include <dcp/bp/bp_queueing_mode.h>
-#include <dcpsim/common/DcpTypesGlobals.h>
-#include <dcpsim/bp/BPDataTypes.h>
-#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcp/bp/bp_transmissible_types.h>
+#include <dcp/common/global_types_constants.h>
 
+using namespace omnetpp;
+using namespace inet;
+using dcp::bp::BPLengthT;
 using dcp::bp::BPQueueingMode;
 
 // -----------------------------------------------------------------
