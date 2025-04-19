@@ -19,7 +19,7 @@
 #pragma once
 
 #include <omnetpp.h>
-#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcp/common/global_types_constants.h>
 #include <dcpsim/srp/SafetyDataT.h>
 
 // --------------------------------------------------------------------------
