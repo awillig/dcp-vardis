@@ -971,7 +971,7 @@ bool BeaconingProtocol::clientProtocolRegistered(BPProtocolIdT protocolId)
  * Send the given confirmation message with the given status code to the given
  * client protocol
  */
-void BeaconingProtocol::sendConfirmation(BPConfirmation *confMsg, BPStatus status, Protocol* theProtocol)
+void BeaconingProtocol::sendConfirmation(BPConfirmation *confMsg, DcpStatus status, Protocol* theProtocol)
 {
     dbg_enter("sendConfirmation");
     assert(theProtocol);
@@ -993,7 +993,7 @@ void BeaconingProtocol::sendConfirmation(BPConfirmation *confMsg, BPStatus statu
 /**
  * Prepares and sends a BPRegisterProtocol.confirm message
  */
-void BeaconingProtocol::sendRegisterProtocolConfirm(BPStatus status, Protocol* theProtocol)
+void BeaconingProtocol::sendRegisterProtocolConfirm(DcpStatus status, Protocol* theProtocol)
 {
     dbg_enter("sendRegisterProtocolConfirm");
     BPRegisterProtocol_Confirm*  conf = new BPRegisterProtocol_Confirm;
@@ -1008,7 +1008,7 @@ void BeaconingProtocol::sendRegisterProtocolConfirm(BPStatus status, Protocol* t
 /**
  * Prepares and sends a BPDeregisterProtocol.confirm message
  */
-void BeaconingProtocol::sendDeregisterProtocolConfirm(BPStatus status, Protocol* theProtocol)
+void BeaconingProtocol::sendDeregisterProtocolConfirm(DcpStatus status, Protocol* theProtocol)
 {
     dbg_enter("sendDeregisterProtocolConfirm");
     sendConfirmation(new BPDeregisterProtocol_Confirm, status, theProtocol);
@@ -1020,7 +1020,7 @@ void BeaconingProtocol::sendDeregisterProtocolConfirm(BPStatus status, Protocol*
 /**
  * Prepares and sends a BPTransmitPayload.confirm message
  */
-void BeaconingProtocol::sendTransmitPayloadConfirm(BPStatus status, Protocol* theProtocol)
+void BeaconingProtocol::sendTransmitPayloadConfirm(DcpStatus status, Protocol* theProtocol)
 {
     dbg_enter("sendTransmitPayloadConfirm");
     sendConfirmation(new BPTransmitPayload_Confirm, status, theProtocol);
@@ -1032,7 +1032,7 @@ void BeaconingProtocol::sendTransmitPayloadConfirm(BPStatus status, Protocol* th
 /**
  * Prepares and sends a BPClearBuffer.confirm message
  */
-void BeaconingProtocol::sendClearBufferConfirm(BPStatus status, Protocol* theProtocol)
+void BeaconingProtocol::sendClearBufferConfirm(DcpStatus status, Protocol* theProtocol)
 {
     dbg_enter("sendClearBufferConfirm");
     sendConfirmation(new BPClearBuffer_Confirm, status, theProtocol);
@@ -1045,7 +1045,7 @@ void BeaconingProtocol::sendClearBufferConfirm(BPStatus status, Protocol* thePro
 /**
  * Prepares and sends a BPQueryNumberBufferedPayloads.confirm message
  */
-void BeaconingProtocol::sendQueryNumberBufferedPayloadsConfirm (BPStatus status, unsigned int numPayloads, BPProtocolIdT protocolId, Protocol* theProtocol)
+void BeaconingProtocol::sendQueryNumberBufferedPayloadsConfirm (DcpStatus status, unsigned int numPayloads, BPProtocolIdT protocolId, Protocol* theProtocol)
 {
     dbg_enter("sendQueryNumberBufferedPayloadsConfirm");
     auto confMsg = new BPQueryNumberBufferedPayloads_Confirm;

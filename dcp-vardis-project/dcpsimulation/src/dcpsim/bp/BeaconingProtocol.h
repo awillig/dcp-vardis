@@ -23,6 +23,7 @@
 #include <inet/common/InitStages.h>
 #include <inet/common/Protocol.h>
 #include <inet/networklayer/common/InterfaceTable.h>
+#include <dcp/common/services_status.h>
 #include <dcpsim/common/DcpTypesGlobals.h>
 #include <dcpsim/bp/BPDataTypes.h>
 #include <dcpsim/bp/BPDeregisterProtocol_m.h>
@@ -157,33 +158,33 @@ protected:
      * Sends a confirmation message (for a previous service request) to client
      * protocol
      */
-    void sendConfirmation(BPConfirmation *confMsg, BPStatus status, Protocol* theProtocol);
+    void sendConfirmation(BPConfirmation *confMsg, DcpStatus status, Protocol* theProtocol);
 
     /**
      * Generates and sends BPRegisterProtocol.confirm message to client protocol
      */
-    void sendRegisterProtocolConfirm (BPStatus status, Protocol* theProtocol);
+    void sendRegisterProtocolConfirm (DcpStatus status, Protocol* theProtocol);
 
     /**
      * Generates and sends BPDeregisterProtocol.confirm message to client protocol
      */
-    void sendDeregisterProtocolConfirm (BPStatus status, Protocol* theProtocol);
+    void sendDeregisterProtocolConfirm (DcpStatus status, Protocol* theProtocol);
 
     /**
      * Generates and sends BPTransmitPayload.confirm message to client protocol
      */
-    void sendTransmitPayloadConfirm (BPStatus status, Protocol* theProtocol);
+    void sendTransmitPayloadConfirm (DcpStatus status, Protocol* theProtocol);
 
     /**
      * Generates and sends BPClearBuffer.confirm message to client protocol
      */
-    void sendClearBufferConfirm (BPStatus status, Protocol* theProtocol);
+    void sendClearBufferConfirm (DcpStatus status, Protocol* theProtocol);
 
 
     /**
      * Generates and sends BPQueryNumberBufferedPayloads.confirm message to client protocol
      */
-    void sendQueryNumberBufferedPayloadsConfirm (BPStatus status, unsigned int numPayloads, BPProtocolIdT protocolId, Protocol* theProtocol);
+    void sendQueryNumberBufferedPayloadsConfirm (DcpStatus status, unsigned int numPayloads, BPProtocolIdT protocolId, Protocol* theProtocol);
 
     /**
      * Checks whether BPHeaderT of incoming beacon is well-formed
