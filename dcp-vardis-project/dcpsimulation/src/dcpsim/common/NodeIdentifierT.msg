@@ -18,7 +18,7 @@
 
 
 cplusplus {{
-#include <dcpsim/common/DcpTypesGlobals.h>
+#include <dcp/common/global_types_constants.h>
 typedef dcp::NodeIdentifierT  NodeIdentifierT;
 }}
 
