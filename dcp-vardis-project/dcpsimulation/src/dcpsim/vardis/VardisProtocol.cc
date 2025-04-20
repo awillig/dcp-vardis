@@ -31,6 +31,7 @@
 using namespace omnetpp;
 using namespace inet;
 using namespace dcp;
+using namespace dcp::vardis;
 
 using dcp::bp::BP_QMODE_QUEUE_DROPHEAD;
 
@@ -63,17 +64,17 @@ void VardisProtocol::initialize(int stage)
         assert(maxPayloadSize > 0);
         assert(maxPayloadSize <= 1400);   // this deviates from specification (would require config data from BP)
         assert(vardisMaxValueLength > 0);
-        assert(vardisMaxValueLength <= std::min(maxVarLen, maxPayloadSize - dcp::ICHeaderT::fixed_size()));
+        assert(vardisMaxValueLength <= std::min(maxVarLen, maxPayloadSize - ICHeaderT::fixed_size()));
         assert(vardisMaxDescriptionLength > 0);
         assert(vardisMaxDescriptionLength <=   maxPayloadSize
-                                             - (   dcp::ICHeaderT::fixed_size()
-                                                 + dcp::VarSpecT::fixed_size()
-                                                 + dcp::VarUpdateT::fixed_size()
+                                             - (   ICHeaderT::fixed_size()
+                                                 + VarSpecT::fixed_size()
+                                                 + VarUpdateT::fixed_size()
                                                  + vardisMaxValueLength
                                                  ));
         assert(vardisMaxRepetitions > 0);
         assert(vardisMaxRepetitions <= 15);
-        assert(vardisMaxSummaries <= (maxPayloadSize - dcp::ICHeaderT::fixed_size())/dcp::VarSummT::fixed_size());
+        assert(vardisMaxSummaries <= (maxPayloadSize - ICHeaderT::fixed_size())/VarSummT::fixed_size());
         assert(vardisBufferCheckPeriod > 0);
 
         // find gate identifiers
@@ -450,11 +451,14 @@ void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indicati
 
     ByteVectorDisassemblyArea area ("vardis-handleBPReceivedPayloadIndication", bvpayload);
 
-    // Dispatch on ICType
+    // Dispatch on InstructionContainerT
     while (area.used() < area.available())
     {
-        DBG_PVAR2 ("Deserializing: considering ICType", (int) area.used(), (int) ((ICType) area.peek_byte()));
-        switch((ICType) area.peek_byte())
+	ICHeaderT icHeader;
+	icHeader.deserialize(area);
+	
+        DBG_PVAR2 ("Deserializing: considering ICType", (int) area.used(), icHeader.icType.val);
+        switch(icHeader.icType.val)
         {
         case ICTYPE_SUMMARIES:
             dbg_string("considering ICTYPE_SUMMARIES");
@@ -594,7 +598,7 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
     }
 
 
-    DBG_PVAR1("creating new variable", (int) spec.varId);
+    DBG_PVAR1("creating new variable", spec.varId);
 
     // initialize new database entry and add it
     DBEntry newent;
@@ -694,7 +698,7 @@ void VardisProtocol::handleRTDBUpdateRequest(RTDBUpdate_Request* updateReq)
         return;
     }
 
-    if (varLen > vardisMaxValueLength)
+    if (varLen.val > vardisMaxValueLength)
     {
         dbg_string("value length is too long, dropping request");
         sendRTDBUpdateConfirm(VARDIS_STATUS_VALUE_TOO_LONG, varId, theProtocol);
@@ -712,15 +716,15 @@ void VardisProtocol::handleRTDBUpdateRequest(RTDBUpdate_Request* updateReq)
         return;
     }
 
-    DBG_PVAR1("updating variable with varId = ", (int) varId);
+    DBG_PVAR1("updating variable with varId = ", varId);
 
     // update the DB entry
-    theEntry.seqno        = (theEntry.seqno + 1) % maxVarSeqno;
+    theEntry.seqno.val    = (theEntry.seqno.val + 1) % VarSeqnoT::modulus();
     theEntry.countUpdate  = theEntry.spec.repCnt;
     theEntry.tStamp       = simTime();
     delete [] theEntry.value.data;
-    theEntry.value.length = varLen;
-    theEntry.value.data   =  new uint8_t [varLen];
+    theEntry.value.length = varLen.val;
+    theEntry.value.data   =  new uint8_t [varLen.val];
     for (int i=0; i<varLen; i++)
         theEntry.value.data[i] = updateReq->getUpddata(i);
 
@@ -759,7 +763,7 @@ void VardisProtocol::handleRTDBReadRequest (RTDBRead_Request* readReq)
 
     // generate and initialize confirmation
     auto readConf = new RTDBRead_Confirm;
-    readConf->setVarId(varId);
+    readConf->setVarId(varId.val);
     readConf->setDataLen(0);
     readConf->setDataArraySize(0);
 
@@ -831,13 +835,13 @@ void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Req
     {
         auto theVar = it->second;
 
-        DBG_PVAR3("adding description", (int) theVar.spec.varId, theVar.spec.prodId, theVar.spec.descr.to_str());
+        DBG_PVAR3("adding description", theVar.spec.varId, theVar.spec.prodId, theVar.spec.descr.to_str());
 
         VarSpecEntry vse;
 
-        vse.varId   = theVar.spec.varId;
+        vse.varId   = theVar.spec.varId.val;
         vse.prodId  = theVar.spec.prodId;
-        vse.repCnt  = theVar.spec.repCnt;
+        vse.repCnt  = theVar.spec.repCnt.val;
         vse.descr   = std::string(theVar.spec.descr.to_str());
         dbConf->setSpec(i,vse);
         i++;
@@ -881,26 +885,26 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
 
     if (not variableExists(varId))
     {
-        DBG_PVAR1("requested variable does not exist", (int) varId);
+        DBG_PVAR1("requested variable does not exist", varId);
         sendConfirmation(varDescr, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST, theProtocol);
         dbg_leave();
         return;
     }
 
-    DBG_PVAR1("generating description for variable", (int) varId);
+    DBG_PVAR1("generating description for variable", varId);
 
     // retrieve variable and generate response data about it
     DBEntry& theEntry = theVariableDatabase.at(varId);
-    varDescr->setVarId(varId);
+    varDescr->setVarId(varId.val);
     varDescr->setProdId(theEntry.spec.prodId);
-    varDescr->setRepCnt(theEntry.spec.repCnt);
+    varDescr->setRepCnt(theEntry.spec.repCnt.val);
     varDescr->setLength(theEntry.value.length);
     varDescr->setDescr(theEntry.spec.descr.to_str().c_str());
-    varDescr->setSeqno(theEntry.seqno);
+    varDescr->setSeqno(theEntry.seqno.val);
     varDescr->setTstamp(theEntry.tStamp);
-    varDescr->setCountUpdate(theEntry.countUpdate);
-    varDescr->setCountCreate(theEntry.countCreate);
-    varDescr->setCountDelete(theEntry.countDelete);
+    varDescr->setCountUpdate(theEntry.countUpdate.val);
+    varDescr->setCountCreate(theEntry.countCreate.val);
+    varDescr->setCountDelete(theEntry.countDelete.val);
     varDescr->setToBeDeleted(theEntry.toBeDeleted);
     varDescr->setValueArraySize(theEntry.value.length);
     for (int i=0; i<theEntry.value.length; i++)
@@ -936,7 +940,7 @@ void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* delReq)
 
     // generate and initialize confirmation
     auto deleteConf = new RTDBDelete_Confirm;
-    deleteConf->setVarId(varId);
+    deleteConf->setVarId(varId.val);
 
     // perform some checks
 
@@ -1011,7 +1015,7 @@ unsigned int VardisProtocol::instructionSizeVarCreate(VarIdT varId)
 {
     DBEntry& theEntry = theVariableDatabase.at(varId);
     return    theEntry.spec.total_size()
-            + dcp::VarUpdateT::fixed_size()
+            + VarUpdateT::fixed_size()
             + theEntry.value.length;
 }
 
@@ -1019,7 +1023,7 @@ unsigned int VardisProtocol::instructionSizeVarCreate(VarIdT varId)
 
 unsigned int VardisProtocol::instructionSizeVarSummary(VarIdT varId)
 {
-    return dcp::VarSummT::fixed_size();
+    return VarSummT::fixed_size();
 }
 
 // ----------------------------------------------------
@@ -1027,28 +1031,28 @@ unsigned int VardisProtocol::instructionSizeVarSummary(VarIdT varId)
 unsigned int VardisProtocol::instructionSizeVarUpdate(VarIdT varId)
 {
     DBEntry& theEntry = theVariableDatabase.at(varId);
-    return dcp::VarUpdateT::fixed_size() + theEntry.value.length;
+    return VarUpdateT::fixed_size() + theEntry.value.length;
 }
 
 // ----------------------------------------------------
 
 unsigned int VardisProtocol::instructionSizeVarDelete(VarIdT varId)
 {
-    return dcp::VarDeleteT::fixed_size();
+    return VarDeleteT::fixed_size();
 }
 
 // ----------------------------------------------------
 
 unsigned int VardisProtocol::instructionSizeReqCreate(VarIdT varId)
 {
-    return dcp::VarReqCreateT::fixed_size();
+    return VarReqCreateT::fixed_size();
 }
 
 // ----------------------------------------------------
 
 unsigned int VardisProtocol::instructionSizeReqUpdate(VarIdT varId)
 {
-    return dcp::VarReqUpdateT::fixed_size();
+    return VarReqUpdateT::fixed_size();
 }
 
 // ----------------------------------------------------
@@ -1188,18 +1192,18 @@ unsigned int VardisProtocol::numberFittingRecords(
 {
     // first work out how many records we can add
     unsigned int   numberRecordsToAdd = 0;
-    unsigned int   bytesToBeAdded = dcp::ICHeaderT::fixed_size();
+    unsigned int   bytesToBeAdded = ICHeaderT::fixed_size();
     auto           it = queue.begin();
     while(    (it != queue.end())
            && (bytesToBeAdded + instructionSizeFunction(*it) <= area.available())
-           && (numberRecordsToAdd < dcp::ICHeaderT::max_records()))
+           && (numberRecordsToAdd < ICHeaderT::max_records()))
     {
         numberRecordsToAdd++;
         bytesToBeAdded += instructionSizeFunction(*it);
         it++;
     }
 
-    return (std::min(numberRecordsToAdd, (unsigned int) dcp::ICHeaderT::max_records()));
+    return (std::min(numberRecordsToAdd, (unsigned int) ICHeaderT::max_records()));
 }
 
 
@@ -1218,7 +1222,7 @@ void VardisProtocol::makeICTypeCreateVariables (AssemblyArea& area)
 
     // check for empty createQ or insufficient size to add at least the first instruction record
     if (    createQ.empty()
-         || (instructionSizeVarCreate(createQ.front()) + dcp::ICHeaderT::fixed_size()) > area.available())
+         || (instructionSizeVarCreate(createQ.front()) + ICHeaderT::fixed_size()) > area.available())
     {
         dbg_string("queue empty or insufficient space available");
         dbg_leave();
@@ -1244,7 +1248,7 @@ void VardisProtocol::makeICTypeCreateVariables (AssemblyArea& area)
         createQ.pop_front();
         DBEntry& nextVar = theVariableDatabase.at(nextVarId);
 
-        DBG_PVAR5("adding", (int) nextVarId, instructionSizeVarCreate(nextVarId), (int) nextVar.countCreate, area.used(), area.available());
+        DBG_PVAR5("adding", nextVarId, instructionSizeVarCreate(nextVarId), nextVar.countCreate, area.used(), area.available());
         assert(nextVar.countCreate > 0);
 
         nextVar.countCreate--;
@@ -1278,7 +1282,7 @@ void VardisProtocol::makeICTypeSummaries (AssemblyArea& area)
     // check for empty summaryQ, insufficient size to add at least the first instruction record,
     // or whether summaries function is enabled
     if (    summaryQ.empty()
-         || (instructionSizeVarSummary(summaryQ.front()) + dcp::ICHeaderT::fixed_size() > area.available())
+         || (instructionSizeVarSummary(summaryQ.front()) + ICHeaderT::fixed_size() > area.available())
          || (vardisMaxSummaries == 0))
     {
         dbg_string("queue empty, insufficient space available or no summaries to be created");
@@ -1304,7 +1308,7 @@ void VardisProtocol::makeICTypeSummaries (AssemblyArea& area)
     {
         VarIdT nextVarId  = summaryQ.front();
 
-        DBG_PVAR5("adding", (int) nextVarId, instructionSizeVarSummary(nextVarId), (int) theVariableDatabase.at(nextVarId).seqno, area.used(), area.available());
+        DBG_PVAR5("adding", nextVarId, instructionSizeVarSummary(nextVarId), theVariableDatabase.at(nextVarId).seqno, area.used(), area.available());
 
         summaryQ.pop_front();
         summaryQ.push_back(nextVarId);
@@ -1332,7 +1336,7 @@ void VardisProtocol::makeICTypeUpdates (AssemblyArea& area)
 
     // check for empty updateQ or insufficient size to add at least the first instruction record
     if (    updateQ.empty()
-         || (instructionSizeVarUpdate(updateQ.front()) + dcp::ICHeaderT::fixed_size() > area.available()))
+         || (instructionSizeVarUpdate(updateQ.front()) + ICHeaderT::fixed_size() > area.available()))
     {
         dbg_string("queue empty or insufficient space available");
         dbg_leave();
@@ -1358,7 +1362,7 @@ void VardisProtocol::makeICTypeUpdates (AssemblyArea& area)
         updateQ.pop_front();
         DBEntry& nextVar = theVariableDatabase.at(nextVarId);
 
-        DBG_PVAR6("adding", (int) nextVarId, instructionSizeVarUpdate(nextVarId), nextVar.countUpdate, (int) nextVar.seqno, area.used(), area.available());
+        DBG_PVAR6("adding", nextVarId, instructionSizeVarUpdate(nextVarId), nextVar.countUpdate, nextVar.seqno, area.used(), area.available());
         assert(nextVar.countUpdate > 0);
 
         nextVar.countUpdate--;
@@ -1391,7 +1395,7 @@ void VardisProtocol::makeICTypeDeleteVariables (AssemblyArea& area)
 
     // check for empty deleteQ or insufficient size to add at least the first instruction record
     if (    deleteQ.empty()
-         || (instructionSizeVarDelete(deleteQ.front()) + dcp::ICHeaderT::fixed_size() > area.available()))
+         || (instructionSizeVarDelete(deleteQ.front()) + ICHeaderT::fixed_size() > area.available()))
     {
         dbg_string("queue empty or insufficient space available");
         dbg_leave();
@@ -1418,7 +1422,7 @@ void VardisProtocol::makeICTypeDeleteVariables (AssemblyArea& area)
         assert(variableExists(nextVarId));
         DBEntry& nextVar = theVariableDatabase.at(nextVarId);
 
-        DBG_PVAR5("adding", (int) nextVarId, instructionSizeVarDelete(nextVarId), (int) nextVar.countDelete, area.used(), area.available());
+        DBG_PVAR5("adding", nextVarId, instructionSizeVarDelete(nextVarId), nextVar.countDelete, area.used(), area.available());
         assert(nextVar.countDelete > 0);
 
         nextVar.countDelete--;
@@ -1431,7 +1435,7 @@ void VardisProtocol::makeICTypeDeleteVariables (AssemblyArea& area)
         }
         else
         {
-            DBG_PVAR2("now we actually DELETE variable", (int) nextVarId, nextVar.spec.descr.to_str());
+            DBG_PVAR2("now we actually DELETE variable", nextVarId, nextVar.spec.descr.to_str());
             theVariableDatabase.erase(nextVarId);
         }
     }
@@ -1457,7 +1461,7 @@ void VardisProtocol::makeICTypeRequestVarUpdates (AssemblyArea& area)
 
     // check for empty reqUpdQ or insufficient size to add at least the first instruction record
     if (    reqUpdQ.empty()
-         || (instructionSizeReqUpdate(reqUpdQ.front()) + dcp::ICHeaderT::fixed_size() > area.available()))
+         || (instructionSizeReqUpdate(reqUpdQ.front()) + ICHeaderT::fixed_size() > area.available()))
     {
         dbg_string("queue empty or insufficient space available");
         dbg_leave();
@@ -1483,7 +1487,7 @@ void VardisProtocol::makeICTypeRequestVarUpdates (AssemblyArea& area)
         reqUpdQ.pop_front();
         DBEntry& nextVar = theVariableDatabase.at(nextVarId);
 
-        DBG_PVAR4("adding", (int) nextVarId, instructionSizeReqUpdate(nextVarId), area.used(), area.available());
+        DBG_PVAR4("adding", nextVarId, instructionSizeReqUpdate(nextVarId), area.used(), area.available());
 
         addVarReqUpdate(nextVarId, nextVar, area);
     }
@@ -1509,7 +1513,7 @@ void VardisProtocol::makeICTypeRequestVarCreates (AssemblyArea& area)
 
     // check for empty reqCreateQ or insufficient size to add at least the first instruction record
     if (    reqCreateQ.empty()
-         || (instructionSizeReqCreate(reqCreateQ.front()) + dcp::ICHeaderT::fixed_size() > area.available()))
+         || (instructionSizeReqCreate(reqCreateQ.front()) + ICHeaderT::fixed_size() > area.available()))
     {
         dbg_string("queue empty or insufficient space available");
         dbg_leave();
@@ -1534,7 +1538,7 @@ void VardisProtocol::makeICTypeRequestVarCreates (AssemblyArea& area)
         VarIdT nextVarId = reqCreateQ.front();
         reqCreateQ.pop_front();
 
-        DBG_PVAR4("adding VarReqCreate", (int) nextVarId, instructionSizeReqCreate(nextVarId), area.used(), area.available());
+        DBG_PVAR4("adding VarReqCreate", nextVarId, instructionSizeReqCreate(nextVarId), area.used(), area.available());
 
         addVarReqCreate(nextVarId, area);
     }
@@ -1635,7 +1639,7 @@ void VardisProtocol::processVarCreate(const VarCreateT& create)
     NodeIdentifierT   prodId = create.spec.prodId;
 
     assert(create.update.value.length > 0);
-    DBG_PVAR2("considering", (int) varId, prodId);
+    DBG_PVAR2("considering", varId, prodId);
 
     if (    (not variableExists(varId))
          && (prodId != getOwnNodeId())
@@ -1647,7 +1651,7 @@ void VardisProtocol::processVarCreate(const VarCreateT& create)
          && (create.spec.repCnt <= vardisMaxRepetitions)
        )
     {
-        DBG_PVAR3("ADDING new variable to database", (int) varId, prodId, create.spec.descr.to_str());
+        DBG_PVAR3("ADDING new variable to database", varId, prodId, create.spec.descr.to_str());
 
         // create and initialize new DBEntry
         DBEntry newEntry;
@@ -1692,19 +1696,19 @@ void VardisProtocol::processVarDelete(const VarDeleteT& del)
 
     VarIdT   varId   = del.varId;
 
-    DBG_PVAR1("considering", (int) varId);
+    DBG_PVAR1("considering", varId);
 
     if (variableExists(varId))
     {
         DBEntry&        theEntry = theVariableDatabase.at(varId);
         NodeIdentifierT prodId   = theEntry.spec.prodId;
 
-        DBG_PVAR3("considering", (int) varId, prodId, theEntry.toBeDeleted);
+        DBG_PVAR3("considering", varId, prodId, theEntry.toBeDeleted);
 
         if (    (not theEntry.toBeDeleted)
              && (not producerIsMe(varId)))
         {
-            DBG_PVAR1("DELETING", (int) varId);
+            DBG_PVAR1("DELETING", varId);
 
             // update variable state
             theEntry.toBeDeleted  = true;
@@ -1742,12 +1746,12 @@ void VardisProtocol::processVarUpdate(const VarUpdateT& update)
 
     VarIdT  varId   = update.varId;
 
-    DBG_PVAR3("considering", (int) varId, (int) update.seqno, (int) update.value.length);
+    DBG_PVAR3("considering", varId, update.seqno, update.value.length);
 
     // check if variable exists -- if not, add it to queue to generate ReqVarCreate
     if (not variableExists(varId))
     {
-        DBG_PVAR1("variable does not exist in my database", (int) varId);
+        DBG_PVAR1("variable does not exist in my database", varId);
         if (not isVarIdInQueue(reqCreateQ, varId))
             reqCreateQ.push_back(varId);
 
@@ -1789,7 +1793,7 @@ void VardisProtocol::processVarUpdate(const VarUpdateT& update)
 
     // If received update is older than what I have, schedule transmissions of
     // VarUpdate's for this variable to educate the sender
-    if (MORE_RECENT_SEQNO((int) theEntry.seqno, (int) update.seqno))
+    if (more_recent_seqno(theEntry.seqno, update.seqno))
     {
         dbg_string("received variable has strictly older sequence number than I have");
         // I have a more recent sequence number
@@ -1802,7 +1806,7 @@ void VardisProtocol::processVarUpdate(const VarUpdateT& update)
         return;
     }
 
-    DBG_PVAR2("UPDATING", (int) varId, (int) update.seqno);
+    DBG_PVAR2("UPDATING", varId, update.seqno);
 
     // update variable with new value, update relevant queues
     theEntry.seqno        =  update.seqno;
@@ -1832,12 +1836,12 @@ void VardisProtocol::processVarSummary(const VarSummT& summ)
     VarIdT     varId = summ.varId;
     VarSeqnoT  seqno = summ.seqno;
 
-    DBG_PVAR2("considering", (int) varId, (int) seqno);
+    DBG_PVAR2("considering", varId, seqno);
 
     // if variable does not exist in local RTDB, request a VarCreate
     if (not variableExists(varId))
     {
-        DBG_PVAR1("variable does not exist in my database", (int) varId);
+        DBG_PVAR1("variable does not exist in my database", varId);
         if (not isVarIdInQueue(reqCreateQ, varId))
         {
             reqCreateQ.push_back(varId);
@@ -1873,7 +1877,7 @@ void VardisProtocol::processVarSummary(const VarSummT& summ)
 
     // schedule transmission of VarUpdate's if the received seqno is too
     // old
-    if (MORE_RECENT_SEQNO(theEntry.seqno, seqno))
+    if (more_recent_seqno(theEntry.seqno, seqno))
     {
         dbg_string("received variable summary has strictly older sequence number than I have");
         if (not isVarIdInQueue(updateQ, varId))
@@ -1908,13 +1912,13 @@ void VardisProtocol::processVarReqUpdate(const VarReqUpdateT& requpd)
     VarIdT     varId = requpd.updSpec.varId;
     VarSeqnoT  seqno = requpd.updSpec.seqno;
 
-    DBG_PVAR2("considering", (int) varId, (int) seqno);
+    DBG_PVAR2("considering", varId, seqno);
 
     // check some conditions
 
     if (not variableExists(varId))
     {
-        DBG_PVAR1("variable does not exist in my database", (int) varId);
+        DBG_PVAR1("variable does not exist in my database", varId);
         if (not isVarIdInQueue(reqCreateQ, varId))
         {
             reqCreateQ.push_back(varId);
@@ -1932,7 +1936,7 @@ void VardisProtocol::processVarReqUpdate(const VarReqUpdateT& requpd)
         return;
     }
 
-    if (MORE_RECENT_SEQNO(seqno, theEntry.seqno))
+    if (more_recent_seqno(seqno, theEntry.seqno))
     {
         dbg_string("received variable summary has more recent sequence number than I have");
         dbg_leave();
@@ -1961,7 +1965,7 @@ void VardisProtocol::processVarReqCreate(const VarReqCreateT& reqcreate)
 
     VarIdT varId = reqcreate.varId;
 
-    DBG_PVAR1("considering", (int) varId);
+    DBG_PVAR1("considering", varId);
 
     if (not variableExists(varId))
     {
@@ -1987,7 +1991,7 @@ void VardisProtocol::processVarReqCreate(const VarReqCreateT& reqcreate)
 
     if (not isVarIdInQueue(createQ, varId))
     {
-        DBG_PVAR1("scheduling future VarCreate transmissions", (int) varId);
+        DBG_PVAR1("scheduling future VarCreate transmissions", varId);
         createQ.push_back(varId);
     }
 
@@ -2111,7 +2115,7 @@ void VardisProtocol::extractVarCreateList(DisassemblyArea& area, std::deque<VarC
         VarCreateT create;
         create.deserialize (area);
 
-        DBG_VAR4((int) create.spec.varId, (int) create.spec.repCnt, create.spec.prodId, create.spec.descr.to_str());
+        DBG_VAR4(create.spec.varId, create.spec.repCnt, create.spec.prodId, create.spec.descr.to_str());
 
         creates.push_back(create);
     }
@@ -2136,7 +2140,7 @@ void VardisProtocol::extractVarDeleteList(DisassemblyArea& area, std::deque<VarD
         VarDeleteT del;
         del.deserialize(area);
 
-        DBG_VAR1((int) del.varId);
+        DBG_VAR1(del.varId);
 
         deletes.push_back(del);
     }
@@ -2160,7 +2164,7 @@ void VardisProtocol::extractVarUpdateList(DisassemblyArea& area, std::deque<VarU
         VarUpdateT upd;
         upd.deserialize (area);
 
-        DBG_VAR2((int) upd.varId, (int) upd.seqno);
+        DBG_VAR2(upd.varId, upd.seqno);
 
         updates.push_back(upd);
     }
@@ -2184,7 +2188,7 @@ void VardisProtocol::extractVarSummaryList(DisassemblyArea& area, std::deque<Var
         VarSummT summ;
         summ.deserialize (area);
 
-        DBG_VAR2((int) summ.varId, (int) summ.seqno);
+        DBG_VAR2(summ.varId, summ.seqno);
 
         summs.push_back(summ);
     }
@@ -2209,7 +2213,7 @@ void VardisProtocol::extractVarReqUpdateList (DisassemblyArea& area, std::deque<
         VarReqUpdateT requpd;
         requpd.deserialize (area);
 
-        DBG_VAR2((int) requpd.updSpec.varId, (int) requpd.updSpec.seqno);
+        DBG_VAR2(requpd.updSpec.varId, requpd.updSpec.seqno);
 
         requpdates.push_back(requpd);
     }
@@ -2233,7 +2237,7 @@ void VardisProtocol::extractVarReqCreateList(DisassemblyArea& area, std::deque<V
         VarReqCreateT reqcr;
         reqcr.deserialize (area);
 
-        DBG_VAR1((int) reqcr.varId);
+        DBG_VAR1(reqcr.varId);
 
         reqcreates.push_back(reqcr);
     }
@@ -2270,7 +2274,7 @@ void VardisProtocol::sendRTDBCreateConfirm(DcpStatus status, VarIdT varId, Proto
     dbg_enter("sendRTDBCreateConfirm");
 
     auto conf = new RTDBCreate_Confirm;
-    conf->setVarId(varId);
+    conf->setVarId(varId.val);
     sendConfirmation(conf, status, theProtocol);
 
     dbg_leave();
@@ -2283,7 +2287,7 @@ void VardisProtocol::sendRTDBUpdateConfirm(DcpStatus status, VarIdT varId, Proto
     dbg_enter("sendRTDBUpdateConfirm");
 
     auto conf = new RTDBUpdate_Confirm;
-    conf->setVarId(varId);
+    conf->setVarId(varId.val);
     sendConfirmation(conf, status, theProtocol);
 
     dbg_leave();
@@ -2404,8 +2408,8 @@ void VardisProtocol::dbg_summaryQ()
        << " , contents = {";
     for (auto it = summaryQ.begin(); it != summaryQ.end(); it++)
     {
-        EV << " (i:" << (int) *it
-           << ", s:" << (int) theVariableDatabase.at(*it).seqno
+        EV << " (i:" << *it
+           << ", s:" << theVariableDatabase.at((*it).val).seqno
            << ")";
     }
     EV << "}" << endl;
@@ -2422,9 +2426,9 @@ void VardisProtocol::dbg_createQ()
        << " , contents = {";
     for (auto it = createQ.begin(); it != createQ.end(); it++)
     {
-        EV << " (i:" << (int) *it
-           << ", s:" << (int) theVariableDatabase.at(*it).seqno
-           << ", c:" << (int) theVariableDatabase.at(*it).countCreate
+        EV << " (i:" << *it
+           << ", s:" << theVariableDatabase.at((*it).val).seqno
+           << ", c:" << theVariableDatabase.at((*it).val).countCreate
            << ")";
     }
     EV << "}" << endl;
@@ -2441,9 +2445,9 @@ void VardisProtocol::dbg_updateQ()
        << " , contents = {";
     for (auto it = updateQ.begin(); it != updateQ.end(); it++)
     {
-        EV << " (i:" << (int) *it
-           << ", s:" << (int) theVariableDatabase.at(*it).seqno
-           << ", c:" << (int) theVariableDatabase.at(*it).countUpdate
+        EV << " (i:" << *it
+           << ", s:" << theVariableDatabase.at((*it).val).seqno
+           << ", c:" << theVariableDatabase.at((*it).val).countUpdate
            << ")";
     }
     EV << "}" << endl;
@@ -2460,7 +2464,7 @@ void VardisProtocol::dbg_reqCreateQ()
        << " , contents = {";
     for (auto it = reqCreateQ.begin(); it != reqCreateQ.end(); it++)
     {
-        EV << " (i:" << (int) *it
+        EV << " (i:" << *it
            << ")";
     }
     EV << "}" << endl;
@@ -2477,8 +2481,8 @@ void VardisProtocol::dbg_reqUpdateQ()
        << " , contents = {";
     for (auto it = reqUpdQ.begin(); it != reqUpdQ.end(); it++)
     {
-        EV << " (i:" << (int) *it
-           << ", c:" << (int) theVariableDatabase.at(*it).seqno
+        EV << " (i:" << *it
+           << ", c:" << theVariableDatabase.at((*it).val).seqno
            << ")";
     }
     EV << "}" << endl;
@@ -2495,12 +2499,12 @@ void VardisProtocol::dbg_database()
        << " , contents = {";
     for (auto it = theVariableDatabase.begin(); it != theVariableDatabase.end(); it++)
     {
-        EV << " (i:" << (int) (it->second.spec.varId)
-           << ", s:" << (int) (it->second.seqno)
-           << ", r:" << (int) (it->second.spec.repCnt)
-           << ", cc:" << (int) (it->second.countCreate)
-           << ", cu:" << (int) (it->second.countUpdate)
-           << ", cd:" << (int) (it->second.countDelete)
+        EV << " (i:" << it->second.spec.varId
+           << ", s:" << it->second.seqno
+           << ", r:" << it->second.spec.repCnt
+           << ", cc:" << it->second.countCreate
+           << ", cu:" << it->second.countUpdate
+           << ", cd:" << it->second.countDelete
            << ")";
     }
     EV << "}" << endl;
@@ -2520,12 +2524,12 @@ void VardisProtocol::dbg_database_complete()
     {
         DBEntry& theEntry = it->second;
         dbg_prefix();
-        EV << "      (i:" << (int) (theEntry.spec.varId)
-           << ", s:" << (int) (theEntry.seqno)
-           << ", r:" << (int) (theEntry.spec.repCnt)
-           << ", cc:" << (int) (theEntry.countCreate)
-           << ", cu:" << (int) (theEntry.countUpdate)
-           << ", cd:" << (int) (theEntry.countDelete)
+        EV << "      (i:" << theEntry.spec.varId
+           << ", s:" << theEntry.seqno
+           << ", r:" << theEntry.spec.repCnt
+           << ", cc:" << theEntry.countCreate
+           << ", cu:" << theEntry.countUpdate
+           << ", cd:" << theEntry.countDelete
            << " , descrLen = " << (int) (theEntry.spec.descr.length)
            << " , descr = " << (theEntry.spec.descr.to_str())
            << (theEntry.toBeDeleted ? " TO-BE-DELETED" : "")
@@ -2567,13 +2571,13 @@ void VardisProtocol::assert_createQ()
         std::string addrstring = addrss.str();
         if (theVariableDatabase.find(varId) == theVariableDatabase.end())
         {
-            DBG_PVAR3("no database entry", (int) varId, ownId, addrstring);
+            DBG_PVAR3("no database entry", varId, ownId, addrstring);
             error("assert_createQ: varId not contained in database");
         }
 
         if (theVariableDatabase.at(varId).countCreate == 0)
         {
-            DBG_PVAR3("database entry has countCreate = 0", (int) varId, ownId, addrstring);
+            DBG_PVAR3("database entry has countCreate = 0", varId, ownId, addrstring);
             error("assert_createQ: countCreate is zero");
         }
     }
@@ -2589,13 +2593,13 @@ void VardisProtocol::assert_updateQ()
         VarIdT varId = it;
         if (theVariableDatabase.find(varId) == theVariableDatabase.end())
         {
-            DBG_PVAR1("no database entry for variable", (int) varId);
+            DBG_PVAR1("no database entry for variable", varId);
             error("assert_updateQ: varId not contained in database");
         }
 
         if (theVariableDatabase.at(varId).countUpdate == 0)
         {
-            DBG_PVAR1("database entry for variable has countUpdate = 0", (int) varId);
+            DBG_PVAR1("database entry for variable has countUpdate = 0", varId);
             error("assert_updateQ: countUpdate is zero");
         }
     }
