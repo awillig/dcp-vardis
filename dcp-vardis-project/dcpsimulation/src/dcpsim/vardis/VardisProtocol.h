@@ -23,11 +23,11 @@
 #include <inet/common/InitStages.h>
 #include <dcp/common/area.h>
 #include <dcp/common/services_status.h>
+#include <dcp/vardis/vardis_transmissible_types.h>
 #include <dcpsim/bp/BPClientProtocol.h>
 #include <dcpsim/bp/BPReceivePayload_m.h>
 #include <dcpsim/bp/BPPayloadTransmitted_m.h>
 #include <dcpsim/bp/BPQueryNumberBufferedPayloads_m.h>
-#include <dcpsim/vardis/VardisDatatypes.h>
 #include <dcpsim/vardis/VardisDBEntry.h>
 #include <dcpsim/vardis/VardisRTDBConfirmation_m.h>
 #include <dcpsim/vardis/VardisRTDBCreate_m.h>
