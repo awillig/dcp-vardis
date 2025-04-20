@@ -146,7 +146,20 @@ namespace dcp {
   void initialize_file_logging(const LoggingConfigurationBlock& cfg);
 
 
-  
-  
+
+  /**
+   * @brief A set of macros to act as wrapper around logging calls for
+   *        either BOOST logging (in the implementation) or OMNeT++
+   *        logging (in the simulation)
+   */
+#ifdef __DCPSIMULATION__
+#define DCPLOG_TRACE(logstream) EV_TRACE
+#define DCPLOG_INFO(logstream) EV_INFO
+#define DCPLOG_FATAL(logstream) EV_FATAL
+#else
+#define DCPLOG_TRACE(logstream) BOOST_LOG_SEV(logstream,trivial::trace)
+#define DCPLOG_INFO(logstream) BOOST_LOG_SEV(logstream,trivial::info)
+#define DCPLOG_FATAL(logstream) BOOST_LOG_SEV(logstream,trivial::fatal)
+#endif
   
 };  // namespace dcp
