@@ -211,16 +211,16 @@ void VardisVariableConsumer::handleRTDBReadConfirm(RTDBRead_Confirm* readConf)
     // (for one selected variable)
     VarIdT varId = readConf->getVarId();
 
-    DBG_PVAR3("CONSIDERING", (int) varId, readsRequested, (lastReceived.find(varId) == lastReceived.end()));
+    DBG_PVAR3("CONSIDERING", varId, readsRequested, (lastReceived.find(varId) == lastReceived.end()));
 
     if (    (lastReceived.find(varId) == lastReceived.end())
          || (theValue.seqno != lastReceived[varId].seqno))
     {
-        DBG_PVAR5("UPDATING VARIABLE VALUE", (int) varId, theValue.value, theValue.seqno, theValue.tstamp, (simTime() - theValue.tstamp));
+        DBG_PVAR5("UPDATING VARIABLE VALUE", varId, theValue.value, theValue.seqno, theValue.tstamp, (simTime() - theValue.tstamp));
 
-        if (varIdToObserve == (int) varId)
+        if (varIdToObserve == varId.val)
         {
-            DBG_PVAR4("EMITTING statistics", (int) varId, 1000.0d * (SIMTIME_DBL(simTime() - theValue.tstamp)), theValue.seqno - lastReceived[varId].seqno, simTime());
+            DBG_PVAR4("EMITTING statistics", varId, 1000.0d * (SIMTIME_DBL(simTime() - theValue.tstamp)), theValue.seqno - lastReceived[varId].seqno, simTime());
             emit(delaySig, 1000.0d * (SIMTIME_DBL(simTime() - theValue.tstamp)));
             emit(seqnoSig, theValue.seqno - lastReceived[varId].seqno);
             emit(rxTimeSig, simTime());

@@ -61,7 +61,7 @@ void VardisVariableProducer::initialize(int stage)
         assert (creationTime >= 0);
         assert (deletionTime > creationTime);
 
-        DBG_PVAR2("Starting producer", (int) varId, (int) varRepCnt);
+        DBG_PVAR2("Starting producer", varId, varRepCnt);
 
         // initialize internal state
         isActivelyGenerating = false;
@@ -77,8 +77,8 @@ void VardisVariableProducer::initialize(int stage)
         // register a separate protocol for this producer and register it
         // as Vardis client protocol with dispatcher
         std::stringstream ssLc, ssUc;
-        ssLc << "vardisvariableproducer[" << getOwnNodeId() << "]-varId:" << (int) varId;
-        ssUc << "VARDISVARIABLEPRODUCER[" << getOwnNodeId() << "]-varId:" << (int) varId;
+        ssLc << "vardisvariableproducer[" << getOwnNodeId() << "]-varId:" << varId;
+        ssUc << "VARDISVARIABLEPRODUCER[" << getOwnNodeId() << "]-varId:" << varId;
         createProtocol(ssLc.str().c_str(), ssUc.str().c_str());
 
         dbg_leave();
@@ -173,7 +173,7 @@ void VardisVariableProducer::handleCreateMsg()
     // construction description string
     std::stringstream ssdescr;
     ssdescr << "variable/producer=" << getOwnNodeId()
-            << "/varId=" << (int) varId;
+            << "/varId=" << varId;
 
     auto              createReq = new RTDBCreate_Request;
 
@@ -185,9 +185,9 @@ void VardisVariableProducer::handleCreateMsg()
 
     // fill in the RTDB_Create_Request
     uint8_t      *valPtr = (uint8_t*) &varExmpl;
-    createReq->setVarId(varId);
+    createReq->setVarId(varId.val);
     createReq->setProdId(getOwnNodeId());
-    createReq->setRepCnt(varRepCnt);
+    createReq->setRepCnt(varRepCnt.val);
     createReq->setDescr(ssdescr.str().c_str());
     createReq->setUpdlen(sizeof(VardisExampleVariable));
     createReq->setUpddataArraySize(sizeof(VardisExampleVariable));
@@ -211,7 +211,7 @@ void VardisVariableProducer::handleUpdateMsg()
 
     if (isActivelyGenerating)
     {
-        DBG_PVAR2("Generating update", (int) varId, seqno);
+        DBG_PVAR2("Generating update", varId, seqno);
 
         // construct the updated value
         VardisExampleVariable newVal;
@@ -222,7 +222,7 @@ void VardisVariableProducer::handleUpdateMsg()
         // create and fill in RTDBUpdate_Request
         uint8_t *valPtr  = (uint8_t*) &newVal;
         auto   updReq    = new RTDBUpdate_Request;
-        updReq->setVarId(varId);
+        updReq->setVarId(varId.val);
         updReq->setUpdlen(sizeof(VardisExampleVariable));
         updReq->setUpddataArraySize(sizeof(VardisExampleVariable));
         for (size_t i = 0; i < sizeof(VardisExampleVariable); i++)
@@ -250,7 +250,7 @@ void VardisVariableProducer::handleDeleteMsg()
     isActivelyGenerating = false;
 
     auto deleteReq = new RTDBDelete_Request;
-    deleteReq->setVarId(varId);
+    deleteReq->setVarId(varId.val);
     sendToVardis(deleteReq);
 
     dbg_leave();
@@ -275,7 +275,7 @@ void VardisVariableProducer::handleRTDBCreateConfirm(RTDBCreate_Confirm* createC
     VarIdT    varId  = createConf->getVarId();
     delete createConf;
 
-    DBG_PVAR2("got confirm", (int) varId, status);
+    DBG_PVAR2("got confirm", varId, status);
 
     // check outcome
     if (status != VARDIS_STATUS_OK)
@@ -327,11 +327,11 @@ void VardisVariableProducer::handleRTDBUpdateConfirm(RTDBUpdate_Confirm* updateC
 
     // extract information
     handleVardisConfirmation(updateConf);
-    DcpStatus status     = updateConf->getStatus();
-    VarIdT       cVarId  = updateConf->getVarId();
+    DcpStatus status  = updateConf->getStatus();
+    VarIdT    cVarId  = updateConf->getVarId();
     delete updateConf;
 
-    DBG_PVAR2("got confirm", (int) cVarId, status);
+    DBG_PVAR2("got confirm", cVarId, status);
 
     // check outcome
     assert(cVarId == varId);
