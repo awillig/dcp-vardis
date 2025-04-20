@@ -353,7 +353,7 @@ namespace dcp::vardis {
         }
         else
         {
-	  BOOST_LOG_SEV(log_tx, trivial::info) << "Deleting variable " << nextVarId;
+	  DCPLOG_INFO(log_tx) << "Deleting variable " << nextVarId;
 	  vardis_store.deallocate_identifier (nextVarId);
 	  active_variables.erase (nextVarId);
         }
@@ -473,8 +473,8 @@ namespace dcp::vardis {
 	 && (create.spec.repCnt > 0)
        )
       {
-	BOOST_LOG_SEV(log_rx, trivial::info) << "process_var_create: adding new variable to database, varId = " << varId
-					     << ", description = " << create.spec.descr;
+	DCPLOG_INFO(log_rx) << "process_var_create: adding new variable to database, varId = " << varId
+			    << ", description = " << create.spec.descr;
 
         // create and initialize new DBEntry
         DBEntry newEntry;
@@ -531,7 +531,7 @@ namespace dcp::vardis {
         if (    (not theEntry.toBeDeleted)
    	     && (not producerIsMe(varId)))
         {
-	  BOOST_LOG_SEV(log_rx, trivial::info) << "process_var_delete: deleting variable from database, varId = " << varId;
+	  DCPLOG_INFO(log_rx) << "process_var_delete: deleting variable from database, varId = " << varId;
 	  
 	  // update variable state
 	  theEntry.toBeDeleted  = true;
@@ -568,12 +568,12 @@ namespace dcp::vardis {
   {
     VarIdT  varId               = update.varId;
 
-    BOOST_LOG_SEV(log_rx, trivial::trace) << "process_var_update: got variable update, varId = " << varId;
+    DCPLOG_TRACE(log_rx) << "process_var_update: got variable update, varId = " << varId;
     
     // check if variable exists -- if not, add it to queue to generate ReqVarCreate
     if (not variableExists(varId))
     {
-      BOOST_LOG_SEV(log_rx, trivial::trace) << "process_var_update: got update for unknown variable, varId = " << varId << ". Stopping processing.";
+      DCPLOG_TRACE(log_rx) << "process_var_update: got update for unknown variable, varId = " << varId << ". Stopping processing.";
 
       if (not reqCreateQ.contains (varId))
 	reqCreateQ.insert(varId);
@@ -619,7 +619,7 @@ namespace dcp::vardis {
         return;
       }
 
-    BOOST_LOG_SEV(log_rx, trivial::trace) << "process_var_update: updating variable value, varId = " << varId;
+    DCPLOG_TRACE(log_rx) << "process_var_update: updating variable value, varId = " << varId;
 
     // update variable with new value, update relevant queues
     theEntry.seqno        =  update.seqno;
@@ -649,8 +649,8 @@ namespace dcp::vardis {
     VarIdT     varId            = summ.varId;
     VarSeqnoT  seqno            = summ.seqno;
     
-    BOOST_LOG_SEV(log_rx, trivial::trace) << "process_var_summary: got variable summary, varId = " << varId
-					  << ", seqno = " << seqno;
+    DCPLOG_TRACE(log_rx) << "process_var_summary: got variable summary, varId = " << varId
+			 << ", seqno = " << seqno;
     
     // if variable does not exist in local RTDB, request a VarCreate
     if (not variableExists(varId))
@@ -716,8 +716,8 @@ namespace dcp::vardis {
     VarIdT     varId         = requpd.updSpec.varId;
     VarSeqnoT  seqno         = requpd.updSpec.seqno;
     
-    BOOST_LOG_SEV(log_rx, trivial::trace) << "process_var_requpdate: got request for varId = " << varId
-					  << " with seqno = " << seqno;
+    DCPLOG_TRACE(log_rx) << "process_var_requpdate: got request for varId = " << varId
+			 << " with seqno = " << seqno;
     // check some conditions
     
     if (not variableExists(varId))
@@ -762,7 +762,7 @@ namespace dcp::vardis {
   {
     VarIdT varId             = reqcreate.varId;
 
-    BOOST_LOG_SEV(log_rx, trivial::trace) << "process_var_reqcreate: got request for varId = " << varId;
+    DCPLOG_TRACE(log_rx) << "process_var_reqcreate: got request for varId = " << varId;
     
     if (not variableExists(varId))
       {
@@ -800,7 +800,7 @@ namespace dcp::vardis {
     const VarValueT&   value  = createReq.value;
     const VarIdT       varId  = spec.varId;    
 
-    BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace) << "Received RTDB-Create request for variable " << spec.varId;
+    DCPLOG_TRACE(log_mgmt_rtdb) << "Received RTDB-Create request for variable " << spec.varId;
     
     if (not vardis_store.get_vardis_isactive())
       {
@@ -832,7 +832,7 @@ namespace dcp::vardis {
 	return RTDB_Create_Confirm (VARDIS_STATUS_ILLEGAL_REPCOUNT, varId);
       }
 
-    BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace) << "Processing RTDB-Create request for variable " << spec.varId;
+    DCPLOG_TRACE(log_mgmt_rtdb) << "Processing RTDB-Create request for variable " << spec.varId;
     
     // initialize new database entry and add it
     DBEntry newent;
@@ -877,7 +877,7 @@ namespace dcp::vardis {
     const VarIdT  varId  = updateReq.varId;
     const VarLenT varLen = updateReq.value.length;
 
-    BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace) << "Received RTDB-Update request for variable " << varId;
+    DCPLOG_TRACE(log_mgmt_rtdb) << "Received RTDB-Update request for variable " << varId;
     
     // perform various checks
 
@@ -913,7 +913,7 @@ namespace dcp::vardis {
       return RTDB_Update_Confirm (VARDIS_STATUS_EMPTY_VALUE, varId);
     }
 
-    BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace) << "Handling RTDB-Update request for variable " << varId;
+    DCPLOG_TRACE(log_mgmt_rtdb) << "Handling RTDB-Update request for variable " << varId;
     
     // update the DB entry
     theEntry.seqno        = (theEntry.seqno.val + 1) % (VarSeqnoT::modulus());
@@ -939,7 +939,7 @@ namespace dcp::vardis {
   {
     VarIdT varId = deleteReq.varId;
 
-    BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace) << "Received RTDB-Delete request for variable " << varId;
+    DCPLOG_TRACE(log_mgmt_rtdb) << "Received RTDB-Delete request for variable " << varId;
     
     // perform some checks
 
@@ -965,7 +965,7 @@ namespace dcp::vardis {
       return RTDB_Delete_Confirm (VARDIS_STATUS_VARIABLE_BEING_DELETED, varId);
     }
 
-    BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace) << "Handling RTDB-Delete request for variable " << varId;
+    DCPLOG_TRACE(log_mgmt_rtdb) << "Handling RTDB-Delete request for variable " << varId;
     
     // add varId to deleteQ, remove it from any other queue
     // assert(not isVarIdInQueue(deleteQ, varId));
@@ -998,7 +998,7 @@ namespace dcp::vardis {
   {
     VarIdT varId = readReq.varId;
 
-    BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace) << "Received RTDB-Read request for variable " << varId;
+    DCPLOG_TRACE(log_mgmt_rtdb) << "Received RTDB-Read request for variable " << varId;
     
     // perform some checks
 
@@ -1019,7 +1019,7 @@ namespace dcp::vardis {
       return RTDB_Read_Confirm (VARDIS_STATUS_VARIABLE_BEING_DELETED, varId);
     }
 
-    BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace) << "Handling RTDB-Delete request for variable " << varId;
+    DCPLOG_TRACE(log_mgmt_rtdb) << "Handling RTDB-Delete request for variable " << varId;
 
     VarValueT the_value = vardis_store.read_value (varId);
     RTDB_Read_Confirm conf (VARDIS_STATUS_OK, varId, the_value.length, the_value.data);
