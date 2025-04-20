@@ -18,7 +18,9 @@
 
 #pragma once
 
-#include <dcpsim/vardis/VardisDatatypes.h>
+#include <dcp/vardis/vardis_transmissible_types.h>
+
+using namespace dcp::vardis;
 
 // -----------------------------------------
 
