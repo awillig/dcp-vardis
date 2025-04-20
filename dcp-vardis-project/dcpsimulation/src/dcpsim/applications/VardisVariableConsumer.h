@@ -20,14 +20,16 @@
 
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
+#include <dcp/vardis/vardis_transmissible_types.h>
 #include <dcpsim/applications/VardisVariableExample.h>
 #include <dcpsim/vardis/VardisRTDBConfirmation_m.h>
 #include <dcpsim/vardis/VardisApplication.h>
-#include <dcpsim/vardis/VardisDatatypes.h>
 #include <dcpsim/vardis/VardisRTDBDescribeDatabase_m.h>
 #include <dcpsim/vardis/VardisRTDBRead_m.h>
 
 using namespace omnetpp;
+
+using dcp::vardis::VarIdT;
 
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------

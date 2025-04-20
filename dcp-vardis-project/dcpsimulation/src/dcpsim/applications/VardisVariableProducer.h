@@ -20,12 +20,15 @@
 
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
-
-#include <dcpsim/vardis/VardisRTDBConfirmation_m.h>
+#include <dcp/vardis/vardis_transmissible_types.h>
 #include <dcpsim/vardis/VardisApplication.h>
-#include <dcpsim/vardis/VardisDatatypes.h>
+#include <dcpsim/vardis/VardisRTDBConfirmation_m.h>
+
 
 using namespace omnetpp;
+
+using dcp::vardis::VarIdT;
+using dcp::vardis::VarRepCntT;
 
 // --------------------------------------------------------------------
 
