@@ -155,10 +155,14 @@ namespace dcp {
 #ifdef __DCPSIMULATION__
 #define DCPLOG_TRACE(logstream) EV_TRACE
 #define DCPLOG_INFO(logstream) EV_INFO
+#define DCPLOG_WARNING(logstream) EV_WARN  
+#define DCPLOG_ERROR(logstream) EV_ERROR
 #define DCPLOG_FATAL(logstream) EV_FATAL
 #else
 #define DCPLOG_TRACE(logstream) BOOST_LOG_SEV(logstream,trivial::trace)
 #define DCPLOG_INFO(logstream) BOOST_LOG_SEV(logstream,trivial::info)
+#define DCPLOG_WARNING(logstream) BOOST_LOG_SEV(logstream,trivial::warning)
+#define DCPLOG_ERROR(logstream) BOOST_LOG_SEV(logstream,trivial::error)
 #define DCPLOG_FATAL(logstream) BOOST_LOG_SEV(logstream,trivial::fatal)
 #endif
   
