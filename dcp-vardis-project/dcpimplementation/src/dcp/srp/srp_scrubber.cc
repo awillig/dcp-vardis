@@ -37,7 +37,7 @@ namespace dcp::srp {
   
   void scrubber_thread (SRPRuntimeData& runtime)
   {
-    BOOST_LOG_SEV(log_scrub, trivial::info) << "Starting scrubbing thread.";
+    DCPLOG_INFO(log_scrub) << "Starting scrubbing thread.";
 
     uint16_t timeoutMS = runtime.srp_config.srp_conf.srpScrubbingTimeoutMS;
 
@@ -60,7 +60,7 @@ namespace dcp::srp {
     }
     catch (DcpException& e)
       {
-	BOOST_LOG_SEV(log_scrub, trivial::fatal)
+	DCPLOG_FATAL(log_scrub)
 	  << "Caught DCP exception in SRP scrubber main loop. "
 	  << "Exception type: " << e.ename()
 	  << ", module: " << e.modname()
@@ -70,7 +70,7 @@ namespace dcp::srp {
       }
     catch (std::exception& e)
       {
-	BOOST_LOG_SEV(log_scrub, trivial::fatal)
+	DCPLOG_FATAL(log_scrub)
 	  << "Caught other exception in SRP scrubber main loop. "
 	  << "Message: " << e.what()
 	  << ". Exiting.";
@@ -78,7 +78,7 @@ namespace dcp::srp {
       }
 
       
-    BOOST_LOG_SEV(log_scrub, trivial::info) << "Exiting scrubbing thread.";
+    DCPLOG_INFO(log_scrub) << "Exiting scrubbing thread.";
   }
   
 };  // namespace dcp::srp

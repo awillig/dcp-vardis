@@ -38,7 +38,7 @@ namespace dcp::srp {
   
   void receiver_thread (SRPRuntimeData& runtime)
   {
-    BOOST_LOG_SEV(log_rx, trivial::info) << "Starting receive thread.";
+    DCPLOG_INFO(log_rx) << "Starting receive thread.";
 
     try {
       while (not runtime.srp_exitFlag)
@@ -60,7 +60,7 @@ namespace dcp::srp {
 	    
 	    if ((rx_stat == BP_STATUS_OK) and (result_length == sizeof(ExtendedSafetyDataT)))
 	      {
-		BOOST_LOG_SEV(log_rx, trivial::trace) << "Processing payload of correct length";
+		DCPLOG_TRACE(log_rx) << "Processing payload of correct length";
 		ExtendedSafetyDataT *pESD = (ExtendedSafetyDataT*) rx_buffer;
 		
 		if (pESD->nodeId == runtime.srp_store.get_own_node_identifier ())
@@ -73,11 +73,15 @@ namespace dcp::srp {
 	      {
 		if (rx_stat != BP_STATUS_OK)
 		  {
-		    BOOST_LOG_SEV(log_rx, trivial::info) << "Retrieving received payload issued error " << bp_status_to_string (rx_stat);
+		    DCPLOG_INFO(log_rx)
+		      << "Retrieving received payload issued error "
+		      << bp_status_to_string (rx_stat);
 		  }
 		else if (result_length != 0)
 		  {
-		    BOOST_LOG_SEV(log_rx, trivial::info) << "Retrieving received payload had wrong length " << result_length;
+		    DCPLOG_INFO(log_rx)
+		      << "Retrieving received payload had wrong length "
+		      << result_length;
 		  }
 	      }
 	  } while (more_payloads);
@@ -85,7 +89,7 @@ namespace dcp::srp {
     }
     catch (DcpException& e)
       {
-	BOOST_LOG_SEV(log_rx, trivial::fatal)
+	DCPLOG_FATAL(log_rx)
 	  << "Caught DCP exception in SRP receiver main loop. "
 	  << "Exception type: " << e.ename()
 	  << ", module: " << e.modname()
@@ -95,7 +99,7 @@ namespace dcp::srp {
       }
     catch (std::exception& e)
       {
-	BOOST_LOG_SEV(log_rx, trivial::fatal)
+	DCPLOG_FATAL(log_rx)
 	  << "Caught other exception in SRP receiver main loop. "
 	  << "Message: " << e.what()
 	  << ". Exiting.";
@@ -103,7 +107,7 @@ namespace dcp::srp {
       }
 
     
-    BOOST_LOG_SEV(log_rx, trivial::info) << "Exiting receive thread.";
+    DCPLOG_INFO(log_rx) << "Exiting receive thread.";
   }
   
 };  // namespace dcp::srp

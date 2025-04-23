@@ -36,7 +36,7 @@ namespace dcp::srp {
   
   void transmitter_thread (SRPRuntimeData& runtime)
   {
-    BOOST_LOG_SEV(log_tx, trivial::info) << "Starting transmit thread.";
+    DCPLOG_INFO(log_tx) << "Starting transmit thread.";
 
     BPShmControlSegment& CS = *runtime.pSCS;
     uint16_t          sleep_time         = runtime.srp_config.srp_conf.srpGenerationPeriodMS;
@@ -64,7 +64,7 @@ namespace dcp::srp {
 	  if (curr_time.milliseconds_passed_since(past_time) >= keepalive_timeout)
 	    {
 	      if (runtime.srp_store.get_own_safety_data_written_flag ())
-		BOOST_LOG_SEV(log_tx, trivial::info) << "Stop sending own safety data after not being updated for a while.";
+		DCPLOG_INFO(log_tx) << "Stop sending own safety data after not being updated for a while.";
 	      runtime.srp_store.set_own_safety_data_written_flag (false);
 	      continue;
 	    }
@@ -84,9 +84,10 @@ namespace dcp::srp {
 	  DcpStatus retval = CS.transmit_payload (BPLengthT(sizeof(BPTransmitPayload_Request) + sizeof(ExtendedSafetyDataT)), pld_buffer);
 	  if (retval != BP_STATUS_OK)
 	    {
-	      BOOST_LOG_SEV(log_tx, trivial::fatal) << "transmit payload request failed, status = "
-						    << bp_status_to_string (retval)
-						    << ". Exiting.";
+	      DCPLOG_FATAL(log_tx)
+		<< "transmit payload request failed, status = "
+		<< bp_status_to_string (retval)
+		<< ". Exiting.";
 	      runtime.srp_exitFlag = true;
 	      return;
 	    }	
@@ -94,7 +95,7 @@ namespace dcp::srp {
     }
     catch (DcpException& e)
       {
-	BOOST_LOG_SEV(log_tx, trivial::fatal)
+	DCPLOG_FATAL(log_tx)
 	  << "Caught DCP exception in SRP transmitter main loop. "
 	  << "Exception type: " << e.ename()
 	  << ", module: " << e.modname()
@@ -104,14 +105,14 @@ namespace dcp::srp {
       }
     catch (std::exception& e)
       {
-	BOOST_LOG_SEV(log_tx, trivial::fatal)
+	DCPLOG_FATAL(log_tx)
 	  << "Caught other exception in SRP transmitter main loop. "
 	  << "Message: " << e.what()
 	  << ". Exiting.";
 	runtime.srp_exitFlag = true;
       }
     
-    BOOST_LOG_SEV(log_tx, trivial::info) << "Exiting transmit thread.";
+    DCPLOG_INFO(log_tx) << "Exiting transmit thread.";
   }
   
 };  // namespace dcp::srp
