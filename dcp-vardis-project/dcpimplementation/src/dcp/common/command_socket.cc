@@ -69,7 +69,7 @@ namespace dcp {
     const char* socket_name = socketName.c_str();
     if (!socket_name)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "No name for command socket given.";
+	DCPLOG_FATAL(log) << "No name for command socket given.";
 	throw SocketException ("open_owner",
 			       "no name for command socket given");
       }
@@ -77,7 +77,7 @@ namespace dcp {
     // check whether socket name is too long
     if (std::strlen(socket_name) > max_command_socket_name_length())
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "Path name of command socket is too long";
+	DCPLOG_FATAL(log) << "Path name of command socket is too long";
 	throw SocketException ("open_owner",
 			       "path name of command socket is too long");
       }
@@ -89,7 +89,7 @@ namespace dcp {
     the_command_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (the_command_socket < 0)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "Cannot open command socket, errno = " << errno << " , text = " << strerror(errno);
+	DCPLOG_FATAL(log) << "Cannot open command socket, errno = " << errno << " , text = " << strerror(errno);
 	throw SocketException ("open_owner",
 			       std::format("cannot open command socket, errno = {}", strerror (errno)));
       }
@@ -105,7 +105,7 @@ namespace dcp {
     int ret = bind (the_command_socket, (const struct sockaddr *) &addr, sizeof(struct sockaddr_un));
     if (ret < 0)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "Cannot bind command socket, errno = " << errno << " , text = " << strerror(errno);
+	DCPLOG_FATAL(log) << "Cannot bind command socket, errno = " << errno << " , text = " << strerror(errno);
 	close (the_command_socket);
 	unlink (socket_name);
 	throw SocketException ("open_owner",
@@ -119,20 +119,20 @@ namespace dcp {
     ret = setsockopt(the_command_socket, SOL_SOCKET, SO_RCVTIMEO, (void*) &tv, sizeof(struct timeval));
     if (ret < 0)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "Cannot set socket option on command socket, errno = " << errno << " , text = " << strerror(errno);
+	DCPLOG_FATAL(log) << "Cannot set socket option on command socket, errno = " << errno << " , text = " << strerror(errno);
 	close (the_command_socket);
 	unlink (socket_name);
 	throw SocketException ("open_owner",
 			       std::format("cannot set socket option on command socket, errno = {}", strerror (errno)));
       }
-    BOOST_LOG_SEV(log, trivial::info) << "Set receive timeout of command socket to " << tv.tv_sec << " seconds and " << tv.tv_usec << " microseconds";
+    DCPLOG_INFO(log) << "Set receive timeout of command socket to " << tv.tv_sec << " seconds and " << tv.tv_usec << " microseconds";
 
     
     // calling listen on the socket
     ret = listen (the_command_socket, commandSocketListenBufferBacklog);
     if (ret < 0)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "Cannot call listen on command socket, errno = " << errno << " , text = " << strerror(errno);
+	DCPLOG_FATAL(log) << "Cannot call listen on command socket, errno = " << errno << " , text = " << strerror(errno);
 	close (the_command_socket);
 	unlink (socket_name);
 	throw SocketException ("open_owner",
@@ -179,7 +179,7 @@ namespace dcp {
 
     if (rv < 0)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::read_owner: select() returns error, errno = " << errno << " , text = " << strerror(errno);
+	DCPLOG_FATAL(log) << "CommandSocket::read_owner: select() returns error, errno = " << errno << " , text = " << strerror(errno);
 	return -1;
       }
     
@@ -187,7 +187,7 @@ namespace dcp {
     data_socket = accept (the_command_socket, NULL, NULL);
     if (data_socket < 0)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::read_owner: accept() returns error, errno = " << errno << " , text = " << strerror(errno);
+	DCPLOG_FATAL(log) << "CommandSocket::read_owner: accept() returns error, errno = " << errno << " , text = " << strerror(errno);
 	return - 1;
       }
 	    
@@ -196,7 +196,7 @@ namespace dcp {
     
     if (nbytes < 0)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::read_owner: read() returns error, errno = " << errno << " , text = " << strerror(errno);
+	DCPLOG_FATAL(log) << "CommandSocket::read_owner: read() returns error, errno = " << errno << " , text = " << strerror(errno);
 	close (data_socket);
 	return -1;
       }
@@ -212,7 +212,7 @@ namespace dcp {
     
     if (data_socket != (-1))
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::start_read_command: socket still in use. Exiting.";
+	DCPLOG_FATAL(log) << "CommandSocket::start_read_command: socket still in use. Exiting.";
 	exitFlag = true;
 	return -1;
       }
@@ -221,7 +221,7 @@ namespace dcp {
     
     if (nbytes < 0)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::start_read_command: Error reading from socket. Exiting.";
+	DCPLOG_FATAL(log) << "CommandSocket::start_read_command: Error reading from socket. Exiting.";
 	exitFlag = true;
 	if (data_socket >= 0)
 	  {
@@ -236,7 +236,7 @@ namespace dcp {
     
     if (((size_t) nbytes) < sizeof(DcpServiceType))
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::start_read_command: truncated service type, nbytes = " << nbytes;
+	DCPLOG_FATAL(log) << "CommandSocket::start_read_command: truncated service type, nbytes = " << nbytes;
 	close (data_socket);
 	data_socket = -1;
 	exitFlag = true;
@@ -256,7 +256,7 @@ namespace dcp {
   {
     if (data_socket < 0)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::stop_read_command: un-used data socket";
+	DCPLOG_FATAL(log) << "CommandSocket::stop_read_command: un-used data socket";
 	exitFlag = true;
 	return -1;
       }
@@ -272,7 +272,7 @@ namespace dcp {
   {
     if (data_socket < 0)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::send_raw_confirmation: no data socket";
+	DCPLOG_FATAL(log) << "CommandSocket::send_raw_confirmation: no data socket";
 	exitFlag = true;
 	return;
       }
@@ -281,14 +281,14 @@ namespace dcp {
         
     if (bytessent < 0)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::send_raw_confirmation: Error sending confirmation primitive, error when calling sendto(), errno = " << errno << " , text = " << strerror(errno);
+	DCPLOG_FATAL(log) << "CommandSocket::send_raw_confirmation: Error sending confirmation primitive, error when calling sendto(), errno = " << errno << " , text = " << strerror(errno);
 	exitFlag = true;
 	return;
       }
 
     if (bytessent != confsize)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::send_raw_confirmation: Error sending confirmation primitive, wrong number of bytes sent = " << bytessent;
+	DCPLOG_FATAL(log) << "CommandSocket::send_raw_confirmation: Error sending confirmation primitive, wrong number of bytes sent = " << bytessent;
 	exitFlag = true;
 	return;
       }
@@ -300,7 +300,7 @@ namespace dcp {
   {
     if (data_socket < 0)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::send_raw_data: no data socket";
+	DCPLOG_FATAL(log) << "CommandSocket::send_raw_data: no data socket";
 	exitFlag = true;
 	return -1;
       }
@@ -309,14 +309,14 @@ namespace dcp {
     
     if (bytessent < 0)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::send_raw_data: error when calling write(), errno = " << errno << " , text = " << strerror(errno);
+	DCPLOG_FATAL(log) << "CommandSocket::send_raw_data: error when calling write(), errno = " << errno << " , text = " << strerror(errno);
 	exitFlag = true;
 	return -1;
       }
     
     if (((size_t) bytessent) != len)
       {
-	BOOST_LOG_SEV(log, trivial::fatal) << "CommandSocket::send_raw_data: error when calling write(), wrong number of bytes sent = " << bytessent;
+	DCPLOG_FATAL(log) << "CommandSocket::send_raw_data: error when calling write(), wrong number of bytes sent = " << bytessent;
 	exitFlag = true;
 	return -1;
       }
