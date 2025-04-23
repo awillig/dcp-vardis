@@ -39,7 +39,7 @@ namespace dcp::bp {
   {
     if (not runtime.clientProtocols.contains(pldHdr.protocolId))
       {
-	BOOST_LOG_SEV(log_rx, trivial::info)
+	DCPLOG_INFO(log_rx)
 	  << "deliver_payload: payload for unregistered protocol identifier "
 	  << pldHdr.protocolId
 	  << ", dropping payload.";
@@ -53,7 +53,7 @@ namespace dcp::bp {
     
     if (clientProt.static_info.protocolId != pldHdr.protocolId)
       {
-	BOOST_LOG_SEV(log_rx, trivial::error)
+	DCPLOG_ERROR(log_rx)
 	  << "deliver_payload: found internal consistency around protocol identifiers, dropping payload.";
 	
 	area.incr (pldHdr.length.val);
@@ -66,7 +66,7 @@ namespace dcp::bp {
     
     if (pldHdr.length.val + sizeof(BPReceivePayload_Indication) > CS.pqReceivePayloadIndication.get_buffer_size())
       {
-	BOOST_LOG_SEV(log_rx, trivial::error)
+	DCPLOG_ERROR(log_rx)
 	  << "deliver_payload: shared memory buffer is too small, dropping payload."
 	  << " pldHdr.length = " << pldHdr.length
 	  << ", sizeof(BPReceivePayloadIndication) = " << sizeof (BPReceivePayload_Indication)
@@ -97,16 +97,19 @@ namespace dcp::bp {
     CS.pqReceivePayloadIndication.push_wait (handler, timed_out, shortTimeoutMS);
     if (timed_out)
       {
-	BOOST_LOG_SEV(log_rx, trivial::info)
+	DCPLOG_INFO(log_rx)
 	  << "deliver_payload: no free buffer available in shared memory, dropping payload.";
 	area.incr (pldHdr.length.val);
 	clientProt.cntDroppedIncomingPayloads += 1;
       }
     else
       {
-	BOOST_LOG_SEV(log_rx, trivial::trace)
-	  << "pushed payload of length " << pldHdr.length << " into pqReceivePayloadIndication"
-	  << ", queue occupancy is " << CS.report_stored_buffers();
+	DCPLOG_TRACE(log_rx)
+	  << "pushed payload of length "
+	  << pldHdr.length
+	  << " into pqReceivePayloadIndication"
+	  << ", queue occupancy is "
+	  << CS.report_stored_buffers();
       }    
   }
   
@@ -118,37 +121,44 @@ namespace dcp::bp {
 
     if (area.available() <= dcp::bp::BPHeaderT::fixed_size())
       {
-	BOOST_LOG_SEV(log_rx, trivial::error) << "process_received_payload: insufficient length to accommodate BPHeaderT, no further processing";
+	DCPLOG_ERROR(log_rx)
+	  << "process_received_payload: insufficient length to accommodate BPHeaderT, no further processing";
 	return;
       }
 
     bpHdr.deserialize (area);
     if (not bpHdr.isWellFormed (runtime.ownNodeIdentifier))
       {
-	BOOST_LOG_SEV(log_rx, trivial::trace) << "process_received_payload: malformed BPHeaderT, no further processing. Header is " << bpHdr;
+	DCPLOG_TRACE(log_rx)
+	  << "process_received_payload: malformed BPHeaderT, no further processing. Header is "
+	  << bpHdr;
 	return;
       }
 
-    BOOST_LOG_SEV(log_rx, trivial::trace) << "process_received_payload: got packet with valid BPHeaderT, senderId = " << bpHdr.senderId
-					  << ", length = " << bpHdr.length
-					  << ", numPayloads = " << (int) bpHdr.numPayloads
-					  << ", seqno = " << bpHdr.seqno;
+    DCPLOG_TRACE(log_rx)
+      << "process_received_payload: got packet with valid BPHeaderT, senderId = "
+      << bpHdr.senderId
+      << ", length = " << bpHdr.length
+      << ", numPayloads = " << (int) bpHdr.numPayloads
+      << ", seqno = " << bpHdr.seqno;
     
     uint8_t     numberPayloads = bpHdr.numPayloads;
     BPLengthT   pldLength      = bpHdr.length;
 
     if (pldLength.val > area.available())
       {
-	BOOST_LOG_SEV(log_rx, trivial::fatal) << "process_received_payload: BPHeaderT.length is larger than payload length, BPHeaderT.length = " << bpHdr.length
-					      << ", payload length = " << area.available();
+	DCPLOG_FATAL(log_rx)
+	  << "process_received_payload: BPHeaderT.length is larger than payload length, BPHeaderT.length = " << bpHdr.length
+	  << ", payload length = " << area.available();
 	runtime.bp_exitFlag = true;
 	return;
       }
 
     if (pldLength.val < area.available())
       {
-	BOOST_LOG_SEV(log_rx, trivial::trace) << "process_received_payload: area is larger than payload length, re-sizing. pldLength = " << pldLength
-					      << ", area length = " << area.available();
+	DCPLOG_TRACE(log_rx)
+	  << "process_received_payload: area is larger than payload length, re-sizing. pldLength = " << pldLength
+	  << ", area length = " << area.available();
 	area.resize (BPHeaderT::fixed_size() + pldLength.val);
       }
 
@@ -158,17 +168,18 @@ namespace dcp::bp {
 
 	if (area.available() < dcp::bp::BPPayloadHeaderT::fixed_size())
 	  {
-	    BOOST_LOG_SEV(log_rx, trivial::info) << "process_received_payload: insufficient length to accommodate BPPayloadHeaderT, no further processing";
+	    DCPLOG_INFO(log_rx)
+	      << "process_received_payload: insufficient length to accommodate BPPayloadHeaderT, no further processing";
 	    return;
 	  }
 	
 	pldHdr.deserialize(area);
 
-	BOOST_LOG_SEV(log_rx, trivial::trace) << "process_received_payload: payload header is " << pldHdr;
+	DCPLOG_TRACE(log_rx) << "process_received_payload: payload header is " << pldHdr;
 	
 	if (area.available() < pldHdr.length.val)
 	  {
-	    BOOST_LOG_SEV(log_rx, trivial::info) << "process_received_payload: insufficient length to retrieve payload, no further processing";
+	    DCPLOG_INFO(log_rx) << "process_received_payload: insufficient length to retrieve payload, no further processing";
 	    return;
 	  }
 
@@ -184,7 +195,7 @@ namespace dcp::bp {
 
   void receiver_thread (BPRuntimeData& runtime)
   {
-    BOOST_LOG_SEV(log_rx, trivial::info) << "Starting receiver thread.";
+    DCPLOG_INFO(log_rx) << "Starting receiver thread.";
 
     SnifferConfiguration sniff_config;
     Sniffer*   pSniffer = nullptr;
@@ -204,7 +215,9 @@ namespace dcp::bp {
       pSniffer = new Sniffer (runtime.bp_config.bp_conf.interfaceName, sniff_config);
     }
     catch (std::exception& e) {
-      BOOST_LOG_SEV(log_rx, trivial::fatal) << "Could not listen on network interface. Wrong interface or permissions missing? Caught exception " << e.what() << ". Exiting.";
+      DCPLOG_FATAL(log_rx)
+	<< "Could not listen on network interface. Wrong interface or permissions missing? Caught exception " << e.what()
+	<< ". Exiting.";
       runtime.bp_exitFlag = true;
       return;
     }
@@ -218,7 +231,7 @@ namespace dcp::bp {
 	    {
 	      const EthernetII& eth_frame = rx_pdu->rfind_pdu<EthernetII>();
 	      
-	      BOOST_LOG_SEV(log_rx, trivial::trace)
+	      DCPLOG_TRACE(log_rx)
 		<< "Got frame with srcaddr = " << eth_frame.src_addr()
 		<< ", dstaddr = " << eth_frame.dst_addr()
 		<< ", payload-type = " << eth_frame.payload_type()
@@ -261,8 +274,9 @@ namespace dcp::bp {
 		  last_beacon_reception_time = TimeStampT::get_current_system_time();
 		  runtime.cntBPPayloads++;
 		  
-		  BOOST_LOG_SEV(log_rx, trivial::trace) << "process_received_payload: avg inter beacon time (ms) = " << runtime.avg_inter_beacon_reception_time
-							<< ", avg beacon size (B) = " << runtime.avg_received_beacon_size;
+		  DCPLOG_TRACE(log_rx)
+		    << "process_received_payload: avg inter beacon time (ms) = " << runtime.avg_inter_beacon_reception_time
+		    << ", avg beacon size (B) = " << runtime.avg_received_beacon_size;
 		  
 		  if (runtime.bp_isActive)
 		    {
@@ -278,7 +292,7 @@ namespace dcp::bp {
     }
     catch (DcpException& e)
       {
-	BOOST_LOG_SEV(log_rx, trivial::fatal)
+	DCPLOG_FATAL(log_rx)
 	  << "Caught DCP exception in BP receiver main loop. "
 	  << "Exception type: " << e.ename()
 	  << ", module: " << e.modname()
@@ -288,14 +302,14 @@ namespace dcp::bp {
       }
     catch (std::exception& e)
       {
-	BOOST_LOG_SEV(log_rx, trivial::fatal)
+	DCPLOG_FATAL(log_rx)
 	  << "Caught other exception in BP receiver main loop. "
 	  << "Message: " << e.what()
 	  << ". Exiting.";
 	runtime.bp_exitFlag = true;
       }
       
-    BOOST_LOG_SEV(log_rx, trivial::info) << "Stopping receiver thread.";
+    DCPLOG_INFO(log_rx) << "Stopping receiver thread.";
   }
   
   // ------------------------------------------------------------------

@@ -63,7 +63,7 @@ namespace dcp::bp {
     {
       if (sizeof(BPTransmitPayload_Confirm) > max_buffer_size)
 	{
-	  BOOST_LOG_SEV(log_mgmt_payload, trivial::fatal) << "send_transmit_payload_confirmation: buffer too small for payload. Exiting.";
+	  DCPLOG_FATAL(log_mgmt_payload) << "send_transmit_payload_confirmation: buffer too small for payload. Exiting.";
 	  runtime.bp_exitFlag = true;
 	  return (size_t) 0;
 	}
@@ -78,7 +78,7 @@ namespace dcp::bp {
 
     if (timed_out)
       {
-	BOOST_LOG_SEV(log_mgmt_payload, trivial::fatal) << "send_transmit_payload_confirmation: timeout for confirm queue. Exiting.";
+	DCPLOG_FATAL(log_mgmt_payload) << "send_transmit_payload_confirmation: timeout for confirm queue. Exiting.";
 	runtime.bp_exitFlag = true;
 	return;
       }
@@ -113,7 +113,7 @@ namespace dcp::bp {
 
   void management_thread_payload (BPRuntimeData& runtime)
   {
-    BOOST_LOG_SEV(log_mgmt_payload, trivial::info) << "Starting payload management thread.";
+    DCPLOG_INFO(log_mgmt_payload) << "Starting payload management thread.";
 
     try {
       while (not runtime.bp_exitFlag)
@@ -126,7 +126,7 @@ namespace dcp::bp {
     }
     catch (DcpException& e)
       {
-	BOOST_LOG_SEV(log_mgmt_payload, trivial::fatal)
+	DCPLOG_FATAL(log_mgmt_payload)
 	  << "Caught DCP exception in BP payload handler loop. "
 	  << "Exception type: " << e.ename()
 	  << ", module: " << e.modname()
@@ -136,7 +136,7 @@ namespace dcp::bp {
       }
     catch (std::exception& e)
       {
-	BOOST_LOG_SEV(log_mgmt_payload, trivial::fatal)
+	DCPLOG_FATAL(log_mgmt_payload)
 	  << "Caught other exception in BP payload handler loop. "
 	  << "Message: " << e.what()
 	  << ". Exiting.";
@@ -144,7 +144,7 @@ namespace dcp::bp {
       }
 
     
-    BOOST_LOG_SEV(log_mgmt_payload, trivial::info) << "Stopping payload management thread.";
+    DCPLOG_INFO(log_mgmt_payload) << "Stopping payload management thread.";
   }
   
 };  // namespace dcp::bp

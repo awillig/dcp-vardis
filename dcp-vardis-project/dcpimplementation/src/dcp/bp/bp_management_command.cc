@@ -83,7 +83,7 @@ namespace dcp::bp {
    */
   void handleBPShutDown_Request (BPRuntimeData& runtime, byte*, size_t)
   {
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "Processing request: ShutDown";
+    DCPLOG_INFO(log_mgmt_command) << "Processing request: ShutDown";
     runtime.bp_exitFlag = true;
     return;
   }
@@ -94,7 +94,7 @@ namespace dcp::bp {
   {
     if (nbytes != sizeof(BPActivate_Request))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+	DCPLOG_FATAL(log_mgmt_command)
 	    << "Processing BPActivate request: wrong data size = "
 	    << nbytes
 	    << ". Exiting"
@@ -104,7 +104,7 @@ namespace dcp::bp {
 	return;
       }
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "Processing request: Activate";
+    DCPLOG_INFO(log_mgmt_command) << "Processing request: Activate";
     runtime.bp_isActive = true;
     send_simple_confirmation<BPActivate_Confirm>(runtime, BP_STATUS_OK);
     return;
@@ -116,7 +116,7 @@ namespace dcp::bp {
   {
     if (nbytes != sizeof(BPDeactivate_Request))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+	DCPLOG_FATAL(log_mgmt_command)
 	    << "Processing BPDeactivate request: wrong data size = "
 	    << nbytes
 	    << ". Exiting."
@@ -126,7 +126,7 @@ namespace dcp::bp {
 	return;
       }
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "Processing request: Deactivate";
+    DCPLOG_INFO(log_mgmt_command) << "Processing request: Deactivate";
     runtime.bp_isActive = false;
     send_simple_confirmation<BPDeactivate_Confirm>(runtime, BP_STATUS_OK);
     return;
@@ -138,7 +138,7 @@ namespace dcp::bp {
   {
     if (nbytes != sizeof(BPGetStatistics_Request))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+	DCPLOG_FATAL(log_mgmt_command)
 	    << "Processing BPGetStatistics request: wrong data size = "
 	    << nbytes
 	    << ". Exiting."
@@ -163,7 +163,7 @@ namespace dcp::bp {
   {
     if (nbytes != sizeof(BPRegisterProtocol_Request))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+	DCPLOG_FATAL(log_mgmt_command)
 	    << "Processing BPRegisterProtocol request: wrong data size = "
 	    << nbytes
 	    << ". Exiting"
@@ -175,7 +175,7 @@ namespace dcp::bp {
 
     BPRegisterProtocol_Request*  pReq = (BPRegisterProtocol_Request*) buffer;
     BPStaticClientInfo& sci = pReq->static_info;
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info)
+    DCPLOG_INFO(log_mgmt_command)
       << "Processing request: RegisterProtocol, protocolId = " << sci.protocolId
       << " , name = " << sci.protocolName
       << " , maxPayloadSize = " << sci.maxPayloadSize
@@ -186,7 +186,7 @@ namespace dcp::bp {
     // check whether client protocol already exists
     if (runtime.clientProtocols.contains (sci.protocolId))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::error)
+	DCPLOG_ERROR(log_mgmt_command)
 	  << "Processing BPRegisterProtocol request: protocol already exists";
 
 	sendRegisterConfirmation(runtime, BP_STATUS_PROTOCOL_ALREADY_REGISTERED);
@@ -196,7 +196,7 @@ namespace dcp::bp {
     // check if maxPayloadSize is not strictly positive
     if (sci.maxPayloadSize <= 0)
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::error)
+	DCPLOG_ERROR(log_mgmt_command)
 	  << "Processing BPRegisterProtocol request: max payload size <= 0";
 
 	sendRegisterConfirmation(runtime, BP_STATUS_ILLEGAL_MAX_PAYLOAD_SIZE);
@@ -206,7 +206,7 @@ namespace dcp::bp {
     // check if maxPayloadSize is too large
     if (sci.maxPayloadSize.val > runtime.bp_config.bp_conf.maxBeaconSize - (dcp::bp::BPHeaderT::fixed_size() + dcp::bp::BPPayloadHeaderT::fixed_size()))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::error)
+	DCPLOG_ERROR(log_mgmt_command)
 	  << "Processing BPRegisterProtocol request: max payload size exceeds allowed maximum";
 
 	sendRegisterConfirmation(runtime, BP_STATUS_ILLEGAL_MAX_PAYLOAD_SIZE);
@@ -218,7 +218,7 @@ namespace dcp::bp {
 	      || (sci.queueingMode == BP_QMODE_QUEUE_DROPHEAD))
 	 && (sci.maxEntries <= 0))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::error)
+	DCPLOG_ERROR(log_mgmt_command)
 	  << "Processing BPRegisterProtocol request: illegal dropping queue size";
 
 	sendRegisterConfirmation(runtime, BP_STATUS_ILLEGAL_DROPPING_QUEUE_SIZE);
@@ -239,14 +239,14 @@ namespace dcp::bp {
     // and add client protocol entry to the client protocols list    
     runtime.clientProtocols[sci.protocolId] = std::move(clientProt);
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info)
+    DCPLOG_INFO(log_mgmt_command)
       << "Processing BPRegisterProtocol request: completed successful registration of protocolId "
       << sci.protocolId
       << ", runtime.clientProt.pSCS = " << (void*) runtime.clientProtocols[sci.protocolId].pSCS
       ; 
     sendRegisterConfirmation(runtime, BP_STATUS_OK);
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info)
+    DCPLOG_INFO(log_mgmt_command)
       << "Processing BPRegisterProtocol request: FINISHING";
   }
   
@@ -256,7 +256,7 @@ namespace dcp::bp {
   {
     if (nbytes != sizeof(BPDeregisterProtocol_Request))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+	DCPLOG_FATAL(log_mgmt_command)
 	    << "Processing BPDeregisterProtocol request: wrong data size = "
 	    << nbytes
 	    << ". Exiting."
@@ -267,13 +267,13 @@ namespace dcp::bp {
       }
 
     BPDeregisterProtocol_Request*  pReq = (BPDeregisterProtocol_Request*) buffer;
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info)
+    DCPLOG_INFO(log_mgmt_command)
       << "Processing request: DeregisterProtocol, protocolId = " << pReq->protocolId;
 
     // check whether client protocol exists
     if (not runtime.clientProtocols.contains (pReq->protocolId))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::info)
+	DCPLOG_INFO(log_mgmt_command)
 	  << "Processing BPDerregisterProtocol request: protocol is not registered";
 	send_simple_confirmation<BPDeregisterProtocol_Confirm>(runtime, BP_STATUS_UNKNOWN_PROTOCOL);
 	return;
@@ -281,7 +281,7 @@ namespace dcp::bp {
 
     BPClientProtocolData& the_client_prot = runtime.clientProtocols[pReq->protocolId];
     auto pSSB = the_client_prot.pSSB;
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace)
+    DCPLOG_TRACE(log_mgmt_command)
       << "Processing BPDerregisterProtocol request: BEFORE erasing: "
       << "this = " << (void*) (&the_client_prot)
       << ", pSCS = " << (void*) the_client_prot.pSCS
@@ -294,7 +294,7 @@ namespace dcp::bp {
       ;
     runtime.clientProtocols.erase(pReq->protocolId);
     
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "Processing BPDeregisterProtocol request: erased registered protocol";
+    DCPLOG_INFO(log_mgmt_command) << "Processing BPDeregisterProtocol request: erased registered protocol";
     send_simple_confirmation<BPDeregisterProtocol_Confirm>(runtime, BP_STATUS_OK);
   }
 
@@ -307,7 +307,7 @@ namespace dcp::bp {
     
     if (nbytes != sizeof(BPListRegisteredProtocols_Request))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Processing BPListRegisteredProtocols request: wrong data size = " << nbytes;
+	DCPLOG_FATAL(log_mgmt_command) << "Processing BPListRegisteredProtocols request: wrong data size = " << nbytes;
 	runtime.bp_exitFlag = true;
 	
 	conf.numberProtocols = 0;
@@ -318,7 +318,7 @@ namespace dcp::bp {
 	return;
       }
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "Processing request: ListRegisteredProtocols";
+    DCPLOG_INFO(log_mgmt_command) << "Processing request: ListRegisteredProtocols";
 
     // send confirmation primitive as header
     conf.status_code      = BP_STATUS_OK;
@@ -363,7 +363,7 @@ namespace dcp::bp {
     // check size of request
     if (nbytes != sizeof(RT))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+	DCPLOG_FATAL(log_mgmt_command)
 	    << "Processing "
 	    << servname
 	    << " request: wrong data size = "
@@ -376,7 +376,7 @@ namespace dcp::bp {
 
     RT*  pReq = (RT*) buffer;
     
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info)
+    DCPLOG_INFO(log_mgmt_command)
         << "Processing request: "
         << servname
         << ", protocol id = "
@@ -386,7 +386,7 @@ namespace dcp::bp {
     // check for valid protocol id
     if (not runtime.clientProtocols.contains (pReq->protocolId))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::warning)
+	DCPLOG_WARNING(log_mgmt_command)
 	    << "Processing "
 	    << servname
 	    << " request: unknown protocol id = "
@@ -434,7 +434,7 @@ namespace dcp::bp {
 	      }
 	    default:
 	      {
-		BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+		DCPLOG_FATAL(log_mgmt_command)
 	            << "Processing BPClearBuffer request: unknown queueing mode = "
    	            << clientProt.static_info.queueingMode;
 		   ;
@@ -477,7 +477,7 @@ namespace dcp::bp {
 	      }
 	    default:
 	      {
-		BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+		DCPLOG_FATAL(log_mgmt_command)
 	            << "Processing BPQueryNumberBufferedPayloads request: unknown queueing mode = "
    	            << clientProt.static_info.queueingMode;
 		   ;
@@ -502,7 +502,7 @@ namespace dcp::bp {
 
     if (nbytes <= 0) return;
     
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "Command loop: service type is " << bp_service_type_to_string(serv_type);
+    DCPLOG_INFO(log_mgmt_command) << "Command loop: service type is " << bp_service_type_to_string(serv_type);
     switch (serv_type)
       {
 	
@@ -553,7 +553,7 @@ namespace dcp::bp {
 	break;
 	
       default:
-	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Command loop: unknown service type, val = " << serv_type;
+	DCPLOG_FATAL(log_mgmt_command) << "Command loop: unknown service type, val = " << serv_type;
 	runtime.bp_exitFlag = true;
 	
       }
@@ -566,12 +566,12 @@ namespace dcp::bp {
 
   void management_thread_command (BPRuntimeData& runtime)
   {
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "Starting command socket thread.";
+    DCPLOG_INFO(log_mgmt_command) << "Starting command socket thread.";
     try {      
       runtime.commandSocket.open_owner (log_mgmt_command);
     }
     catch (DcpException& e) {
-      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+      DCPLOG_FATAL(log_mgmt_command)
 	<< "Could not establish BP command socket. "
 	<< "Exception type: " << e.ename()
 	<< ", module: " << e.modname()
@@ -581,12 +581,12 @@ namespace dcp::bp {
       return;
     }
     catch (std::exception& e) {
-      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Could not establish BP command socket. Exiting.";
+      DCPLOG_FATAL(log_mgmt_command) << "Could not establish BP command socket. Exiting.";
       runtime.bp_exitFlag = true;
       return;
     }
     
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "Established BP command socket, starting to wait on commands";
+    DCPLOG_INFO(log_mgmt_command) << "Established BP command socket, starting to wait on commands";
     
     while (not runtime.bp_exitFlag)
       {
@@ -595,7 +595,7 @@ namespace dcp::bp {
     
     runtime.commandSocket.close_owner ();
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "Stopping command socket thread.";
+    DCPLOG_INFO(log_mgmt_command) << "Stopping command socket thread.";
   }
   
 };  // namespace dcp::bp

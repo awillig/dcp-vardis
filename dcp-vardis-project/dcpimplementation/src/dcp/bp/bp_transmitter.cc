@@ -50,9 +50,9 @@ namespace dcp::bp {
 			  BPLengthT              pld_len,
 			  unsigned int&          numPayloadsAdded)
   {
-    BOOST_LOG_SEV(log_tx, trivial::trace) << "serialize_payload: serializing payload for protocolId "
-					  << protEntry.static_info.protocolId
-					  << " of length " << pld_len;
+    DCPLOG_TRACE(log_tx) << "serialize_payload: serializing payload for protocolId "
+			 << protEntry.static_info.protocolId
+			 << " of length " << pld_len;
     
     BPPayloadHeaderT pldHdr;
     pldHdr.protocolId = protEntry.static_info.protocolId;
@@ -83,7 +83,7 @@ namespace dcp::bp {
 
       if (len != sizeof(BPTransmitPayload_Request) + pReq->length)
 	{
-	  BOOST_LOG_SEV(log_tx, trivial::fatal)
+	  DCPLOG_FATAL(log_tx)
 	    << "attempt_add_payload::handler: incorrect length field"
 	    << ", len = " << len
 	    << ", skippable size = " << sizeof(BPTransmitPayload_Request)
@@ -115,7 +115,9 @@ namespace dcp::bp {
 	}
       default:
 	{
-	  BOOST_LOG_SEV(log_tx, trivial::fatal) << "attempt_add_payload: unknown queueingMode " << (int) queueingMode;
+	  DCPLOG_FATAL(log_tx)
+	    << "attempt_add_payload: unknown queueingMode "
+	    << (int) queueingMode;
 	  runtime.bp_exitFlag = true;
 	  return;
 	}
@@ -123,7 +125,8 @@ namespace dcp::bp {
 
     if (timed_out)
       {
-	BOOST_LOG_SEV(log_tx, trivial::fatal) << "attempt_add_payload: timout when accessing payload in shared memory";
+	DCPLOG_FATAL(log_tx)
+	  << "attempt_add_payload: timout when accessing payload in shared memory";
 	runtime.bp_exitFlag = true;
       }
     return;
@@ -188,7 +191,7 @@ namespace dcp::bp {
 
   void transmitter_thread (BPRuntimeData& runtime)
   {
-    BOOST_LOG_SEV(log_tx, trivial::info) << "Starting transmit thread.";
+    DCPLOG_INFO(log_tx) << "Starting transmit thread.";
 
     boost::random::mt19937 randgen;
     int lower_bound_int = (int) floor (runtime.bp_config.bp_conf.avgBeaconPeriodMS * (1 - runtime.bp_config.bp_conf.jitterFactor));
@@ -196,9 +199,9 @@ namespace dcp::bp {
 
     if (lower_bound_int <= 0)
       {
-	BOOST_LOG_SEV(log_tx, trivial::fatal) << "Average beacon period (ms) has been chosen too small ("
-					      << runtime.bp_config.bp_conf.avgBeaconPeriodMS
-					      << "), leaving.";
+	DCPLOG_FATAL(log_tx) << "Average beacon period (ms) has been chosen too small ("
+			     << runtime.bp_config.bp_conf.avgBeaconPeriodMS
+			     << "), leaving.";
 
 	runtime.bp_exitFlag = true;
 	return;
@@ -222,7 +225,7 @@ namespace dcp::bp {
     }
     catch (DcpException& e)
       {
-	BOOST_LOG_SEV(log_tx, trivial::fatal)
+	DCPLOG_FATAL(log_tx)
 	  << "Caught DCP exception in BP transmitter main loop. "
 	  << "Exception type: " << e.ename()
 	  << ", module: " << e.modname()
@@ -232,14 +235,14 @@ namespace dcp::bp {
       }
     catch (std::exception& e)
       {
-	BOOST_LOG_SEV(log_tx, trivial::fatal)
+	DCPLOG_FATAL(log_tx)
 	  << "Caught other exception in BP transmitter main loop. "
 	  << "Message: " << e.what()
 	  << ". Exiting.";
 	runtime.bp_exitFlag = true;
       }
 
-    BOOST_LOG_SEV(log_tx, trivial::info) << "Stopping transmit thread.";
+    DCPLOG_INFO(log_tx) << "Stopping transmit thread.";
   }
 
   // ------------------------------------------------------------------
