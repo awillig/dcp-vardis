@@ -44,7 +44,7 @@ namespace dcp::vardis {
   {
     if (icHeader.icNumRecords == 0)
       {
-	BOOST_LOG_SEV(log_rx, trivial::info) << "extractInstructionContainerElements: number of records is zero";
+	DCPLOG_INFO(log_rx) << "extractInstructionContainerElements: number of records is zero";
 	throw VardisReceiveException ("extractInstructionContainerElements", "number of records is zero");
       }
     
@@ -176,7 +176,7 @@ namespace dcp::vardis {
   
   void receiver_thread (VardisRuntimeData& runtime)
   {
-    BOOST_LOG_SEV(log_rx, trivial::info) << "Starting receive thread.";
+    DCPLOG_INFO(log_rx) << "Starting receive thread.";
 
     try {
       while (not runtime.vardis_exitFlag)
@@ -198,23 +198,25 @@ namespace dcp::vardis {
 	    
 	    if ((result_length > 0) && (rx_stat == BP_STATUS_OK))
 	      {
-		BOOST_LOG_SEV(log_rx, trivial::trace)
-		  << "Processing payload of length " << result_length
-		  ;
+		DCPLOG_TRACE(log_rx)
+		  << "Processing payload of length "
+		  << result_length;
 		MemoryChunkDisassemblyArea area ("vd-rx", (size_t) result_length.val, rx_buffer);
 		process_received_payload (runtime, area);
 	      }
 	    else
 	      {
 		if (rx_stat != BP_STATUS_OK)
-		  BOOST_LOG_SEV(log_rx, trivial::info) << "Retrieving received payload issued error " << bp_status_to_string (rx_stat);
+		  DCPLOG_INFO(log_rx)
+		    << "Retrieving received payload issued error "
+		    << bp_status_to_string (rx_stat);
 	      }
 	  } while (more_payloads);
 	}
     }
     catch (DcpException& e)
       {
-	BOOST_LOG_SEV(log_rx, trivial::fatal)
+	DCPLOG_FATAL(log_rx)
 	  << "Caught DCP exception in Vardis receiver main loop. "
 	  << "Exception type: " << e.ename()
 	  << ", module: " << e.modname()
@@ -224,7 +226,7 @@ namespace dcp::vardis {
       }
     catch (std::exception& e)
       {
-	BOOST_LOG_SEV(log_rx, trivial::fatal)
+	DCPLOG_FATAL(log_rx)
 	  << "Caught other exception in Vardis receiver main loop. "
 	  << "Message: " << e.what()
 	  << ". Exiting.";
@@ -232,7 +234,7 @@ namespace dcp::vardis {
       }
 
     
-    BOOST_LOG_SEV(log_rx, trivial::info) << "Exiting receive thread.";
+    DCPLOG_INFO(log_rx) << "Exiting receive thread.";
   }
     
 };  // namespace dcp::vardis

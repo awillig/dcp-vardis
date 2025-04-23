@@ -41,7 +41,7 @@ namespace dcp::vardis {
 
     std::function <void (byte*, size_t)> req_handler = [&] (byte* memaddr, size_t len)
     {
-      BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace)
+      DCPLOG_TRACE(log_mgmt_rtdb)
 	<< "handle_request_queue: got buffer from request queue "
 	<< requestQueue.get_queue_name ()
 	<< " and confirm queue " << confirmQueue.get_queue_name ();
@@ -51,7 +51,7 @@ namespace dcp::vardis {
       RT theRequest;
       theRequest.deserialize (disass_area);
       
-      BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace)
+      DCPLOG_TRACE(log_mgmt_rtdb)
 	<< "handle_request_queue: got request "
 	<< theRequest;
       
@@ -65,7 +65,7 @@ namespace dcp::vardis {
 	return ass_area.used();
       };
       
-      BOOST_LOG_SEV(log_mgmt_rtdb, trivial::trace)
+      DCPLOG_TRACE(log_mgmt_rtdb)
 	<< "handle_request_queue: status code after processing = "
 	<< vardis_status_to_string (theConfirm.status_code);
       
@@ -73,7 +73,7 @@ namespace dcp::vardis {
       
       if (conf_timed_out or conf_is_full)
 	{
-	  BOOST_LOG_SEV(log_mgmt_rtdb, trivial::fatal) << "handle_request_queue: cannot place confirm in queue. Exiting.";
+	  DCPLOG_FATAL(log_mgmt_rtdb) << "handle_request_queue: cannot place confirm in queue. Exiting.";
 	  runtime.vardis_exitFlag = true;
 	  return;
 	}
@@ -82,7 +82,8 @@ namespace dcp::vardis {
     requestQueue.popall_nowait (req_handler, timed_out);
     if (timed_out)
       {
-	BOOST_LOG_SEV(log_mgmt_rtdb, trivial::fatal) << "handle_request_queue: shared memory timeout while processing request queue. Exiting.";
+	DCPLOG_FATAL(log_mgmt_rtdb)
+	  << "handle_request_queue: shared memory timeout while processing request queue. Exiting.";
 	runtime.vardis_exitFlag = true;
 	return;
       }    
@@ -145,7 +146,7 @@ namespace dcp::vardis {
   
   void management_thread_rtdb (VardisRuntimeData& runtime)
   {
-    BOOST_LOG_SEV(log_mgmt_rtdb, trivial::info) << "Starting to interact with client via shared memory";
+    DCPLOG_INFO(log_mgmt_rtdb) << "Starting to interact with client via shared memory";
 
     try {
       while (not runtime.vardis_exitFlag)
@@ -165,7 +166,7 @@ namespace dcp::vardis {
     }
     catch (DcpException& e)
       {
-	BOOST_LOG_SEV(log_mgmt_rtdb, trivial::fatal)
+	DCPLOG_FATAL(log_mgmt_rtdb)
 	  << "Caught DCP exception in Vardis RTDB management main loop. "
 	  << "Exception type: " << e.ename()
 	  << ", module: " << e.modname()
@@ -175,14 +176,14 @@ namespace dcp::vardis {
       }
     catch (std::exception& e)
       {
-	BOOST_LOG_SEV(log_mgmt_rtdb, trivial::fatal)
+	DCPLOG_FATAL(log_mgmt_rtdb)
 	  << "Caught other exception in Vardis RTDB management main loop. "
 	  << "Message: " << e.what()
 	  << ". Exiting.";
 	runtime.vardis_exitFlag = true;
       }
 
-    BOOST_LOG_SEV(log_mgmt_rtdb, trivial::info) << "Stopping to interact with client via shared memory, cleanup";    
+    DCPLOG_INFO(log_mgmt_rtdb) << "Stopping to interact with client via shared memory, cleanup";    
   }
   
 };  // namespace dcp::vardis

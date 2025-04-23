@@ -44,7 +44,11 @@ namespace dcp::vardis {
   {
     if (nbytes != sizeof(RT))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << methname << ": request has wrong data size = " << nbytes << ". Exiting.";
+	DCPLOG_FATAL(log_mgmt_command)
+	  << methname
+	  << ": request has wrong data size = "
+	  << nbytes
+	  << ". Exiting.";
 	runtime.vardis_exitFlag = true;
 	send_simple_confirmation <CT> (runtime, VARDIS_STATUS_INTERNAL_ERROR);
 	return true;
@@ -59,13 +63,16 @@ namespace dcp::vardis {
     if (wrong_request_size<VardisRegister_Request, VardisRegister_Confirm> (runtime, "handleVardisRegisterRequest", nbytes)) return;
 
     VardisRegister_Request*  pReq = (VardisRegister_Request*) buffer;
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Processing VardisRegister request: shm name = " << pReq->shm_area_name;
+    DCPLOG_INFO(log_mgmt_command)
+      << "Processing VardisRegister request: shm name = "
+      << pReq->shm_area_name;
 
     // check whether client application already exists -- to do this,
     // we check uniqueness of shared memory area name
     if (runtime.clientApplications.contains (std::string (pReq->shm_area_name)))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "Processing VardisRegister request: application already exists";
+	DCPLOG_INFO(log_mgmt_command)
+	  << "Processing VardisRegister request: application already exists";
 	send_simple_confirmation<VardisRegister_Confirm> (runtime, VARDIS_STATUS_APPLICATION_ALREADY_REGISTERED);
 	return;
       }
@@ -78,7 +85,8 @@ namespace dcp::vardis {
     
     runtime.clientApplications[clientProt.clientName] = clientProt;
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Processing VardisRegister request: completed successful registration";
+    DCPLOG_INFO(log_mgmt_command)
+      << "Processing VardisRegister request: completed successful registration";
     VardisRegister_Confirm conf (VARDIS_STATUS_OK, runtime.protocol_data.ownNodeIdentifier);
     runtime.vardisCommandSock.send_raw_data (log_mgmt_command, (byte*) &conf, sizeof(VardisRegister_Confirm), runtime.vardis_exitFlag);
   }
@@ -90,19 +98,25 @@ namespace dcp::vardis {
     if (wrong_request_size<VardisDeregister_Request, VardisDeregister_Confirm> (runtime, "handleVardisDeregisterRequest", nbytes)) return;
 
     VardisDeregister_Request*  pReq = (VardisDeregister_Request*) buffer;
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Processing request: VardisDeregister, name = " << pReq->shm_area_name;
+    DCPLOG_INFO(log_mgmt_command)
+      << "Processing request: VardisDeregister, name = "
+      << pReq->shm_area_name;
 
     // check whether client protocol exists
     if (not runtime.clientApplications.contains (std::string (pReq->shm_area_name)))
       {
-	BOOST_LOG_SEV(log_mgmt_command, trivial::info) << "handleVardisDeregisterRequest: vardis application / client with shmname " << pReq->shm_area_name << " is not registered";
+	DCPLOG_INFO(log_mgmt_command)
+	  << "handleVardisDeregisterRequest: vardis application / client with shmname "
+	  << pReq->shm_area_name
+	  << " is not registered";
 	send_simple_confirmation<VardisDeregister_Confirm>(runtime, VARDIS_STATUS_UNKNOWN_APPLICATION);
 	return;
       }
     
     runtime.clientApplications.erase(std::string(pReq->shm_area_name));
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Processing VardisDeregister request: erased registered application";
+    DCPLOG_INFO(log_mgmt_command)
+      << "Processing VardisDeregister request: erased registered application";
     send_simple_confirmation<VardisDeregister_Confirm>(runtime, VARDIS_STATUS_OK);
 
   }
@@ -111,7 +125,7 @@ namespace dcp::vardis {
 
   void handleVardisShutdownRequest (VardisRuntimeData& runtime, byte*, size_t)
   {
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Processing VardisShutdown request. Exiting.";
+    DCPLOG_INFO(log_mgmt_command) << "Processing VardisShutdown request. Exiting.";
     runtime.vardis_exitFlag = true;
   }
   
@@ -121,7 +135,7 @@ namespace dcp::vardis {
   {
     if (wrong_request_size<VardisActivate_Request, VardisActivate_Confirm> (runtime, "handleVardisActivateRequest", nbytes)) return;
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Processing VardisActivate request.";
+    DCPLOG_INFO(log_mgmt_command) << "Processing VardisActivate request.";
     runtime.variable_store.set_vardis_isactive (true);
 
     send_simple_confirmation<VardisActivate_Confirm>(runtime, VARDIS_STATUS_OK);
@@ -133,7 +147,7 @@ namespace dcp::vardis {
   {
     if (wrong_request_size<VardisDeactivate_Request, VardisDeactivate_Confirm> (runtime, "handleVardisDeactivateRequest", nbytes)) return;
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Processing VardisDeactivate request.";
+    DCPLOG_INFO(log_mgmt_command) << "Processing VardisDeactivate request.";
     
     runtime.variable_store.set_vardis_isactive (false);
 
@@ -146,7 +160,7 @@ namespace dcp::vardis {
   {
     if (wrong_request_size<VardisGetStatistics_Request, VardisGetStatistics_Confirm> (runtime, "handleVardisGetStatisticsRequest", nbytes)) return;
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Processing VardisGetStatistics request.";
+    DCPLOG_TRACE(log_mgmt_command) << "Processing VardisGetStatistics request.";
 
     VardisGetStatistics_Confirm gsConf;
     
@@ -163,7 +177,7 @@ namespace dcp::vardis {
   {
     if (wrong_request_size<VardisDescribeDatabase_Request, VardisDescribeDatabase_Confirm> (runtime, "handleVardisRTDBDescribeDatabaseRequest", nbytes)) return;
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Processing VardisDescribeDatabase request.";
+    DCPLOG_TRACE(log_mgmt_command) << "Processing VardisDescribeDatabase request.";
 
     std::list<DescribeDatabaseVariableDescription> var_descriptions;
 
@@ -209,7 +223,9 @@ namespace dcp::vardis {
     VardisDescribeVariable_Request *pReq = (VardisDescribeVariable_Request*) buffer;
     VarIdT varId = pReq->varId;
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Processing RTDBDescribeVariable request for varId " << varId;
+    DCPLOG_TRACE(log_mgmt_command)
+      << "Processing RTDBDescribeVariable request for varId "
+      << varId;
 
     DescribeVariableDescription var_descr;
     byte val_buffer [MAX_maxValueLength + 1];
@@ -267,7 +283,9 @@ namespace dcp::vardis {
 
     if (nbytes <= 0) return;
     
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Command loop: service type is " << vardis_service_type_to_string(serv_type);
+    DCPLOG_TRACE(log_mgmt_command)
+      << "Command loop: service type is "
+      << vardis_service_type_to_string(serv_type);
     switch (serv_type)
       {
 	
@@ -310,7 +328,9 @@ namespace dcp::vardis {
 	break;
 	
       default:
-	BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Command loop: unknown or un-implemented service type, val = " << serv_type;
+	DCPLOG_FATAL(log_mgmt_command)
+	  << "Command loop: unknown or un-implemented service type, val = "
+	  << serv_type;
 	runtime.vardis_exitFlag = true;
       }
     
@@ -327,7 +347,7 @@ namespace dcp::vardis {
       runtime.vardisCommandSock.open_owner (log_mgmt_command);
     }
     catch (DcpException& e) {
-      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+      DCPLOG_FATAL(log_mgmt_command)
 	<< "Could not establish Vardis command socket. "
 	<< "Exception type: " << e.ename()
 	<< ", module: " << e.modname()
@@ -337,12 +357,13 @@ namespace dcp::vardis {
       return;
     }
     catch (std::exception& e) {
-      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Could not establish Vardis command socket. Exiting.";
+      DCPLOG_FATAL(log_mgmt_command)
+	<< "Could not establish Vardis command socket. Exiting.";
       runtime.vardis_exitFlag = true;
       return;
     }
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace)
+    DCPLOG_INFO(log_mgmt_command)
       << "Established Vardis command socket "
       << runtime.vardisCommandSock.get_name()
       << ", starting to wait on commands";
@@ -353,7 +374,7 @@ namespace dcp::vardis {
 	  handle_command_socket (runtime);
 	}
 	catch (DcpException& e) {
-	  BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+	  DCPLOG_FATAL(log_mgmt_command)
 	    << "Could not receive data from command socket. "
 	    << "Exception type: " << e.ename()
 	    << ", module: " << e.modname()
@@ -362,12 +383,15 @@ namespace dcp::vardis {
 	  runtime.vardis_exitFlag = true;
 	}
 	catch (std::exception& e) {
-	  BOOST_LOG_SEV(log_mgmt_command, trivial::fatal) << "Caught exception " << e.what() << " while handling command. Exiting.";
+	  DCPLOG_FATAL(log_mgmt_command)
+	    << "Caught exception "
+	    << e.what()
+	    << " while handling command. Exiting.";
 	  runtime.vardis_exitFlag = true;
 	}
       }
 
-    BOOST_LOG_SEV(log_mgmt_command, trivial::trace) << "Leaving command loop, cleanup";
+    DCPLOG_INFO(log_mgmt_command) << "Leaving command loop, cleanup";
 
     runtime.vardisCommandSock.close_owner ();
   }

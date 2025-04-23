@@ -62,7 +62,7 @@ namespace dcp::vardis {
 	}
     }
     catch (DcpException& e) {
-      BOOST_LOG_SEV(log_mgmt_command, trivial::fatal)
+      DCPLOG_FATAL(log_mgmt_command)
 	<< "Caught exception during payload construction. "
 	<< "Exception type: " << e.ename()
 	<< ", module: " << e.modname()
@@ -74,7 +74,10 @@ namespace dcp::vardis {
 
     catch (std::exception& e)
       {
-	BOOST_LOG_SEV(log_tx, trivial::fatal) << "Caught exception during payload construction: " << e.what() << ". Exiting.";
+	DCPLOG_FATAL(log_tx)
+	  << "Caught exception during payload construction: "
+	  << e.what()
+	  << ". Exiting.";
 	runtime.vardis_exitFlag = true;
 	containers_added = 0;
       }
@@ -84,7 +87,7 @@ namespace dcp::vardis {
   
   void transmitter_thread (VardisRuntimeData& runtime)
   {
-    BOOST_LOG_SEV(log_tx, trivial::info) << "Starting transmit thread.";
+    DCPLOG_INFO(log_tx) << "Starting transmit thread.";
 
     BPShmControlSegment& CS = *(runtime.pSCS);
 
@@ -119,14 +122,14 @@ namespace dcp::vardis {
 	  CS.queue.push_wait (handler, timed_out);
 	  if (timed_out)
 	    {
-	      BOOST_LOG_SEV(log_tx, trivial::fatal) << "Shared memory timeout. Exiting.";
+	      DCPLOG_FATAL(log_tx) << "Shared memory timeout. Exiting.";
 	      runtime.vardis_exitFlag = true;
 	    }
 	}
     }
     catch (DcpException& e)
       {
-	BOOST_LOG_SEV(log_tx, trivial::fatal)
+	DCPLOG_FATAL(log_tx)
 	  << "Caught DCP exception in Vardis transmitter main loop. "
 	  << "Exception type: " << e.ename()
 	  << ", module: " << e.modname()
@@ -136,14 +139,14 @@ namespace dcp::vardis {
       }
     catch (std::exception& e)
       {
-	BOOST_LOG_SEV(log_tx, trivial::fatal)
+	DCPLOG_FATAL(log_tx)
 	  << "Caught other exception in Vardis transmitter main loop. "
 	  << "Message: " << e.what()
 	  << ". Exiting.";
 	runtime.vardis_exitFlag = true;
       }
     
-    BOOST_LOG_SEV(log_tx, trivial::info) << "Exiting transmit thread.";
+    DCPLOG_INFO(log_tx) << "Exiting transmit thread.";
   }
   
 };  // namespace dcp::vardis
