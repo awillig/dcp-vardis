@@ -21,6 +21,7 @@
 #pragma once
 
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <dcp/vardis/vardis_protocol_statistics.h>
 #include <dcp/vardis/vardis_rtdb_entry.h>
 #include <dcp/vardis/vardis_transmissible_types.h>
 
@@ -121,6 +122,12 @@ namespace dcp::vardis {
      */
     virtual NodeIdentifierT get_own_node_identifier () const = 0;
 
+
+    /**
+     * @brief Returns current number of registered variables
+     */
+    virtual unsigned int get_number_variables () const = 0;
+    
 
     /**
      * @brief Return the current vardis_isActive flag
