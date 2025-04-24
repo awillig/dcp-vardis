@@ -16,11 +16,11 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-package dcpsimulation.dcp.vardis;
+package dcpsimulation.dcpsim.vardis;
 
-import dcpsimulation.dcp.bp.BPClientProtocol;
+import dcpsimulation.dcpsim.bp.BPClientProtocol;
 
-@namespace(dcp);
+@namespace(dcp::vardis);
 
 simple VardisProtocol extends BPClientProtocol
 {

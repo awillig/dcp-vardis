@@ -16,10 +16,10 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-package dcpsimulation.dcp.networks;
+package dcpsimulation.dcpsim.networks;
 
-import dcpsimulation.dcp.bp.BeaconingProtocol;
-import dcpsimulation.dcp.srp.StateReportingProtocol;
+import dcpsimulation.dcpsim.bp.BeaconingProtocol;
+import dcpsimulation.dcpsim.srp.StateReportingProtocol;
 
 network TestNetwork2
 {

@@ -16,9 +16,9 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-package dcpsimulation.dcp.srp;
+package dcpsimulation.dcpsim.srp;
 
-import dcpsimulation.dcp.common.DcpApplication;
+import dcpsimulation.dcpsim.common.DcpApplication;
 
 @namespace(dcp);
 

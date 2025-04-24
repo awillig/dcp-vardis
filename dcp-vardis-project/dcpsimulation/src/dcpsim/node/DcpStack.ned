@@ -16,13 +16,13 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-package dcpsimulation.dcp.node;
+package dcpsimulation.dcpsim.node;
 
 
 import inet.common.MessageDispatcher;
-import dcpsimulation.dcp.bp.BeaconingProtocol;
-import dcpsimulation.dcp.srp.StateReportingProtocol;
-import dcpsimulation.dcp.vardis.VardisProtocol;
+import dcpsimulation.dcpsim.bp.BeaconingProtocol;
+import dcpsimulation.dcpsim.srp.StateReportingProtocol;
+import dcpsimulation.dcpsim.vardis.VardisProtocol;
 
 module DcpStack
 {
@@ -35,8 +35,8 @@ module DcpStack
         output toVardisApp;
         input  fromVardisApp;
 
-		output toSRPApp;
-		input  fromSRPApp;		
+	output toSRPApp;
+	input  fromSRPApp;		
 
     submodules:
         bp:        BeaconingProtocol;

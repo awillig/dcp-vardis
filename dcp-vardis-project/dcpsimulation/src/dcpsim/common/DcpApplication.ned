@@ -16,9 +16,9 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-package dcpsimulation.dcp.common;
+package dcpsimulation.dcpsim.common;
 
-import dcpsimulation.dcp.common.DcpProtocol;
+import dcpsimulation.dcpsim.common.DcpProtocol;
 
 @namespace(dcp);
 

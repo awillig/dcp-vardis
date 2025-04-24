@@ -16,9 +16,9 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-package dcpsimulation.dcp.srp;
+package dcpsimulation.dcpsim.srp;
 
-import dcpsimulation.dcp.bp.BPClientProtocol;
+import dcpsimulation.dcpsim.bp.BPClientProtocol;
 
 @namespace(dcp);
 
@@ -28,7 +28,7 @@ simple StateReportingProtocol extends BPClientProtocol
         maxPayloadSize = 100B;
   
         volatile double srpNeighbourTableTimeout @unit(s)        = default (0.3s);     // timeout for neighbor table entries
-                 double srpNeighbourTableScrubPeriod @unit(s)    = default (0.05s);    // period for checking neigbor table for stale entries
+	         double srpNeighbourTableScrubPeriod @unit(s)    = default (0.05s);    // period for checking neigbor table for stale entries
                  double srpNeighbourTablePrintPeriod @unit(s)    = default (0.1s);     // period for printing neighbor table (no printing if < 0)
 	
 		@class(StateReportingProtocol);

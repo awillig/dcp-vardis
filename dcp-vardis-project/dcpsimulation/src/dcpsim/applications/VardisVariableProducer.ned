@@ -16,9 +16,9 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-package dcpsimulation.dcp.applications;
+package dcpsimulation.dcpsim.applications;
 
-import dcpsimulation.dcp.vardis.VardisApplication;
+import dcpsimulation.dcpsim.vardis.VardisApplication;
 
 @namespace(dcp);
 
