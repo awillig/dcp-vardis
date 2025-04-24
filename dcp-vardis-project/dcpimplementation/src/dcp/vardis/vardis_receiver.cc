@@ -54,8 +54,7 @@ namespace dcp::vardis {
         element.deserialize (area);
         result_list.push_back(element);
       }
-  }
-  
+  };
   
   // -----------------------------------------------------------------
 
