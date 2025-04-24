@@ -225,7 +225,11 @@ namespace dcp::vardis {
        */
       GlobalState global_state;
 
-
+      /**
+       * @brief Counts how many variables are currently registered
+       */
+      unsigned int number_current_variables = 0;
+      
       /**
        * @brief Array containing all the per-identifier information
        */
@@ -395,6 +399,16 @@ namespace dcp::vardis {
 
 
     /**
+     * @brief Returns current number of registered variables
+     */
+    virtual unsigned int get_number_variables () const
+    {
+      ArrayContents&  AC = *pContents;
+      return AC.number_current_variables;
+    };
+    
+    
+    /**
      * @brief Returns reference to Vardis runtime statistics
      */
     virtual VardisProtocolStatistics& get_vardis_protocol_statistics_ref () const { return pContents->global_state._vardis_stats; };
@@ -430,6 +444,7 @@ namespace dcp::vardis {
       AC.id_states[varId.val].used        = true;
       AC.id_states[varId.val].val_offs    = fl_entry.buffer_offs;
       AC.id_states[varId.val].descr_offs  = fl_entry.descr_offs;
+      AC.number_current_variables++;
     };
 
 
@@ -458,6 +473,7 @@ namespace dcp::vardis {
       AC.id_states[varId.val].val_size   = 0;
       AC.id_states[varId.val].descr_size = 0;
       AC.freeList.push (fl_entry);
+      AC.number_current_variables--;
     };
 
 
