@@ -39,7 +39,7 @@ void SRPSimpleApp::initialize(int stage)
     {
         dbg_setModuleName("SRPSimpleApp");
         dbg_enter("initialize");
-        assert(getOwnNodeId() != nullIdentifier);
+        assert(getOwnNodeId() != nullNodeIdentifier);
 
         // read parameters
         isActive   = par("isActive");
