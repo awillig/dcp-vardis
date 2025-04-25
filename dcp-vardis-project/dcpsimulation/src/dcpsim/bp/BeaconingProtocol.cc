@@ -23,6 +23,7 @@
 #include <inet/linklayer/common/MacAddress.h>
 #include <inet/linklayer/common/InterfaceTag_m.h>
 #include <inet/linklayer/common/MacAddressTag_m.h>
+#include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/common/global_types_constants.h>
 #include <dcpsim/bp/BeaconingProtocol.h>
 #include <dcpsim/bp/BPConfirmation_m.h>
@@ -402,71 +403,6 @@ void BeaconingProtocol::handleGenerateBeaconMsg ()
 // Processing received packets
 // ========================================================================================
 
-/**
- * Sanity checks for incoming BPHeaderT: right magicno, making sure I don't get my
- * own packet, checking protocol version
- */
-bool BeaconingProtocol::bpHeaderWellFormed (DisassemblyArea& area, BPHeaderT& bpHdr)
-{
-    dbg_enter ("bpHeaderWellFormed");
-
-    bpHdr.deserialize (area);
-
-    if (bpHdr.magicNo != bpMagicNo)
-    {
-        DBG_PVAR1 ("did not find magicno", bpHdr.magicNo);
-        dbg_leave ();
-        return false;
-    }
-
-    if (bpHdr.senderId == getOwnNodeId())
-    {
-        dbg_string ("got my own packet");
-        dbg_leave ();
-        return false;
-    }
-
-    if (bpHdr.version != bpProtocolVersion)
-    {
-        DBG_PVAR1 ("wrong protocol version", bpHdr.version);
-        dbg_leave ();
-        return false;
-    }
-
-    if (bpHdr.numPayloads == 0)
-    {
-        dbg_string("numPayloads is zero");
-        dbg_leave();
-        return false;
-    }
-
-    if (bpHdr.length == 0)
-    {
-        dbg_string ("length is zero");
-        dbg_leave ();
-        return false;
-    }
-
-    dbg_leave ();
-    return true;
-}
-
-// ----------------------------------------------------
-
-/**
- * Sanity checks for incoming BPHeaderT: right magicno, making sure I don't get my
- * own packet, checking protocol version
- */
-bool BeaconingProtocol::bpPayloadHeaderWellFormed (DisassemblyArea& area, BPPayloadHeaderT& bpPHdr)
-{
-    dbg_enter("bpPayloadHeaderWellFormed");
-
-    bpPHdr.deserialize (area);
-
-    dbg_leave();
-    return true;
-}
-
 
 // ----------------------------------------------------
 
@@ -490,7 +426,8 @@ void BeaconingProtocol::handleReceivedPacket (Packet* packet)
     DBG_PVAR1("got packet with size", bvPacket.size());
 
     BPHeaderT bpHdr;
-    if (not bpHeaderWellFormed(area, bpHdr))
+    bpHdr.deserialize (area);
+    if (not bpHdr.isWellFormed(getOwnNodeId()))
     {
         error ("BPHeader is not well-formed, stop processing");
     }
@@ -503,10 +440,7 @@ void BeaconingProtocol::handleReceivedPacket (Packet* packet)
     for (int cntPayload = 0; cntPayload < numberPayloads; cntPayload++)
     {
         BPPayloadHeaderT bpPHdr;
-        if (not bpPayloadHeaderWellFormed(area, bpPHdr))
-        {
-            error ("BPPayloadHeader is not well-formed, stop processing");
-        }
+	bpPHdr.deserialize (area);
 
         Protocol *theProtocol        = convertProtocolIdToProtocol(bpPHdr.protocolId);
         if (not theProtocol)
