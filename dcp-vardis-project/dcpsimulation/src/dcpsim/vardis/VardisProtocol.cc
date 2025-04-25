@@ -792,7 +792,7 @@ void VardisProtocol::generatePayload ()
         bv.resize (maxPayloadSize.val);
         bv.reserve (2*maxPayloadSize.val);
 
-	unsigned int containers_added;
+	unsigned int containers_added = 0;
         constructPayload(bv, containers_added);
 
         if (containers_added > 0)
