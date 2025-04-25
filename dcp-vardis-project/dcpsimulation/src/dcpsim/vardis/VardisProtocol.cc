@@ -51,20 +51,18 @@ void VardisProtocol::initialize(int stage)
         dbg_setModuleName("VarDis");
         dbg_enter("initialize");
 
-        vardisActive = false;
-
         // read and check parameters
-        vardisMaxValueLength        = (BPLengthT) par("vardisMaxValueLength");
-        vardisMaxDescriptionLength  = (BPLengthT) par("vardisMaxDescriptionLength");
-        vardisMaxRepetitions        = (unsigned int) par("vardisMaxRepetitions");
-        vardisMaxSummaries          = (unsigned int) par("vardisMaxSummaries");
+        vardisMaxValueLength        = (size_t) par("vardisMaxValueLength");
+        vardisMaxDescriptionLength  = (size_t) par("vardisMaxDescriptionLength");
+        vardisMaxRepetitions        = (uint8_t) par("vardisMaxRepetitions");
+        vardisMaxSummaries          = (uint8_t) par("vardisMaxSummaries");
         vardisBufferCheckPeriod     = par("vardisBufferCheckPeriod");
 
         // sanity-check parameters
         assert(maxPayloadSize > 0);
         assert(maxPayloadSize <= 1400);   // this deviates from specification (would require config data from BP)
         assert(vardisMaxValueLength > 0);
-        assert(vardisMaxValueLength <= std::min(maxVarLen, maxPayloadSize - ICHeaderT::fixed_size()));
+        assert(vardisMaxValueLength <= std::min((size_t) VarLenT::max_val(), maxPayloadSize.val - ICHeaderT::fixed_size()));
         assert(vardisMaxDescriptionLength > 0);
         assert(vardisMaxDescriptionLength <=   maxPayloadSize
                                              - (   ICHeaderT::fixed_size()
@@ -74,7 +72,7 @@ void VardisProtocol::initialize(int stage)
                                                  ));
         assert(vardisMaxRepetitions > 0);
         assert(vardisMaxRepetitions <= 15);
-        assert(vardisMaxSummaries <= (maxPayloadSize - ICHeaderT::fixed_size())/VarSummT::fixed_size());
+        assert(vardisMaxSummaries <= (maxPayloadSize.val - ICHeaderT::fixed_size())/VarSummT::fixed_size());
         assert(vardisBufferCheckPeriod > 0);
 
         // find gate identifiers
@@ -179,7 +177,14 @@ bool VardisProtocol::handleBPRegisterProtocol_Confirm (BPRegisterProtocol_Confir
 
     if (pConf->getStatus() == BP_STATUS_OK)
     {
-        vardisActive = true;
+      vardis_store_p = std::make_unique<VardisVariableStoreInMemory> (true,
+								      vardisMaxSummaries,
+								      vardisMaxDescriptionLength,
+								      vardisMaxValueLength,
+								      vardisMaxRepetitions,
+								      getOwnNodeId());
+      vardis_store_p->set_vardis_isactive (true);
+      vardis_protocol_data_p = std::make_unique<VardisProtocolData> (*vardis_store_p);
     }
     else
     {
@@ -217,10 +222,8 @@ void VardisProtocol::handleApplicationMessage (cMessage* msg)
     if (dynamic_cast<RTDBUpdate_Request*>(msg))
     {
         dbg_string("handling RTDBUpdate_Request");
-        dbg_queueSizes();
         RTDBUpdate_Request* updateReq = (RTDBUpdate_Request*) msg;
         handleRTDBUpdateRequest(updateReq);
-        dbg_queueSizes();
         dbg_leave();
         return;
     }
@@ -228,10 +231,8 @@ void VardisProtocol::handleApplicationMessage (cMessage* msg)
     if (dynamic_cast<RTDBRead_Request*>(msg))
     {
         dbg_string("handling RTDBRead_Request");
-        dbg_queueSizes();
         RTDBRead_Request* readReq = (RTDBRead_Request*) msg;
         handleRTDBReadRequest(readReq);
-        dbg_queueSizes();
         dbg_leave();
         return;
     }
@@ -239,10 +240,8 @@ void VardisProtocol::handleApplicationMessage (cMessage* msg)
     if (dynamic_cast<RTDBCreate_Request*>(msg))
     {
         dbg_string("handling RTDBCreate_Request");
-        dbg_queueSizes();
         RTDBCreate_Request* createReq = (RTDBCreate_Request*) msg;
         handleRTDBCreateRequest(createReq);
-        dbg_queueSizes();
         dbg_leave();
         return;
     }
@@ -250,10 +249,8 @@ void VardisProtocol::handleApplicationMessage (cMessage* msg)
     if (dynamic_cast<RTDBDelete_Request*>(msg))
     {
         dbg_string("handling RTDBDelete_Request");
-        dbg_queueSizes();
         RTDBDelete_Request* deleteReq = (RTDBDelete_Request*) msg;
         handleRTDBDeleteRequest(deleteReq);
-        dbg_queueSizes();
         dbg_leave();
         return;
     }
@@ -426,7 +423,7 @@ void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indicati
     assert(payload);
     assert(payload->getProtId() == BP_PROTID_VARDIS);
 
-    if (not vardisActive)
+    if (not vardisActive())
     {
         dbg_string ("vardis is not active");
         delete payload;
@@ -457,32 +454,32 @@ void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indicati
 	ICHeaderT icHeader;
 	icHeader.deserialize(area);
 	
-        DBG_PVAR2 ("Deserializing: considering ICType", (int) area.used(), icHeader.icType.val);
+        DBG_PVAR2 ("Deserializing: considering ICType", (int) area.used(), (int) icHeader.icType.val);
         switch(icHeader.icType.val)
         {
         case ICTYPE_SUMMARIES:
             dbg_string("considering ICTYPE_SUMMARIES");
-            extractVarSummaryList(area, icSummaries);
+            extractInstructionContainerElements<VarSummT> (area, icHeader, icSummaries);
             break;
         case ICTYPE_UPDATES:
             dbg_string("considering ICTYPE_UPDATES");
-            extractVarUpdateList(area, icUpdates);
+            extractInstructionContainerElements<VarUpdateT> (area, icHeader, icUpdates);
             break;
         case ICTYPE_REQUEST_VARUPDATES:
             dbg_string("considering ICTYPE_REQUEST_VARUPDATES");
-            extractVarReqUpdateList(area, icRequestVarUpdates);
+            extractInstructionContainerElements<VarReqUpdateT> (area, icHeader, icRequestVarUpdates);
             break;
         case ICTYPE_REQUEST_VARCREATES:
             dbg_string("considering ICTYPE_REQUEST_VARCREATES");
-            extractVarReqCreateList(area, icRequestVarCreates);
+            extractInstructionContainerElements<VarReqCreateT> (area, icHeader, icRequestVarCreates);
             break;
         case ICTYPE_CREATE_VARIABLES:
             dbg_string("considering ICTYPE_CREATE_VARIABLES");
-            extractVarCreateList(area, icCreateVariables);
+            extractInstructionContainerElements<VarCreateT> (area, icHeader, icCreateVariables);
             break;
         case ICTYPE_DELETE_VARIABLES:
             dbg_string("considering ICTYPE_DELETE_VARIABLES");
-            extractVarDeleteList(area, icDeleteVariables);
+            extractInstructionContainerElements<VarDeleteT> (area, icHeader, icDeleteVariables);
             break;
         default:
             error("VardisProtocol::handleReceivedPayload: unknown ICType");
@@ -518,121 +515,18 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
 {
     dbg_enter("handleRTDBCreateRequest");
     assert(createReq);
-    dbg_comprehensive("handleRTDBCreateRequest/enter");
 
     // keep a reference to the client protocol sending this, required for
     // sending a confirmation message back to the client protocol
     Protocol* theProtocol = fetchSenderProtocol(createReq);
 
-    // copy description string (including terminating zero) to newly allocated memory
-    std::string descr      = createReq->getDescr();
-    auto        descrLen   = descr.length();
-    uint8_t*    descr_cstr = new uint8_t [descrLen];
-    std::memcpy ((char*) descr_cstr, (char*) descr.c_str(), descrLen);
-
-    // Fill in the VarSpecT record
-    VarSpecT    spec;
-    spec.varId         =  createReq->getVarId();
-    spec.repCnt        =  createReq->getRepCnt();
-    spec.descr.length  =  descrLen;
-    spec.descr.data    =  descr_cstr;
-    spec.prodId        =  createReq->getProdId();
-
-    auto length  = createReq->getUpdlen();
-
-    // perform various checks
-
-
-    if (not vardisActive)
-    {
-        dbg_string("Vardis is not active, dropping request");
-        sendRTDBCreateConfirm(VARDIS_STATUS_INACTIVE, spec.varId, theProtocol);
-        delete createReq;
-        dbg_leave();
-        return;
-    }
-
-    if (variableExists(spec.varId))
-    {
-        dbg_string("variable exists, dropping request");
-        sendRTDBCreateConfirm(VARDIS_STATUS_VARIABLE_EXISTS, spec.varId, theProtocol);
-        delete createReq;
-        dbg_leave();
-        return;
-    }
-
-    if (descrLen > vardisMaxDescriptionLength)
-    {
-        DBG_PVAR4("description is too long", descrLen, vardisMaxDescriptionLength, descr, descr.length());
-        sendRTDBCreateConfirm(VARDIS_STATUS_VARIABLE_DESCRIPTION_TOO_LONG, spec.varId, theProtocol);
-        delete createReq;
-        dbg_leave();
-        return;
-    }
-
-    if (length > vardisMaxValueLength)
-    {
-        dbg_string("value length is too long, dropping request");
-        sendRTDBCreateConfirm(VARDIS_STATUS_VALUE_TOO_LONG, spec.varId, theProtocol);
-        delete createReq;
-        dbg_leave();
-        return;
-    }
-
-    if (length == 0)
-    {
-        dbg_string("value length is zero, dropping request");
-        sendRTDBCreateConfirm(VARDIS_STATUS_EMPTY_VALUE, spec.varId, theProtocol);
-        delete createReq;
-        dbg_leave();
-        return;
-    }
-
-    if ((spec.repCnt == 0) || (spec.repCnt > vardisMaxRepetitions))
-    {
-        dbg_string("illegal repCnt value, dropping request");
-        sendRTDBCreateConfirm(VARDIS_STATUS_ILLEGAL_REPCOUNT, spec.varId, theProtocol);
-        delete createReq;
-        dbg_leave();
-        return;
-    }
-
-
-    DBG_PVAR1("creating new variable", spec.varId);
-
-    // initialize new database entry and add it
-    DBEntry newent;
-    newent.spec          =  spec;
-    newent.spec.prodId   =  getOwnNodeId();
-    newent.seqno         =  0;
-    newent.tStamp        =  simTime();
-    newent.countUpdate   =  0;
-    newent.countCreate   =  spec.repCnt;
-    newent.countDelete   =  0;
-    newent.toBeDeleted   =  false;
-    newent.value.length  =  length;
-    newent.value.data    =  new uint8_t [length];
-    for (int i=0; i<length; i++)
-        newent.value.data[i] = createReq->getUpddata(i);
-    theVariableDatabase[spec.varId] = newent;
-
-    // clean out varId from all queues, just to be safe
-    removeVarIdFromQueue(createQ, spec.varId);
-    removeVarIdFromQueue(updateQ, spec.varId);
-    removeVarIdFromQueue(summaryQ, spec.varId);
-    removeVarIdFromQueue(deleteQ, spec.varId);
-    removeVarIdFromQueue(reqUpdQ, spec.varId);
-    removeVarIdFromQueue(reqCreateQ, spec.varId);
-
-    // add new variable to relevant queues
-    createQ.push_back(spec.varId);
-    summaryQ.push_back(spec.varId);
-
+    RTDB_Create_Request crReq  = createReq->getCrReq();
+    RTDB_Create_Confirm crConf = vardis_protocol_data_p->handle_rtdb_create_request (crReq);
+    
     // send confirmation to application and delete request
-    sendRTDBCreateConfirm(VARDIS_STATUS_OK, spec.varId, theProtocol);
+    sendRTDBCreateConfirm(crConf.status_code, crReq.spec.varId, theProtocol);
     delete createReq;
 
-    dbg_comprehensive("handleRTDBCreateRequest/leave");
     dbg_leave();
 
 }
@@ -649,96 +543,19 @@ void VardisProtocol::handleRTDBUpdateRequest(RTDBUpdate_Request* updateReq)
 {
     dbg_enter("handleRTDBUpdateRequest");
     assert(updateReq);
-    dbg_comprehensive("handleRTDBUpdateRequest/enter");
 
     // keep a reference to the client protocol sending this, required for
     // sending a confirmation message back to the client protocol
     Protocol* theProtocol = fetchSenderProtocol(updateReq);
 
-    VarIdT  varId  = updateReq->getVarId();
-    VarLenT varLen = updateReq->getUpdlen();
-
-    // perform various checks
-
-    if (not vardisActive)
-    {
-        dbg_string("Vardis is active, dropping request");
-        sendRTDBUpdateConfirm(VARDIS_STATUS_INACTIVE, varId, theProtocol);
-        delete updateReq;
-        dbg_leave();
-        return;
-    }
-
-    if (not variableExists(varId))
-    {
-        dbg_string("attempting to update non-existing variable, dropping request");
-        sendRTDBUpdateConfirm(VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST, varId, theProtocol);
-        delete updateReq;
-        dbg_leave();
-        return;
-    }
-
-    DBEntry& theEntry = theVariableDatabase.at(varId);
-
-    if (not producerIsMe(varId))
-    {
-        dbg_string("attempting to update variable for which I am not the producer, dropping request");
-        sendRTDBUpdateConfirm(VARDIS_STATUS_NOT_PRODUCER, varId, theProtocol);
-        delete updateReq;
-        dbg_leave();
-        return;
-    }
-
-    if (theEntry.toBeDeleted)
-    {
-        dbg_string("attempting to update a to-be-deleted variable, dropping request");
-        sendRTDBUpdateConfirm(VARDIS_STATUS_VARIABLE_BEING_DELETED, varId, theProtocol);
-        delete updateReq;
-        dbg_leave();
-        return;
-    }
-
-    if (varLen.val > vardisMaxValueLength)
-    {
-        dbg_string("value length is too long, dropping request");
-        sendRTDBUpdateConfirm(VARDIS_STATUS_VALUE_TOO_LONG, varId, theProtocol);
-        delete updateReq;
-        dbg_leave();
-        return;
-    }
-
-    if (varLen == 0)
-    {
-        dbg_string("value length is zero, dropping request");
-        sendRTDBUpdateConfirm(VARDIS_STATUS_EMPTY_VALUE, varId, theProtocol);
-        delete updateReq;
-        dbg_leave();
-        return;
-    }
-
-    DBG_PVAR1("updating variable with varId = ", varId);
-
-    // update the DB entry
-    theEntry.seqno.val    = (theEntry.seqno.val + 1) % VarSeqnoT::modulus();
-    theEntry.countUpdate  = theEntry.spec.repCnt;
-    theEntry.tStamp       = simTime();
-    delete [] theEntry.value.data;
-    theEntry.value.length = varLen.val;
-    theEntry.value.data   =  new uint8_t [varLen.val];
-    for (int i=0; i<varLen; i++)
-        theEntry.value.data[i] = updateReq->getUpddata(i);
-
-    // add varId to updateQ if necessary
-    if (not isVarIdInQueue(updateQ, varId))
-    {
-        updateQ.push_back(varId);
-    }
+    RTDB_Update_Request updReq  = updateReq->getUpdReq();
+    RTDB_Update_Confirm updConf = vardis_protocol_data_p->handle_rtdb_update_request (updReq);
+    
 
     // send confirmation to application and delete request
-    sendRTDBUpdateConfirm(VARDIS_STATUS_OK, varId, theProtocol);
+    sendRTDBUpdateConfirm(updConf.status_code, updReq.varId, theProtocol);
     delete updateReq;
 
-    dbg_comprehensive("handleRTDBUpdateRequest/leave");
     dbg_leave();
 }
 
@@ -758,42 +575,16 @@ void VardisProtocol::handleRTDBReadRequest (RTDBRead_Request* readReq)
     // sending a confirmation message back to the client protocol
     Protocol* theProtocol = fetchSenderProtocol(readReq);
 
-    VarIdT varId = readReq->getVarId();
+    RTDB_Read_Request rReq  = readReq->getReadReq ();
+    RTDB_Read_Confirm rConf = vardis_protocol_data_p->handle_rtdb_read_request (rReq);
+    
     delete readReq;
 
     // generate and initialize confirmation
     auto readConf = new RTDBRead_Confirm;
-    readConf->setVarId(varId.val);
-    readConf->setDataLen(0);
-    readConf->setDataArraySize(0);
+    readConf->setReadConf (rConf);
 
-    // perform various checks
-
-    if (not vardisActive)
-    {
-        dbg_string("Vardis is not active, dropping request");
-        sendConfirmation(readConf, VARDIS_STATUS_INACTIVE, theProtocol);
-        dbg_leave();
-        return;
-    }
-
-    if (not variableExists(varId))
-    {
-        dbg_string("attempting to read non-existing variable, dropping request");
-        sendConfirmation(readConf, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST, theProtocol);
-        dbg_leave();
-        return;
-    }
-
-    // retrieve and copy variable value into confirmation
-    DBEntry& theEntry = theVariableDatabase.at(varId);
-    assert(theEntry.value.data);
-    readConf->setDataLen(theEntry.value.length);
-    readConf->setDataArraySize(theEntry.value.length);
-    for (int i=0; i<theEntry.value.length; i++)
-        readConf->setData(i,theEntry.value.data[i]);
-
-    sendConfirmation(readConf, VARDIS_STATUS_OK, theProtocol);
+    sendConfirmation(readConf, rConf.status_code, theProtocol);
 
     dbg_leave();
 }
@@ -816,13 +607,13 @@ void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Req
     delete descrDbReq;
 
     auto dbConf = new RTDBDescribeDatabase_Confirm;
-    dbConf->setSpecArraySize(theVariableDatabase.size());
+    dbConf->setDescrsArraySize(vardis_store_p->get_number_variables());
 
     // check whether Vardis protocol is actually active
-    if (not vardisActive)
+    if (not vardisActive())
     {
         dbg_string("Vardis is not active, dropping request");
-        dbConf->setSpecArraySize(0);
+        dbConf->setDescrsArraySize (0);
         sendConfirmation(dbConf, VARDIS_STATUS_INACTIVE, theProtocol);
         dbg_leave();
         return;
@@ -830,22 +621,27 @@ void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Req
 
 
     // copy information about each variable into the confirmation message
-    int i=0;
-    for (auto it=theVariableDatabase.begin(); it!=theVariableDatabase.end(); it++)
-    {
-        auto theVar = it->second;
 
-        DBG_PVAR3("adding description", theVar.spec.varId, theVar.spec.prodId, theVar.spec.descr.to_str());
+   VardisProtocolData& PD = *vardis_protocol_data_p;
 
-        VarSpecEntry vse;
+   int i=0;
+   for (auto varId : PD.active_variables)
+     {
+       DBEntry& db_entry = vardis_store_p->get_db_entry_ref (varId);
+       DescribeDatabaseVariableDescription descr;
 
-        vse.varId   = theVar.spec.varId.val;
-        vse.prodId  = theVar.spec.prodId;
-        vse.repCnt  = theVar.spec.repCnt.val;
-        vse.descr   = std::string(theVar.spec.descr.to_str());
-        dbConf->setSpec(i,vse);
-        i++;
-    }
+       DBG_PVAR2("adding description", db_entry.varId, db_entry.prodId);
+       
+       descr.varId          =  db_entry.varId;
+       descr.prodId         =  db_entry.prodId;
+       descr.repCnt         =  db_entry.repCnt;
+       descr.tStamp         =  db_entry.tStamp;
+       descr.toBeDeleted    =  db_entry.toBeDeleted;
+       PD.vardis_store.read_description (varId, descr.description);
+
+       dbConf->setDescrs(i,descr);
+       i++;	
+      }    
 
     sendConfirmation(dbConf, VARDIS_STATUS_OK, theProtocol);
 
@@ -875,7 +671,7 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
 
     // perform some checks
 
-    if (not vardisActive)
+    if (not vardisActive())
     {
         dbg_string("Vardis is not active, dropping request");
         sendConfirmation(varDescr, VARDIS_STATUS_INACTIVE, theProtocol);
@@ -894,22 +690,18 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
     DBG_PVAR1("generating description for variable", varId);
 
     // retrieve variable and generate response data about it
-    DBEntry& theEntry = theVariableDatabase.at(varId);
-    varDescr->setVarId(varId.val);
-    varDescr->setProdId(theEntry.spec.prodId);
-    varDescr->setRepCnt(theEntry.spec.repCnt.val);
-    varDescr->setLength(theEntry.value.length);
-    varDescr->setDescr(theEntry.spec.descr.to_str().c_str());
-    varDescr->setSeqno(theEntry.seqno.val);
-    varDescr->setTstamp(theEntry.tStamp);
-    varDescr->setCountUpdate(theEntry.countUpdate.val);
-    varDescr->setCountCreate(theEntry.countCreate.val);
-    varDescr->setCountDelete(theEntry.countDelete.val);
-    varDescr->setToBeDeleted(theEntry.toBeDeleted);
-    varDescr->setValueArraySize(theEntry.value.length);
-    for (int i=0; i<theEntry.value.length; i++)
-        varDescr->setValue(i,theEntry.value.data[i]);
-
+    DBEntry& theEntry = vardis_store_p->get_db_entry_ref(varId);
+    varDescr->setVarId (varId.val);
+    varDescr->setProdId (theEntry.prodId);
+    varDescr->setRepCnt (theEntry.repCnt.val);
+    varDescr->setValue (vardis_store_p->read_value (varId));
+    varDescr->setDescr (vardis_store_p->read_description (varId));
+    varDescr->setSeqno (theEntry.seqno.val);
+    varDescr->setTstamp (theEntry.tStamp);
+    varDescr->setCountUpdate (theEntry.countUpdate);
+    varDescr->setCountCreate (theEntry.countCreate);
+    varDescr->setCountDelete (theEntry.countDelete);
+    varDescr->setToBeDeleted (theEntry.toBeDeleted);
 
     sendConfirmation(varDescr, VARDIS_STATUS_OK, theProtocol);
 
@@ -925,75 +717,25 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
  * to be in the to-be-deleted state and schedules transmission of
  * suitable instruction records.
  */
-void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* delReq)
+void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* deleteReq)
 {
 
     dbg_enter("handleRTDBDeleteRequest");
-    assert(delReq);
+    assert(deleteReq);
 
     // keep a reference to the client protocol sending this, required for
     // sending a confirmation message back to the client protocol
-    Protocol* theProtocol = fetchSenderProtocol(delReq);
+    Protocol* theProtocol = fetchSenderProtocol(deleteReq);
 
-    VarIdT varId = delReq->getVarId();
-    delete delReq;
+    RTDB_Delete_Request delReq  = deleteReq->getDelReq();
+    RTDB_Delete_Confirm delConf = vardis_protocol_data_p->handle_rtdb_delete_request (delReq);
+    
+    delete deleteReq;
 
     // generate and initialize confirmation
     auto deleteConf = new RTDBDelete_Confirm;
-    deleteConf->setVarId(varId.val);
 
-    // perform some checks
-
-    if (not vardisActive)
-    {
-        dbg_string("Vardis is not active, dropping request");
-        sendConfirmation(deleteConf, VARDIS_STATUS_INACTIVE, theProtocol);
-        dbg_leave();
-        return;
-    }
-
-    if (not variableExists(varId))
-    {
-        dbg_string("attempting to delete non-existing variable, dropping request");
-        sendConfirmation(deleteConf, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST, theProtocol);
-        dbg_leave();
-        return;
-    }
-
-    if (not producerIsMe(varId))
-    {
-        dbg_string("attempting to delete variable owned by someone else, dropping request");
-        sendConfirmation(deleteConf, VARDIS_STATUS_NOT_PRODUCER, theProtocol);
-        dbg_leave();
-        return;
-    }
-
-    DBEntry& theEntry = theVariableDatabase.at(varId);
-
-    if (theEntry.toBeDeleted)
-    {
-        dbg_string("attempting to delete variable that is already in deletion process, dropping request");
-        sendConfirmation(deleteConf, VARDIS_STATUS_VARIABLE_BEING_DELETED, theProtocol);
-        dbg_leave();
-        return;
-    }
-
-    // add varId to deleteQ, remove it from any other queue
-    assert(not isVarIdInQueue(deleteQ, varId));
-    deleteQ.push_back(varId);
-    removeVarIdFromQueue(createQ, varId);
-    removeVarIdFromQueue(summaryQ, varId);
-    removeVarIdFromQueue(updateQ, varId);
-    removeVarIdFromQueue(reqUpdQ, varId);
-    removeVarIdFromQueue(reqCreateQ, varId);
-
-    // update variable status
-    theEntry.toBeDeleted = true;
-    theEntry.countDelete = theEntry.spec.repCnt;
-    theEntry.countCreate = 0;
-    theEntry.countUpdate = 0;
-
-    sendConfirmation(deleteConf, VARDIS_STATUS_OK, theProtocol);
+    sendConfirmation(deleteConf, delConf.status_code, theProtocol);
 
     dbg_leave();
 }
@@ -1005,548 +747,6 @@ void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* delReq)
 // Construction of instruction containers for outgoing packets
 // ========================================================================================
 
-/* the following 'instructionSizeXX' functions shall return the number of bytes
- * that the respective instruction container entries (given their varId's) will
- * need in their serialization.The numbers here reflect a 'packed' realization
- * of these types.
- */
-
-unsigned int VardisProtocol::instructionSizeVarCreate(VarIdT varId)
-{
-    DBEntry& theEntry = theVariableDatabase.at(varId);
-    return    theEntry.spec.total_size()
-            + VarUpdateT::fixed_size()
-            + theEntry.value.length;
-}
-
-// ----------------------------------------------------
-
-unsigned int VardisProtocol::instructionSizeVarSummary(VarIdT varId)
-{
-    return VarSummT::fixed_size();
-}
-
-// ----------------------------------------------------
-
-unsigned int VardisProtocol::instructionSizeVarUpdate(VarIdT varId)
-{
-    DBEntry& theEntry = theVariableDatabase.at(varId);
-    return VarUpdateT::fixed_size() + theEntry.value.length;
-}
-
-// ----------------------------------------------------
-
-unsigned int VardisProtocol::instructionSizeVarDelete(VarIdT varId)
-{
-    return VarDeleteT::fixed_size();
-}
-
-// ----------------------------------------------------
-
-unsigned int VardisProtocol::instructionSizeReqCreate(VarIdT varId)
-{
-    return VarReqCreateT::fixed_size();
-}
-
-// ----------------------------------------------------
-
-unsigned int VardisProtocol::instructionSizeReqUpdate(VarIdT varId)
-{
-    return VarReqUpdateT::fixed_size();
-}
-
-// ----------------------------------------------------
-
-/* the following 'addXX' functions perform the serialization of the
- * known instruction container entries, assuming a 'packed' representation.
- */
-
-
-void VardisProtocol::addVarCreate (VarIdT varId,
-                                   DBEntry& theEntry,
-                                   AssemblyArea& area)
-{
-    dbg_enter("addVarCreate");
-
-    VarCreateT create;
-    create.spec = theEntry.spec;
-    create.update.varId   =  theEntry.spec.varId;
-    create.update.seqno   =  theEntry.seqno;
-    create.update.value   =  theEntry.value;
-
-    create.serialize (area);
-
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-
-void VardisProtocol::addVarSummary (VarIdT varId,
-                                    DBEntry& theEntry,
-                                    AssemblyArea& area)
-{
-    dbg_enter("addVarSummary");
-
-    VarSummT summ;
-    summ.varId  = varId;
-    summ.seqno  = theEntry.seqno;
-
-    summ.serialize (area);
-
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::addVarUpdate (VarIdT varId,
-                                   DBEntry& theEntry,
-                                   AssemblyArea& area)
-{
-    dbg_enter("addVarUpdate");
-
-    VarUpdateT update;
-    update.varId   =  theEntry.spec.varId;
-    update.seqno   =  theEntry.seqno;
-    update.value   =  theEntry.value;
-
-    update.serialize (area);
-
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::addVarDelete (VarIdT varId,
-                                   AssemblyArea& area)
-{
-    dbg_enter("addVarDelete");
-
-    VarDeleteT del;
-    del.varId = varId;
-
-    del.serialize (area);
-
-    dbg_leave();
-}
-
-
-// ----------------------------------------------------
-
-void VardisProtocol::addVarReqCreate (VarIdT varId,
-                                      AssemblyArea& area)
-{
-    dbg_enter("addVarReqCreate");
-
-    VarReqCreateT cr;
-    cr.varId = varId;
-
-    cr.serialize (area);
-
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::addVarReqUpdate (VarIdT varId,
-                                      DBEntry& theEntry,
-                                      AssemblyArea& area)
-{
-    dbg_enter("addVarReqUpdate");
-
-    VarReqUpdateT upd;
-    upd.updSpec.varId = varId;
-    upd.updSpec.seqno = theEntry.seqno;
-
-    upd.serialize (area);
-
-    dbg_leave();
-}
-
-
-// ----------------------------------------------------
-
-void VardisProtocol::addICHeader (ICHeaderT icHdr,
-                                  AssemblyArea& area)
-{
-    dbg_enter("addICHeader");
-
-    icHdr.serialize (area);
-
-    dbg_leave();
-}
-
-
-// ----------------------------------------------------
-
-/**
- * This function calculates how many information instruction records referenced
- * in the given queue and of the given type (cf 'instructionSizeFunction' parameter)
- * fit into the number of bytes still available in the VarDis payload
- */
-unsigned int VardisProtocol::numberFittingRecords(
-                  const std::deque<VarIdT>& queue,
-                  AssemblyArea& area,
-                  std::function<unsigned int (VarIdT)> instructionSizeFunction
-                  )
-{
-    // first work out how many records we can add
-    unsigned int   numberRecordsToAdd = 0;
-    unsigned int   bytesToBeAdded = ICHeaderT::fixed_size();
-    auto           it = queue.begin();
-    while(    (it != queue.end())
-           && (bytesToBeAdded + instructionSizeFunction(*it) <= area.available())
-           && (numberRecordsToAdd < ICHeaderT::max_records()))
-    {
-        numberRecordsToAdd++;
-        bytesToBeAdded += instructionSizeFunction(*it);
-        it++;
-    }
-
-    return (std::min(numberRecordsToAdd, (unsigned int) ICHeaderT::max_records()));
-}
-
-
-// ----------------------------------------------------
-
-/**
- * This serializes an instruction container for VarCreateT's, it generates
- * an ICHeader and a as many VarCreateT records as possible / available.
- */
-void VardisProtocol::makeICTypeCreateVariables (AssemblyArea& area)
-{
-    dbg_enter("makeICTypeCreateVariables");
-    DBG_VAR3(createQ.size(), area.used(), area.available());
-
-    dropNonexistingDeleted(createQ);
-
-    // check for empty createQ or insufficient size to add at least the first instruction record
-    if (    createQ.empty()
-         || (instructionSizeVarCreate(createQ.front()) + ICHeaderT::fixed_size()) > area.available())
-    {
-        dbg_string("queue empty or insufficient space available");
-        dbg_leave();
-        return;
-    }
-
-    // first work out how many records we will add
-    std::function<unsigned int(VarIdT)> instSizeFn = [&] (VarIdT varId) { return instructionSizeVarCreate(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(createQ, area, instSizeFn);
-    assert(numberRecordsToAdd > 0);
-    DBG_VAR1(numberRecordsToAdd);
-
-    // initialize and serialize ICHeader
-    ICHeaderT   icHeader;
-    icHeader.icType       = ICTYPE_CREATE_VARIABLES;
-    icHeader.icNumRecords = numberRecordsToAdd;
-    addICHeader(icHeader, area);
-
-    // serialize the records
-    for (unsigned int i=0; i<numberRecordsToAdd; i++)
-    {
-        VarIdT nextVarId = createQ.front();
-        createQ.pop_front();
-        DBEntry& nextVar = theVariableDatabase.at(nextVarId);
-
-        DBG_PVAR5("adding", nextVarId, instructionSizeVarCreate(nextVarId), nextVar.countCreate, area.used(), area.available());
-        assert(nextVar.countCreate > 0);
-
-        nextVar.countCreate--;
-
-        addVarCreate(nextVarId, nextVar, area);
-
-        if (nextVar.countCreate > 0)
-        {
-            createQ.push_back(nextVarId);
-        }
-    }
-
-    dbg_comprehensive("makeICTypeCreateVariables");
-    dbg_leave();
-    return;
-}
-
-// ----------------------------------------------------
-
-/**
- * This serializes an instruction container for VarSummT's, it generates
- * an ICHeader and a as many VarSummT records as possible / available.
- */
-void VardisProtocol::makeICTypeSummaries (AssemblyArea& area)
-{
-    dbg_enter("makeICTypeSummaries");
-    DBG_VAR3(summaryQ.size(), area.used(), area.available());
-
-    dropNonexistingDeleted(summaryQ);
-
-    // check for empty summaryQ, insufficient size to add at least the first instruction record,
-    // or whether summaries function is enabled
-    if (    summaryQ.empty()
-         || (instructionSizeVarSummary(summaryQ.front()) + ICHeaderT::fixed_size() > area.available())
-         || (vardisMaxSummaries == 0))
-    {
-        dbg_string("queue empty, insufficient space available or no summaries to be created");
-        dbg_leave();
-        return;
-    }
-
-    // first work out how many records we will add, cap at vardisMaxSummaries
-    std::function<unsigned int(VarIdT)> instSizeFn = [&] (VarIdT varId) { return instructionSizeVarSummary(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(summaryQ, area, instSizeFn);
-    assert(numberRecordsToAdd > 0);
-    numberRecordsToAdd = std::min(numberRecordsToAdd, vardisMaxSummaries);
-    DBG_VAR1(numberRecordsToAdd);
-
-    // initialize and serialize ICHeader
-    ICHeaderT   icHeader;
-    icHeader.icType       = ICTYPE_SUMMARIES;
-    icHeader.icNumRecords = numberRecordsToAdd;
-    addICHeader(icHeader, area);
-
-    // serialize the records
-    for (unsigned int i=0; i<numberRecordsToAdd; i++)
-    {
-        VarIdT nextVarId  = summaryQ.front();
-
-        DBG_PVAR5("adding", nextVarId, instructionSizeVarSummary(nextVarId), theVariableDatabase.at(nextVarId).seqno, area.used(), area.available());
-
-        summaryQ.pop_front();
-        summaryQ.push_back(nextVarId);
-        DBEntry&   theNextEntry  = theVariableDatabase.at(nextVarId);
-        addVarSummary(nextVarId, theNextEntry, area);
-    }
-
-    dbg_comprehensive("makeICTypeSummaries");
-    dbg_leave();
-    return;
-}
-
-// ----------------------------------------------------
-
-/**
- * This serializes an instruction container for VarUpdateT's, it generates
- * an ICHeader and a as many VarUpdateT records as possible / available.
- */
-void VardisProtocol::makeICTypeUpdates (AssemblyArea& area)
-{
-    dbg_enter("makeICTypeUpdates");
-    DBG_VAR3(updateQ.size(), area.used(), area.available());
-
-    dropNonexistingDeleted(updateQ);
-
-    // check for empty updateQ or insufficient size to add at least the first instruction record
-    if (    updateQ.empty()
-         || (instructionSizeVarUpdate(updateQ.front()) + ICHeaderT::fixed_size() > area.available()))
-    {
-        dbg_string("queue empty or insufficient space available");
-        dbg_leave();
-        return;
-    }
-
-    // first work out how many records we will add
-    std::function<unsigned int(VarIdT)> instSizeFn = [&] (VarIdT varId) { return instructionSizeVarUpdate(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(updateQ, area, instSizeFn);
-    assert(numberRecordsToAdd > 0);
-    DBG_VAR1(numberRecordsToAdd);
-
-    // initialize and serialize ICHeader
-    ICHeaderT   icHeader;
-    icHeader.icType       = ICTYPE_UPDATES;
-    icHeader.icNumRecords = numberRecordsToAdd;
-    addICHeader(icHeader, area);
-
-    // serialize required records
-    for (unsigned int i=0; i<numberRecordsToAdd; i++)
-    {
-        VarIdT nextVarId = updateQ.front();
-        updateQ.pop_front();
-        DBEntry& nextVar = theVariableDatabase.at(nextVarId);
-
-        DBG_PVAR6("adding", nextVarId, instructionSizeVarUpdate(nextVarId), nextVar.countUpdate, nextVar.seqno, area.used(), area.available());
-        assert(nextVar.countUpdate > 0);
-
-        nextVar.countUpdate--;
-
-        addVarUpdate(nextVarId, nextVar, area);
-
-        if (nextVar.countUpdate > 0)
-        {
-            updateQ.push_back(nextVarId);
-        }
-    }
-
-    dbg_comprehensive("makeICTypeUpdates");
-    dbg_leave();
-    return;
-}
-
-// ----------------------------------------------------
-
-/**
- * This serializes an instruction container for VarDeleteT's, it generates
- * an ICHeader and a as many VarDeleteT records as possible / available.
- */
-void VardisProtocol::makeICTypeDeleteVariables (AssemblyArea& area)
-{
-    dbg_enter("makeICTypeDeleteVariables");
-    DBG_VAR3(deleteQ.size(), area.used(), area.available());
-
-    dropNonexisting(deleteQ);
-
-    // check for empty deleteQ or insufficient size to add at least the first instruction record
-    if (    deleteQ.empty()
-         || (instructionSizeVarDelete(deleteQ.front()) + ICHeaderT::fixed_size() > area.available()))
-    {
-        dbg_string("queue empty or insufficient space available");
-        dbg_leave();
-        return;
-    }
-
-    // first work out how many records we will add
-    std::function<unsigned int(VarIdT)> instSizeFn = [&] (VarIdT varId) { return instructionSizeVarDelete(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(deleteQ, area, instSizeFn);
-    assert(numberRecordsToAdd > 0);
-    DBG_VAR1(numberRecordsToAdd);
-
-    // initialize and serialize ICHeader
-    ICHeaderT   icHeader;
-    icHeader.icType       = ICTYPE_DELETE_VARIABLES;
-    icHeader.icNumRecords = numberRecordsToAdd;
-    addICHeader(icHeader, area);
-
-    // serialize required records
-    for (unsigned int i=0; i<numberRecordsToAdd; i++)
-    {
-        VarIdT nextVarId = deleteQ.front();
-        deleteQ.pop_front();
-        assert(variableExists(nextVarId));
-        DBEntry& nextVar = theVariableDatabase.at(nextVarId);
-
-        DBG_PVAR5("adding", nextVarId, instructionSizeVarDelete(nextVarId), nextVar.countDelete, area.used(), area.available());
-        assert(nextVar.countDelete > 0);
-
-        nextVar.countDelete--;
-
-        addVarDelete(nextVarId, area);
-
-        if (nextVar.countDelete > 0)
-        {
-            deleteQ.push_back(nextVarId);
-        }
-        else
-        {
-            DBG_PVAR2("now we actually DELETE variable", nextVarId, nextVar.spec.descr.to_str());
-            theVariableDatabase.erase(nextVarId);
-        }
-    }
-
-    dbg_comprehensive("makeICTypeDeleteVariables");
-    dbg_leave();
-    return;
-}
-
-// ----------------------------------------------------
-
-/**
- * This serializes an instruction container for VarReqUpdateT's, it
- * generates an ICHeader and a as many VarReqUpdateT records as
- * possible / available.
- */
-void VardisProtocol::makeICTypeRequestVarUpdates (AssemblyArea& area)
-{
-    dbg_enter("makeICTypeRequestVarUpdates");
-    DBG_VAR3(reqUpdQ.size(), area.used(), area.available());
-
-    dropNonexistingDeleted(reqUpdQ);
-
-    // check for empty reqUpdQ or insufficient size to add at least the first instruction record
-    if (    reqUpdQ.empty()
-         || (instructionSizeReqUpdate(reqUpdQ.front()) + ICHeaderT::fixed_size() > area.available()))
-    {
-        dbg_string("queue empty or insufficient space available");
-        dbg_leave();
-        return;
-    }
-
-    // first work out how many records we will add
-    std::function<unsigned int(VarIdT)> instSizeFn = [&] (VarIdT varId) { return instructionSizeReqUpdate(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(reqUpdQ, area, instSizeFn);
-    assert(numberRecordsToAdd > 0);
-    DBG_VAR1(numberRecordsToAdd);
-
-    // initialize and serialize ICHeader
-    ICHeaderT   icHeader;
-    icHeader.icType       = ICTYPE_REQUEST_VARUPDATES;
-    icHeader.icNumRecords = numberRecordsToAdd;
-    addICHeader(icHeader, area);
-
-    // serialize required records
-    for (unsigned int i=0; i<numberRecordsToAdd; i++)
-    {
-        VarIdT nextVarId = reqUpdQ.front();
-        reqUpdQ.pop_front();
-        DBEntry& nextVar = theVariableDatabase.at(nextVarId);
-
-        DBG_PVAR4("adding", nextVarId, instructionSizeReqUpdate(nextVarId), area.used(), area.available());
-
-        addVarReqUpdate(nextVarId, nextVar, area);
-    }
-
-    dbg_comprehensive("makeICTypeRequestVarUpdates");
-    dbg_leave();
-}
-
-
-// ----------------------------------------------------
-
-/**
- * This serializes an instruction container for VarReqCreateT's, it
- * generates an ICHeader and a as many VarReqCreateT records as
- * possible / available.
- */
-void VardisProtocol::makeICTypeRequestVarCreates (AssemblyArea& area)
-{
-    dbg_enter("makeICTypeRequestVarCreates");
-    DBG_VAR3(reqCreateQ.size(), area.used(), area.available());
-
-    dropDeleted(reqCreateQ);
-
-    // check for empty reqCreateQ or insufficient size to add at least the first instruction record
-    if (    reqCreateQ.empty()
-         || (instructionSizeReqCreate(reqCreateQ.front()) + ICHeaderT::fixed_size() > area.available()))
-    {
-        dbg_string("queue empty or insufficient space available");
-        dbg_leave();
-        return;
-    }
-
-    // first work out how many records we will add
-    std::function<unsigned int(VarIdT)> instSizeFn = [&] (VarIdT varId) { return instructionSizeReqCreate(varId); };
-    auto numberRecordsToAdd = numberFittingRecords(reqCreateQ, area, instSizeFn);
-    assert(numberRecordsToAdd > 0);
-    DBG_VAR1(numberRecordsToAdd);
-
-    // initialize and serialize ICHeader
-    ICHeaderT   icHeader;
-    icHeader.icType       = ICTYPE_REQUEST_VARCREATES;
-    icHeader.icNumRecords = numberRecordsToAdd;
-    addICHeader(icHeader, area);
-
-    // serialize required records
-    for (unsigned int i=0; i<numberRecordsToAdd; i++)
-    {
-        VarIdT nextVarId = reqCreateQ.front();
-        reqCreateQ.pop_front();
-
-        DBG_PVAR4("adding VarReqCreate", nextVarId, instructionSizeReqCreate(nextVarId), area.used(), area.available());
-
-        addVarReqCreate(nextVarId, area);
-    }
-
-    dbg_comprehensive("makeICTypeRequestVarCreates");
-    dbg_leave();
-}
-
 
 // ----------------------------------------------------
 
@@ -1554,24 +754,20 @@ void VardisProtocol::makeICTypeRequestVarCreates (AssemblyArea& area)
  * Constructs a Vardis payload for BP by adding instruction containers in the
  * specified order.
  */
-void VardisProtocol::constructPayload(bytevect& bv)
+void VardisProtocol::constructPayload(bytevect& bv, unsigned int& containers_added)
 {
     dbg_enter("constructPayload");
 
-    dbg_comprehensive("constructPayload/enter");
-
     ByteVectorAssemblyArea area ("vardis-constructPayload", maxPayloadSize.val, bv);
 
-    makeICTypeCreateVariables (area);
-    makeICTypeDeleteVariables (area);
-    makeICTypeRequestVarCreates (area);
-    makeICTypeSummaries (area);
-    makeICTypeUpdates (area);
-    makeICTypeRequestVarUpdates (area);
+    vardis_protocol_data_p->makeICTypeCreateVariables (area, containers_added);
+    vardis_protocol_data_p->makeICTypeDeleteVariables (area, containers_added);
+    vardis_protocol_data_p->makeICTypeRequestVarCreates (area, containers_added);
+    vardis_protocol_data_p->makeICTypeSummaries (area, containers_added);
+    vardis_protocol_data_p->makeICTypeUpdates (area, containers_added);
+    vardis_protocol_data_p->makeICTypeRequestVarUpdates (area, containers_added);
 
     bv.resize (area.used());
-
-    dbg_comprehensive("constructPayload/leave");
 
     dbg_leave();
 
@@ -1587,7 +783,7 @@ void VardisProtocol::generatePayload ()
 {
     dbg_enter("generatePayload");
 
-    if (vardisActive)
+    if (vardisActive())
     {
         dbg_string("we are active");
 
@@ -1596,9 +792,10 @@ void VardisProtocol::generatePayload ()
         bv.resize (maxPayloadSize.val);
         bv.reserve (2*maxPayloadSize.val);
 
-        constructPayload(bv);
+	unsigned int containers_added;
+        constructPayload(bv, containers_added);
 
-        if (bv.size() > 0)
+        if (containers_added > 0)
         {
             DBG_PVAR1("SENDING payload", bv.size());
 
@@ -1624,381 +821,6 @@ void VardisProtocol::generatePayload ()
 // Helpers for deconstructing and processing received packets
 // ========================================================================================
 
-/**
- * Processes a received VarCreate entry. If variable does not already exist,
- * it will be added to the local RTDB, including description and value, and
- * its metadata will be initialized.
- */
-void VardisProtocol::processVarCreate(const VarCreateT& create)
-{
-    dbg_enter("processVarCreate");
-
-    // const VarSpecT&    spec   = create.spec;
-    // const VarUpdateT&  update = create.update;
-    VarIdT            varId  = create.spec.varId;
-    NodeIdentifierT   prodId = create.spec.prodId;
-
-    assert(create.update.value.length > 0);
-    DBG_PVAR2("considering", varId, prodId);
-
-    if (    (not variableExists(varId))
-         && (prodId != getOwnNodeId())
-         && (create.spec.descr.length <= vardisMaxDescriptionLength)
-         && (create.spec.descr.length > 0)
-         && (create.update.value.length <= vardisMaxValueLength)
-         && (create.update.value.length > 0)
-         && (create.spec.repCnt > 0)
-         && (create.spec.repCnt <= vardisMaxRepetitions)
-       )
-    {
-        DBG_PVAR3("ADDING new variable to database", varId, prodId, create.spec.descr.to_str());
-
-        // create and initialize new DBEntry
-        DBEntry newEntry;
-        newEntry.spec         =  create.spec;
-        newEntry.seqno        =  create.update.seqno;
-        newEntry.tStamp       =  simTime();
-        newEntry.countUpdate  =  0;
-        newEntry.countCreate  =  create.spec.repCnt;
-        newEntry.countDelete  =  0;
-        newEntry.toBeDeleted  =  false;
-        newEntry.value        =  create.update.value;
-        theVariableDatabase[varId] = newEntry;
-
-        // just to be safe, delete varId from all queues before inserting it
-        // into the right ones
-        removeVarIdFromQueue (createQ, varId);
-        removeVarIdFromQueue (deleteQ, varId);
-        removeVarIdFromQueue (updateQ, varId);
-        removeVarIdFromQueue (summaryQ, varId);
-        removeVarIdFromQueue (reqUpdQ, varId);
-        removeVarIdFromQueue (reqCreateQ, varId);
-
-        // add varId to relevant queues
-        createQ.push_back (varId);
-        summaryQ.push_back (varId);
-        removeVarIdFromQueue (reqCreateQ, varId);
-    }
-
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-/**
- * Processes a received VarDelete entry. If variable exists, its state will
- * be set to move into the to-be-deleted state, and it will be removed from
- * the relevant queues
- */
-void VardisProtocol::processVarDelete(const VarDeleteT& del)
-{
-    dbg_enter("processVarDelete");
-
-    VarIdT   varId   = del.varId;
-
-    DBG_PVAR1("considering", varId);
-
-    if (variableExists(varId))
-    {
-        DBEntry&        theEntry = theVariableDatabase.at(varId);
-        NodeIdentifierT prodId   = theEntry.spec.prodId;
-
-        DBG_PVAR3("considering", varId, prodId, theEntry.toBeDeleted);
-
-        if (    (not theEntry.toBeDeleted)
-             && (not producerIsMe(varId)))
-        {
-            DBG_PVAR1("DELETING", varId);
-
-            // update variable state
-            theEntry.toBeDeleted  = true;
-            theEntry.countUpdate  = 0;
-            theEntry.countCreate  = 0;
-            theEntry.countDelete  = theEntry.spec.repCnt;
-
-            // remove varId from relevant queues
-            removeVarIdFromQueue(updateQ, varId);
-            removeVarIdFromQueue(createQ, varId);
-            removeVarIdFromQueue(reqUpdQ, varId);
-            removeVarIdFromQueue(reqCreateQ, varId);
-            removeVarIdFromQueue(summaryQ, varId);
-            removeVarIdFromQueue(deleteQ, varId);
-
-            // add it to deleteQ
-            deleteQ.push_back(varId);
-        }
-    }
-
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-/**
- * Processes a received VarUpdate entry. If variable exists and certain
- * conditions are met, its value will be updated and the variable will
- * be added to the relevant queues.
- */
-void VardisProtocol::processVarUpdate(const VarUpdateT& update)
-{
-    dbg_enter("processVarUpdate");
-    assert(update.value.length > 0);
-
-    VarIdT  varId   = update.varId;
-
-    DBG_PVAR3("considering", varId, update.seqno, update.value.length);
-
-    // check if variable exists -- if not, add it to queue to generate ReqVarCreate
-    if (not variableExists(varId))
-    {
-        DBG_PVAR1("variable does not exist in my database", varId);
-        if (not isVarIdInQueue(reqCreateQ, varId))
-            reqCreateQ.push_back(varId);
-
-        dbg_leave();
-        return;
-    }
-
-    DBEntry& theEntry = theVariableDatabase.at(varId);
-
-    // perform some checks
-
-    if (theEntry.toBeDeleted)
-    {
-        dbg_string("variable has toBeDeleted set");
-        dbg_leave();
-        return;
-    }
-
-    if (producerIsMe(varId))
-    {
-        dbg_string("variable is produced by me");
-        dbg_leave();
-        return;
-    }
-
-    if (update.value.length > vardisMaxValueLength)
-    {
-        dbg_string("variable value is too long");
-        dbg_leave();
-        return;
-    }
-
-    if (theEntry.seqno == update.seqno)
-    {
-        dbg_string("variable has same sequence number");
-        dbg_leave();
-        return;
-    }
-
-    // If received update is older than what I have, schedule transmissions of
-    // VarUpdate's for this variable to educate the sender
-    if (more_recent_seqno(theEntry.seqno, update.seqno))
-    {
-        dbg_string("received variable has strictly older sequence number than I have");
-        // I have a more recent sequence number
-        if (not isVarIdInQueue(updateQ, varId))
-        {
-            updateQ.push_back(varId);
-            theEntry.countUpdate = theEntry.spec.repCnt;
-        }
-        dbg_leave();
-        return;
-    }
-
-    DBG_PVAR2("UPDATING", varId, update.seqno);
-
-    // update variable with new value, update relevant queues
-    theEntry.seqno        =  update.seqno;
-    theEntry.tStamp       =  simTime();
-    theEntry.countUpdate  =  theEntry.spec.repCnt;
-    theEntry.value        =  update.value;
-
-    if (not isVarIdInQueue(updateQ, varId))
-    {
-        updateQ.push_back(varId);
-    }
-    removeVarIdFromQueue(reqUpdQ, varId);
-
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-/**
- * Processes a received VarSummary entry. If variable exists but we have
- * it only in outdated version, we send a ReqVarUpdate for this variable
- */
-void VardisProtocol::processVarSummary(const VarSummT& summ)
-{
-    dbg_enter("processVarSummary");
-
-    VarIdT     varId = summ.varId;
-    VarSeqnoT  seqno = summ.seqno;
-
-    DBG_PVAR2("considering", varId, seqno);
-
-    // if variable does not exist in local RTDB, request a VarCreate
-    if (not variableExists(varId))
-    {
-        DBG_PVAR1("variable does not exist in my database", varId);
-        if (not isVarIdInQueue(reqCreateQ, varId))
-        {
-            reqCreateQ.push_back(varId);
-        }
-        dbg_leave();
-        return;
-    }
-
-    DBEntry& theEntry = theVariableDatabase.at(varId);
-
-    // perform some checks
-
-    if (theEntry.toBeDeleted)
-    {
-        dbg_string("variable has toBeDeleted set");
-        dbg_leave();
-        return;
-    }
-
-    if (producerIsMe(varId))
-    {
-        dbg_string("variable is produced by me");
-        dbg_leave();
-        return;
-    }
-
-    if (theEntry.seqno == seqno)
-    {
-        dbg_string("variable has same sequence number");
-        dbg_leave();
-        return;
-    }
-
-    // schedule transmission of VarUpdate's if the received seqno is too
-    // old
-    if (more_recent_seqno(theEntry.seqno, seqno))
-    {
-        dbg_string("received variable summary has strictly older sequence number than I have");
-        if (not isVarIdInQueue(updateQ, varId))
-        {
-            updateQ.push_back(varId);
-            theEntry.countUpdate = theEntry.spec.repCnt;
-        }
-        dbg_leave();
-        return;
-    }
-
-    // If my own value is too old, schedule transmission of VarReqUpdate
-    if (not isVarIdInQueue(reqUpdQ, varId))
-    {
-        reqUpdQ.push_back(varId);
-    }
-
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-/**
- * Processes a received VarReqUpdate entry. If variable exists and we
- * have it in a more recent version, schedule transmissions of VarUpdate's
- * for this variable
- */
-void VardisProtocol::processVarReqUpdate(const VarReqUpdateT& requpd)
-{
-    dbg_enter("processVarReqUpdate");
-
-    VarIdT     varId = requpd.updSpec.varId;
-    VarSeqnoT  seqno = requpd.updSpec.seqno;
-
-    DBG_PVAR2("considering", varId, seqno);
-
-    // check some conditions
-
-    if (not variableExists(varId))
-    {
-        DBG_PVAR1("variable does not exist in my database", varId);
-        if (not isVarIdInQueue(reqCreateQ, varId))
-        {
-            reqCreateQ.push_back(varId);
-        }
-        dbg_leave();
-        return;
-    }
-
-    DBEntry& theEntry = theVariableDatabase.at(varId);
-
-    if (theEntry.toBeDeleted)
-    {
-        dbg_string("variable has toBeDeleted set");
-        dbg_leave();
-        return;
-    }
-
-    if (more_recent_seqno(seqno, theEntry.seqno))
-    {
-        dbg_string("received variable summary has more recent sequence number than I have");
-        dbg_leave();
-        return;
-    }
-
-    theEntry.countUpdate = theEntry.spec.repCnt;
-
-    if (not isVarIdInQueue(updateQ, varId))
-    {
-        updateQ.push_back(varId);
-    }
-
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-/**
- * Processes a received VarReqCreate entry. If variable exists, schedule
- * transmissions of VarCreate's for this variable
- */
-void VardisProtocol::processVarReqCreate(const VarReqCreateT& reqcreate)
-{
-    dbg_enter("processVarReqCreate");
-
-    VarIdT varId = reqcreate.varId;
-
-    DBG_PVAR1("considering", varId);
-
-    if (not variableExists(varId))
-    {
-        dbg_string("variable does not exist in my database");
-        if (not isVarIdInQueue(reqCreateQ, varId))
-        {
-            reqCreateQ.push_back(varId);
-        }
-        dbg_leave();
-        return;
-    }
-
-    DBEntry& theEntry = theVariableDatabase.at(varId);
-
-    if (theEntry.toBeDeleted)
-    {
-        dbg_string("variable has toBeDeleted set");
-        dbg_leave();
-        return;
-    }
-
-    theEntry.countCreate = theEntry.spec.repCnt;
-
-    if (not isVarIdInQueue(createQ, varId))
-    {
-        DBG_PVAR1("scheduling future VarCreate transmissions", varId);
-        createQ.push_back(varId);
-    }
-
-
-    dbg_leave();
-}
-
 
 // ----------------------------------------------------
 
@@ -2009,14 +831,14 @@ void VardisProtocol::processVarReqCreate(const VarReqCreateT& reqcreate)
 
 void VardisProtocol::processVarCreateList(const std::deque<VarCreateT>& creates)
 {
-    dbg_enter("processVarCreateList");
-
-    for (auto it = creates.begin(); it != creates.end(); it++)
+  dbg_enter("processVarCreateList");
+  
+  for (auto it = creates.begin(); it != creates.end(); it++)
     {
-        processVarCreate(*it);
+      vardis_protocol_data_p->process_var_create(*it);
     }
-
-    dbg_leave();
+  
+  dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -2028,7 +850,7 @@ void VardisProtocol::processVarDeleteList(const std::deque<VarDeleteT>& deletes)
 
     for (auto it = deletes.begin(); it != deletes.end(); it++)
     {
-        processVarDelete(*it);
+        vardis_protocol_data_p->process_var_delete(*it);
     }
 
     dbg_leave();
@@ -2043,7 +865,7 @@ void VardisProtocol::processVarUpdateList(const std::deque<VarUpdateT>& updates)
 
     for (auto it = updates.begin(); it != updates.end(); it++)
     {
-        processVarUpdate(*it);
+        vardis_protocol_data_p->process_var_update(*it);
     }
 
     dbg_leave();
@@ -2058,7 +880,7 @@ void VardisProtocol::processVarSummaryList(const std::deque<VarSummT>& summs)
 
     for (auto it = summs.begin(); it != summs.end(); it++)
     {
-        processVarSummary(*it);
+        vardis_protocol_data_p->process_var_summary(*it);
     }
 
     dbg_leave();
@@ -2073,7 +895,7 @@ void VardisProtocol::processVarReqUpdateList(const std::deque<VarReqUpdateT>& re
 
     for (auto it = requpdates.begin(); it != requpdates.end(); it++)
     {
-        processVarReqUpdate(*it);
+        vardis_protocol_data_p->process_var_requpdate(*it);
     }
 
     dbg_leave();
@@ -2088,158 +910,7 @@ void VardisProtocol::processVarReqCreateList(const std::deque<VarReqCreateT>& re
 
     for (auto it = reqcreates.begin(); it != reqcreates.end(); it++)
     {
-        processVarReqCreate(*it);
-    }
-
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-/**
- * The following methods all extract / parse an entire instruction container,
- * both the ICHeader and the instruction records, which are stored in a list
- */
-
-void VardisProtocol::extractVarCreateList(DisassemblyArea& area, std::deque<VarCreateT>& creates)
-{
-    dbg_enter("extractVarCreateList");
-
-    ICHeaderT icHeader;
-    icHeader.deserialize (area);
-    assert(icHeader.icType == ICTYPE_CREATE_VARIABLES);
-    assert(icHeader.icNumRecords > 0);
-
-    for (int i=0; i<icHeader.icNumRecords; i++)
-    {
-        VarCreateT create;
-        create.deserialize (area);
-
-        DBG_VAR4(create.spec.varId, create.spec.repCnt, create.spec.prodId, create.spec.descr.to_str());
-
-        creates.push_back(create);
-    }
-
-    dbg_leave();
-}
-
-
-// ----------------------------------------------------
-
-void VardisProtocol::extractVarDeleteList(DisassemblyArea& area, std::deque<VarDeleteT>& deletes)
-{
-    dbg_enter("extractVarDeleteList");
-
-    ICHeaderT icHeader;
-    icHeader.deserialize (area);
-    assert(icHeader.icType == ICTYPE_DELETE_VARIABLES);
-    assert(icHeader.icNumRecords > 0);
-
-    for (int i=0; i<icHeader.icNumRecords; i++)
-    {
-        VarDeleteT del;
-        del.deserialize(area);
-
-        DBG_VAR1(del.varId);
-
-        deletes.push_back(del);
-    }
-
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::extractVarUpdateList(DisassemblyArea& area, std::deque<VarUpdateT>& updates)
-{
-    dbg_enter("extractVarUpdateList");
-
-    ICHeaderT icHeader;
-    icHeader.deserialize (area);
-    assert(icHeader.icType == ICTYPE_UPDATES);
-    assert(icHeader.icNumRecords > 0);
-
-    for (int i=0; i<icHeader.icNumRecords; i++)
-    {
-        VarUpdateT upd;
-        upd.deserialize (area);
-
-        DBG_VAR2(upd.varId, upd.seqno);
-
-        updates.push_back(upd);
-    }
-
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::extractVarSummaryList(DisassemblyArea& area, std::deque<VarSummT>& summs)
-{
-    dbg_enter("extractVarSummaryList");
-
-    ICHeaderT icHeader;
-    icHeader.deserialize (area);
-    assert(icHeader.icType == ICTYPE_SUMMARIES);
-    assert(icHeader.icNumRecords > 0);
-
-    for (int i=0; i<icHeader.icNumRecords; i++)
-    {
-        VarSummT summ;
-        summ.deserialize (area);
-
-        DBG_VAR2(summ.varId, summ.seqno);
-
-        summs.push_back(summ);
-    }
-
-    dbg_leave();
-}
-
-
-// ----------------------------------------------------
-
-void VardisProtocol::extractVarReqUpdateList (DisassemblyArea& area, std::deque<VarReqUpdateT>& requpdates)
-{
-    dbg_enter("extractVarReqUpdateList");
-
-    ICHeaderT icHeader;
-    icHeader.deserialize (area);
-    assert(icHeader.icType == ICTYPE_REQUEST_VARUPDATES);
-    assert(icHeader.icNumRecords > 0);
-
-    for (int i=0; i<icHeader.icNumRecords; i++)
-    {
-        VarReqUpdateT requpd;
-        requpd.deserialize (area);
-
-        DBG_VAR2(requpd.updSpec.varId, requpd.updSpec.seqno);
-
-        requpdates.push_back(requpd);
-    }
-
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::extractVarReqCreateList(DisassemblyArea& area, std::deque<VarReqCreateT>& reqcreates)
-{
-    dbg_enter("extractVarReqCreateList");
-
-    ICHeaderT icHeader;
-    icHeader.deserialize (area);
-    assert(icHeader.icType == ICTYPE_REQUEST_VARCREATES);
-    assert(icHeader.icNumRecords > 0);
-
-    for (int i=0; i<icHeader.icNumRecords; i++)
-    {
-        VarReqCreateT reqcr;
-        reqcr.deserialize (area);
-
-        DBG_VAR1(reqcr.varId);
-
-        reqcreates.push_back(reqcr);
+        vardis_protocol_data_p->process_var_reqcreate(*it);
     }
 
     dbg_leave();
@@ -2322,295 +993,17 @@ Protocol* VardisProtocol::fetchSenderProtocol(Message* message)
 
 bool VardisProtocol::variableExists(VarIdT varId)
 {
-    return (theVariableDatabase.find(varId) != theVariableDatabase.end());
+  return vardis_store_p->identifier_is_allocated (varId);
 }
 
 // ----------------------------------------------------
 
 bool VardisProtocol::producerIsMe(VarIdT varId)
 {
-    DBEntry& theEntry = theVariableDatabase.at(varId);
+    DBEntry& theEntry = vardis_store_p->get_db_entry_ref (varId);
 
-    return theEntry.spec.prodId == getOwnNodeId();
+    return theEntry.prodId == getOwnNodeId();
 }
 
 
-// ========================================================================================
-// Queue management helpers
-// ========================================================================================
 
-
-bool VardisProtocol::isVarIdInQueue(const std::deque<VarIdT>& q, VarIdT varId)
-{
-    return (std::find(q.begin(), q.end(), varId) != q.end());
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::removeVarIdFromQueue(std::deque<VarIdT>& q, VarIdT varId)
-{
-    auto rems = std::remove(q.begin(), q.end(), varId);
-    q.erase(rems, q.end());
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::dropNonexistingDeleted(std::deque<VarIdT>& q)
-{
-    auto rems = std::remove_if(q.begin(),
-                               q.end(),
-                               [&](VarIdT varId){ return (    (theVariableDatabase.find(varId) == theVariableDatabase.end())
-                                                           || (theVariableDatabase.at(varId).toBeDeleted));}
-                              );
-    q.erase(rems, q.end());
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::dropNonexisting(std::deque<VarIdT>& q)
-{
-    auto rems = std::remove_if(q.begin(),
-                               q.end(),
-                               [&](VarIdT varId){ return (theVariableDatabase.find(varId) == theVariableDatabase.end());}
-                              );
-    q.erase(rems, q.end());
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::dropDeleted(std::deque<VarIdT>& q)
-{
-    auto rems = std::remove_if(q.begin(),
-                               q.end(),
-                               [&](VarIdT varId){ return (    (theVariableDatabase.find(varId) != theVariableDatabase.end())
-                                                           && (theVariableDatabase.at(varId).toBeDeleted));}
-                              );
-    q.erase(rems, q.end());
-}
-
-
-// ========================================================================================
-// Debug helpers
-// ========================================================================================
-
-void VardisProtocol::dbg_queueSizes()
-{
-    DBG_VAR6(createQ.size(), deleteQ.size(), updateQ.size(), summaryQ.size(), reqUpdQ.size(), reqCreateQ.size());
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::dbg_summaryQ()
-{
-    if (summaryQ.empty()) return;
-    dbg_prefix();
-    EV << "summaryQ.size = " << summaryQ.size()
-       << " , contents = {";
-    for (auto it = summaryQ.begin(); it != summaryQ.end(); it++)
-    {
-        EV << " (i:" << *it
-           << ", s:" << theVariableDatabase.at((*it).val).seqno
-           << ")";
-    }
-    EV << "}" << endl;
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::dbg_createQ()
-{
-    if (createQ.empty()) return;
-
-    dbg_prefix();
-    EV << "createQ.size = " << createQ.size()
-       << " , contents = {";
-    for (auto it = createQ.begin(); it != createQ.end(); it++)
-    {
-        EV << " (i:" << *it
-           << ", s:" << theVariableDatabase.at((*it).val).seqno
-           << ", c:" << theVariableDatabase.at((*it).val).countCreate
-           << ")";
-    }
-    EV << "}" << endl;
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::dbg_updateQ()
-{
-    if (updateQ.empty()) return;
-
-    dbg_prefix();
-    EV << "updateQ.size = " << updateQ.size()
-       << " , contents = {";
-    for (auto it = updateQ.begin(); it != updateQ.end(); it++)
-    {
-        EV << " (i:" << *it
-           << ", s:" << theVariableDatabase.at((*it).val).seqno
-           << ", c:" << theVariableDatabase.at((*it).val).countUpdate
-           << ")";
-    }
-    EV << "}" << endl;
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::dbg_reqCreateQ()
-{
-    if (reqCreateQ.empty()) return;
-
-    dbg_prefix();
-    EV << "reqCreateQ.size = " << reqCreateQ.size()
-       << " , contents = {";
-    for (auto it = reqCreateQ.begin(); it != reqCreateQ.end(); it++)
-    {
-        EV << " (i:" << *it
-           << ")";
-    }
-    EV << "}" << endl;
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::dbg_reqUpdateQ()
-{
-    if (reqUpdQ.empty()) return;
-
-    dbg_prefix();
-    EV << "reqUpdQ.size = " << reqUpdQ.size()
-       << " , contents = {";
-    for (auto it = reqUpdQ.begin(); it != reqUpdQ.end(); it++)
-    {
-        EV << " (i:" << *it
-           << ", c:" << theVariableDatabase.at((*it).val).seqno
-           << ")";
-    }
-    EV << "}" << endl;
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::dbg_database()
-{
-    if (theVariableDatabase.empty()) return;
-
-    dbg_prefix();
-    EV << "database.size = " << theVariableDatabase.size()
-       << " , contents = {";
-    for (auto it = theVariableDatabase.begin(); it != theVariableDatabase.end(); it++)
-    {
-        EV << " (i:" << it->second.spec.varId
-           << ", s:" << it->second.seqno
-           << ", r:" << it->second.spec.repCnt
-           << ", cc:" << it->second.countCreate
-           << ", cu:" << it->second.countUpdate
-           << ", cd:" << it->second.countDelete
-           << ")";
-    }
-    EV << "}" << endl;
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::dbg_database_complete()
-{
-    if (theVariableDatabase.empty()) return;
-
-    dbg_enter("dbg_database_complete");
-    dbg_prefix();
-    EV << "database.size = " << theVariableDatabase.size()
-       << " , contents = {" << endl;
-    for (auto it = theVariableDatabase.begin(); it != theVariableDatabase.end(); it++)
-    {
-        DBEntry& theEntry = it->second;
-        dbg_prefix();
-        EV << "      (i:" << theEntry.spec.varId
-           << ", s:" << theEntry.seqno
-           << ", r:" << theEntry.spec.repCnt
-           << ", cc:" << theEntry.countCreate
-           << ", cu:" << theEntry.countUpdate
-           << ", cd:" << theEntry.countDelete
-           << " , descrLen = " << (int) (theEntry.spec.descr.length)
-           << " , descr = " << (theEntry.spec.descr.to_str())
-           << (theEntry.toBeDeleted ? " TO-BE-DELETED" : "")
-           << ")" << endl;
-    }
-    dbg_prefix();
-    EV << "}" << endl;
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::dbg_comprehensive(std::string methname)
-{
-    dbg_enter(methname);
-
-    dbg_queueSizes();
-    dbg_summaryQ();
-    dbg_createQ();
-    dbg_updateQ();
-    dbg_reqCreateQ();
-    dbg_reqUpdateQ();
-    dbg_database();
-
-    dbg_leave();
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::assert_createQ()
-{
-    if (createQ.empty()) return;
-    for (auto it : createQ)
-    {
-        VarIdT           varId = it;
-        NodeIdentifierT  ownId = getOwnNodeId();
-        std::stringstream addrss;
-        addrss << "address = " << ownId;
-        std::string addrstring = addrss.str();
-        if (theVariableDatabase.find(varId) == theVariableDatabase.end())
-        {
-            DBG_PVAR3("no database entry", varId, ownId, addrstring);
-            error("assert_createQ: varId not contained in database");
-        }
-
-        if (theVariableDatabase.at(varId).countCreate == 0)
-        {
-            DBG_PVAR3("database entry has countCreate = 0", varId, ownId, addrstring);
-            error("assert_createQ: countCreate is zero");
-        }
-    }
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::assert_updateQ()
-{
-    if (updateQ.empty()) return;
-    for (auto it : updateQ)
-    {
-        VarIdT varId = it;
-        if (theVariableDatabase.find(varId) == theVariableDatabase.end())
-        {
-            DBG_PVAR1("no database entry for variable", varId);
-            error("assert_updateQ: varId not contained in database");
-        }
-
-        if (theVariableDatabase.at(varId).countUpdate == 0)
-        {
-            DBG_PVAR1("database entry for variable has countUpdate = 0", varId);
-            error("assert_updateQ: countUpdate is zero");
-        }
-    }
-}
-
-// ----------------------------------------------------
-
-void VardisProtocol::assert_queues()
-{
-    dbg_enter("assert_queues");
-    assert_createQ();
-    assert_updateQ();
-    dbg_leave();
-}
