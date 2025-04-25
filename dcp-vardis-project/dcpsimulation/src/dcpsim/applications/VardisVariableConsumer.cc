@@ -45,7 +45,7 @@ void VardisVariableConsumer::initialize(int stage)
     {
         dbg_setModuleName("VardisVariableConsumer");
         dbg_enter("initialize");
-        assert(getOwnNodeId() != nullIdentifier);
+        assert(getOwnNodeId() != nullNodeIdentifier);
 
         // read and check module parameters
         consumerActive    = par("consumerActive");
@@ -157,7 +157,7 @@ void VardisVariableConsumer::handleRTDBDescribeDatabaseConfirm(RTDBDescribeDatab
     assert(readsRequested == 0);
 
     // check for empty database
-    if (dbConf->getSpecArraySize() == 0)
+    if (dbConf->getDescrsArraySize() == 0)
     {
         dbg_string("database is empty");
         state = cState_WaitForSampling;
@@ -167,20 +167,22 @@ void VardisVariableConsumer::handleRTDBDescribeDatabaseConfirm(RTDBDescribeDatab
     }
 
     // non-empty database: generate read request for each listed variable
-    for (size_t i=0; i<dbConf->getSpecArraySize(); i++)
+    for (size_t i=0; i<dbConf->getDescrsArraySize(); i++)
     {
-        auto spec = dbConf->getSpec(i);
+        auto spec = dbConf->getDescrs (i);
 
-        DBG_PVAR3("requesting read", (int) spec.varId, spec.prodId, spec.descr);
+        DBG_PVAR2("requesting read", spec.varId, spec.prodId);
 
         auto readReq = new RTDBRead_Request;
-        readReq->setVarId(spec.varId);
+	RTDB_Read_Request rReq;
+	rReq.varId = spec.varId;
+	readReq->setReadReq (rReq);
         sendToVardis(readReq);
     }
 
     // change state
     state           =  cState_WaitForReadResponses;
-    readsRequested  =  dbConf->getSpecArraySize();
+    readsRequested  =  dbConf->getDescrsArraySize();
 
     delete dbConf;
 
@@ -192,24 +194,23 @@ void VardisVariableConsumer::handleRTDBDescribeDatabaseConfirm(RTDBDescribeDatab
 void VardisVariableConsumer::handleRTDBReadConfirm(RTDBRead_Confirm* readConf)
 {
     dbg_enter("handleRTDBReadConfirm");
+
+    RTDB_Read_Confirm rConf = readConf->getReadConf();
+    
     assert(readConf);
     assert(state == cState_WaitForReadResponses);
-    assert(readConf->getStatus() == VARDIS_STATUS_OK);
+    assert(rConf.status_code == VARDIS_STATUS_OK);
     assert(readsRequested > 0);
-    assert(readConf->getDataLen() == sizeof(VardisExampleVariable));
+    assert(rConf.value.len == sizeof(VardisExampleVariable));
 
     // copy received data into local variable
     VardisExampleVariable theValue;
     uint8_t *thePtr = (uint8_t*) &theValue;
-    for (size_t i=0; i<sizeof(VardisExampleVariable); i++)
-    {
-        *thePtr = readConf->getData(i);
-        thePtr++;
-    }
+    std::memcpy (thePtr, rConf.value.data, sizeof(VardisExampleVariable));
 
     // if variable is new or has updated value print debug output and record statistics
     // (for one selected variable)
-    VarIdT varId = readConf->getVarId();
+    VarIdT varId = rConf.varId;
 
     DBG_PVAR3("CONSIDERING", varId, readsRequested, (lastReceived.find(varId) == lastReceived.end()));
 
