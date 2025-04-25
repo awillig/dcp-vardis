@@ -18,9 +18,16 @@
 
 import inet.common.packet.Message;
 
+cplusplus {{
+#include <dcp/vardis/vardis_service_primitives.h>
+typedef dcp::vardis::RTDB_Update_Request RTDB_Update_Request;
+}}
+
+class RTDB_Update_Request {
+    @existingClass;
+}
+
 class RTDBUpdate_Request extends inet::Message
 {
-    uint8_t         varId;
-    uint8_t         updlen;
-    uint8_t         upddata[];
+   RTDB_Update_Request updReq;
 };

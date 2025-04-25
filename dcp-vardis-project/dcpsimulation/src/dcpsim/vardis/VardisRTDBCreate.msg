@@ -17,16 +17,18 @@
 //
 
 import inet.common.packet.Message;
-import dcpsim.common.NodeIdentifierT;
+import dcpsim.common.GlobalTypes;
 
+cplusplus {{
+#include <dcp/vardis/vardis_service_primitives.h>
+typedef dcp::vardis::RTDB_Create_Request RTDB_Create_Request;
+}}
+
+class RTDB_Create_Request {
+    @existingClass;
+}
 
 class RTDBCreate_Request extends inet::Message
 {
-    uint8_t           varId;
-    NodeIdentifierT   prodId;
-    uint8_t           repCnt;
-    string            descr;
-
-    uint8_t           updlen;
-    uint8_t           upddata[];
+   RTDB_Create_Request crReq;
 };

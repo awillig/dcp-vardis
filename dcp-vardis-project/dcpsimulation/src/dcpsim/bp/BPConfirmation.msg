@@ -18,7 +18,7 @@
 
 
 import inet.common.packet.Message;
-import dcpsim.common.NodeIdentifierT;
+import dcpsim.common.GlobalTypes;
 
 
 

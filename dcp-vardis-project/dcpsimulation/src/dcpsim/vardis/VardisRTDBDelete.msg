@@ -18,7 +18,16 @@
 
 import inet.common.packet.Message;
 
+cplusplus {{
+#include <dcp/vardis/vardis_service_primitives.h>
+typedef dcp::vardis::RTDB_Delete_Request RTDB_Delete_Request;
+}}
+
+class RTDB_Delete_Request {
+    @existingClass;
+}
+
 class RTDBDelete_Request extends inet::Message
 {
-    uint8_t   varId;
-};
+   RTDB_Delete_Request delReq;
+}

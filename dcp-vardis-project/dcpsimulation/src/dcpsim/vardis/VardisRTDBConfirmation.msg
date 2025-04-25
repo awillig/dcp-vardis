@@ -18,12 +18,13 @@
 
 
 import inet.common.packet.Message;
+import dcpsim.vardis.VardisTypes;
 
 
 class VardisConfirmation extends inet::Message
 {
     uint16_t  status;
-    uint8_t   varId;
+    VarIdT    varId;
 }
 
 

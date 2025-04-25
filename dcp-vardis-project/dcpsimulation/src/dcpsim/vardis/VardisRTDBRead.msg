@@ -20,14 +20,27 @@
 import inet.common.packet.Message;
 import VardisRTDBConfirmation;
 
+cplusplus {{
+#include <dcp/vardis/vardis_service_primitives.h>
+typedef dcp::vardis::RTDB_Read_Request RTDB_Read_Request;
+typedef dcp::vardis::RTDB_Read_Confirm RTDB_Read_Confirm;
+}}
+
+class RTDB_Read_Request {
+    @existingClass;
+}
+
+class RTDB_Read_Confirm {
+    @existingClass;
+}
+
 class RTDBRead_Request extends inet::Message
 {
-    uint8_t varId;
+    RTDB_Read_Request readReq;
 };
 
 
 class RTDBRead_Confirm extends VardisConfirmation
 {
-    uint8_t    dataLen;
-    uint8_t    data[];
+    RTDB_Read_Confirm readConf;
 }

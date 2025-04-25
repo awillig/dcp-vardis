@@ -17,26 +17,26 @@
 //
 
 import inet.common.packet.Message;
-import dcpsim.common.NodeIdentifierT;
+import dcpsim.common.GlobalTypes;
+import dcpsim.vardis.VardisTypes;
 import VardisRTDBConfirmation;
 
 class RTDBDescribeVariable_Request extends inet::Message
 {
-    uint8_t            varId;
+    VarIdT  varId;
 };
 
 class RTDBDescribeVariable_Confirm extends VardisConfirmation
 {
-    uint8_t             varId;
+    VarIdT              varId;
     NodeIdentifierT     prodId;
-    uint8_t             repCnt;
-    string              descr;
-    uint8_t             length;
-    uint8_t             value [];
-    uint8_t             seqno;
-	simtime_t           tstamp;
-    uint8_t             countUpdate;
-    uint8_t             countCreate;
-    uint8_t             countDelete;
+    VarRepCntT          repCnt;
+    StringT             descr;
+    VarValueT           value;
+    VarSeqnoT           seqno;
+    TimeStampT          tstamp;
+    VarRepCntT          countUpdate;
+    VarRepCntT          countCreate;
+    VarRepCntT          countDelete;
     bool                toBeDeleted;
 };

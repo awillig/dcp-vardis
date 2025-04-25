@@ -19,22 +19,15 @@
 
 import inet.common.packet.Message;
 import VardisRTDBConfirmation;
-import dcpsim.common.NodeIdentifierT;
+import dcpsim.common.GlobalTypes;
+import dcpsim.vardis.VardisTypes;
 
 class RTDBDescribeDatabase_Request extends inet::Message
 {
 };
 
-struct VarSpecEntry
-{
-    uint8_t          varId;
-    NodeIdentifierT  prodId;
-    uint8_t          repCnt;
-    string           descr;
-};
-
 
 class RTDBDescribeDatabase_Confirm extends VardisConfirmation
 {
-        VarSpecEntry     spec [];
+   DescribeDatabaseVariableDescription  descrs [];
 }
