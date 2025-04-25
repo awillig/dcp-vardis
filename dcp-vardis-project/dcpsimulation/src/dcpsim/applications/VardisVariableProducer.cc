@@ -19,7 +19,7 @@
 
 #include <inet/common/IProtocolRegistrationListener.h>
 #include <inet/common/Protocol.h>
-
+#include <dcp/vardis/vardis_service_primitives.h>
 #include <dcpsim/applications/VardisVariableProducer.h>
 #include <dcpsim/vardis/VardisRTDBCreate_m.h>
 #include <dcpsim/vardis/VardisRTDBDelete_m.h>
@@ -28,6 +28,7 @@
 
 
 using namespace dcp;
+using namespace dcp::vardis;
 
 
 Define_Module(VardisVariableProducer);
@@ -45,7 +46,7 @@ void VardisVariableProducer::initialize(int stage)
     {
         dbg_setModuleName("VardisVariableProducer");
         dbg_enter("initialize");
-        assert(getOwnNodeId() != nullIdentifier);
+        assert(getOwnNodeId() != nullNodeIdentifier);
 
         // read parameters
         varId         = (VarIdT) par("varId");
@@ -55,9 +56,9 @@ void VardisVariableProducer::initialize(int stage)
 
         // check parameters
         assert (varId >= 0);
-        assert (varId <= maxVarId);
+        assert (varId <= VarIdT::max_val());
         assert (varRepCnt >= 0);
-        assert (varRepCnt <= maxVarRepCnt);
+        assert (varRepCnt <= VarRepCntT::max_val());
         assert (creationTime >= 0);
         assert (deletionTime > creationTime);
 
@@ -168,7 +169,7 @@ void VardisVariableProducer::handleCreateMsg()
 {
     dbg_enter("handleCreateMsg");
     assert(not isActivelyGenerating);
-    assert(nullIdentifier != getOwnNodeId());
+    assert(nullNodeIdentifier != getOwnNodeId());
 
     // construction description string
     std::stringstream ssdescr;
@@ -185,14 +186,13 @@ void VardisVariableProducer::handleCreateMsg()
 
     // fill in the RTDB_Create_Request
     uint8_t      *valPtr = (uint8_t*) &varExmpl;
-    createReq->setVarId(varId.val);
-    createReq->setProdId(getOwnNodeId());
-    createReq->setRepCnt(varRepCnt.val);
-    createReq->setDescr(ssdescr.str().c_str());
-    createReq->setUpdlen(sizeof(VardisExampleVariable));
-    createReq->setUpddataArraySize(sizeof(VardisExampleVariable));
-    for (size_t i = 0; i < sizeof(VardisExampleVariable); i++)
-        createReq->setUpddata(i, *(valPtr++));
+    RTDB_Create_Request crReq;
+    crReq.spec.varId   = varId;
+    crReq.spec.prodId  = getOwnNodeId();
+    crReq.spec.repCnt  = varRepCnt;
+    crReq.spec.descr   = StringT (ssdescr.str());
+    crReq.value        = VarValueT (sizeof(VardisExampleVariable), valPtr);
+    createReq->setCrReq (crReq);
 
     // hand over to VarDis
     sendToVardis(createReq);
@@ -220,16 +220,16 @@ void VardisVariableProducer::handleUpdateMsg()
         newVal.tstamp =  simTime();
 
         // create and fill in RTDBUpdate_Request
-        uint8_t *valPtr  = (uint8_t*) &newVal;
-        auto   updReq    = new RTDBUpdate_Request;
-        updReq->setVarId(varId.val);
-        updReq->setUpdlen(sizeof(VardisExampleVariable));
-        updReq->setUpddataArraySize(sizeof(VardisExampleVariable));
-        for (size_t i = 0; i < sizeof(VardisExampleVariable); i++)
-            updReq->setUpddata(i, *(valPtr++));
+        uint8_t *valPtr      = (uint8_t*) &newVal;
+        auto   updateReq     = new RTDBUpdate_Request;
+	RTDB_Update_Request  updReq;
+        updReq.varId = varId;
+	updReq.value = VarValueT (sizeof(VardisExampleVariable), valPtr);
 
+	updateReq->setUpdReq (updReq);
+	
         // hand over to VarDis
-        sendToVardis(updReq);
+        sendToVardis(updateReq);
     }
 
     // schedule next update
@@ -249,8 +249,10 @@ void VardisVariableProducer::handleDeleteMsg()
 
     isActivelyGenerating = false;
 
+    RTDB_Delete_Request del_req;
+    del_req.varId = varId;
     auto deleteReq = new RTDBDelete_Request;
-    deleteReq->setVarId(varId.val);
+    deleteReq->setDelReq(del_req);
     sendToVardis(deleteReq);
 
     dbg_leave();
