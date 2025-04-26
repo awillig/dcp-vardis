@@ -28,6 +28,7 @@
 #include <dcp/common/configuration.h>
 
 
+
 namespace sources  = boost::log::sources;
 namespace trivial  = boost::log::trivial;
 
@@ -145,14 +146,17 @@ namespace dcp {
    */
   void initialize_file_logging(const LoggingConfigurationBlock& cfg);
 
+};  // namespace dcp
+  
 
-
-  /**
-   * @brief A set of macros to act as wrapper around logging calls for
-   *        either BOOST logging (in the implementation) or OMNeT++
-   *        logging (in the simulation)
-   */
+/**
+ * @brief A set of macros to act as wrapper around logging calls for
+ *        either BOOST logging (in the implementation) or OMNeT++
+ *        logging (in the simulation)
+ */
 #ifdef __DCPSIMULATION__
+#include <omnetpp.h>
+using namespace omnetpp;
 #define DCPLOG_TRACE(logstream) EV_TRACE
 #define DCPLOG_INFO(logstream) EV_INFO
 #define DCPLOG_WARNING(logstream) EV_WARN  
@@ -166,4 +170,4 @@ namespace dcp {
 #define DCPLOG_FATAL(logstream) BOOST_LOG_SEV(logstream,trivial::fatal)
 #endif
   
-};  // namespace dcp
+
