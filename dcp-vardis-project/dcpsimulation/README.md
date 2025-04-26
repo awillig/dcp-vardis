@@ -12,13 +12,16 @@ can be found [here](https://github.com/awillig/dcp-vardis.git). The
 simulator has been developed for the OMNeT++ discrete-event simulation
 framework ([website](https://omnetpp.org)) and in addition uses the
 INET module library for OMNeT++
-([website](https://inet.omnetpp.org/)).
+([website](https://inet.omnetpp.org/)). The simulator shares
+substantial amounts of code with the DCP implementation (which can be
+found in the directory `dcpimplementation` adjacent to the current
+directory `dcpsimulation`).
 
-IMPORTANT: The DCP/Vardis specification and simulation model are being
-continuously developed, bugs are corrected, features are added et
-cetera. We do not guarantee that the simulator code fully conforms to
-the specification or that the specification as such is free of errors
-or ambiguities.
+IMPORTANT: The DCP/Vardis specification, implementation and simulation
+model are being continuously developed, bugs are corrected, features
+are added et cetera. We do not guarantee that the implementation or
+simulator code fully conforms to the specification or that the
+specification as such is free of errors or ambiguities.
 
 We welcome any contributions! If you are interested in contributing to
 this project please get in touch with [Andreas
@@ -28,10 +31,10 @@ Willig](mailto:andreas.willig@canterbury.ac.nz).
 Versions
 ========
 
-Presently, the code is developed under Linux on an AARCH64
-platform. It works together with OMNeT++ in version 6.1 and builds on
-the INET framework in version 4.5.3. Both OMNeT++ and the INET
-framework have been built with the `gcc` toolchain in version
+Presently, the code is developed under Ubuntu Linux 24.04 on an
+AARCH64 platform. It works together with OMNeT++ in version 6.1 and
+builds on the INET framework in version 4.5.4. Both OMNeT++ and the
+INET framework have been built with the `gcc` toolchain in version
 13.3. The code itself uses features of the C++20 standard.
 
 
@@ -61,11 +64,29 @@ the INET source files. Furthermore, ensure that:
     in your `PATH` environment variable, and
   - the `lib/` sub-directory of your OMNeT++ installation directory is
     in your `LD_LIBRARY_PATH` environment variable.
+  - the environment variable `__omnetpp_root_dir` points to the root
+    directory of your OMNeT++ installation. This is needed by the
+    build process for the DCP implementation.
+
+Before building the simulator you will have to build the DCP
+implementation to create suitable libraries that can be linked to the
+simulator. This can be achieved as follows:
+``` shell
+cd dcpimplementation/src
+rm -rf ../_build/
+cmake -S . -B ../_build
+cmake --build ../_build
+```
+You can follow this by running the available unit tests:
+
+``` shell
+cd ../_build/ && ctest && cd ../src/
+```
 
 To build the DCP/Vardis code run the following commands
 ```shell
-cd dcpsimulation
-opp_makemake -f -r -M release --deep -I$INET_ROOT/src -I./src -L$INET_ROOT/src -lINET
+cd ../../dcpsimulation
+opp_makemake -f -r -M release --deep -I$INET_ROOT/src -I./src -I../dcpimplementation/src -L$INET_ROOT/src -L../dcpimplementation/_build -lINET -ldcplib-common-sim -ldcplib-bp-sim -ldcplib-vardis-sim
 make -j$nproc
 ```
 This invocation builds the simulation in the OMNeT++ release mode and
