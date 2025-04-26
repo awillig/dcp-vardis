@@ -1,3 +1,20 @@
+Version 1.3.6, April 2025
+=========================
+
+No specification changes, no changes to the implementation. The
+simulator code is now based to a significant degree on code from the
+implementation, in particular concerning data types and the
+implementation of actual protocol behaviours.
+
+
+Version 1.3.5, April 2025
+=========================
+
+No specification changes, no changes to the simulation. Implementation
+changes: substantial re-working of shared memory management, receive
+path for SRP and Vardis does not use polling anymore but rather
+blocking waits on a shared memory queue.
+
 Version 1.3, March 2025
 =======================
 
