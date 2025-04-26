@@ -8,6 +8,7 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -g -fPIC -fopenmp -DBOOST_LOG_DYN_
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+
 # ========================================================================================
 # Main outputs
 # ========================================================================================
@@ -37,14 +38,14 @@ file (GLOB applications_SRC
   "dcp/applications/*.cc"
 )
 
-
-add_library(dcpcommon SHARED ${common_SRC})
-add_library(dcpbp SHARED ${bp_SRC})
-add_library(dcpsrp SHARED ${srp_SRC})
-add_library(dcpvardis SHARED ${vardis_SRC})
-add_executable(dcp-bp "dcp/main/bp_main.cc")
-add_executable(dcp-srp "dcp/main/srp_main.cc")
-add_executable(dcp-vardis "dcp/main/vardis_main.cc")
+# targets for implementation, linked against BOOST
+add_library(dcplib-common SHARED ${common_SRC})
+add_library(dcplib-bp SHARED ${bp_SRC})
+add_library(dcplib-srp SHARED ${srp_SRC})
+add_library(dcplib-vardis SHARED ${vardis_SRC})
+add_executable(dcpmain-bp "dcp/main/bp_main.cc")
+add_executable(dcpmain-srp "dcp/main/srp_main.cc")
+add_executable(dcpmain-vardis "dcp/main/vardis_main.cc")
 add_executable(vardisapp-test-producer "dcp/applications/vardisapp-test-producer.cc")
 add_executable(vardisapp-test-consumer "dcp/applications/vardisapp-test-consumer.cc")
 add_executable(vardisapp-delete-variable "dcp/applications/vardisapp-delete-variable.cc")
@@ -53,24 +54,46 @@ add_executable(vardisapp-list-variables "dcp/applications/vardisapp-list-variabl
 add_executable(srpapp-test-generate-sd "dcp/applications/srpapp-test-generate-sd.cc")
 add_executable(srpapp-display-neighbour-table "dcp/applications/srpapp-display-neighbour-table.cc")
 
+# targets linked against OMNeT++ simulation tool, if available
+if (DEFINED ENV{__omnetpp_root_dir})
+  set(OPP_INCLUDE_PATH "$ENV{__omnetpp_root_dir}/include")
+  message("Building libraries suitable for OMNeT++, OPP_INCLUDE_PATH=${OPP_INCLUDE_PATH}")
+  add_library(dcplib-common-sim SHARED
+    dcp/common/debug_helpers.cc
+    dcp/common/global_types_constants.cc
+    dcp/common/services_status.cc)
+  add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
+  add_library(dcplib-bp-sim SHARED
+    dcp/bp/bp_queueing_mode.cc
+    dcp/bp/bp_service_primitives.cc
+    dcp/bp/bp_transmissible_types.cc)
+  add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
+  add_library(dcplib-vardis-sim SHARED
+    dcp/vardis/vardis_protocol_data.cc
+    dcp/vardis/vardis_protocol_statistics.cc
+    dcp/vardis/vardis_service_primitives.cc
+    dcp/vardis/vardis_transmissible_types.cc)
+  add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
+endif()
+
 find_package(Boost COMPONENTS program_options log log_setup REQUIRED)
 set(PROJECT_LIB ${PROJECT_LIB} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
 find_library(TINS_LIB tins)
 find_library(NCURSES_LIB ncurses)
 
-target_link_libraries(dcpbp dcpcommon tins ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
-target_link_libraries(dcpsrp dcpbp)
-target_link_libraries(dcpvardis dcpbp)
-target_link_libraries(dcp-bp -Wl,--start-group  ${PROJECT_LIB} tins dcpcommon dcpbp -Wl,--end-group)
-target_link_libraries(dcp-srp -Wl,--start-group tins ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpbp dcpsrp -Wl,--end-group)
-target_link_libraries(dcp-vardis -Wl,--start-group tins ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpbp dcpvardis -Wl,--end-group)
-target_link_libraries(vardisapp-test-producer -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis -Wl,--end-group)
-target_link_libraries(vardisapp-test-consumer -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis ncurses -Wl,--end-group)
-target_link_libraries(vardisapp-delete-variable -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis -Wl,--end-group)
-target_link_libraries(vardisapp-describe-variable -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis -Wl,--end-group)
-target_link_libraries(vardisapp-list-variables -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpvardis -Wl,--end-group)
-target_link_libraries(srpapp-test-generate-sd -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpsrp -Wl,--end-group)
-target_link_libraries(srpapp-display-neighbour-table -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcpcommon dcpsrp ncurses -Wl,--end-group)
+target_link_libraries(dcplib-bp dcplib-common tins ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
+target_link_libraries(dcplib-srp dcplib-bp)
+target_link_libraries(dcplib-vardis dcplib-bp)
+target_link_libraries(dcpmain-bp -Wl,--start-group  ${PROJECT_LIB} tins dcplib-common dcplib-bp -Wl,--end-group)
+target_link_libraries(dcpmain-srp -Wl,--start-group tins ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcplib-common dcplib-bp dcplib-srp -Wl,--end-group)
+target_link_libraries(dcpmain-vardis -Wl,--start-group tins ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcplib-common dcplib-bp dcplib-vardis -Wl,--end-group)
+target_link_libraries(vardisapp-test-producer -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcplib-common dcplib-vardis -Wl,--end-group)
+target_link_libraries(vardisapp-test-consumer -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcplib-common dcplib-vardis ncurses -Wl,--end-group)
+target_link_libraries(vardisapp-delete-variable -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcplib-common dcplib-vardis -Wl,--end-group)
+target_link_libraries(vardisapp-describe-variable -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcplib-common dcplib-vardis -Wl,--end-group)
+target_link_libraries(vardisapp-list-variables -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcplib-common dcplib-vardis -Wl,--end-group)
+target_link_libraries(srpapp-test-generate-sd -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcplib-common dcplib-srp -Wl,--end-group)
+target_link_libraries(srpapp-display-neighbour-table -Wl,--start-group ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY} dcplib-common dcplib-srp ncurses -Wl,--end-group)
 
 
 # ========================================================================================
@@ -128,15 +151,15 @@ add_executable(common_avl_test "test/common/avl_tree.cc")
 add_executable(common_misc_test "test/common/miscellaneous_test.cc")
 add_executable(vardis_tt_test "test/vardis/vardis_transmissible_types_test.cc")
 add_executable(vardis_pd_test "test/vardis/vardis_protocol_data_test.cc")
-target_link_libraries(bp_shm_test GTest::gtest_main dcpcommon dcpbp ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
+target_link_libraries(bp_shm_test GTest::gtest_main dcplib-common dcplib-bp ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
 target_link_libraries(common_tt_test GTest::gtest_main)
-target_link_libraries(common_shm_test GTest::gtest_main dcpcommon ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
+target_link_libraries(common_shm_test GTest::gtest_main dcplib-common ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
 target_link_libraries(common_ser_test GTest::gtest_main)
-target_link_libraries(common_cs_test GTest::gtest_main dcpcommon ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
-target_link_libraries(common_avl_test GTest::gtest_main dcpcommon)
-target_link_libraries(common_misc_test GTest::gtest_main dcpcommon ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
-target_link_libraries(vardis_tt_test GTest::gtest_main dcpcommon dcpvardis)
-target_link_libraries(vardis_pd_test GTest::gtest_main dcpcommon dcpvardis)
+target_link_libraries(common_cs_test GTest::gtest_main dcplib-common ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
+target_link_libraries(common_avl_test GTest::gtest_main dcplib-common)
+target_link_libraries(common_misc_test GTest::gtest_main dcplib-common ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
+target_link_libraries(vardis_tt_test GTest::gtest_main dcplib-common dcplib-vardis)
+target_link_libraries(vardis_pd_test GTest::gtest_main dcplib-common dcplib-vardis)
 include(GoogleTest)
 gtest_discover_tests(bp_shm_test)
 gtest_discover_tests(common_tt_test)
