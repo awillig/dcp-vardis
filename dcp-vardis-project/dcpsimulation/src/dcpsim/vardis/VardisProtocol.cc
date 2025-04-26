@@ -14,10 +14,11 @@
 // 
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
-// 
+//
 
 
 #include <algorithm>
+#include <format>
 #include <inet/common/IProtocolRegistrationListener.h>
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcpsim/bp/BPTransmitPayload_m.h>
@@ -161,7 +162,7 @@ void VardisProtocol::registerAsBPClient()
 
     DBG_VAR1(maxPayloadSize);
 
-    sendRegisterProtocolRequest(BP_PROTID_VARDIS, "VarDis -- Variable Dissemination Protocol V1.3", maxPayloadSize, BP_QMODE_QUEUE_DROPHEAD, false, 10);
+    sendRegisterProtocolRequest(BP_PROTID_VARDIS, std::format("VarDis -- Variable Dissemination Protocol V{}", dcpVersionNumber), maxPayloadSize, BP_QMODE_QUEUE_DROPHEAD, false, 10);
 
     dbg_leave();
 }
