@@ -71,7 +71,7 @@ int run_srp_demon (const std::string cfg_filename)
   // read configuration and start logging
   SRPConfiguration srpconfig;
   srpconfig.read_from_config_file (cfg_filename);
-  initialize_logging (srpconfig);
+  initialize_logging (srpconfig.logging_conf);
   BOOST_LOG_SEV(log_main, trivial::info) << "Demon mode with config file " << cfg_filename;
   BOOST_LOG_SEV(log_main, trivial::info) << "Configuration: " << srpconfig;
 

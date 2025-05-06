@@ -71,7 +71,7 @@ int run_vardis_demon (const std::string cfg_filename)
   // read configuration and start logging
   VardisConfiguration vdconfig;
   vdconfig.read_from_config_file (cfg_filename);
-  initialize_logging (vdconfig);
+  initialize_logging (vdconfig.logging_conf);
   BOOST_LOG_SEV(log_main, trivial::info) << "Demon mode with config file " << cfg_filename; 
   BOOST_LOG_SEV(log_main, trivial::info) << "Configuration: " << vdconfig;
 

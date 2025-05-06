@@ -55,9 +55,9 @@ namespace dcp::srp {
   logger_type log_scrub    (keywords::channel = "SCRUB");
   logger_type log_main     (keywords::channel = "MAIN");
   
-  void initialize_logging(const SRPConfiguration& srpcfg)
+  void initialize_logging(const LoggingConfigurationBlock& logcfg)
   {
-    initialize_file_logging (srpcfg.logging_conf);
+    initialize_file_logging (logcfg);
     
     logging::core::get()->set_filter
       (

@@ -45,6 +45,6 @@ namespace dcp::vardis {
   /**
    * @brief Initialize logging (set output format etc)
    */
-  void initialize_logging (const VardisConfiguration& bpcfg);
+  void initialize_logging (const LoggingConfigurationBlock& logcfg);
   
 };  // namespace dcp::vardis

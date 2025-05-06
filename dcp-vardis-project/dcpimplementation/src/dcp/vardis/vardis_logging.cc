@@ -60,9 +60,9 @@ namespace dcp::vardis {
   logger_type log_mgmt_rtdb      (keywords::channel = "MGMT-RTDB");
   logger_type log_main           (keywords::channel = "MAIN");
   
-  void initialize_logging(const VardisConfiguration& vdcfg)
+  void initialize_logging(const LoggingConfigurationBlock& logcfg)
   {
-    initialize_file_logging (vdcfg.logging_conf);
+    initialize_file_logging (logcfg);
     
     logging::core::get()->set_filter
       (

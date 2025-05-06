@@ -44,6 +44,6 @@ namespace dcp::srp {
   /**
    * @brief Initialize logging (set output format etc)
    */
-  void initialize_logging (const SRPConfiguration& bpcfg);
+  void initialize_logging (const LoggingConfigurationBlock& logcfg);
   
 };  // namespace dcp::srp
