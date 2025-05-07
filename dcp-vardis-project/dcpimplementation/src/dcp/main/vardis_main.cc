@@ -150,18 +150,18 @@ int run_vardis_management_command (MgmtCommand cmd, const std::string cfg_filena
 	if (result == dcp::VARDIS_STATUS_OK)
 	  {
 	    cout << "Vardis demon protocol runtime statistics:\n"
-	    << "    RTDB services: create: " << protocol_stats.count_handle_rtdb_create
-	    << ", delete: " << protocol_stats.count_handle_rtdb_delete
-	    << ", update: " << protocol_stats.count_handle_rtdb_update
-	    << ", read: " << protocol_stats.count_handle_rtdb_read
-	    << "\n"
-	    << "    Processed instructions: create: " << protocol_stats.count_process_var_create
-	    << ", delete: " << protocol_stats.count_process_var_delete
-	    << ", update: " << protocol_stats.count_process_var_update
-	    << ", summary: " << protocol_stats.count_process_var_summary
-	    << ", reqcreate: " << protocol_stats.count_process_var_reqcreate
-	    << ", requpdate: " << protocol_stats.count_process_var_requpdate
-	    << endl;
+		 << "    RTDB services: create: " << protocol_stats.count_handle_rtdb_create
+		 << ", delete: " << protocol_stats.count_handle_rtdb_delete
+		 << ", update: " << protocol_stats.count_handle_rtdb_update
+		 << ", read: " << protocol_stats.count_handle_rtdb_read
+		 << "\n"
+		 << "    Processed instructions: create: " << protocol_stats.count_process_var_create
+		 << ", delete: " << protocol_stats.count_process_var_delete
+		 << ", update: " << protocol_stats.count_process_var_update
+		 << ", summary: " << protocol_stats.count_process_var_summary
+		 << ", reqcreate: " << protocol_stats.count_process_var_reqcreate
+		 << ", requpdate: " << protocol_stats.count_process_var_requpdate
+		 << endl;
 	  }
 	break;
       }
