@@ -116,6 +116,10 @@ guarantees at least for some client protocols.
 	  `false`. This parameter is only relevant for `queueMode` being
 	  either `BP_QMODE_QUEUE_DROPTAIL` or `BP_QMODE_QUEUE_DROPHEAD`.
 
+- The transmissible data type `BPNetworkIdentifierT` is an unsigned
+  integer of at least 16-bit width (implementation-dependent), its
+  values identify a network of DCP nodes.
+
 - The transmissible data type `BPPayloadHeaderT` holds all the
   header information for an individual payload. It is a record with
   the following fields in the given order:
@@ -136,6 +140,8 @@ guarantees at least for some client protocols.
       `0x497E`.
 	- `senderId` is of type `NodeIdentifierT` and contains the node
       identifier of the node sending the beacon.
+	- `networkId` is of type `BPNetworkIdentifierT` and identifies the
+	  DCP network identifier of the node sending the beacon.
 	- `length` is of type `BPLengthT` contains the total length of the
 	  BP payload in bytes (not including the `BPHeaderT` itself).
 	- `numPayloads` is an unsigned 8-bit value specifying the number
@@ -633,6 +639,11 @@ needs to support. These are:
   the maximum packet size allowed by the UWB. The default value is
   `UWB-MaxPacketSize`.
 
+- `BPPAR_NETWORK_ID`: this parameter of type `BPNetworkIdentifierT`
+  identifies the DCP network the node belongs to. It will only accept
+  packets from other nodes carrying the same network identifier in the
+  BP header.
+
 If a user-supplied value for one of these parameters does not match
 its conditions for validity (e.g. the value handed over for the
 `BPPAR_MAXIMUM_PACKET_SIZE` parameter is zero), then the supplied
@@ -785,6 +796,9 @@ representable by the `numPayloads` field of `BPHeaderT`. The
 - Set the `senderId` field to the node identifier of the sending node
   (stored in variable `ownNodeIdentifier` of type `NodeIdentifierT`).
 
+- Set the `networkId` field to the value of the `BPPAR_NETWORK_ID`
+  configuration parameter.
+
 - Set the `length` field to the sum of the following components: for
   each of the `numPayloads` included payload add the size of that
   payload and `sizeof(BPPayloadHeaderT)` to the sum
@@ -820,6 +834,8 @@ following sanity checks are performed:
 
 - The `numPayloads` field is not zero.
 
+- The value in the `networkId` field is equal to the value of the
+  `BPPAR_NETWORK_ID` configuration parameter.
 
 If any of these conditions is not satisfied, the entire received
 bearer payload is discarded without further processing. It is at the
