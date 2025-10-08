@@ -35,14 +35,15 @@ namespace dcp::bp {
       
   const size_t minimumRequiredMTUSize  = 256;
   
-  const std::string defaultValueInterfaceName               = "wlan0";
-  const size_t      defaultValueMtuSize                     = 1492;
-  const uint16_t    defaultValueEtherType                   = 0x4953;
-  const size_t      defaultValueMaxBeaconSize               = 1000;
-  const double      defaultValueAvgBeaconPeriodMS           = 100.0;
-  const double      defaultValueJitterFactor                = 0.1;
-  const double      defaultValueInterBeaconTimeEWMAAlpha    = 0.975;
-  const double      defaultValueBeaconSizeEWMAAlpha         = 0.975;
+  const std::string   defaultValueInterfaceName               = "wlan0";
+  const size_t        defaultValueMtuSize                     = 1492;
+  const uint16_t      defaultValueEtherType                   = 0x4953;
+  const size_t        defaultValueMaxBeaconSize               = 1000;
+  const double        defaultValueAvgBeaconPeriodMS           = 100.0;
+  const double        defaultValueJitterFactor                = 0.1;
+  const double        defaultValueInterBeaconTimeEWMAAlpha    = 0.975;
+  const double        defaultValueBeaconSizeEWMAAlpha         = 0.975;
+  const uint16_t      defaultValueOwnNetworkIdentifier        = 0x1111; 
   
     /**
      * @brief This struct contains the configuration data for BP to operate on.
@@ -107,6 +108,16 @@ namespace dcp::bp {
       double      jitterFactor    = defaultValueJitterFactor;
             
 
+      /**
+       * @brief Own network identifier
+       *
+       * Each DCP network has its own identifier, which is included in
+       * beacons. This allows to separate traffic in spatially
+       * overlapping but distinct DCP networks.
+       */
+      uint16_t  ownNetworkIdentifier = defaultValueOwnNetworkIdentifier;
+      
+      
       /**************************************************
        * Other options (e.g. runtime statistics)
        *************************************************/

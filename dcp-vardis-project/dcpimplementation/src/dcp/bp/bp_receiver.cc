@@ -127,7 +127,7 @@ namespace dcp::bp {
       }
 
     bpHdr.deserialize (area);
-    if (not bpHdr.isWellFormed (runtime.ownNodeIdentifier))
+    if (not bpHdr.isWellFormed (runtime.ownNodeIdentifier, runtime.bp_config.bp_conf.ownNetworkIdentifier))
       {
 	DCPLOG_TRACE(log_rx)
 	  << "process_received_payload: malformed BPHeaderT, no further processing. Header is "

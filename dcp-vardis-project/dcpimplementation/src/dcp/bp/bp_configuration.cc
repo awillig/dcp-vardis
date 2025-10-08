@@ -40,9 +40,10 @@ namespace dcp::bp {
       (opt("interface_etherType").c_str(),  po::value<uint16_t>(&etherType)->default_value(defaultValueEtherType), txt("Wireless interface: ether_type value (protocol field)").c_str())
       
       // BP parameters
-      (opt("maxBeaconSize").c_str(),     po::value<size_t>(&maxBeaconSize)->default_value(defaultValueMaxBeaconSize), txt("BP: maximum beacon size (bytes)").c_str())
-      (opt("avgBeaconPeriodMS").c_str(), po::value<double>(&avgBeaconPeriodMS)->default_value(defaultValueAvgBeaconPeriodMS), txt("BP: average beacon period (ms)").c_str())
-      (opt("jitterFactor").c_str(),      po::value<double>(&jitterFactor)->default_value(defaultValueJitterFactor), txt("BP: jitter factor (strictly between 0 and 1)").c_str())
+      (opt("maxBeaconSize").c_str(),          po::value<size_t>(&maxBeaconSize)->default_value(defaultValueMaxBeaconSize), txt("BP: maximum beacon size (bytes)").c_str())
+      (opt("avgBeaconPeriodMS").c_str(),      po::value<double>(&avgBeaconPeriodMS)->default_value(defaultValueAvgBeaconPeriodMS), txt("BP: average beacon period (ms)").c_str())
+      (opt("jitterFactor").c_str(),           po::value<double>(&jitterFactor)->default_value(defaultValueJitterFactor), txt("BP: jitter factor (strictly between 0 and 1)").c_str())
+      (opt("ownNetworkIdentifier").c_str(),   po::value<uint16_t>(&ownNetworkIdentifier)->default_value(defaultValueOwnNetworkIdentifier), txt("BP: own network identifier").c_str())
 
       // Other parameters (e.g. run-time statistics)
       (opt("interBeaconTimeEWMAAlpha").c_str(),      po::value<double>(&interBeaconTimeEWMAAlpha)->default_value(defaultValueInterBeaconTimeEWMAAlpha), txt("BP: alpha value for EWMA estimator of inter-beacon reception time in ms (between 0 and 1)").c_str())
@@ -96,6 +97,7 @@ namespace dcp::bp {
        << " , maxBeaconSize = " << cfg.bp_conf.maxBeaconSize
        << " , avgBeaconPeriodMS = " << cfg.bp_conf.avgBeaconPeriodMS
        << " , jitterFactor = " << cfg.bp_conf.jitterFactor
+       << " , ownNetworkIdentifier = " << cfg.bp_conf.ownNetworkIdentifier
        << " , interBeaconTimeEWMAAlpha = " << cfg.bp_conf.interBeaconTimeEWMAAlpha
        << " , beaconSizeEWMAAlpha = " << cfg.bp_conf.beaconSizeEWMAAlpha
       

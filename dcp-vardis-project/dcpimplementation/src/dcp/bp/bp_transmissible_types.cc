@@ -27,13 +27,19 @@ namespace dcp::bp {
     os << bplen.val;
     return os;
   }
-  
+
+  std::ostream& operator<< (std::ostream& os, const BPNetworkIdentifierT& netwId)
+  {
+    os << netwId.val;
+    return os;
+  }
   
   std::ostream& operator<<(std::ostream& os, const BPHeaderT& hdr)
   {
     os << "BPHeaderT { version = " << (int) hdr.version
        << " , magicNo = " << (int) hdr.magicNo
        << " , senderId = " << hdr.senderId
+       << " , networkId = " << hdr.networkId
        << " , length = " << hdr.length
        << " , numPayloads = " << (int) hdr.numPayloads
        << " , seqno = " << hdr.seqno

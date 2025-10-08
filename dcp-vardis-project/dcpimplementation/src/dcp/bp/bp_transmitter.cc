@@ -171,6 +171,7 @@ namespace dcp::bp {
 	bpHdr.version      =   bpHeaderVersion;
 	bpHdr.magicNo      =   bpMagicNo;
 	bpHdr.senderId     =   runtime.ownNodeIdentifier;
+	bpHdr.networkId    =   runtime.bp_config.bp_conf.ownNetworkIdentifier;
 	bpHdr.length       =   area.used() - dcp::bp::BPHeaderT::fixed_size();
 	bpHdr.numPayloads  =   numPayloadsAdded;
 	bpHdr.seqno        =   runtime.bpSequenceNumber++;

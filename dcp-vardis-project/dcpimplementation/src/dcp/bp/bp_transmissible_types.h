@@ -48,6 +48,21 @@ namespace dcp::bp {
     friend std::ostream& operator<< (std::ostream&os, const BPLengthT& protId);
   };
 
+
+  /**
+   * @brief Type for DCP network identifiers
+   */
+  class BPNetworkIdentifierT : public TransmissibleIntegral<uint16_t> {
+  public:
+    BPNetworkIdentifierT  () : TransmissibleIntegral<uint16_t> () {};
+    BPNetworkIdentifierT (uint16_t v) : TransmissibleIntegral<uint16_t>(v) {};
+    BPNetworkIdentifierT (const BPNetworkIdentifierT& other) : TransmissibleIntegral<uint16_t>(other) {};
+    
+    BPNetworkIdentifierT& operator= (const BPNetworkIdentifierT& other) { val = other.val; return *this; };
+    
+    friend std::ostream& operator<< (std::ostream&os, const BPNetworkIdentifierT& netwId);
+  };
+
   
   /**
    * @brief Constant fields of BPHeader
@@ -62,17 +77,19 @@ namespace dcp::bp {
   class BPHeaderT : public TransmissibleType<sizeof(byte)
 					     +sizeof(uint16_t)
 					     +NodeIdentifierT::fixed_size()
+					     +BPNetworkIdentifierT::fixed_size()
 					     +BPLengthT::fixed_size()
 					     +sizeof(byte)
 					     +sizeof(uint32_t)>
   {
   public:
-    uint8_t          version         = bpHeaderVersion;  /*!< Version field, fixed value */
-    uint16_t         magicNo         = bpMagicNo;        /*!< Magic number, fixed value */
-    NodeIdentifierT  senderId;                           /*!< Node id of sender */
-    BPLengthT        length;                             /*!< Total length of beacon payload, not including this header */
-    uint8_t          numPayloads;                        /*!< Number of client protocol payloads */
-    uint32_t         seqno;                              /*!< Beacon sequence number */
+    uint8_t               version         = bpHeaderVersion;  /*!< Version field, fixed value */
+    uint16_t              magicNo         = bpMagicNo;        /*!< Magic number, fixed value */
+    NodeIdentifierT       senderId;                           /*!< Node id of sender */
+    BPNetworkIdentifierT  networkId;                          /*!< Network id of sender */
+    BPLengthT             length;                             /*!< Total length of beacon payload, not including this header */
+    uint8_t               numPayloads;                        /*!< Number of client protocol payloads */
+    uint32_t              seqno;                              /*!< Beacon sequence number */
 
 
     /**
@@ -83,6 +100,7 @@ namespace dcp::bp {
       area.serialize_byte (version);
       area.serialize_uint16_n (magicNo);
       senderId.serialize (area);
+      networkId.serialize (area);
       length.serialize (area);
       area.serialize_byte (numPayloads);
       area.serialize_uint32_n (seqno);
@@ -97,6 +115,7 @@ namespace dcp::bp {
       version = area.deserialize_byte ();
       area.deserialize_uint16_n (magicNo);
       senderId.deserialize (area);
+      networkId.deserialize (area);
       length.deserialize (area);
       numPayloads = area.deserialize_byte ();
       area.deserialize_uint32_n (seqno);
@@ -113,11 +132,12 @@ namespace dcp::bp {
     /**
      * @brief Validity checks on a header
      */
-    inline bool isWellFormed (const NodeIdentifierT& ownNodeId) const
+    inline bool isWellFormed (const NodeIdentifierT& ownNodeId, const BPNetworkIdentifierT netwId) const
     {
       return (    (version == bpHeaderVersion)
 	       && (magicNo == bpMagicNo)
 	       && (senderId != ownNodeId)
+	       && (networkId == netwId)
   	       && (numPayloads > 0)
 	       && (length.val > 0)
 	     );
