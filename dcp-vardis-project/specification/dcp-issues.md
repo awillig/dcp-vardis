@@ -8,7 +8,7 @@
   missing functionalities:
     - Encryption / decryption
 	- Limiting certain management actions to proper clients. For
-	  example, currently an BP client can de-register any registered
+	  example, currently a BP client can de-register any registered
 	  protocol and not just itself. Similarly, a VarDis client can
 	  delete any variable, including variables created by other VarDis
 	  clients.
@@ -36,14 +36,9 @@
   statically or dynamically prioritize higher layer protocols, to make
   sure the higher-priority payloads are always included.
   
-- Offer a service to activate and de-activate BP.
-
 - There is no runtime liveness checking of client protocols and no
   proper cleanup. That could be a soft-state mechanism for registered
   protocols, together with additional status codes.
-
-- Add something like a 'network identifier' to the BP header, so that
-  co-located drone swarms can be separated.
 
 
 ## SRP
