@@ -6,6 +6,19 @@ The change log describes changes made from one version to the
 next. This is restricted to substantial changes, editorial matters
 such as language issues, typos or minor errors are not reported.
 
+## Changes for Version 2.0
+
+### Changes in `dcp-bp.md`
+
+- Added a new data type `BPNetworkIdentifierT`, a new configuration
+  value `BPPAR_NETWORK_ID`, and a new field `networkId` to
+  `BPHeaderT`. These are used to implement a network identifier,
+  identifying a DCP network. This allows to separate distinct DCP
+  networks sharing a geographic region. In particular, received
+  beacons with a `networkId` different from the one configured in
+  `BPPAR_NETWORK_ID` are simply dropped.
+
+
 ## Changes for Version 1.3
 
 ### Changes in `dcp-datatypes.md`
