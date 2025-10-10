@@ -30,14 +30,14 @@ the underlying BP, for which VarDis is a client protocol) instead of
 flooding updates separately.
 
 The real-time database itself is dynamic in the sense that variables
-can be created or removed at runtime.
+can be created or deleted at runtime.
 
 The real-time database is not tied to any notion of persistency, and
 there is no guarantee that any node will be able to track all updates
 made to a variable. Furthermore, the moniker "real-time" should not be
 interpreted strictly, as no guarantees on dissemination speed or
-reliability will and can be given. It merely captures an aspiration to
-be both fast and reliable.
+reliability are given. It merely captures an aspiration to be both
+fast and reliable.
 
 
 ## High-level Overview
@@ -52,7 +52,7 @@ interface](#vardis-application-service-interface)) by submitting
 *service requests* for creating, updating, and deleting variables, as
 well as reading their values.
 
-In response to any change made to the variable database (creating or
+To disseminate any change made to the variable database (creating or
 deleting a variable, updating its value), the VarDis transmit path
 creates a BP payload made up of *instruction containers*, which in
 turn contain one or more *instruction records* (or simply
@@ -128,7 +128,8 @@ it must be an integer multiple of one byte.
   times a variable can have values of different lengths. The variable
   length must not exceed a configurable maximum variable length
   (parameter `VARDISPAR_MAX_VALUE_LENGTH`, see [Configurable
-  Parameters](#vardis-configurable-parameters)).
+  Parameters](#vardis-configurable-parameters)). A variable must
+  always have a non-zero length.
 
 - The transmissible data type `VarRepCntT` is an unsigned integer,
   which specifies for a variable in how many distinct beacons a node
@@ -136,7 +137,7 @@ it must be an integer multiple of one byte.
   delete operations, updates).
 
 - The transmissible data type `VarSeqnoT` is an unsigned integer
-  representing sequence numbers, with a width of $n$ bytes. Sequence
+  representing per-variable sequence numbers, with a width of $n$ bytes. Sequence
   numbers are used in a circular fashion. The sequence number space
   ranges from 0 to `SEQNO-MODULUS` minus one, where `SEQNO-MODULUS`
   equals $2^{8n}$. Each producer of a variable maintains a separate
@@ -487,8 +488,7 @@ processes a service request.
 A VarDis instance will only process (and respond to) service request
 primitives while it is registered with BP -- the registration is to be
 carried out during the initialization of VarDis, and the
-deregistration is to be carried out when the VarDis instance stops
-running. 
+deregistration is to be carried out when the VarDis instance shuts down. 
 
 Furthermore, the implementation of the VarDis application service
 interface must support application multiplexing, i.e. it must be
@@ -512,13 +512,14 @@ records for all variables currently in the RTDB.
 The VarDis entity responds with a `RTDB-DescribeDatabase.confirm`
 primitive. If the global variable `vardisActive` has value `false`,
 then this confirm primitive contains status code
-`VARDIS-STATUS-INACTIVE`. Otherwise, the confirm primitive will carry
-status code `VARDIS-STATUS-OK`, and will carry as further data a list
-of the `VarSpecT` records of all variables currently in the real-time
-database, including those that have their `toBeDeleted` flag set in
-their respective `DBEntry` records. Implementations can choose to add
-additional fields from the `DBEntry` record of a variable, for example
-the `toBeDeleted` field or its timestamp field `tStamp`.
+`VARDIS-STATUS-INACTIVE` and carries no further data. Otherwise, the
+confirm primitive will carry status code `VARDIS-STATUS-OK`, and will
+carry as further data a list of the `VarSpecT` records of all
+variables currently in the real-time database, including those that
+have their `toBeDeleted` flag set in their respective `DBEntry`
+records. Implementations can choose to add additional fields from the
+`DBEntry` record of a variable, for example the `toBeDeleted` field or
+its timestamp field `tStamp`.
 
 
 #### Service `RTDB-DescribeVariable`
@@ -1172,7 +1173,7 @@ the following parameters:
 - `maxPayloadSize` is set to the value of the
   `VARDISPAR_MAX_PAYLOAD_SIZE` configuration parameter.
 - `queueingMode` is set to `BP_QMODE_QUEUE_DROPHEAD`.
-- `maxEntries` is set to an implementation-defined value.
+- `maxEntries` is set to an implementation-defined strictly positive value.
 - `allowMultiplePayloads` is set to `false`.
 
 The `BP-RegisterProtocol.confirm` service primitive includes the
