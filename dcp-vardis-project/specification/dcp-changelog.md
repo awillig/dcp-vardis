@@ -18,6 +18,26 @@ such as language issues, typos or minor errors are not reported.
   beacons with a `networkId` different from the one configured in
   `BPPAR_NETWORK_ID` are simply dropped.
 
+### Changes in `dcp-vardis.md`
+
+- The behaviour upon variable deletion has been revised. Deleted
+  variables are **not** removed from the real-time database any
+  longer, but they are marked as deleted. This removes the previous
+  problem of how to process any stray instructions after a variable
+  has been deleted. Along with this, the type `VarSpecT` now also
+  includes a creation timestamp, which allows to distinguish different
+  invocations of the `RTDB-Create.request` primitive, so that
+  variables can be re-created at a later time, for example after they
+  have been deleted.
+
+- Variables can now optionally be soft-state, i.e. they can be marked
+  as deleted when they have not been updated for some time. This is
+  achieved by adding a further field to `VarSpecT` to indicate a
+  timeout value for a variable, and by adding a periodic scrubbing
+  process which iterates over the real-time database and checks for
+  each eligible variable whether it has timed out. In this case, the
+  variable is marked as deleted and `VarDeleteT` instructions are sent
+  out into the network.
 
 ## Changes for Version 1.3
 

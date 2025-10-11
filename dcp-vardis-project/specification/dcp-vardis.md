@@ -30,7 +30,9 @@ the underlying BP, for which VarDis is a client protocol) instead of
 flooding updates separately.
 
 The real-time database itself is dynamic in the sense that variables
-can be created or deleted at runtime.
+can be created or deleted at runtime. The individual variables can be
+configured to be soft-state, i.e.\ producers will mark a variable as
+being deleted when it has not been updated for some time.
 
 The real-time database is not tied to any notion of persistency, and
 there is no guarantee that any node will be able to track all updates
@@ -137,15 +139,23 @@ it must be an integer multiple of one byte.
   delete operations, updates).
 
 - The transmissible data type `VarSeqnoT` is an unsigned integer
-  representing per-variable sequence numbers, with a width of $n$ bytes. Sequence
-  numbers are used in a circular fashion. The sequence number space
-  ranges from 0 to `SEQNO-MODULUS` minus one, where `SEQNO-MODULUS`
-  equals $2^{8n}$. Each producer of a variable maintains a separate
-  local sequence number for that variable. This sequence number is
-  initialized upon creation of a variable and incremented upon every
-  new update operation and included in the disseminated
-  update. Sequence numbers are used by nodes to check whether they
-  have the most recent value of a variable.
+  representing per-variable sequence numbers, with a width of $n$
+  bytes. Sequence numbers are used in a circular fashion. The sequence
+  number space ranges from 0 to `SEQNO-MODULUS` minus one, where
+  `SEQNO-MODULUS` equals $2^{8n}$. Each producer of a variable
+  maintains a separate local sequence number for that variable. This
+  sequence number is initialized upon creation of a variable and
+  incremented upon every new update operation and included in the
+  disseminated update. Sequence numbers are used by nodes to check
+  whether they have the most recent value of a variable.
+
+- The transmissible data type `VarTimeoutT` is an unsigned integer
+  representing the number of milliseconds before a variable times out.
+  If the timeout value is zero, the variable will never be deleted. If
+  the timeout value is non-zero, the variable is soft-state and a
+  Vardis-internal scrubbing process marks the variable as deleted if
+  the time since its last creation or update exceeds the timeout
+  value.
 
 - The transmissible data type `VarValueT` is represented as a
   `MemBlockT` (see Section [Basic transmissible data
@@ -167,6 +177,14 @@ it must be an integer multiple of one byte.
 	- `prodId` of type `NodeIdentifierT`: the node identifier of
 	  the variable producer.
 	- `repCnt` of type `VarRepCntT`: its repetition count.
+	- `tStamp` of type `TimeStampT`: the timestamp at which the
+	  producer has created the variable (with reference to the
+	  producers local clock).
+    - `timeout` of type `VarTimeoutT`: the timeout associated with
+      this variable. If it is zero, then the variable is never
+      scrubbed. If it is strictly positive, then a scrubbing process
+      marks the variable as deleted when the time since the last
+      creation or update exceeds the timeout.
 	- `descr` of type `StringT`: a human-readable description of the
 	  variable.
 
@@ -404,26 +422,24 @@ identifier there exists a database entry of the non-transmissible type
   more times a `VarCreateT` instruction record for this variable (with
   its most recent value) is to be included into future distinct beacons.
 - A counter `countDelete` of type `VarRepCntT`, indicating how many
-  more times a `VarDeleteT` instruction record for this variable
-  (it's `VarIdT` field) is to be included into future distinct beacons.
-- A flag `toBeDeleted` of type `Bool` to indicate whether the variable is
-  marked for deletion (`true`) or not (`false`). A variable  deletion
-  is not immediately carried out in the moment a `VarDeleteT`
-  instruction record found in an `ICTYPE-DELETE-VARIABLES` instruction
-  container is processed, but only after the deletion instruction has
-  been repeated in beacons sufficiently often. This flag is to be
-  initialized with `false`.
+  more times a `VarDeleteT` instruction record for this variable (it's
+  `VarIdT` field) is to be included into future distinct beacons.   
+- A flag `isDeleted` of type `Bool` to indicate whether the variable
+  has been deleted (`true`) or not (`false`). A deleted variable is
+  not removed from the real-time database but marked as such by
+  setting this flag. After receiving a `VarDeleteT` instruction record
+  in an `ICTYPE-DELETE-VARIABLES` instruction container the first
+  time, the deletion instruction is repeated in beacons sufficiently
+  often (accoring to the `repCnt` parameter of this variable). This
+  flag is to be initialized with `false`.
 
 The real-time database supports three main operations:
 
 - `RTDB.lookup()`, which takes as parameter a value of type `VarIdT`
   and either returns the unique database entry `ent` (of type
   `DBEntry`) for which `ent.spec.varId` equals the given `VarIdT`
-  value, or an indication that no such entry exists.
-- `RTDB.remove()`, which takes as parameter a value of type
-  `VarIdT`. If the database contains an entry `ent` for which
-  `ent.spec.varId` equals the given `VarIdT` value, then the entry
-  is removed from the database, otherwise nothing happens.
+  value, or an indication that no such entry exists (we express this
+  indication as a special `NULL` value).
 - `RTDB.update()`, which takes as parameter a value of type
   `DBEntry`, referred to as `newent`. If the database contains no
   entry `ent` for which `ent.spec.varId == newent.spec.varId`, then
@@ -516,9 +532,9 @@ then this confirm primitive contains status code
 confirm primitive will carry status code `VARDIS-STATUS-OK`, and will
 carry as further data a list of the `VarSpecT` records of all
 variables currently in the real-time database, including those that
-have their `toBeDeleted` flag set in their respective `DBEntry`
+have their `isDeleted` flag set in their respective `DBEntry`
 records. Implementations can choose to add additional fields from the
-`DBEntry` record of a variable, for example the `toBeDeleted` field or
+`DBEntry` record of a variable, for example the `isDeleted` field or
 its timestamp field `tStamp`.
 
 
@@ -569,8 +585,10 @@ steps:
 ~~~
 1.     If (vardisActive == false) then
           stop processing, return status code VARDIS-STATUS-INACTIVE
-2.     If (RTDB.lookup(spec.varId) == true) then
-          stop processing, return status code VARDIS-STATUS-VARIABLE-EXISTS
+2.     If (RTDB.lookup(spec.varId) != NULL) then
+          Let oldent = RTDB.lookup (spec.varId)
+		  If oldent.spec.prodId != ownNodeIdentifier then
+             stop processing, return status code VARDIS-STATUS-VARIABLE-EXISTS
 3.     If (spec.descr.length > (VARDISPAR_MAX_DESCRIPTION_LENGTH)) then
           stop processing, return status code VARDIS-STATUS-VARIABLE-DESCRIPTION-TOO-LONG
 4.     If (value.length > VARDISPAR_MAX_VALUE_LENGTH) then
@@ -584,13 +602,14 @@ steps:
 7.     Let newent : DBEntry with
            newent.spec         =  spec
 		   newent.spec.prodId  =  ownNodeIdentifier
+		   newent.spec.tStamp  =  current system time
 		   newent.value        =  value
 		   newent.seqno        =  0
 		   newent.tStamp       =  current system time
 		   newent.countUpdate  =  0
 		   newent.countCreate  =  spec.repCnt
 		   newent.countDelete  =  0
-		   newent.toBeDeleted  =  False
+		   newent.isDeleted    =  False
 
 8.     createQ.remove (spec.varId)
 9.     deleteQ.remove (spec.varId)
@@ -613,15 +632,16 @@ new variable is known to any other node in the network.
 
 The checking of uniqueness of a variable identifier is quite
 limited. We can reliably discover the case where a variable is to be
-created twice on the same producer node, but there are other
-pathological cases an aspiring producer cannot immediately discover,
-and the protocol makes no attempt to prevent, resolve or report such a
-situation. One example of such a situation is when two nodes at far
-away ends of a large multi-hop network want to create the same
-variable at the same time. None of the two nodes will be aware of the
-other one's efforts, and quite likely it will be some intermediate
-nodes noticing a `VarCreateT` instruction record for an already
-existing variable (and coming from a different producer node).
+created twice on the same producer node (which actually is permissible
+and will be processed), but there are other pathological cases an
+aspiring producer cannot immediately discover, and the protocol makes
+no attempt to prevent, resolve or report such a situation. One example
+of such a situation is when two nodes at far away ends of a large
+multi-hop network want to create the same variable at the same
+time. None of the two nodes will be aware of the other one's efforts,
+and quite likely it will be some intermediate nodes noticing a
+`VarCreateT` instruction record for an already existing variable (and
+coming from a different producer node).
 
 
 
@@ -646,20 +666,20 @@ steps:
 ~~~
 1.     If (vardisActive == false) then
           stop processing, return status code VARDIS-STATUS-INACTIVE
-2.     If (RTDB.lookup(varId) == false) then
+2.     If (RTDB.lookup(varId) == NULL) then
            stop processing, return status code VARDIS-STATUS-VARIABLE-DOES-NOT-EXIST
 3.     Let ent = RTDB.lookup(varId)
 4.     If (ent.spec.prodId != ownNodeIdentifier) then
            stop processing, return status code VARDIS-STATUS-NOT-PRODUCER
-5.     If (ent.toBeDeleted == true) then
-           stop processing, return status code VARDIS-STATUS-VARIABLE-BEING-DELETED
+5.     If (ent.isDeleted == true) then
+           stop processing, return status code VARDIS-STATUS-VARIABLE-IS-DELETED
 6.     deleteQ.qAppend(varId)
 7.     createQ.remove(varId)
 8.     summaryQ.remove(varId)
 9.     updateQ.remove(varId)
 10.    reqUpdQ.remove(varId)
 11.    reqCreateQ.remove(varId)
-12.    ent.toBeDeleted   =  True
+12.    ent.isDeleted     =  True
 13.    ent.countDelete   =  ent.spec.repCnt
 14.    ent.countCreate   =  0
 15.    ent.countUpdate   =  0
@@ -670,13 +690,14 @@ steps:
 A successful completion of this primitive only means that now the
 deletion process for the chosen variable has started **on the producer
 node**. It takes an unspecified amount of time before the variable is
-actually deleted from the real-time databases of all nodes (including
-the producer node). To check for deletion on the producer node, an
-application can issue the `RTDB-DescribeDatabase.request` service
-primitive at a later point in time (see [Service
+marked as being deleted in the real-time databases of all nodes. To
+check for deletion on the producer node, an application can issue the
+`RTDB-DescribeDatabase.request` service primitive at a later point in
+time (see [Service
 `RTDB-DescribeDatabase](#vardis-service-database-contents-describe-db)). There
 is currently no way for the application on the producer to confirm
-whether the variable has been deleted from every node in the network.
+whether the variable is marked as deleted in every node in the
+network.
 
 
 #### Service `RTDB-Update`
@@ -701,13 +722,13 @@ steps:
 ~~~
 1.     If (vardisActive == false) then
           stop processing, return status code VARDIS-STATUS-INACTIVE
-2.     If (RTDB.lookup(varId) == false) then
+2.     If (RTDB.lookup(varId) == NULL) then
            stop processing, return status code VARDIS-STATUS-VARIABLE-DOES-NOT-EXIST
 3.     Let ent = RTDB.lookup(varId)
 4.     If (ent.spec.prodId != ownNodeIdentifier) then
            stop processing, return status code VARDIS-STATUS-NOT-PRODUCER
-5.     If (ent.toBeDeleted == True) then
-           stop processing, return status code VARDIS-STATUS-VARIABLE-BEING-DELETED
+5.     If (ent.isDeleted == True) then
+           stop processing, return status code VARDIS-STATUS-VARIABLE-IS-DELETED
 6.     If (value.length > VARDISPAR_MAX_VALUE_LENGTH) then
           stop processing, return status code VARDIS-STATUS-VALUE-TOO-LONG
 7.     If (value.length == 0) then
@@ -757,11 +778,11 @@ steps:
 ~~~
 1.     If (vardisActive == false) then
           stop processing, return status code VARDIS-STATUS-INACTIVE
-2.     If (RTDB.lookup(varId) == false) then
+2.     If (RTDB.lookup(varId) == NULL) then
            stop processing, return status code VARDIS-STATUS-VARIABLE-DOES-NOT-EXIST
 3.     Let ent = RTDB.lookup(varId)
-4.     If (ent.toBeDeleted == True) then
-           stop processing, return status code VARDIS-STATUS-VARIABLE-BEING-DELETED
+4.     If (ent.isDeleted == True) then
+           stop processing, return status code VARDIS-STATUS-VARIABLE-IS-DELETED
 5.     return status code VARDIS-STATUS-OK, ent.value, ent.tStamp
 ~~~
 
@@ -862,6 +883,15 @@ implementation needs to support. These are:
   `(VARDISPAR_MAX_PAYLOAD_SIZE-ssizeof(ICHeaderT))/ssizeof(VarSummT)`.
   If this value is zero, then no `ICTYPE_SUMMARIES` instruction
   container is being created.
+
+- `VARDISPAR_SCRUBBING_PERIOD` specifies the period of time in
+  milliseconds between invocations of the scrubbing runtime
+  process. The scrubbing process checks for each non-deleted variable
+  with a non-zero timeout value whether the last time this variable
+  has been created or updated is older than the timeout value, in
+  which case the variable is being marked as deleted (soft
+  state). This value must be an integer value larger than zero and not
+  exceeding 65,000.
 
 - `VARDISPAR_BUFFER_CHECK_PERIOD` specifies the period of time in
   milliseconds between checks of the number of payloads in the BP
@@ -1065,8 +1095,6 @@ container includes the following steps:
 		   Add VarDeleteT using nextVarId to ICTYPE-DELETE-VARIABLES
            if (nextVar.countDelete > 0)
 		      deleteQ.qAppend(nextVarId)
-		   else
-		      RTDB.remove(nextVarId)
 6.     Return the constructed ICTYPE-DELETE-VARIABLES container
 ~~~
 
@@ -1078,8 +1106,7 @@ The preceding procedure adds an `ICHeaderT` and `VarIdT` records to the
 
 The repetition counter for each variable is decremented, and the
 `VarIdT` is appended to `deleteQ` again if the repetition counter is
-still larger than zero. Once the repetition counter has reached zero,
-the variable is also deleted from the local RTDB.
+still larger than zero.
 
 
 
@@ -1201,7 +1228,9 @@ initialization:
   from the `BP-RegisterProtocol.confirm` primitive received in
   response to the own `BP-RegisterProtocol.request` primitive and
   stored in the global variable `ownNodeIdentifier`.
-  
+
+- The scrubbing process is started (see Section [Scrubbing Process](#vardis-runtime-scrubbing)).
+
 After all previous steps of the initialization have been successfully
 completed, the variable `vardisActive` is set to `true`. 
   
@@ -1248,6 +1277,52 @@ hands it over to the BP by submitting a `BP-TransmitPayload.request`
 primitive as above.
 
 
+#### Scrubbing Process {#vardis-runtime-scrubbing}
+
+Vardis variables can be configured to be soft-state, variables are
+being marked as deleted when they have have not been created or
+updated for a time period at least as large as the given timeout for
+this variable. This condition is checked periodically, and this
+checking process is referred to as **scrubbing**. If the variable
+timeout value is configured to be zero, then the variable is not
+subject to scrubbing and can therefore remain alive in the real-time
+database for an indefinite amount of time without update.
+
+The scrubbing process is to be invoked periodically, with the period
+given by the configuration value `VARDISPAR_SCRUBBING_PERIOD` (see
+Section [Configurable
+Parameters](#vardis-configurable-parameters)). It is system- and
+implementation-dependent how accurately the period is observed.
+
+One invocation of the scrubbing process includes the following steps:
+
+~~~
+1. Loop over all variables in the real-time database:
+2.    Let varId = variable identifier of the current variable
+          ent   = RTDB.lookup (varId)
+		  spec  = ent.spec
+		  t     = current system time
+3.    If (ent.isDeleted) then
+         skip to next variable
+4.    If (spec.timeout == 0) then
+         skip to next variable
+5.    If ((t - ent.tStamp) <= spec.timeout) then
+         skip to next variable
+6.    ent.isDeleted    =  true
+      ent.countUpdate  =  0
+	  ent.countDelete  =  spec.repCnt
+	  ent.countCreate  =  0
+      RTDB.update (ent)
+7.	  createQ.remove (varId)
+	  deleteQ.remove (varId)
+	  updateQ.remove (varId)
+	  summaryQ.remove (varId)
+	  reqUpdQ.remove (varId)
+	  reqCreateQ.remove (varId)
+8.    deleteQ.qAppend (varId)
+~~~
+
+
 
 ### Shutdown
 
@@ -1265,7 +1340,8 @@ following actions:
   `BP-DeregisterProtocol.request` primitive with the `protId`
   parameter set to `BP_PROTID_VARDIS`.
 
-- The real-time database `RTDB` is completely cleared.
+- The real-time database `RTDB` is completely cleared and the
+  scrubbing process is stopped.
 
 - All queues (`createQ`, `deleteQ`, `updateQ`, `summaryQ`, `reqUpdQ`,
   `reqCreateQ`) are completely cleared.
@@ -1392,8 +1468,10 @@ the following steps:
 1.     Let spec : VarSpecT    = rcvdVC.spec
            upd : VarUpdateT   = rcvdVC.upd
 		   varId : VarIdT     = spec.varId
-2.     If (RTDB.lookup (varId) == true) then
-          stop processing
+2.     If (RTDB.lookup (varId) != NULL) then
+          let oldent = RTDB.lookup (varId)
+		  If oldent.spec.tStamp >= spec.tStamp
+             stop processing
 3.     If (spec.prodId == ownNodeIdentifier) then
           stop processing
 4.     If (    (upd.value.length > VARDISPAR_MAX_VALUE_LENGTH) 
@@ -1412,7 +1490,7 @@ the following steps:
 		   newent.countUpdate  =  0
 		   newent.countCreate  =  spec.repCnt
 		   newent.countDelete  =  0
-		   newent.toBeDeleted  =  False
+		   newent.isDeleted    =  False
 
 6.     createQ.remove (spec.varId)
 7.     deleteQ.remove (spec.varId)
@@ -1437,14 +1515,14 @@ a list of `VarDeleteT` instruction records, each of which includes a
 VarDis instance performs the following steps:
 
 ~~~
-1.     If (RTDB.lookup(varId) == false) then
+1.     If (RTDB.lookup(varId) == NULL) then
            stop processing
 2.     Let ent = RTDB.lookup(varId)
-3.     If (ent.toBeDeleted == True) then
+3.     If (ent.isDeleted == True) then
            stop processing
 4.     If (ent.spec.prodId == ownNodeIdentifier) then
            stop processing
-5.     ent.toBeDeleted = True
+5.     ent.isDeleted   = True
 6.     ent.countUpdate = 0
 7.     ent.countCreate = 0
 8.     ent.countDelete = ent.spec.repCnt
@@ -1471,12 +1549,12 @@ steps:
 
 ~~~
 1.     Let varId = upd.varId
-2.     If (RTDB.lookup(varId) == false) then
+2.     If (RTDB.lookup(varId) == NULL) then
            If (reqCreateQ.contains(varId) == false) then
                reqCreateQ.qAppend(varId)
 		   stop processing
 3.     Let ent = RTDB.lookup(varId)
-4.     If (ent.toBeDeleted == True) then
+4.     If (ent.isDeleted == True) then
            stop processing
 5.     If (ent.spec.prodId == ownNodeIdentifier) then
            stop processing
@@ -1512,12 +1590,12 @@ of `VarSummT` instruction records. For each included `VarSummT` record
 ~~~
 1.     Let varId      = summ.varId
            rcvdseqno  = summ.seqno
-2.     If (RTDB.lookup(varId) == false) then
+2.     If (RTDB.lookup(varId) == NULL) then
            If (reqCreateQ.contains(varId) == false) then
                reqCreateQ.qAppend(varId)
 		   stop processing
 3.     Let ent = RTDB.lookup(varId)
-4.     If (ent.toBeDeleted == true) then
+4.     If (ent.isDeleted == true) then
            stop processing
 5.     If (ent.spec.prodId == ownNodeIdentifier) then
            stop processing
@@ -1545,12 +1623,12 @@ variable identifier `varId` of type `VarIdT` and a sequence number
 receiving VarDis instance performs the following steps:
 
 ~~~
-1.     If (RTDB.lookup(varId) == false) then
+1.     If (RTDB.lookup(varId) == NULL) then
            If (reqCreateQ.contains(varId) == false) then
                reqCreateQ.qAppend(varId)
            stop processing
 2.     Let ent = RTDB.lookup(varId)
-3.     If (ent.toBeDeleted == True) then
+3.     If (ent.isDeleted == True) then
            stop processing
 4.     If (ent.seqno is not strictly larger than seqno) then
            stop processing
@@ -1572,12 +1650,12 @@ includes a variable identifier `varId` of type `VarIdT`. For each such
 following steps:
 
 ~~~
-1.     If (RTDB.lookup(varId) == false) then
+1.     If (RTDB.lookup(varId) == NULL) then
            If (reqCreateQ.contains(varId) == false) then
                reqCreateQ.qAppend(varId)
            stop processing
 2.     Let ent = RTDB.lookup(varId)
-3.     If (ent.toBeDeleted == true) then
+3.     If (ent.isDeleted == true) then
            stop processing
 4.     ent.countCreate  =  ent.spec.repCnt
 5.     RTDB.update(ent)
