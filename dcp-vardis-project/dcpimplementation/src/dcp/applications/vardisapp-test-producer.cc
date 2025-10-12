@@ -180,6 +180,7 @@ int main (int argc, char* argv [])
     spec.varId   = varId;
     spec.prodId  = cl_rt.get_own_node_identifier();
     spec.repCnt  = 1;
+    spec.timeout = 10000;
     spec.descr   = StringT (std::format("vardis-testvar-{}", (int) varId.val));
     
     VardisTestVariable initial_varval = generate_new_value (distribution);

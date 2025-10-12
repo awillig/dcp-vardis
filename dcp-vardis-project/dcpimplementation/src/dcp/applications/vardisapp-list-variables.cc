@@ -100,7 +100,7 @@ int main (int argc, char* argv [])
 	     << ", repCnt = " << descr.repCnt
 	     << ", descr = " << descr.description
 	     << ", tStamp = " << descr.tStamp
-	     << ", toBeDeleted = " << descr.toBeDeleted
+	     << ", isDeleted = " << descr.isDeleted
 	<< endl;
       } 
   }

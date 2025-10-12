@@ -119,7 +119,7 @@ int main (int argc, char* argv [])
 	 << "   countCreate  = " << (int) var_descr.countCreate.val << "\n"
 	 << "   countDelete  = " << (int) var_descr.countDelete.val << "\n"
 	 << std::boolalpha
-	 << "   toBeDeleted  = " << var_descr.toBeDeleted << "\n"
+	 << "   isDeleted    = " << var_descr.isDeleted << "\n"
 	 << "   value_length = " << (int) var_descr.value_length.val << "\n"
 	 << "   data         = " << byte_array_to_string (buffer, std::min (32, (int) var_descr.value_length.val)) << "\n"
 	 << endl;
