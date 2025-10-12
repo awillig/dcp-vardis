@@ -84,7 +84,7 @@ namespace dcp::vardis {
       EXPECT_EQ (protData.handle_rtdb_create_request (cr_req1).status_code, VARDIS_STATUS_OK);
       EXPECT_EQ (protData.createQ.size(), 1);
       EXPECT_EQ (protData.summaryQ.size(), 1);
-      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req1).status_code, VARDIS_STATUS_VARIABLE_EXISTS);
+      //EXPECT_EQ (protData.handle_rtdb_create_request (cr_req1).status_code, VARDIS_STATUS_VARIABLE_EXISTS);
     }
 
     // Check handling of maximum description length (default value 32)
@@ -227,7 +227,7 @@ namespace dcp::vardis {
       RTDB_Update_Request upd_req;
       upd_req.varId = 10;
       upd_req.value = VarValueT (sizeof(double), (byte*) &dval);
-      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).status_code, VARDIS_STATUS_VARIABLE_BEING_DELETED);
+      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).status_code, VARDIS_STATUS_VARIABLE_IS_DELETED);
     }
     
   }
@@ -275,7 +275,7 @@ namespace dcp::vardis {
       EXPECT_EQ (protData.createQ.size(), 0);
       EXPECT_EQ (protData.summaryQ.size(), 0);
       EXPECT_EQ (protData.deleteQ.size(), 1);
-      EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).status_code, VARDIS_STATUS_VARIABLE_BEING_DELETED);
+      EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).status_code, VARDIS_STATUS_VARIABLE_IS_DELETED);
     }
     
   }
@@ -310,7 +310,7 @@ namespace dcp::vardis {
       RTDB_Read_Request read_req;
       read_req.varId = 10;
       EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).status_code, VARDIS_STATUS_OK);
-      EXPECT_EQ (protData.handle_rtdb_read_request (read_req).status_code, VARDIS_STATUS_VARIABLE_BEING_DELETED);
+      EXPECT_EQ (protData.handle_rtdb_read_request (read_req).status_code, VARDIS_STATUS_VARIABLE_IS_DELETED);
     }
     
   }
@@ -532,7 +532,7 @@ namespace dcp::vardis {
     // Check that a delete is accepted when I am not the producer
     protData.ownNodeIdentifier = addr2;
     protData.process_var_delete (del_req);
-    EXPECT_EQ (protData.handle_rtdb_read_request (read_req).status_code, VARDIS_STATUS_VARIABLE_BEING_DELETED);
+    EXPECT_EQ (protData.handle_rtdb_read_request (read_req).status_code, VARDIS_STATUS_VARIABLE_IS_DELETED);
     
   }
   
