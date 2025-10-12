@@ -74,7 +74,7 @@ namespace dcp::vardis {
     EXPECT_EQ (spec.repCnt, 20);
     EXPECT_NE (spec.descr.data, descr.data);
     EXPECT_EQ (spec.descr, descr);
-    EXPECT_EQ (spec.fixed_size(), VarIdT::fixed_size() + NodeIdentifierT::fixed_size() + VarRepCntT::fixed_size() + VarLenT::fixed_size());
+    EXPECT_EQ (spec.fixed_size(), VarIdT::fixed_size() + NodeIdentifierT::fixed_size() + VarRepCntT::fixed_size() + TimeStampT::fixed_size() + VarTimeoutT::fixed_size() + VarLenT::fixed_size());
     EXPECT_EQ (spec.total_size(), spec.fixed_size() + descr.length);
 
     EXPECT_EQ (VarCreateT::fixed_size(), VarSpecT::fixed_size() + VarUpdateT::fixed_size());
