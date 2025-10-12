@@ -97,7 +97,7 @@ namespace dcp {
       case VARDIS_STATUS_ILLEGAL_REPCOUNT:                return "VARDIS_STATUS_ILLEGAL_REPCOUNT";
       case VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST:         return "VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST";
       case VARDIS_STATUS_NOT_PRODUCER:                    return "VARDIS_STATUS_NOT_PRODUCER";
-      case VARDIS_STATUS_VARIABLE_BEING_DELETED:          return "VARDIS_STATUS_VARIABLE_BEING_DELETED";
+      case VARDIS_STATUS_VARIABLE_IS_DELETED:             return "VARDIS_STATUS_VARIABLE_IS_DELETED";
       case VARDIS_STATUS_INACTIVE:                        return "VARDIS_STATUS_INACTIVE";
 
 	// implementation-dependent status codes

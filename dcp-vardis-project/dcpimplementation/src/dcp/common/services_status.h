@@ -194,7 +194,7 @@ namespace dcp {
   const DcpStatus VARDIS_STATUS_ILLEGAL_REPCOUNT                =  BaseVardisStatus + 0x0005;
   const DcpStatus VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST         =  BaseVardisStatus + 0x0006;
   const DcpStatus VARDIS_STATUS_NOT_PRODUCER                    =  BaseVardisStatus + 0x0007;
-  const DcpStatus VARDIS_STATUS_VARIABLE_BEING_DELETED          =  BaseVardisStatus + 0x0008;
+  const DcpStatus VARDIS_STATUS_VARIABLE_IS_DELETED             =  BaseVardisStatus + 0x0008;
   const DcpStatus VARDIS_STATUS_INACTIVE                        =  BaseVardisStatus + 0x0009;
 
   
