@@ -205,7 +205,7 @@ namespace dcp::vardis {
     VarRepCntT         repCnt;
     char               description [MAX_maxDescriptionLength + 1];
     TimeStampT         tStamp;
-    bool               toBeDeleted;
+    bool               isDeleted;
 
     friend std::ostream& operator<<(std::ostream& os, const DescribeDatabaseVariableDescription& descr);
   } DescribeDatabaseVariableDescription;
@@ -256,7 +256,7 @@ namespace dcp::vardis {
     VarRepCntT        countUpdate;
     VarRepCntT        countCreate;
     VarRepCntT        countDelete;
-    bool              toBeDeleted;
+    bool              isDeleted;
     VarLenT           value_length;
 
     friend std::ostream& operator<<(std::ostream& os, const DescribeVariableDescription& descr);

@@ -131,7 +131,7 @@ namespace dcp::vardis {
        << ", repCnt = " << (int) descr.repCnt.val
        << ", description = " << descr.description
        << ", tStamp = " << descr.tStamp
-       << ", toBeDeleted = " << descr.toBeDeleted
+       << ", isDeleted = " << descr.isDeleted
        << " }";
     return os;
   }
@@ -154,7 +154,7 @@ namespace dcp::vardis {
        << ", countUpdate = " << (int) descr.countUpdate.val
        << ", countCreate = " << (int) descr.countCreate.val
        << ", countDelete = " << (int) descr.countDelete.val
-       << ", toBeDeleted = " << descr.toBeDeleted
+       << ", isDeleted = " << descr.isDeleted
        << ", value_length = " << (int) descr.value_length.val
        << " }";
     return os;
