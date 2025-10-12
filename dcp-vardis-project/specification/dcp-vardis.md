@@ -177,7 +177,7 @@ it must be an integer multiple of one byte.
 	- `prodId` of type `NodeIdentifierT`: the node identifier of
 	  the variable producer.
 	- `repCnt` of type `VarRepCntT`: its repetition count.
-	- `tStamp` of type `TimeStampT`: the timestamp at which the
+	- `creationTime` of type `TimeStampT`: the timestamp at which the
 	  producer has created the variable (with reference to the
 	  producers local clock).
     - `timeout` of type `VarTimeoutT`: the timeout associated with
@@ -600,16 +600,16 @@ steps:
 		  stop processing, return status code VARDIS-STATUS-ILLEGAL-REPCOUNT
 
 7.     Let newent : DBEntry with
-           newent.spec         =  spec
-		   newent.spec.prodId  =  ownNodeIdentifier
-		   newent.spec.tStamp  =  current system time
-		   newent.value        =  value
-		   newent.seqno        =  0
-		   newent.tStamp       =  current system time
-		   newent.countUpdate  =  0
-		   newent.countCreate  =  spec.repCnt
-		   newent.countDelete  =  0
-		   newent.isDeleted    =  False
+           newent.spec               =  spec
+		   newent.spec.prodId        =  ownNodeIdentifier
+		   newent.spec.creationTime  =  current system time
+		   newent.value              =  value
+		   newent.seqno              =  0
+		   newent.tStamp             =  current system time
+		   newent.countUpdate        =  0
+		   newent.countCreate        =  spec.repCnt
+		   newent.countDelete        =  0
+		   newent.isDeleted          =  False
 
 8.     createQ.remove (spec.varId)
 9.     deleteQ.remove (spec.varId)
@@ -1470,7 +1470,7 @@ the following steps:
 		   varId : VarIdT     = spec.varId
 2.     If (RTDB.lookup (varId) != NULL) then
           let oldent = RTDB.lookup (varId)
-		  If oldent.spec.tStamp >= spec.tStamp
+		  If oldent.spec.creationTime >= spec.creationTime
              stop processing
 3.     If (spec.prodId == ownNodeIdentifier) then
           stop processing
@@ -1491,16 +1491,15 @@ the following steps:
 		   newent.countCreate  =  spec.repCnt
 		   newent.countDelete  =  0
 		   newent.isDeleted    =  False
+6.     RTDB.update(newent)
 
-6.     createQ.remove (spec.varId)
-7.     deleteQ.remove (spec.varId)
-8.     updateQ.remove (spec.varId)
-9.	   summaryQ.remove (spec.varId)
-10.	   reqUpdQ.remove (spec.varId)
-11.	   reqCreateQ.remove (spec.varId)
+7.     createQ.remove (spec.varId)
+8.     deleteQ.remove (spec.varId)
+9.     updateQ.remove (spec.varId)
+10.	   summaryQ.remove (spec.varId)
+11.	   reqUpdQ.remove (spec.varId)
+12.	   reqCreateQ.remove (spec.varId)
 
-
-12.    RTDB.update(newent)
 13.    createQ.qAppend(varId)
 14.    summaryQ.qAppend(varId)
 ~~~
