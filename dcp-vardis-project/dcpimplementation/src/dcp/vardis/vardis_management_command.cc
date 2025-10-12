@@ -195,7 +195,7 @@ namespace dcp::vardis {
 	  descr.prodId         =  db_entry.prodId;
 	  descr.repCnt         =  db_entry.repCnt;
 	  descr.tStamp         =  db_entry.tStamp;
-	  descr.toBeDeleted    =  db_entry.toBeDeleted;
+	  descr.isDeleted      =  db_entry.isDeleted;
 	  PD.vardis_store.read_description (varId, descr.description);
 	  
 	  var_descriptions.push_back (descr);
@@ -250,7 +250,7 @@ namespace dcp::vardis {
 	  var_descr.countUpdate  =  db_entry.countUpdate;
 	  var_descr.countCreate  =  db_entry.countCreate;
 	  var_descr.countDelete  =  db_entry.countDelete;
-	  var_descr.toBeDeleted  =  db_entry.toBeDeleted;
+	  var_descr.isDeleted    =  db_entry.isDeleted;
 	  var_descr.value_length =  PD.vardis_store.size_of_value (varId);
 	  PD.vardis_store.read_value (varId, val_buffer, val_size);
 	}
