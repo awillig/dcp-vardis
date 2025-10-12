@@ -261,6 +261,8 @@ namespace dcp {
     friend std::ostream& operator<<(std::ostream& os, const TimeStampT& tstamp);
     TimeStampT& operator= (const TimeStampT& other) { tStamp = other.tStamp; return *this; };
 
+    friend inline bool operator== (const TimeStampT& lhs, const TimeStampT& rhs) { return (lhs.tStamp == rhs.tStamp); };
+    friend inline bool operator>= (const TimeStampT& lhs, const TimeStampT& rhs) { return (lhs.tStamp >= rhs.tStamp); };
     
     /**
      * @brief Serialization methods
@@ -320,6 +322,8 @@ namespace dcp {
     friend std::ostream& operator<<(std::ostream& os, const TimeStampT& tstamp);
     TimeStampT& operator= (const TimeStampT& other) { tStamp = other.tStamp; return *this; };
 
+    friend inline bool operator== (const TimeStampT& lhs, const TimeStampT& rhs) { return (lhs.tStamp == rhs.tStamp); };
+    friend inline bool operator>= (const TimeStampT& lhs, const TimeStampT& rhs) { return (lhs.tStamp >= rhs.tStamp); };
     
     /**
      * @brief Serialization methods
