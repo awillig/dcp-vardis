@@ -519,7 +519,7 @@ namespace dcp::vardis {
       existing_entry.countUpdate   = new_entry.countUpdate;
       existing_entry.countCreate   = new_entry.countCreate;
       existing_entry.countDelete   = new_entry.countDelete;
-      existing_entry.toBeDeleted   = new_entry.toBeDeleted;
+      existing_entry.isDeleted     = new_entry.isDeleted;
     };
     
 
