@@ -117,6 +117,24 @@ namespace dcp::vardis {
     
     friend std::ostream& operator<< (std::ostream& os, const VarSeqnoT& vs);
   };
+
+
+  /**
+   * @brief Variable timeout value (in milliseconds)
+   */
+  class VarTimeoutT : public TransmissibleIntegral<uint16_t> {
+  public:
+
+    static constexpr uint16_t max_val () { return 65000; };
+    
+    VarTimeoutT () : TransmissibleIntegral<uint16_t>(0) {};
+    VarTimeoutT (const VarTimeoutT& other) : TransmissibleIntegral<uint16_t> (other) {};
+    VarTimeoutT (uint16_t t) : TransmissibleIntegral<uint16_t>(t) {};
+
+    VarTimeoutT& operator= (const VarTimeoutT& other) { val = other.val; return *this; };
+    
+    friend std::ostream& operator<< (std::ostream& os, const VarTimeoutT& vt);
+  };
   
   
   // -----------------------------------------
@@ -355,11 +373,15 @@ namespace dcp::vardis {
   class VarSpecT : public TransmissibleType<VarIdT::fixed_size()
 					    + NodeIdentifierT::fixed_size()
 					    + VarRepCntT::fixed_size()
-					    + StringT::fixed_size()> {
+					    + StringT::fixed_size()
+					    + TimeStampT::fixed_size()
+					    + VarTimeoutT::fixed_size()> {
   public:
     VarIdT            varId;
     NodeIdentifierT   prodId;
     VarRepCntT        repCnt;
+    TimeStampT        creationTime;
+    VarTimeoutT       timeout;
     StringT           descr;
     
     virtual size_t total_size () const { return fixed_size() + descr.length; };
@@ -374,6 +396,8 @@ namespace dcp::vardis {
 	      and (prodId == other.prodId)
 	      and (repCnt == other.repCnt)
 	      and (descr == other.descr)
+	      and (creationTime == other.creationTime)
+	      and (timeout == other.timeout)
 	      );
     };
 
@@ -386,6 +410,8 @@ namespace dcp::vardis {
       varId.serialize (area);
       prodId.serialize (area);
       repCnt.serialize (area);
+      creationTime.serialize (area);
+      timeout.serialize(area);
       descr.serialize (area);
     };
 
@@ -398,6 +424,8 @@ namespace dcp::vardis {
       varId.deserialize (area);
       prodId.deserialize (area);
       repCnt.deserialize (area);
+      creationTime.deserialize (area);
+      timeout.deserialize (area);
       descr.deserialize (area);
     };
 

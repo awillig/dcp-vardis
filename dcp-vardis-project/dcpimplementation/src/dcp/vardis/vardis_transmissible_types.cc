@@ -46,6 +46,12 @@ namespace dcp::vardis {
     return os;
   }
 
+  std::ostream& operator<< (std::ostream& os, const VarTimeoutT& vt)
+  {
+    os << (int) vt.val;
+    return os;
+  }
+
   // ------------------------------------------
   
   std::ostream& operator<<(std::ostream& os, const VarValueT& vv)
@@ -76,6 +82,8 @@ namespace dcp::vardis {
     os << "VarSpecT { varId = " << vs.varId
        << " , prodId = " << vs.prodId
        << " , repCnt = " << vs.repCnt
+       << " , creationTime = " << vs.creationTime
+       << " , timeout = " << vs.timeout
        << " , descr = " << vs.descr
        << " }";
     return os;
