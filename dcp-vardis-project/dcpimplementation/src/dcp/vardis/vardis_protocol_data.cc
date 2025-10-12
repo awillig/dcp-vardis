@@ -36,13 +36,15 @@ namespace dcp::vardis {
   void VardisProtocolData::addVarCreate (VarIdT, const DBEntry& theEntry, AssemblyArea& area) const
   {
     VarCreateT create;
-    create.spec.varId     =  theEntry.varId;
-    create.spec.prodId    =  theEntry.prodId;
-    create.spec.repCnt    =  theEntry.repCnt;
-    create.spec.descr     =  vardis_store.read_description (theEntry.varId);
-    create.update.varId   =  theEntry.varId;
-    create.update.seqno   =  theEntry.seqno;
-    create.update.value   =  vardis_store.read_value (theEntry.varId);
+    create.spec.varId         =  theEntry.varId;
+    create.spec.prodId        =  theEntry.prodId;
+    create.spec.repCnt        =  theEntry.repCnt;
+    create.spec.creationTime  =  theEntry.creationTime;
+    create.spec.timeout       =  theEntry.timeout;
+    create.spec.descr         =  vardis_store.read_description (theEntry.varId);
+    create.update.varId       =  theEntry.varId;
+    create.update.seqno       =  theEntry.seqno;
+    create.update.value       =  vardis_store.read_value (theEntry.varId);
     create.serialize (area);
   }
   
@@ -353,9 +355,7 @@ namespace dcp::vardis {
         }
         else
         {
-	  DCPLOG_INFO(log_tx) << "Deleting variable " << nextVarId;
-	  vardis_store.deallocate_identifier (nextVarId);
-	  active_variables.erase (nextVarId);
+	  DCPLOG_INFO(log_tx) << "Marking variable " << nextVarId << " as deleted";
         }
     }
 
@@ -459,12 +459,21 @@ namespace dcp::vardis {
    */
   void VardisProtocolData::process_var_create(const VarCreateT& create)
   {
-    VarIdT               varId  = create.spec.varId;
-    NodeIdentifierT      prodId = create.spec.prodId;
+    VarIdT            varId           = create.spec.varId;
+    NodeIdentifierT   prodId          = create.spec.prodId;
+    bool              variable_exists = false;
 
-      
-    if (    (not variableExists(varId))
-         && (prodId != ownNodeIdentifier)
+    if (variableExists(varId))
+      {
+	variable_exists = true;
+	DBEntry& oldent = vardis_store.get_db_entry_ref(varId);
+	if (oldent.creationTime >= create.spec.creationTime)
+	  {
+	    return;
+	  }
+      }
+    
+    if (    (prodId != ownNodeIdentifier)
          && (create.spec.descr.length <= maxDescriptionLength)
 	 && (create.spec.descr.length > 0)
          && (create.update.value.length <= maxValueLength)
@@ -473,7 +482,7 @@ namespace dcp::vardis {
 	 && (create.spec.repCnt > 0)
        )
       {
-	DCPLOG_INFO(log_rx) << "process_var_create: adding new variable to database, varId = " << varId
+	DCPLOG_INFO(log_rx) << "process_var_create: adding new or revived variable to database, varId = " << varId
 			    << ", description = " << create.spec.descr;
 
         // create and initialize new DBEntry
@@ -481,13 +490,18 @@ namespace dcp::vardis {
 	newEntry.varId        =  create.spec.varId;
 	newEntry.prodId       =  create.spec.prodId;
 	newEntry.repCnt       =  create.spec.repCnt;
+	newEntry.creationTime =  create.spec.creationTime;
+	newEntry.timeout      =  create.spec.timeout;
         newEntry.seqno        =  create.update.seqno;
         newEntry.tStamp       =  TimeStampT::get_current_system_time();
         newEntry.countUpdate  =  0;
         newEntry.countCreate  =  create.spec.repCnt;
         newEntry.countDelete  =  0;
-        newEntry.toBeDeleted  =  false;
-	vardis_store.allocate_identifier (varId);
+        newEntry.isDeleted    =  false;
+	if (not variable_exists)
+	  {
+	    vardis_store.allocate_identifier (varId);
+	  }
 	vardis_store.set_db_entry (varId, newEntry);
 	vardis_store.update_description (varId, create.spec.descr);
 	vardis_store.update_value (varId, create.update.value);
@@ -528,13 +542,13 @@ namespace dcp::vardis {
       {
         DBEntry&        theEntry = vardis_store.get_db_entry_ref(varId);
 
-        if (    (not theEntry.toBeDeleted)
+        if (    (not theEntry.isDeleted)
    	     && (not producerIsMe(varId)))
         {
 	  DCPLOG_INFO(log_rx) << "process_var_delete: deleting variable from database, varId = " << varId;
 	  
 	  // update variable state
-	  theEntry.toBeDeleted  = true;
+	  theEntry.isDeleted    = true;
 	  theEntry.countUpdate  = 0;
 	  theEntry.countCreate  = 0;
 	  theEntry.countDelete  = theEntry.repCnt;
@@ -585,7 +599,7 @@ namespace dcp::vardis {
 
     // perform some checks
 
-    if (theEntry.toBeDeleted)
+    if (theEntry.isDeleted)
     {
         return;
     }
@@ -666,7 +680,7 @@ namespace dcp::vardis {
     
     // perform some checks
     
-    if (theEntry.toBeDeleted)
+    if (theEntry.isDeleted)
       {
         return;
       }
@@ -731,7 +745,7 @@ namespace dcp::vardis {
     
     DBEntry& theEntry = vardis_store.get_db_entry_ref(varId);
     
-    if (theEntry.toBeDeleted)
+    if (theEntry.isDeleted)
       {
         return;
       }
@@ -775,7 +789,7 @@ namespace dcp::vardis {
     
     DBEntry& theEntry = vardis_store.get_db_entry_ref(varId);
 
-    if (theEntry.toBeDeleted)
+    if (theEntry.isDeleted)
       {
         return;
       }
@@ -798,7 +812,8 @@ namespace dcp::vardis {
   {
     const VarSpecT&    spec   = createReq.spec;
     const VarValueT&   value  = createReq.value;
-    const VarIdT       varId  = spec.varId;    
+    const VarIdT       varId  = spec.varId;
+    bool variable_exists      = false;  
 
     DCPLOG_TRACE(log_mgmt_rtdb) << "Received RTDB-Create request for variable " << spec.varId;
     
@@ -809,7 +824,12 @@ namespace dcp::vardis {
     
     if (variableExists(spec.varId))
       {
-	return RTDB_Create_Confirm (VARDIS_STATUS_VARIABLE_EXISTS, varId);
+	DBEntry& oldent = vardis_store.get_db_entry_ref(varId);
+	variable_exists = true;
+	if (oldent.prodId != ownNodeIdentifier)
+	  {
+	    return RTDB_Create_Confirm (VARDIS_STATUS_VARIABLE_EXISTS, varId);
+	  }
       }
     
     if (spec.descr.length > maxDescriptionLength)
@@ -839,13 +859,18 @@ namespace dcp::vardis {
     newent.varId         =  spec.varId;
     newent.prodId        =  ownNodeIdentifier;
     newent.repCnt        =  spec.repCnt;
+    newent.creationTime  =  TimeStampT::get_current_system_time();
+    newent.timeout       =  spec.timeout;
     newent.seqno         =  0;
     newent.tStamp        =  TimeStampT::get_current_system_time();
     newent.countUpdate   =  0;
     newent.countCreate   =  spec.repCnt;
     newent.countDelete   =  0;
-    newent.toBeDeleted   =  false;
-    vardis_store.allocate_identifier (spec.varId);
+    newent.isDeleted     =  false;
+    if (not variable_exists)
+      {
+	vardis_store.allocate_identifier (spec.varId);
+      }
     vardis_store.set_db_entry (spec.varId, newent);
     vardis_store.update_description (spec.varId, spec.descr);
     vardis_store.update_value (spec.varId, value);
@@ -898,9 +923,9 @@ namespace dcp::vardis {
       return RTDB_Update_Confirm (VARDIS_STATUS_NOT_PRODUCER, varId);
     }
 
-    if (theEntry.toBeDeleted)
+    if (theEntry.isDeleted)
     {
-      return RTDB_Update_Confirm (VARDIS_STATUS_VARIABLE_BEING_DELETED, varId);
+      return RTDB_Update_Confirm (VARDIS_STATUS_VARIABLE_IS_DELETED, varId);
     }
 
     if (varLen > maxValueLength)
@@ -960,9 +985,9 @@ namespace dcp::vardis {
 
     DBEntry& theEntry = vardis_store.get_db_entry_ref(varId);
 
-    if (theEntry.toBeDeleted)
+    if (theEntry.isDeleted)
     {
-      return RTDB_Delete_Confirm (VARDIS_STATUS_VARIABLE_BEING_DELETED, varId);
+      return RTDB_Delete_Confirm (VARDIS_STATUS_VARIABLE_IS_DELETED, varId);
     }
 
     DCPLOG_TRACE(log_mgmt_rtdb) << "Handling RTDB-Delete request for variable " << varId;
@@ -980,7 +1005,7 @@ namespace dcp::vardis {
     deleteQ.insert(varId);
     
     // update variable status
-    theEntry.toBeDeleted = true;
+    theEntry.isDeleted   = true;
     theEntry.countDelete = theEntry.repCnt;
     theEntry.countCreate = 0;
     theEntry.countUpdate = 0;
@@ -1014,9 +1039,9 @@ namespace dcp::vardis {
 
     DBEntry& theEntry = vardis_store.get_db_entry_ref(varId);
 
-    if (theEntry.toBeDeleted)
+    if (theEntry.isDeleted)
     {
-      return RTDB_Read_Confirm (VARDIS_STATUS_VARIABLE_BEING_DELETED, varId);
+      return RTDB_Read_Confirm (VARDIS_STATUS_VARIABLE_IS_DELETED, varId);
     }
 
     DCPLOG_TRACE(log_mgmt_rtdb) << "Handling RTDB-Delete request for variable " << varId;
