@@ -42,16 +42,20 @@ using dcp::TimeStampT;
 namespace dcp::vardis {
 
   typedef struct DBEntry {
+    // These fixed-size fields need to be always identical to the
+    // fixed-size fields of VarSpecT
     VarIdT            varId;
     NodeIdentifierT   prodId;
     VarRepCntT        repCnt;
+    TimeStampT        creationTime;
+    VarTimeoutT       timeout;
     
     VarSeqnoT       seqno;                   /*!< Last received sequence number for this variable */
     TimeStampT      tStamp;                  /*!< Timestamp where the last update (or create) instruction has been processed */
     VarRepCntT      countUpdate = 0;         /*!< Repetition counter for VarUpdateT instructions */
     VarRepCntT      countCreate = 0;         /*!< Repetition counter for VarCreateT instructions */
     VarRepCntT      countDelete = 0;         /*!< Repetition counter for VarDeleteT instructions */
-    bool            toBeDeleted = false;     /*!< Indicates whether variable is currently in the process of being deleted */
+    bool            isDeleted   = false;     /*!< Indicates whether variable is marked as deleted */
   } DBEntry;
 
 };  // namespace dcp::vardis
