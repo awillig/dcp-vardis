@@ -39,6 +39,7 @@ namespace dcp::vardis {
   const uint8_t    defaultValueMaxRepetitions                   =  1;
   const uint16_t   defaultValueMaxPayloadSize                   =  1000;
   const uint16_t   defaultValueMaxSummaries                     =  20;
+  const uint16_t   defaultValueScrubbingPeriodMS                =  1000;
   const uint16_t   defaultValueQueueMaxEntries                  =  20;
   const uint16_t   defaultValuePayloadGenerationIntervalMS      =  30;
   const uint16_t   defaultValuePollRTDBServiceIntervalMS        =  25;
@@ -84,6 +85,11 @@ namespace dcp::vardis {
     uint16_t maxSummaries          =  defaultValueMaxSummaries;
 
 
+    /**
+     * @brief Scrubbing period in milliseconds
+     */
+    uint16_t scrubbingPeriodMS     =  defaultValueScrubbingPeriodMS;
+    
 
     /**************************************************
      * Implementation options

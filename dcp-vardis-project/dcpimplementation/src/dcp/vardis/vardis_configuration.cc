@@ -38,6 +38,7 @@ namespace dcp::vardis {
       (opt("maxRepetitions").c_str(),         po::value<uint8_t>(&maxRepetitions)->default_value(defaultValueMaxRepetitions), txt("maximum number of repetitions (repCnt)").c_str())
       (opt("maxPayloadSize").c_str(),         po::value<uint16_t>(&maxPayloadSize)->default_value(defaultValueMaxPayloadSize), txt("maximum length of a Vardis payload (bytes)").c_str())
       (opt("maxSummaries").c_str(),           po::value<uint16_t>(&maxSummaries)->default_value(defaultValueMaxSummaries), txt("maximum number of summaries in a Vardis payload").c_str())
+      (opt("scrubbingPeriodMS").c_str(),      po::value<uint16_t>(&scrubbingPeriodMS)->default_value(defaultValueScrubbingPeriodMS),  txt("scrubbing period for soft-state mechanism (in ms)").c_str())
       (opt("payloadGenerationIntervalMS").c_str(),  po::value<uint16_t>(&payloadGenerationIntervalMS)->default_value(defaultValuePayloadGenerationIntervalMS),  txt("interval for checking payload generation (in ms)").c_str())
       (opt("pollRTDBServiceIntervalMS").c_str(),    po::value<uint16_t>(&pollRTDBServiceIntervalMS)->default_value(defaultValuePollRTDBServiceIntervalMS),  txt("interval for checking RTDB service requests in shared memory (in ms)").c_str())
       (opt("queueMaxEntries").c_str(),              po::value<uint16_t>(&queueMaxEntries)->default_value(defaultValueQueueMaxEntries), txt("maximum entries in BP queue for Vardis").c_str())
@@ -70,6 +71,9 @@ namespace dcp::vardis {
 
     if (maxSummaries > ((maxPayloadSize - InstructionContainerT::fixed_size())/(VarSummT::fixed_size())))
       throw ConfigurationException ("VardisConfigurationBlock", "maxSumaries too large");
+
+    if (scrubbingPeriodMS <= 0) throw ConfigurationException ("VardisConfigurationBlock", "scrubbing period must be strictly positive");
+    if (scrubbingPeriodMS > 65000) throw ConfigurationException ("VardisConfigurationBlock", "scrubbing period must not exceed 65000 (ms)");
     
     if (pollRTDBServiceIntervalMS <= 0) throw ConfigurationException ("VardisConfigurationBlock", "period for checking RTDB service requests in shared memory must be strictly positive");
     if (payloadGenerationIntervalMS <= 0) throw ConfigurationException ("VardisConfigurationBlock", "payload generation interval must be strictly positive");
@@ -102,6 +106,7 @@ namespace dcp::vardis {
        << " , maxRepetitions = " << cfg.vardis_conf.maxRepetitions
        << " , maxPayloadSize = " << cfg.vardis_conf.maxPayloadSize
        << " , maxSummaries = " << cfg.vardis_conf.maxSummaries
+       << " , scrubbingPeriodMS = " << cfg.vardis_conf.scrubbingPeriodMS
        << " , pollRTDBServiceIntervalMS = " << cfg.vardis_conf.pollRTDBServiceIntervalMS
        << " , payloadGenerationIntervalMS = " << cfg.vardis_conf.payloadGenerationIntervalMS
        << " , queueMaxEntries = " << cfg.vardis_conf.queueMaxEntries
