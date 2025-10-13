@@ -37,6 +37,7 @@ namespace dcp::vardis {
   
   extern logger_type log_tx;             /*!< Logger for transmitter thread */
   extern logger_type log_rx;             /*!< Logger for receiver thread */
+  extern logger_type log_scrubbing;      /*!< Logger for scrubbing thread */
   extern logger_type log_mgmt_command;   /*!< Logger for thread handling command socket towards Vardis clients */
   extern logger_type log_mgmt_rtdb;      /*!< Logger for thread handling RTDB service invocations via shared memory */
   extern logger_type log_main;           /*!< Logger for main thread of Vardis demon */

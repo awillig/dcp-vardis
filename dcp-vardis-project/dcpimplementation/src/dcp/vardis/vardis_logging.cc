@@ -56,6 +56,7 @@ namespace dcp::vardis {
 
   logger_type log_tx             (keywords::channel = "TX");
   logger_type log_rx             (keywords::channel = "RX");
+  logger_type log_scrubbing      (keywords::channel = "SCRUB");
   logger_type log_mgmt_command   (keywords::channel = "MGMT-COMMAND");
   logger_type log_mgmt_rtdb      (keywords::channel = "MGMT-RTDB");
   logger_type log_main           (keywords::channel = "MAIN");
@@ -68,6 +69,7 @@ namespace dcp::vardis {
       (
        (a_channel == "TX" && a_severity >= minimumSeverityLevel) ||
        (a_channel == "RX" && a_severity >= minimumSeverityLevel) ||
+       (a_channel == "SCRUB" && a_severity >= minimumSeverityLevel) ||
        (a_channel == "MGMT-COMMAND" && a_severity >= minimumSeverityLevel) ||
        (a_channel == "MGMT-RTDB" && a_severity >= minimumSeverityLevel) ||
        (a_channel == "MAIN" && a_severity >= minimumSeverityLevel)
