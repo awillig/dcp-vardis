@@ -18,6 +18,7 @@
 #include <dcp/vardis/vardis_management_rtdb.h>
 #include <dcp/vardis/vardis_receiver.h>
 #include <dcp/vardis/vardis_runtime_data.h>
+#include <dcp/vardis/vardis_scrubber.h>
 #include <dcp/vardis/vardis_transmitter.h>
 #include <dcp/vardis/vardisclient_lib.h>
 
@@ -100,6 +101,7 @@ int run_vardis_demon (const std::string cfg_filename)
     std::thread thread_tx (transmitter_thread, std::ref(*vd_rt_ptr));
     std::thread thread_mgmt_command (management_thread_command, std::ref(*vd_rt_ptr));
     std::thread thread_mgmt_rtdb (management_thread_rtdb, std::ref(*vd_rt_ptr));
+    std::thread thread_scrubbing (scrubbing_thread, std::ref(*vd_rt_ptr));
     
     // and wait for their end
     BOOST_LOG_SEV (log_main, trivial::info) << "Running ...";
@@ -107,6 +109,7 @@ int run_vardis_demon (const std::string cfg_filename)
     thread_tx.join ();
     thread_mgmt_command.join ();
     thread_mgmt_rtdb.join ();
+    thread_scrubbing.join ();
 
     delete vd_rt_ptr;
     vd_rt_ptr = nullptr;
