@@ -511,15 +511,7 @@ namespace dcp::vardis {
 		   std::format("unused varId {}", (int) varId.val));
 
       DBEntry& existing_entry = AC.id_states[varId.val].db_entry;
-      existing_entry.varId         = varId;
-      existing_entry.prodId        = new_entry.prodId;
-      existing_entry.repCnt        = new_entry.repCnt;
-      existing_entry.seqno         = new_entry.seqno;
-      existing_entry.tStamp        = new_entry.tStamp;
-      existing_entry.countUpdate   = new_entry.countUpdate;
-      existing_entry.countCreate   = new_entry.countCreate;
-      existing_entry.countDelete   = new_entry.countDelete;
-      existing_entry.isDeleted     = new_entry.isDeleted;
+      existing_entry = new_entry;
     };
     
 
@@ -604,20 +596,26 @@ namespace dcp::vardis {
      *        must be large enough (not checked)
      *
      * @param varId: variable identifier
+     * @param output_buffer_size: size of application-provided output buffer
      * @param output_buffer: memory address into which to copy variable value
      * @param output_size: output parameter indicating size of variable value
      *
      * Throws upon irregularities (e.g. variable identifier not
-     * allocated, invalid output_buffer).
+     * allocated, invalid or too small output_buffer).
      */
-    virtual void read_value (const VarIdT varId, byte* output_buffer, VarLenT& output_size) const
+    virtual void read_value (const VarIdT varId,
+			     size_t output_buffer_size,
+			     byte* output_buffer,
+			     VarLenT& output_size) const
     {
       ArrayContents&  AC = *pContents;
 
       if (not AC.id_states[varId.val].used)
-	throw VSE ("read_value", std::format("unused varId {}", (int) varId.val));
+	throw VSE ("read_value", std::format("varId {}: variable not used", (int) varId.val));
       if (output_buffer == nullptr)
-	throw VSE ("read_value", std::format("output buffer is null"));
+	throw VSE ("read_value", std::format("varId {}: output buffer is null", (int) varId.val));
+      if (output_buffer_size < AC.id_states[varId.val].val_size)
+	throw VSE ("read_value", std::format("varId {}: output buffer is too small", (int) varId.val));
             
       byte* effective_addr = AC.value_buffer + AC.id_states[varId.val].val_offs;
       std::memcpy (output_buffer, effective_addr, AC.id_states[varId.val].val_size);
