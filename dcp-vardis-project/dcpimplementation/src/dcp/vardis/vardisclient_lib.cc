@@ -227,7 +227,7 @@ namespace dcp {
 	db_descr_list.push_back (*((DescribeDatabaseVariableDescription*) descbuffer));
       }
 
-    return VARDIS_STATUS_OK;
+    return pConf->status_code;
   }
 
   // -----------------------------------------------------------------------------------
@@ -257,7 +257,7 @@ namespace dcp {
     if ((size_t) nread < var_descr.value_length.val)
       cl_sock.abort (std::format ("describe_variable: response for variable value has insufficient size {}", nread));
 
-    return VARDIS_STATUS_OK;
+    return pConf->status_code;
   }
 
   // -----------------------------------------------------------------------------------
@@ -277,7 +277,7 @@ namespace dcp {
 
     stats = pConf->protocol_stats;
     
-    return VARDIS_STATUS_OK;
+    return pConf->status_code;
   }
   
   // -----------------------------------------------------------------------------------
