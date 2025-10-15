@@ -1,9 +1,9 @@
 # DCP/Vardis Implementation
 
-(March 2025)
+(October 2025)
 
 This provides an implementation of the DCP/Vardis protocol
-stack in Version 1.3.
+stack in Version 2.0.
 
 
 ## Tools and Versions
@@ -178,7 +178,7 @@ documentation in HTML and LaTeX formats is generated into directory
   read packets -- it is not possible to have the library stop reading
   when nothing has been received for a while.
 
-- The separation into three separate demons has performance
+- The separation into three separate demons likely has performance
   implications. An alternative could be a split into one low-level
   demon just responsible for sending and receiving packets, and a
   demon combining BP, Vardis and SRP. This might allow to reduce the
