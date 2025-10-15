@@ -60,14 +60,16 @@ void show_header (int counter)
   printw ("VarId");
   move (3, 8);
   printw ("Descr");
-  move (3, 30);
+  move (3, 25);
   printw ("Producer");
-  move (3, 50);
+  move (3, 45);
   printw ("Seqno");
-  move (3, 60);
+  move (3, 55);
   printw ("Value");
-  move (3, 74);
+  move (3, 69);
   printw ("Age(ms)");
+  move (3, 77);
+  printw ("DEL");
   
   attroff (A_BOLD);
 }
@@ -78,20 +80,23 @@ void show_var_line (const int line,
 		    const NodeIdentifierT prodId,
 		    const uint32_t seqno,
 		    const double value,
-		    const uint32_t age)
+		    const uint32_t age,
+		    const bool isDeleted)
 {
   move (line, 0);
   printw ("%d", (int) varId.val);
   move (line, 8);
-  printw ("%.20s", descr);
-  move (line, 30);
+  printw ("%.15s", descr);
+  move (line, 25);
   printw ("%s", prodId.to_str().c_str());
-  move (line, 50);
+  move (line, 45);
   printw ("%d", seqno);
-  move (line, 60);
+  move (line, 55);
   printw ("%.3f", value);
-  move (line, 74);
-  printw ("%d", age);
+  move (line, 69);
+  printw ("%d", isDeleted ? 0 : age);
+  move (line, 77);
+  printw ("%s", isDeleted ? "true " : "false");
 }
 
 
@@ -233,21 +238,21 @@ int main (int argc, char* argv [])
 		    byte     read_buffer [read_buffer_size];
 		    DcpStatus read_status = cl_rt.rtdb_read (descr.varId, respVarId, respVarLen, respTimeStamp, read_buffer_size, read_buffer);
 		    
-		    if (read_status != VARDIS_STATUS_OK)
+		    if ((read_status != VARDIS_STATUS_OK) and (read_status != VARDIS_STATUS_VARIABLE_IS_DELETED))
 		      {
 			endwin ();
 			cout << "Reading varId " << descr.varId << " failed with status " << vardis_status_to_string (read_status) << endl;
 			return EXIT_FAILURE;
 		      }
 		    
-		    if (respVarId != descr.varId)
+		    if ((read_status == VARDIS_STATUS_OK) and (respVarId != descr.varId))
 		      {
 			endwin ();
 			cout << "Submitted read request for varId " << descr.varId << " but got response for varId " << respVarId << ", exiting." << endl;
 			return EXIT_FAILURE;
 		      }
 		    
-		    if (respVarLen != sizeof(VardisTestVariable))
+		    if ((read_status == VARDIS_STATUS_OK) and (respVarLen != sizeof(VardisTestVariable)))
 		      {
 			endwin ();
 			cout << "Submitted read request for varId " << descr.varId << ", got respVarLen = " << respVarLen << " but expected length " << sizeof(VardisTestVariable) << ", exiting." << endl;
@@ -260,7 +265,13 @@ int main (int argc, char* argv [])
 		    TimeStampT rcvd_time   = respTimeStamp;
 		    auto age = rcvd_time.milliseconds_passed_since (start_time);
 		    
-		    show_var_line (line, descr.varId, descr.description, descr.prodId, tv_ptr->seqno, tv_ptr->value, age);
+		    show_var_line (line, descr.varId,
+				   descr.description,
+				   descr.prodId,
+				   tv_ptr->seqno,
+				   tv_ptr->value,
+				   age,
+				   (read_status == VARDIS_STATUS_VARIABLE_IS_DELETED) ? true : false);
 		    line++;		    
 		  }
 	      }
