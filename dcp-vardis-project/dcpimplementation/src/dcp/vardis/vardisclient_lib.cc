@@ -49,7 +49,8 @@ namespace dcp {
   // -----------------------------------------------------------------------------------
 
   VardisClientRuntime::VardisClientRuntime (const VardisClientConfiguration& client_conf,
-					    bool do_register)
+					    bool do_register,
+					    bool delete_old_registration)
     : BaseClientRuntime (client_conf.cmdsock_conf.commandSocketFile, client_conf.cmdsock_conf.commandSocketTimeoutMS),
       shmSegmentName (client_conf.shm_conf_client.shmAreaName),
       variable_store (client_conf.shm_conf_global.shmAreaName.c_str(), false),
@@ -76,7 +77,7 @@ namespace dcp {
 
     if (do_register)
       {
-	DcpStatus reg_response = register_with_vardis();
+	DcpStatus reg_response = register_with_vardis(delete_old_registration);
 	if (reg_response != VARDIS_STATUS_OK)
 	  throw VardisClientLibException ("VardisClientRuntime",
 					  std::format("registration with Vardis failed, status code = {}", vardis_status_to_string(reg_response)));
@@ -142,12 +143,13 @@ namespace dcp {
 
   // -----------------------------------------------------------------------------------
 
-  DcpStatus VardisClientRuntime::register_with_vardis ()
+  DcpStatus VardisClientRuntime::register_with_vardis (bool delete_old_registration)
   {
     ScopedClientSocket cl_sock (commandSock);
         
     VardisRegister_Request rpReq;
     std::strcpy (rpReq.shm_area_name, shmSegmentName.c_str());
+    rpReq.delete_old_registration = delete_old_registration;
     byte buffer [vardisCommandSocketBufferSize];
     int nrcvd = cl_sock.sendRequestAndReadResponseBlock<VardisRegister_Request> (rpReq, buffer, vardisCommandSocketBufferSize);
 

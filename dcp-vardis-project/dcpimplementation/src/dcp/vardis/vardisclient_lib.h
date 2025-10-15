@@ -68,10 +68,13 @@ namespace dcp {
     /**
      * @brief Register client with Vardis demon.
      *
+     * @param delete_old_registration: specifies whether an old registration
+     *        (if any) should be simply deleted instead of raising an error
+     *
      * If registration is successful this establishes access to the
      * shared memory segment.
      */
-    DcpStatus register_with_vardis ();
+    DcpStatus register_with_vardis (bool delete_old_registration = false);
 
     
     /**
@@ -130,9 +133,13 @@ namespace dcp {
      * @param client_conf: Configuration data for Vardis client
      * @param do_register: specifies whether client should
      *        register with Vardis demon
+     * @param delete_old_registration: specifies whether an old registration
+     *        (if any) should be simply deleted instead of raising an error
      */
     VardisClientRuntime (const VardisClientConfiguration& client_conf,
-			 bool do_register = true);
+			 bool do_register = true,
+			 bool delete_old_registration = false
+			 );
 
     
     /**
