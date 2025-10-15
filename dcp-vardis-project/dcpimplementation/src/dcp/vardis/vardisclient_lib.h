@@ -234,12 +234,18 @@ namespace dcp {
 
     /**
      * @brief Create a variable
+     *
+     * @param spec: specification for new variable (all fields except
+     *        creationTime need to be valid)
+     * @param value: initial value of variable
      */
     DcpStatus rtdb_create (const VarSpecT& spec, const VarValueT& value);
 
 
     /**
      * @brief Delete a variable
+     *
+     * @param varId: Identifier of variable to be deleted
      */
     DcpStatus rtdb_delete (VarIdT varId);
 
@@ -249,12 +255,31 @@ namespace dcp {
      */
     DcpStatus rtdb_update (VarIdT varId, const VarValueT& value);
 
-    
+
     /**
      * @brief Read a variable.
      *
-     * Note: This function does not allocate memory, caller must provide
-     *       sufficient buffer space
+     * Note: This function does not allocate memory, caller must
+     *       provide sufficient buffer space. Returns VARDIS_STATUS_OK
+     *       if variable exists and is not deleted, and only in this
+     *       case are the buffer contents and other return values
+     *       valid.
+     *
+     * @param varId: variable identifier of variable to be read
+     * @param responseVarId: output: variable identifier stored in the
+     *        variable database entry
+     * @param responseVarLen: output: length of variable value returned
+     * @param responseTimeStamp: output: local timestamp of last create
+     *        or update operation on this variable
+     * @param value_bufsize: size of the application-provided buffer
+     *        into which the variable value is to be copied
+     * @param value_buffer: application-provided buffer into which the
+     *        variable value is being copied.
+     *
+     * @return If the variable is not allocated then the value
+     *         VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST is returned. If the
+     *         variable exists but is deleted then VARDIS_STATUS_VARIABLE_IS_DELETED
+     *         is returned, otherwise VARDIS_STATUS_OK.
      */
     DcpStatus rtdb_read   (VarIdT varId,
 			   VarIdT& responseVarId,

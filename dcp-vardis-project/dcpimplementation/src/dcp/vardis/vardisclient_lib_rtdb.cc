@@ -141,14 +141,34 @@ namespace dcp {
     if ((value_buffer == nullptr) or (value_bufsize < dcp::vardis::MAX_maxValueLength))
       throw VardisClientLibException ("rtdb_read", "illegal buffer information");
 
+    bool isAllocated = true;
+    bool isDeleted   = false;
+    
     variable_store.lock ();
-    DBEntry& entry = variable_store.get_db_entry_ref (varId);
-    variable_store.read_value (varId, value_buffer, responseVarLen);
-    responseTimeStamp = entry.tStamp;
-    responseVarId = entry.varId;
-    variable_store.get_vardis_protocol_statistics_ref().count_handle_rtdb_read++;
+    if (not (variable_store.identifier_is_allocated (varId)))
+      {
+	isAllocated = false;
+      }
+    else
+      {
+	DBEntry& entry = variable_store.get_db_entry_ref (varId);
+	if (entry.isDeleted)
+	  {
+	    isDeleted = true;
+	  }
+	else
+	  {
+	    variable_store.read_value (varId, value_bufsize, value_buffer, responseVarLen);
+	    responseTimeStamp = entry.tStamp;
+	    responseVarId = entry.varId;
+	    variable_store.get_vardis_protocol_statistics_ref().count_handle_rtdb_read++;
+	  }
+      }
     variable_store.unlock ();
 
+    if (not isAllocated) return VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST;
+    if (isDeleted) return VARDIS_STATUS_VARIABLE_IS_DELETED;
+    
     return VARDIS_STATUS_OK;
     
   }
