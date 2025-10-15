@@ -174,7 +174,7 @@ int main (int argc, char* argv [])
   cl_conf.shm_conf_global.shmAreaName    = shmname_glob;
 
   try {
-    VardisClientRuntime cl_rt (cl_conf);
+    VardisClientRuntime cl_rt (cl_conf, true, true);
 
     VarSpecT spec;
     spec.varId   = varId;
