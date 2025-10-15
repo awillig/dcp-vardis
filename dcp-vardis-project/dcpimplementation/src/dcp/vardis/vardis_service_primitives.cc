@@ -129,6 +129,8 @@ namespace dcp::vardis {
     os << "DescribeDatabaseVariableDescription{varId = " << (int) descr.varId.val
        << ", prodId = " << descr.prodId
        << ", repCnt = " << (int) descr.repCnt.val
+       << ", creationTime = " << descr.creationTime
+       << ", timeout = " << descr.timeout
        << ", description = " << descr.description
        << ", tStamp = " << descr.tStamp
        << ", isDeleted = " << descr.isDeleted
@@ -148,6 +150,8 @@ namespace dcp::vardis {
     os << "DescribeDatabaseVariableDescription{varId = " << (int) descr.varId.val
        << ", prodId = " << descr.prodId
        << ", repCnt = " << (int) descr.repCnt.val
+       << ", creationTime = " << descr.creationTime
+       << ", timeout = " << descr.timeout
        << ", description = " << descr.description
        << ", seqno = " << descr.seqno.val
        << ", tStamp = " << descr.tStamp

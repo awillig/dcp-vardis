@@ -194,6 +194,8 @@ namespace dcp::vardis {
           descr.varId          =  db_entry.varId;
 	  descr.prodId         =  db_entry.prodId;
 	  descr.repCnt         =  db_entry.repCnt;
+	  descr.creationTime   =  db_entry.creationTime;
+	  descr.timeout        =  db_entry.timeout;
 	  descr.tStamp         =  db_entry.tStamp;
 	  descr.isDeleted      =  db_entry.isDeleted;
 	  PD.vardis_store.read_description (varId, descr.description);
@@ -244,6 +246,8 @@ namespace dcp::vardis {
 	  var_descr.varId        =  db_entry.varId;
 	  var_descr.prodId       =  db_entry.prodId;
 	  var_descr.repCnt       =  db_entry.repCnt;
+	  var_descr.creationTime =  db_entry.creationTime;
+	  var_descr.timeout      =  db_entry.timeout;
 	  PD.vardis_store.read_description (varId, var_descr.description);
 	  var_descr.seqno        =  db_entry.seqno;
 	  var_descr.tStamp       =  db_entry.tStamp;

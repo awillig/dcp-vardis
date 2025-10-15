@@ -112,6 +112,8 @@ int main (int argc, char* argv [])
 	 << "   varId        = " << (int) var_descr.varId.val  << "\n"
 	 << "   prodId       = " << var_descr.prodId << "\n"
 	 << "   repCnt       = " << (int) var_descr.repCnt.val << "\n"
+	 << "   creationTime = " << var_descr.creationTime << "\n"
+	 << "   timeout      = " << var_descr.timeout << "\n"
 	 << "   description  = " << var_descr.description << "\n"
 	 << "   seqno        = " << (int) var_descr.seqno.val << "\n"
 	 << "   tStamp       = " << var_descr.tStamp << "\n"

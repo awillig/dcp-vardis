@@ -98,6 +98,8 @@ int main (int argc, char* argv [])
 	cout << "varId = " << descr.varId
    	     << ", prodId = " << descr.prodId
 	     << ", repCnt = " << descr.repCnt
+	     << ", creationTime = " << descr.creationTime
+	     << ", timeout = " << descr.timeout
 	     << ", descr = " << descr.description
 	     << ", tStamp = " << descr.tStamp
 	     << ", isDeleted = " << descr.isDeleted

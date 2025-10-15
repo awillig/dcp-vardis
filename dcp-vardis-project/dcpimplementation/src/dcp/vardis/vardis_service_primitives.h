@@ -203,6 +203,8 @@ namespace dcp::vardis {
     VarIdT             varId;
     NodeIdentifierT    prodId;
     VarRepCntT         repCnt;
+    TimeStampT         creationTime;
+    VarTimeoutT        timeout;
     char               description [MAX_maxDescriptionLength + 1];
     TimeStampT         tStamp;
     bool               isDeleted;
@@ -250,6 +252,8 @@ namespace dcp::vardis {
     VarIdT            varId;
     NodeIdentifierT   prodId;
     VarRepCntT        repCnt;
+    TimeStampT        creationTime;
+    VarTimeoutT       timeout;
     char              description [MAX_maxDescriptionLength + 1];
     VarSeqnoT         seqno;
     TimeStampT        tStamp;
