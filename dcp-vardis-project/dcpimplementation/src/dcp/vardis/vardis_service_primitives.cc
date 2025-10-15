@@ -26,6 +26,7 @@ namespace dcp::vardis {
   {
     os << "VardisRegister_Request{s_type=" << vardis_service_type_to_string(req.s_type)
        << ", shm_area_name = " << req.shm_area_name
+       << ", delete_old_registration = " << req.delete_old_registration
        << " }";
     return os;
   }

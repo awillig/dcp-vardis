@@ -59,10 +59,13 @@ namespace dcp::vardis {
    * @brief VardisRegister service primitives, exchanged via command socket
    *
    * The request primitive carries the name of the shared memory area
-   * to be used between Vardis demon and Vardis client application
+   * to be used between Vardis demon and Vardis client application. It
+   * also carries a flag indicating whether an already existing
+   * registration should be removed before creating a new one.
    */
   typedef struct VardisRegister_Request : ServiceRequest {
     char  shm_area_name [maxShmAreaNameLength+1];
+    bool  delete_old_registration = false;
     VardisRegister_Request () : ServiceRequest (stVardis_Register) {};
     friend std::ostream& operator<<(std::ostream& os, const VardisRegister_Request& req);
   } VardisRegister_Request;
