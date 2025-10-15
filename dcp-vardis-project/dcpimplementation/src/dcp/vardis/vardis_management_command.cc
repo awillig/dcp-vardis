@@ -229,8 +229,9 @@ namespace dcp::vardis {
       << "Processing RTDBDescribeVariable request for varId "
       << varId;
 
+    static const size_t VAL_BUFFER_SIZE = MAX_maxValueLength + 1;
     DescribeVariableDescription var_descr;
-    byte val_buffer [MAX_maxValueLength + 1];
+    byte val_buffer [VAL_BUFFER_SIZE];
     bool found = false;
     {
       ScopedVariableStoreMutex mtx (runtime);
@@ -256,7 +257,7 @@ namespace dcp::vardis {
 	  var_descr.countDelete  =  db_entry.countDelete;
 	  var_descr.isDeleted    =  db_entry.isDeleted;
 	  var_descr.value_length =  PD.vardis_store.size_of_value (varId);
-	  PD.vardis_store.read_value (varId, val_buffer, val_size);
+	  PD.vardis_store.read_value (varId, VAL_BUFFER_SIZE , val_buffer, val_size);
 	}
     }
 
