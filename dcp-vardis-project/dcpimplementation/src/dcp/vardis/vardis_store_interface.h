@@ -239,6 +239,8 @@ namespace dcp::vardis {
      *        buffer must be large enough, its size is not checked.
      *
      * @param varId: variable identifier
+     * @param output_buffer_size: size of application-provided
+     *        output buffer for variable value
      * @param output_buffer: memory location to copy value into
      * @param output_size: output parameter containing size of the
      *        variable value
@@ -246,7 +248,10 @@ namespace dcp::vardis {
      * Throws upon irregularities (e.g. varId not allocated, given buffer too
      * small)
      */
-    virtual void       read_value (const VarIdT varId, byte* output_buffer, VarLenT& output_size) const = 0;
+    virtual void       read_value (const VarIdT varId,
+				   size_t output_buffer_size,
+				   byte* output_buffer,
+				   VarLenT& output_size) const = 0;
 
 
     /**
