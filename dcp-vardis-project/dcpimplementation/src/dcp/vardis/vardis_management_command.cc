@@ -71,10 +71,19 @@ namespace dcp::vardis {
     // we check uniqueness of shared memory area name
     if (runtime.clientApplications.contains (std::string (pReq->shm_area_name)))
       {
-	DCPLOG_INFO(log_mgmt_command)
-	  << "Processing VardisRegister request: application already exists";
-	send_simple_confirmation<VardisRegister_Confirm> (runtime, VARDIS_STATUS_APPLICATION_ALREADY_REGISTERED);
-	return;
+	DCPLOG_INFO (log_mgmt_command)
+	  << "Processing VardisRegister request: application already exists.";
+	if (not pReq->delete_old_registration)
+	  {
+	    send_simple_confirmation<VardisRegister_Confirm> (runtime, VARDIS_STATUS_APPLICATION_ALREADY_REGISTERED);
+	    return;
+	  }
+	else
+	  {
+	    DCPLOG_INFO (log_mgmt_command)
+	      << "Processing VardisRegister request: removing old application.";
+	    runtime.clientApplications.erase(std::string(pReq->shm_area_name));	    
+	  }
       }
 
     // Now create and initialize new client protocol data entry and add it to the list of registered protocols
