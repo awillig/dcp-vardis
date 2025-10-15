@@ -68,6 +68,9 @@ namespace dcp::vardis {
 		  VarIdT     varId     = *var_it;
 		  DBEntry&   ent       = PD.vardis_store.get_db_entry_ref (varId);
 
+		  --numvars;
+		  ++var_it;
+		  
 		  if (    (ent.isDeleted)
 		       || (ent.timeout == 0)
 		       || (curr_time.milliseconds_passed_since (ent.tStamp) <= ent.timeout))
@@ -92,9 +95,6 @@ namespace dcp::vardis {
 		  PD.reqCreateQ.remove (varId);
 
 		  PD.deleteQ.insert (varId);
-		  
-		  --numvars;
-		  ++var_it;
 		}
 	    }
 	  
