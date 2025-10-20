@@ -17,7 +17,7 @@ sudo rm /dev/shm/shm-vardis* > /dev/null 2>&1
 sudo rm log-dcp-* > /dev/null 2>&1
 
 start_bp() {
-    sudo ../_build/dcp-bp -r cfg/bp/simple-test.cfg & > /dev/null 2>&1
+    sudo ../_build/dcpmain-bp -r cfg/bp/simple-test.cfg & > /dev/null 2>&1
     BPPID=$!
     echo "Started BP demon, pid is $BPPID"
 }
@@ -30,7 +30,7 @@ stop_bp() {
 
 
 start_vd() {
-    ../_build/dcp-vardis -r cfg/vardis/simple-test.cfg  & > /dev/null 2>&1
+    ../_build/dcpmain-vardis -r cfg/vardis/simple-test.cfg  & > /dev/null 2>&1
     VDPID=$!
     echo "Started Vardis demon, pid is $VDPID"
 }
@@ -41,7 +41,7 @@ stop_vd() {
 }
 
 start_srp() {
-    ../_build/dcp-srp -r cfg/srp/simple-test.cfg  & > /dev/null 2>&1
+    ../_build/dcpmain-srp -r cfg/srp/simple-test.cfg  & > /dev/null 2>&1
     SRPPID=$!
     echo "Started SRP demon, pid is $SRPPID"
 }
