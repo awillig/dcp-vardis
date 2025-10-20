@@ -190,7 +190,7 @@ int main (int argc, char* argv [])
   cl_conf.shm_conf_global.shmAreaName    = shmname_glob;
 
   try {
-    VardisClientRuntime cl_rt (cl_conf);
+    VardisClientRuntime cl_rt (cl_conf, true, true);
 
     // ============================================
     // Main loop
@@ -209,7 +209,7 @@ int main (int argc, char* argv [])
 	int h, w;
 	getmaxyx (stdscr, h, w);
 
-	if ((w >= 80) and (h >= 20))
+	if ((w >= 80) and (h >= 12))
 	  {
 	    counter++;
 	    clear ();
