@@ -156,13 +156,10 @@ namespace dcp {
 	  {
 	    isDeleted = true;
 	  }
-	else
-	  {
-	    variable_store.read_value (varId, value_bufsize, value_buffer, responseVarLen);
-	    responseTimeStamp = entry.tStamp;
-	    responseVarId = entry.varId;
-	    variable_store.get_vardis_protocol_statistics_ref().count_handle_rtdb_read++;
-	  }
+	variable_store.read_value (varId, value_bufsize, value_buffer, responseVarLen);
+	responseTimeStamp = entry.tStamp;
+	responseVarId = entry.varId;
+	variable_store.get_vardis_protocol_statistics_ref().count_handle_rtdb_read++;
       }
     variable_store.unlock ();
 
