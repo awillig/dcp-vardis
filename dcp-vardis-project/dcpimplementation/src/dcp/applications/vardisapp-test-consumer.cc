@@ -64,11 +64,11 @@ void show_header (int counter)
   printw ("Producer");
   move (3, 45);
   printw ("Seqno");
-  move (3, 55);
+  move (3, 54);
   printw ("Value");
-  move (3, 69);
+  move (3, 67);
   printw ("Age(ms)");
-  move (3, 77);
+  move (3, 76);
   printw ("DEL");
   
   attroff (A_BOLD);
@@ -91,11 +91,11 @@ void show_var_line (const int line,
   printw ("%s", prodId.to_str().c_str());
   move (line, 45);
   printw ("%d", seqno);
-  move (line, 55);
+  move (line, 54);
   printw ("%.3f", value);
-  move (line, 69);
+  move (line, 67);
   printw ("%d", isDeleted ? 0 : age);
-  move (line, 77);
+  move (line, 76);
   printw ("%s", isDeleted ? "true " : "false");
 }
 
