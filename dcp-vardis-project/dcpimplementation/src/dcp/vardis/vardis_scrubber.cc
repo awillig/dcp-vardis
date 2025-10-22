@@ -79,7 +79,8 @@ namespace dcp::vardis {
 		    }
 
 		  DCPLOG_INFO(log_scrubbing) << "Marking variable " << varId
-					     << " as deleted after timeout of " << ent.timeout << " milliseconds.";
+					     << " as deleted after timeout of " << ent.timeout << " milliseconds"
+					     << ", timestamp was " << ent.tStamp << ".";
 		  
 		  // mark varId as deleted
 		  ent.isDeleted    = true;
