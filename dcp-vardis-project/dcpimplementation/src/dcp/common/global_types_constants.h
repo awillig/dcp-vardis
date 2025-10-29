@@ -298,6 +298,10 @@ namespace dcp {
      */
     inline uint32_t milliseconds_passed_since (const TimeStampT& past_time) const
     {
+      if (tStamp < past_time.tStamp)
+	{
+	  return 0;
+	}
       auto duration = tStamp - past_time.tStamp;
       return (uint32_t) (duration.count() / 1000000);
     };
@@ -353,6 +357,10 @@ namespace dcp {
      */
     inline uint32_t milliseconds_passed_since (const TimeStampT& past_time) const
     {
+      if (tStamp < past_time.tStamp)
+	{
+	  return 0;
+	}
       auto duration = tStamp - past_time.tStamp;
       return (uint32_t) duration.inUnit (omnetpp::SIMTIME_MS);
     };
