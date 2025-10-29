@@ -937,8 +937,6 @@ namespace dcp::vardis {
     {
       return RTDB_Update_Confirm (VARDIS_STATUS_EMPTY_VALUE, varId);
     }
-
-    DCPLOG_TRACE(log_mgmt_rtdb) << "Handling RTDB-Update request for variable " << varId;
     
     // update the DB entry
     theEntry.seqno        = (theEntry.seqno.val + 1) % (VarSeqnoT::modulus());
@@ -946,6 +944,9 @@ namespace dcp::vardis {
     theEntry.tStamp       = TimeStampT::get_current_system_time();
     vardis_store.update_value (varId, updateReq.value);
 
+    DCPLOG_TRACE(log_mgmt_rtdb) << "Handling RTDB-Update request for variable " << varId
+				<< " with new timestamp " << theEntry.tStamp;
+    
     // add varId to updateQ if necessary
     if (not updateQ.contains (varId))
     {
