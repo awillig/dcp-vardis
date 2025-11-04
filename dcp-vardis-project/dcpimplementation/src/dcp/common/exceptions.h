@@ -33,6 +33,10 @@
  * type.
  */
 
+#ifdef DCP_EXCEPTION
+#error "Macro DCP_EXCEPTION has been defined elsewhere"
+#endif
+
 
 #define DCP_EXCEPTION(name_) \
   class name_ : public DcpException { \
@@ -82,3 +86,5 @@ namespace dcp {
   DCP_EXCEPTION(VardisTransmitException)
  
 };  // namespace dcp
+
+#undef DCP_EXCEPTION
