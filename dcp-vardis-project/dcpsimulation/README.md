@@ -6,7 +6,7 @@ The DCP/Vardis simulator is an open-source simulation model for the
 DCP/Vardis protocol stack as described in this [arXiv
 report](https://arxiv.org/abs/2404.01570) and its enhanced and revised
 [journal version](https://doi.org/10.1016/j.comcom.2024.108021). It
-aims to be a reasonably (though not completely) faithful
+aims to be a reasonably (though not completely) faithful and complete
 implementation of the DCP/VarDis protocol stack specification, which
 can be found [here](https://github.com/awillig/dcp-vardis.git). The
 simulator has been developed for the OMNeT++ discrete-event simulation
@@ -19,7 +19,7 @@ directory `dcpsimulation`).
 
 IMPORTANT: The DCP/Vardis specification, implementation and simulation
 model are being continuously developed, bugs are corrected, features
-are added et cetera. We do not guarantee that the implementation or
+are added, et cetera. We do not guarantee that the implementation or
 simulator code fully conforms to the specification or that the
 specification as such is free of errors or ambiguities.
 
@@ -51,8 +51,7 @@ commands accordingly.
 To install and build the code, first make sure that OMNeT++ in version
 6.0 or higher, and the INET framework in version 4.5 or higher are
 installed and their `setenv` files are included in (or called from)
-your shell startup file (file `~/.bashrc`). Test that this is the case
-by running
+your shell startup file (file `~/.bashrc`). Confirm this by running
 ```shell
 echo $INET_ROOT
 ``` 
@@ -83,7 +82,7 @@ You can follow this by running the available unit tests:
 cd ../_build/ && ctest && cd ../src/
 ```
 
-To build the DCP/Vardis code run the following commands
+To build the DCP/Vardis simulator run the following commands
 ```shell
 cd ../../dcpsimulation
 opp_makemake -f -r -M release --deep -I$INET_ROOT/src -I./src -I../dcpimplementation/src -L$INET_ROOT/src -L../dcpimplementation/_build -lINET -ldcplib-common-sim -ldcplib-bp-sim -ldcplib-vardis-sim
@@ -104,6 +103,7 @@ the generated executable with the provided example simulation:
 
 
 ## Setting up in the OMNeT++ IDE
+
 This should be as simple as pointing the IDE at the project directories.
 Currently it is not set up to compile and run examples through the IDE.
 
@@ -112,8 +112,8 @@ Currently it is not set up to compile and run examples through the IDE.
 Directory Structure
 ===================
 
-The directory structure follows the standard structure for an OMNeT++
-project:
+The directory structure under the `dcpsimulation` directory follows
+the standard structure for an OMNeT++ project:
 
 * `simulations/`: contains two simple example simulations
 * `src/`
@@ -147,8 +147,3 @@ DCP/Vardis specification. Some of the missing functionalities include:
 
 * VarDis management services (activate/deactivate) are not implemented.
 * BP management services (activate/deactivate) are not implemented.
-
-Also, currently the codebase of the simulator is completely disjoint
-from the code base of the implementation, and the latter is more
-recent and more complete. A short-to-medium term aim is to base both
-on a shared code basis.
