@@ -38,5 +38,5 @@ class RTDBDescribeVariable_Confirm extends VardisConfirmation
     VarRepCntT          countUpdate;
     VarRepCntT          countCreate;
     VarRepCntT          countDelete;
-    bool                toBeDeleted;
+    bool                isDeleted;
 };
