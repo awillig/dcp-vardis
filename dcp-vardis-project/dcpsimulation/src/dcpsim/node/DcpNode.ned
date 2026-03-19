@@ -57,7 +57,7 @@ module DcpNode extends AdhocHost
         numPppInterfaces  = default(0);
         numTunInterfaces  = default(0);
         numVirtInterfaces = default(0);
-
+        dcp.bpmd.interfaceTableModule = default(absPath(".interfaceTable"));
         
     submodules:
         dcp:           DcpStack;
