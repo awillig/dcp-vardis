@@ -67,6 +67,7 @@ void BeaconingProtocol::initialize (int stage)
         dbg_enter("initialize");
 
         // reading and checking module parameters
+	bpNetworkIdentifier      =  (BPNetworkIdentifierT) par("bpNetworkIdentifier");
         bpParMaximumPacketSizeB  =  (BPLengthT) par("bpParMaximumPacketSize");
         assert(bpParMaximumPacketSizeB > 0);
 
@@ -322,6 +323,7 @@ void BeaconingProtocol::constructAndTransmitBeacon (std::list< Ptr<const Chunk> 
     bpHdr.version     =  bpProtocolVersion;
     bpHdr.magicNo     =  bpMagicNo;
     bpHdr.senderId    =  getOwnNodeId();
+    bpHdr.networkId   =  bpNetworkIdentifier;
     bpHdr.length      =  BPHeaderT::fixed_size();   /* ISSUE: Just so that well-formedness check does not fail, but is otherwise ignored for now */
     bpHdr.numPayloads =  beaconChunks.size() / 2;
     bpHdr.seqno       =  _seqno++;
@@ -427,7 +429,7 @@ void BeaconingProtocol::handleReceivedPacket (Packet* packet)
 
     BPHeaderT bpHdr;
     bpHdr.deserialize (area);
-    if (not bpHdr.isWellFormed(getOwnNodeId()))
+    if (not bpHdr.isWellFormed(getOwnNodeId(), bpNetworkIdentifier))
     {
         error ("BPHeader is not well-formed, stop processing");
     }

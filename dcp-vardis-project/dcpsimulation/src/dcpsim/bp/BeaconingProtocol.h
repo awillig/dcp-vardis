@@ -41,6 +41,7 @@ using namespace inet;
 
 using dcp::bp::BPHeaderT;
 using dcp::bp::BPPayloadHeaderT;
+using dcp::bp::BPNetworkIdentifierT;
 
 // -------------------------------------------------------------------
 
@@ -88,6 +89,9 @@ protected:
     // parameter for maximum beacon packet size
     BPLengthT   bpParMaximumPacketSizeB;
 
+    // parameter for network identifier to use
+    BPNetworkIdentifierT  bpNetworkIdentifier = 0;
+  
     // Beacons have sequence numbers
     uint32_t    _seqno = 0;
 
