@@ -27,6 +27,7 @@ simple BeaconingProtocol extends DcpProtocol
     parameters:
         volatile double bpParBeaconPeriodDistr @unit(s)    = default (uniform(90ms, 110ms));  // time between beacon generations
         int             bpParMaximumPacketSize @unit(byte) = default (1400B);                 // max size of a BP beacon
+	int             bpNetworkIdentifier                = default (0);                     // network id to use
     	@class(BeaconingProtocol);
     
     gates:
