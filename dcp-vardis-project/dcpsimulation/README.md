@@ -49,7 +49,8 @@ shell under Linux. For other shells, you will need to modify some
 commands accordingly.
 
 To install and build the code, first make sure that OMNeT++ in version
-6.0 or higher, and the INET framework in version 4.5 or higher are
+6.0 or higher (we have tested versions 6.03, 6.1 and 6.3), and the
+INET framework in version 4.5 or higher (we have tested version 4.6) are
 installed and their `setenv` files are included in (or called from)
 your shell startup file (file `~/.bashrc`). Confirm this by running
 ```shell
@@ -58,14 +59,13 @@ echo $INET_ROOT
 which should output the installation directory of
 the INET source files. Furthermore, ensure that: 
   - INET is built (i.e. that the file `libINET.so` and/or
-    `libINET_dbg.so` exists in `$INET_ROOT/src/`),
+    `libINET_dbg.so` exists in `$INET_ROOT/src/`); and
   - the `bin/` sub-directory of your OMNeT++ installation directory is
-    in your `PATH` environment variable, and
-  - the `lib/` sub-directory of your OMNeT++ installation directory is
-    in your `LD_LIBRARY_PATH` environment variable.
+    in your `PATH` environment variable; and
   - the environment variable `__omnetpp_root_dir` points to the root
     directory of your OMNeT++ installation. This is needed by the
-    build process for the DCP implementation.
+    build process for the DCP implementation to ensure that the
+	libraries used by the simulator are being built.
 
 Before building the simulator you will have to build the DCP
 implementation to create suitable libraries that can be linked to the
@@ -95,8 +95,10 @@ debug` and replace `-lINET` by `-lINET_dbg`.
 
 To run the simulations make sure that your `NEDPATH` environment
 variable points to the `src` sub-directory of the `dcpsimulation`
-directory. Then change into the `simulation/` sub-directory and run
-the generated executable with the provided example simulation:
+directory, to the `src` sub-directory of your INET installation, and
+to the current directory `.`. Then change into the `simulation/` 
+sub-directory and run the generated executable with the provided
+example simulation:
 ```shell
 ../out/gcc-release/dcpsimulation -u Cmdenv -c TestNetwork
 ```
