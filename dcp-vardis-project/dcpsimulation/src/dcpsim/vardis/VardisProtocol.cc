@@ -637,7 +637,7 @@ void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Req
        descr.prodId         =  db_entry.prodId;
        descr.repCnt         =  db_entry.repCnt;
        descr.tStamp         =  db_entry.tStamp;
-       descr.toBeDeleted    =  db_entry.toBeDeleted;
+       descr.isDeleted      =  db_entry.isDeleted;
        PD.vardis_store.read_description (varId, descr.description);
 
        dbConf->setDescrs(i,descr);
@@ -702,7 +702,7 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
     varDescr->setCountUpdate (theEntry.countUpdate);
     varDescr->setCountCreate (theEntry.countCreate);
     varDescr->setCountDelete (theEntry.countDelete);
-    varDescr->setToBeDeleted (theEntry.toBeDeleted);
+    varDescr->setIsDeleted (theEntry.isDeleted);
 
     sendConfirmation(varDescr, VARDIS_STATUS_OK, theProtocol);
 
