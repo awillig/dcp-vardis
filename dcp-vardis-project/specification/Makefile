@@ -15,7 +15,9 @@ PDOPTS = -V colorlinks=true \
          -V marginleft=1.3cm \
          -V marginright=1.3cm \
          -V margintop=1.3cm \
-         -V marginbottom=1.3cm
+         -V marginbottom=1.3cm \
+         -V linktoc=all 
+    
 
 dcpvardis-spec.html : $(MDFILES) Makefile
 	@-rm $@
