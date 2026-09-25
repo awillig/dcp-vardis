@@ -33,8 +33,6 @@
 #include <dcpsim/bp/BPClientProtocol.h>
 
 
-using namespace omnetpp;
-using namespace inet;
 
 // ------------------------------------------------------------------------------------
 
@@ -65,12 +63,12 @@ public:
     // standard OMNeT++ methods
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
     virtual void initialize(int stage) override;
-    virtual void handleMessage (cMessage* msg) override;
+    virtual void handleMessage (omnetpp:: cMessage* msg) override;
 
     // register as BP client protocol
     virtual void registerAsBPClient (void) override;
 
-    const BPLengthT maximumSRPPayloadLength = 100;
+    const dcp::bp::BPLengthT maximumSRPPayloadLength = 100;
 
 private:
 
@@ -91,8 +89,8 @@ private:
     int   gidToApplication;
 
     // Timer self message
-    cMessage*     _scrubNeighbourTableMsg  = nullptr;
-    cMessage*     _printNeighbourTableMsg  = nullptr;
+    omnetpp::cMessage*     _scrubNeighbourTableMsg  = nullptr;
+    omnetpp::cMessage*     _printNeighbourTableMsg  = nullptr;
 
 protected:
 

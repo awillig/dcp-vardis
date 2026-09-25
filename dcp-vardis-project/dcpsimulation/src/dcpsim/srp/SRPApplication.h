@@ -67,8 +67,8 @@ protected:
     /**
      * Sending messages or packets down to SRP
      */
-    void sendToSRP (Message* message);
-    void sendToSRP (Packet* packet);
+    void sendToSRP (inet::Message* message);
+    void sendToSRP (inet::Packet* packet);
 
 };
 

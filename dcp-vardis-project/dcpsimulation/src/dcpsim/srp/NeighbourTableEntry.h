@@ -31,9 +31,9 @@ namespace dcp {
  */
 
 typedef struct NeighbourTableEntry {
-    NodeIdentifierT      nodeId;
-    ExtendedSafetyDataT  extSD;
-    simtime_t            receptionTime;
+  NodeIdentifierT      nodeId;
+  ExtendedSafetyDataT  extSD;
+  omnetpp::simtime_t   receptionTime;
 } NeighbourTableEntry;
 
 } // namespace

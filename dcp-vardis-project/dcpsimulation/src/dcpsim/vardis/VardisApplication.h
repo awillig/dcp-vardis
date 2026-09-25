@@ -63,8 +63,8 @@ protected:
     /**
      * Sending messages or packets down to VarDis
      */
-    void sendToVardis (Message* message);
-    void sendToVardis (Packet* packet);
+    void sendToVardis (inet::Message* message);
+    void sendToVardis (inet::Packet* packet);
 
 };
 

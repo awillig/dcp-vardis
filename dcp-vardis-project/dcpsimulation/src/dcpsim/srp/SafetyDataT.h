@@ -22,7 +22,6 @@
 #include <dcp/common/global_types_constants.h>
 #include <dcp/common/transmissible_type.h>
 
-using namespace omnetpp;
 
 namespace dcp {
 
@@ -57,25 +56,25 @@ public:
 };
 
 
-class ExtendedSafetyDataT : public TransmissibleType<6*sizeof(double)+MAC_ADDRESS_SIZE+sizeof(simtime_t)+sizeof(uint32_t)> {
+class ExtendedSafetyDataT : public TransmissibleType<6*sizeof(double)+MAC_ADDRESS_SIZE+sizeof(omnetpp::simtime_t)+sizeof(uint32_t)> {
 public:
-    SafetyDataT       safetyData;
-    NodeIdentifierT   nodeId;
-    simtime_t         timeStamp;
-    uint32_t          seqno;
+    SafetyDataT          safetyData;
+    NodeIdentifierT      nodeId;
+    omnetpp::simtime_t   timeStamp;
+    uint32_t             seqno;
 
     virtual void serialize (AssemblyArea& area)
     {
         safetyData.serialize(area);
         nodeId.serialize(area);
-        area.serialize_byte_block(sizeof(simtime_t), (byte*) &timeStamp);
+        area.serialize_byte_block(sizeof(omnetpp::simtime_t), (byte*) &timeStamp);
         area.serialize_byte_block(sizeof(uint32_t), (byte*) &seqno);
     };
     virtual void deserialize (DisassemblyArea& area)
     {
         safetyData.deserialize(area);
         nodeId.deserialize(area);
-        area.deserialize_byte_block(sizeof(simtime_t), (byte*) &timeStamp);
+        area.deserialize_byte_block(sizeof(omnetpp::simtime_t), (byte*) &timeStamp);
         area.deserialize_byte_block(sizeof(uint32_t), (byte*) &seqno);
     };
 
