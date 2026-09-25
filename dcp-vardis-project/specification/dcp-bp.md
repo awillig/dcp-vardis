@@ -41,7 +41,7 @@ guarantees at least for some client protocols.
   assumed to be a contiguous block of bytes without any further
   internal structure of relevance to BP.
 
-- The non-transmissible data type `BPQueueingMode` has five
+- The non-transmissible data type `BPQueueingMode` has four
   distinguishable values, indicating how payloads handed over by
   client protocols for transmission are being buffered in the BP:
 
