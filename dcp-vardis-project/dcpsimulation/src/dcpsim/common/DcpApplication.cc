@@ -24,6 +24,14 @@
 
 
 using namespace dcp;
+using inet::DispatchProtocolInd;
+using inet::DispatchProtocolReq;
+using inet::INITSTAGE_LAST;
+using inet::Message;
+using inet::Packet;
+using inet::Protocol;
+using inet::SP_REQUEST;
+
 
 // ========================================================================================
 // Standard OMNeT++ and class methods
@@ -35,13 +43,11 @@ void DcpApplication::initialize(int stage)
 
     if (stage == INITSTAGE_LAST)
     {
-        dbg_enter("DcpApplication::initialize");
+        EvLogging dbg(*this, "DcpApplication::initialize");
 
         // find gate identifiers
         gidFromDcpProtocol =  findGate("fromDcpProtocol");
         gidToDcpProtocol   =  findGate("toDcpProtocol");
-
-        dbg_leave();
     }
 }
 
@@ -62,13 +68,11 @@ DcpApplication::~DcpApplication ()
  */
 void DcpApplication::createProtocol(const char* descr1, const char* descr2)
 {
-    dbg_enter("DcpApplication::createProtocol");
+    EvLogging dbg(*this, "DcpApplication::createProtocol");
     assert(!theProtocol);
 
     theProtocol = new Protocol(descr1, descr2);
     registerProtocol(*theProtocol, gate("toDcpProtocol"), gate("fromDcpProtocol"));
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -79,7 +83,7 @@ void DcpApplication::createProtocol(const char* descr1, const char* descr2)
  */
 void DcpApplication::sendToDcpProtocol (Protocol* targetProtocol, Message* message)
 {
-    dbg_enter("sendToDcpProtocol/Message");
+    EvLogging dbg(*this, "sendToDcpProtocol/Message");
     assert(targetProtocol);
     assert(message);
     assert(getProtocol());
@@ -95,8 +99,6 @@ void DcpApplication::sendToDcpProtocol (Protocol* targetProtocol, Message* messa
 
     // send it to SRP
     send(message, gidToDcpProtocol);
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -107,7 +109,7 @@ void DcpApplication::sendToDcpProtocol (Protocol* targetProtocol, Message* messa
  */
 void DcpApplication::sendToDcpProtocol (Protocol* targetProtocol, Packet* packet)
 {
-    dbg_enter("sendToSRP/Packet");
+    EvLogging dbg(*this, "sendToSRP/Packet");
     assert(targetProtocol);
     assert(packet);
     assert(getProtocol());
@@ -123,6 +125,4 @@ void DcpApplication::sendToDcpProtocol (Protocol* targetProtocol, Packet* packet
 
     // send it to SRP
     send(packet, gidToDcpProtocol);
-
-    dbg_leave();
 }

@@ -24,6 +24,7 @@
 #include <dcpsim/common/DcpProtocol.h>
 #include <dcpsim/srp/SRPUpdateSafetyData_m.h>
 
+
 // --------------------------------------------------------------------------
 
 namespace dcp {
@@ -48,7 +49,7 @@ protected:
     // data members
     // --------------------------------------------
 
-    Protocol *theProtocol = nullptr;
+    inet::Protocol *theProtocol = nullptr;
 
     // gate id's
     int gidFromDcpProtocol = -1;
@@ -68,14 +69,14 @@ protected:
     /**
      * Return (pointer to) the created protocol object
      */
-    Protocol* getProtocol () {assert(theProtocol); return theProtocol;};
+    inet:: Protocol* getProtocol () {assert(theProtocol); return theProtocol;};
 
 
     /**
      * Sending messages or packets down to SRP
      */
-    void sendToDcpProtocol (Protocol* targetProtocol, Message* message);
-    void sendToDcpProtocol (Protocol* targetProtocol, Packet* packet);
+    void sendToDcpProtocol (inet::Protocol* targetProtocol, inet::Message* message);
+    void sendToDcpProtocol (inet::Protocol* targetProtocol, inet::Packet* packet);
 
 };
 
