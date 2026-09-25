@@ -39,8 +39,6 @@
 #include <dcpsim/vardis/VardisRTDBRead_m.h>
 #include <dcpsim/vardis/VardisRTDBUpdate_m.h>
 
-using namespace omnetpp;
-using namespace inet;
 
 // ------------------------------------------------------------------------
 
@@ -80,7 +78,7 @@ namespace dcp::vardis {
     /**
      * @brief Top-level message dispatcher
      */
-    virtual void handleMessage (cMessage* msg) override;
+    virtual void handleMessage (omnetpp::cMessage* msg) override;
 
 
     /**
@@ -114,8 +112,8 @@ namespace dcp::vardis {
     int   gidFromApplication, gidToApplication;   /*!< OMNeT++ gate identifiers */
   
     // Timer self messages
-    cMessage*     bufferCheckMsg;  /*!< Self-message for periodic check of BP buffer occupancy (in response, generate payload if buffer is empty) */
-    cMessage*     sendPayloadMsg;  /*!< Self message for generating and sending payload to BP (shortly before beacon construction) */
+    omnetpp::cMessage*     bufferCheckMsg;  /*!< Self-message for periodic check of BP buffer occupancy (in response, generate payload if buffer is empty) */
+    omnetpp::cMessage*     sendPayloadMsg;  /*!< Self message for generating and sending payload to BP (shortly before beacon construction) */
     
 
     /**
@@ -162,7 +160,7 @@ protected:
      *
      * @param msg: the message to handle
      */
-    virtual void handleApplicationMessage(cMessage* msg);
+    virtual void handleApplicationMessage(omnetpp::cMessage* msg);
 
     
     /**
@@ -171,7 +169,7 @@ protected:
      *
      * @param msg: the message to handle
      */
-    virtual void handleBPMessage(cMessage* msg);
+    virtual void handleBPMessage(omnetpp::cMessage* msg);
 
 
     // ---------------------------------------------------------------------
@@ -343,10 +341,9 @@ protected:
     template <typename T>
     void extractInstructionContainerElements (DisassemblyArea& area, const ICHeaderT& icHeader, std::deque<T>& result_list)
     {
-      dbg_enter ("extractInstructionContainerElements");
+      EvLogging dbg (*this, "extractInstructionContainerElements");
       if (icHeader.icNumRecords == 0)
 	{
-	  EV << "extractInstructionContainerElements: number of records is zero";
 	  error ("extractInstructionContainerElements: number of records is zero");
 	}
       
@@ -356,7 +353,6 @@ protected:
 	  element.deserialize (area);
 	  result_list.push_back(element);
 	}
-      dbg_leave();
     };
     
     
@@ -374,7 +370,7 @@ protected:
      * @param theProtocol: the OMNeT++/INET protocol object to send
      *        the message to (through message dispatcher)
      */
-    void sendConfirmation(VardisConfirmation *confMsg, DcpStatus status, Protocol* theProtocol);
+    void sendConfirmation(VardisConfirmation *confMsg, DcpStatus status, inet::Protocol* theProtocol);
 
     
     /**
@@ -386,7 +382,7 @@ protected:
      * @param varId: the variable identifier this message relates to
      * @param theProtocol: the OMNeT++/INET protocol object to send
      *        the message to (through message dispatcher)     */
-    void sendRTDBCreateConfirm (DcpStatus status, VarIdT varId, Protocol* theProtocol);
+    void sendRTDBCreateConfirm (DcpStatus status, VarIdT varId, inet::Protocol* theProtocol);
 
     
     /**
@@ -396,7 +392,7 @@ protected:
      * @param varId: the variable identifier this message relates to
      * @param theProtocol: the OMNeT++/INET protocol object to send
      *        the message to (through message dispatcher)     */
-    void sendRTDBUpdateConfirm (DcpStatus status, VarIdT varId, Protocol* theProtocol);
+    void sendRTDBUpdateConfirm (DcpStatus status, VarIdT varId, inet::Protocol* theProtocol);
 
 
 
@@ -410,7 +406,7 @@ protected:
      *
      * @param message: the message under consideration
      */
-    Protocol* fetchSenderProtocol(Message* message);
+    inet::Protocol* fetchSenderProtocol(inet::Message* message);
 
     
     /**
