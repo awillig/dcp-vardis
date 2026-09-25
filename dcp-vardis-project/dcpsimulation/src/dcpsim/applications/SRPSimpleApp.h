@@ -23,9 +23,6 @@
 #include <dcpsim/srp/SRPApplication.h>
 #include <dcpsim/srp/SRPUpdateSafetyData_m.h>
 
-using namespace omnetpp;
-using namespace inet;
-
 // ---------------------------------------------------------
 
 namespace dcp {
@@ -33,15 +30,15 @@ namespace dcp {
 class SRPSimpleApp : public SRPApplication {
 
 public:
-    virtual ~SRPSimpleApp ();
-    virtual void initialize (int stage) override;
-    virtual void handleMessage (cMessage* msg) override;
+  virtual ~SRPSimpleApp ();
+  virtual void initialize (int stage) override;
+  virtual void handleMessage (omnetpp::cMessage* msg) override;
 
 protected:
     bool        isActive   = false;
-    cMessage*   sampleMsg  = nullptr;
+    omnetpp::cMessage*   sampleMsg  = nullptr;
 
-    IMobility* _mobility   = nullptr;      // pointer to mobility model, needed to query position
+    inet::IMobility*    _mobility   = nullptr;      // pointer to mobility model, needed to query position
 
     /**
      * Finds the pointer to the mobility model

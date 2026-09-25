@@ -20,12 +20,11 @@
 
 #include <omnetpp.h>
 
-using namespace omnetpp;
 
 #pragma pack(push, 1)
 typedef struct VardisExampleVariable {
-    uint32_t     seqno;
-    double       value;
-    simtime_t    tstamp;
+  uint32_t     seqno;
+  double       value;
+  omnetpp::simtime_t    tstamp;
 } VardisExampleVariable;
 #pragma pack(pop)

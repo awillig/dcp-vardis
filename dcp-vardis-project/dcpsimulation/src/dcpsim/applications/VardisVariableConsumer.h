@@ -27,9 +27,6 @@
 #include <dcpsim/vardis/VardisRTDBDescribeDatabase_m.h>
 #include <dcpsim/vardis/VardisRTDBRead_m.h>
 
-using namespace omnetpp;
-
-using dcp::vardis::VarIdT;
 
 // ------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------
@@ -51,7 +48,7 @@ class VardisVariableConsumer : public VardisApplication
   public:
     virtual ~VardisVariableConsumer();
     virtual void initialize(int stage) override;
-    virtual void handleMessage(cMessage *msg) override;
+    virtual void handleMessage(omnetpp::cMessage *msg) override;
 
   protected:
 
@@ -64,19 +61,19 @@ class VardisVariableConsumer : public VardisApplication
     } ConsumerState;
 
     // contains last read values for all variables
-    std::map<VarIdT, VardisExampleVariable>   lastReceived;
+    std::map<dcp::vardis::VarIdT, VardisExampleVariable>   lastReceived;
 
   protected:
 
     // configuration
-    simtime_t  samplingPeriod;
-    bool       consumerActive = false;
-    int        varIdToObserve = -1;
+    omnetpp::simtime_t  samplingPeriod;
+    bool                consumerActive = false;
+    int                 varIdToObserve = -1;
 
     // internal states
-    ConsumerState state          = cState_WaitForSampling;
-    unsigned int  readsRequested = 0;
-    cMessage*  sampleMsg = nullptr;
+    ConsumerState       state          = cState_WaitForSampling;
+    unsigned int        readsRequested = 0;
+    omnetpp::cMessage*  sampleMsg = nullptr;
 
     // -----------------------------
 
@@ -84,9 +81,9 @@ class VardisVariableConsumer : public VardisApplication
      * Output signals for statistics. Values for these are only emitted for one
      * variable configured by the user (cf parameter varIdToObserve)
      */
-    simsignal_t delaySig;     // delay between generation of current value and reception on this node
-    simsignal_t seqnoSig;     // sequence number
-    simsignal_t rxTimeSig;    // collects times at which read responses for chosen variable have been received
+    omnetpp::simsignal_t delaySig;     // delay between generation of current value and reception on this node
+    omnetpp::simsignal_t seqnoSig;     // sequence number
+    omnetpp::simsignal_t rxTimeSig;    // collects times at which read responses for chosen variable have been received
 
 
     // -----------------------------

@@ -25,11 +25,6 @@
 #include <dcpsim/vardis/VardisRTDBConfirmation_m.h>
 
 
-using namespace omnetpp;
-
-using dcp::vardis::VarIdT;
-using dcp::vardis::VarRepCntT;
-
 // --------------------------------------------------------------------
 
 namespace dcp {
@@ -46,24 +41,24 @@ class VardisVariableProducer : public VardisApplication
   public:
     virtual ~VardisVariableProducer();
     virtual void initialize(int stage) override;
-    virtual void handleMessage(cMessage *msg) override;
+    virtual void handleMessage(omnetpp::cMessage *msg) override;
 
   protected:
 
     // Parameters
-    VarIdT         varId;
-    VarRepCntT     varRepCnt;
-    simtime_t      deletionTime;
-    simtime_t      creationTime;
+    dcp::vardis::VarIdT       varId;
+    dcp::vardis::VarRepCntT   varRepCnt;
+    omnetpp::simtime_t        deletionTime;
+    omnetpp::simtime_t        creationTime;
 
     // internal state
     bool           isActivelyGenerating;
     uint32_t       seqno = 0;
 
     // self-messages for variable creation, updates and deletion
-    cMessage* createMsg = nullptr;
-    cMessage* updateMsg = nullptr;
-    cMessage* deleteMsg = nullptr;
+    omnetpp::cMessage* createMsg = nullptr;
+    omnetpp::cMessage* updateMsg = nullptr;
+    omnetpp::cMessage* deleteMsg = nullptr;
 
     // event handlers for self-messages signaling the time for variable creation,
     // updates and deletion
