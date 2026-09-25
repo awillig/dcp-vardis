@@ -27,6 +27,10 @@
  */
 
 using namespace dcp;
+using inet::INITSTAGE_LAST;
+using omnetpp::cMessage;
+using omnetpp::simTime;
+
 
 Define_Module(VardisVariableConsumer);
 
@@ -44,7 +48,7 @@ void VardisVariableConsumer::initialize(int stage)
     if (stage == INITSTAGE_LAST)
     {
         dbg_setModuleName("VardisVariableConsumer");
-        dbg_enter("initialize");
+        EvLogging dbg(*this, "initialize");
         assert(getOwnNodeId() != nullNodeIdentifier);
 
         // read and check module parameters
@@ -74,26 +78,21 @@ void VardisVariableConsumer::initialize(int stage)
             ssUc << "VARDISVARIABLECONSUMER[" << getOwnNodeId() << "]";
             createProtocol(ssLc.str().c_str(), ssUc.str().c_str());
         }
-
-        dbg_leave();
      }
-
 }
 
 // ----------------------------------------------------
 
 void VardisVariableConsumer::handleMessage(cMessage *msg)
 {
-    dbg_assertToplevel();
-    dbg_enter("handleMessage");
-    DBG_VAR1(state);
+    EvLogging dbg(*this, "handleMessage");
+    dbg.val("state", state);
 
     // dispatch on type of received message
 
     if (msg == sampleMsg)
     {
         handleSampleMsg();
-        dbg_leave();
         return;
     }
 
@@ -101,7 +100,6 @@ void VardisVariableConsumer::handleMessage(cMessage *msg)
      {
          RTDBDescribeDatabase_Confirm* dbConf = (RTDBDescribeDatabase_Confirm*) msg;
          handleRTDBDescribeDatabaseConfirm(dbConf);
-         dbg_leave();
          return;
      }
 
@@ -109,13 +107,10 @@ void VardisVariableConsumer::handleMessage(cMessage *msg)
      {
          RTDBRead_Confirm* readConf = (RTDBRead_Confirm*) msg;
          handleRTDBReadConfirm(readConf);
-         dbg_leave();
          return;
      }
 
     error("VardisVariableConsumer::handleMessage: unknown message type");
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -133,7 +128,7 @@ VardisVariableConsumer::~VardisVariableConsumer()
 
 void VardisVariableConsumer::handleSampleMsg()
 {
-    dbg_enter("handleSampleMsg");
+    EvLogging dbg(*this, "handleSampleMsg");
     assert(state == cState_WaitForSampling);
 
     // schedule next sampling message
@@ -143,15 +138,13 @@ void VardisVariableConsumer::handleSampleMsg()
     auto dbReq = new RTDBDescribeDatabase_Request;
     sendToVardis (dbReq);
     state = cState_WaitForDBDescription;
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
 
 void VardisVariableConsumer::handleRTDBDescribeDatabaseConfirm(RTDBDescribeDatabase_Confirm* dbConf)
 {
-    dbg_enter("handleRTDBDescribeDatabaseConfirm");
+    EvLogging dbg(*this, "handleRTDBDescribeDatabaseConfirm");
     assert(dbConf);
     assert(state == cState_WaitForDBDescription);
     assert(readsRequested == 0);
@@ -159,9 +152,8 @@ void VardisVariableConsumer::handleRTDBDescribeDatabaseConfirm(RTDBDescribeDatab
     // check for empty database
     if (dbConf->getDescrsArraySize() == 0)
     {
-        dbg_string("database is empty");
+        dbg.text("database is empty");
         state = cState_WaitForSampling;
-        dbg_leave();
         delete dbConf;
         return;
     }
@@ -171,7 +163,7 @@ void VardisVariableConsumer::handleRTDBDescribeDatabaseConfirm(RTDBDescribeDatab
     {
         auto spec = dbConf->getDescrs (i);
 
-        DBG_PVAR2("requesting read", spec.varId, spec.prodId);
+        dbg.val("requesting read of varId", spec.varId, "spec.prodId", spec.prodId);
 
         auto readReq = new RTDBRead_Request;
 	RTDB_Read_Request rReq;
@@ -185,15 +177,13 @@ void VardisVariableConsumer::handleRTDBDescribeDatabaseConfirm(RTDBDescribeDatab
     readsRequested  =  dbConf->getDescrsArraySize();
 
     delete dbConf;
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
 
 void VardisVariableConsumer::handleRTDBReadConfirm(RTDBRead_Confirm* readConf)
 {
-    dbg_enter("handleRTDBReadConfirm");
+    EvLogging dbg(*this, "handleRTDBReadConfirm");
 
     RTDB_Read_Confirm rConf = readConf->getReadConf();
     
@@ -212,16 +202,16 @@ void VardisVariableConsumer::handleRTDBReadConfirm(RTDBRead_Confirm* readConf)
     // (for one selected variable)
     VarIdT varId = rConf.varId;
 
-    DBG_PVAR3("CONSIDERING", varId, readsRequested, (lastReceived.find(varId) == lastReceived.end()));
+    dbg.val("CONSIDERING varId", varId, "readsRequested", readsRequested, "variable exists", (lastReceived.find(varId) == lastReceived.end()));
 
     if (    (lastReceived.find(varId) == lastReceived.end())
          || (theValue.seqno != lastReceived[varId].seqno))
     {
-        DBG_PVAR5("UPDATING VARIABLE VALUE", varId, theValue.value, theValue.seqno, theValue.tstamp, (simTime() - theValue.tstamp));
+      dbg.val("UPDATING VARIABLE VALUE, varId", varId, "theValue.value", theValue.value, "theValue.seqno", theValue.seqno, "theValue.tstamp", theValue.tstamp, "time since last", (simTime() - theValue.tstamp));
 
         if (varIdToObserve == varId.val)
         {
-            DBG_PVAR4("EMITTING statistics", varId, 1000.0d * (SIMTIME_DBL(simTime() - theValue.tstamp)), theValue.seqno - lastReceived[varId].seqno, simTime());
+  	    dbg.val("EMITTING statistics for varId", varId, "time since last (ms)", 1000.0d * (SIMTIME_DBL(simTime() - theValue.tstamp)), "seqno diff", theValue.seqno - lastReceived[varId].seqno);
             emit(delaySig, 1000.0d * (SIMTIME_DBL(simTime() - theValue.tstamp)));
             emit(seqnoSig, theValue.seqno - lastReceived[varId].seqno);
             emit(rxTimeSig, simTime());
@@ -234,12 +224,10 @@ void VardisVariableConsumer::handleRTDBReadConfirm(RTDBRead_Confirm* readConf)
     readsRequested--;
     if (readsRequested == 0)
     {
-        dbg_string("going back to state cState_WaitForSampling");
+        dbg.text("going back to state cState_WaitForSampling");
         state = cState_WaitForSampling;
     }
 
     delete readConf;
-
-    dbg_leave();
 }
 

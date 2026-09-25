@@ -21,8 +21,13 @@
 #include <dcpsim/applications/SRPSimpleApp.h>
 
 
-using namespace dcp;
+using inet::getContainingNode;
+using inet::IMobility;
+using inet::INITSTAGE_LAST;
+using omnetpp::cMessage;
+using omnetpp::simTime;
 
+namespace dcp {
 
 Define_Module(SRPSimpleApp);
 
@@ -38,7 +43,7 @@ void SRPSimpleApp::initialize(int stage)
     if (stage == INITSTAGE_LAST)
     {
         dbg_setModuleName("SRPSimpleApp");
-        dbg_enter("initialize");
+        EvLogging dbg(*this, "initialize");
         assert(getOwnNodeId() != nullNodeIdentifier);
 
         // read parameters
@@ -46,7 +51,7 @@ void SRPSimpleApp::initialize(int stage)
 
         if (isActive)
         {
-            dbg_string ("SRPSimpleApp is active");
+            dbg.text ("SRPSimpleApp is active");
 
             // create and schedule self-messages
             sampleMsg = new cMessage("SRPSimpleApp:sampleMsg");
@@ -62,8 +67,6 @@ void SRPSimpleApp::initialize(int stage)
             // find pointer to mobility model
             findModulePointers();
         }
-
-        dbg_leave();
     }
 }
 
@@ -71,31 +74,24 @@ void SRPSimpleApp::initialize(int stage)
 
 void SRPSimpleApp::handleMessage(cMessage *msg)
 {
-    dbg_assertToplevel();
-    dbg_enter("handleMessage");
-
-    // dispatch based on type of message
+    EvLogging dbg(*this, "handleMessage");
 
     if (msg == sampleMsg)
     {
-        dbg_string ("got sampleMsg");
+        dbg.text ("got sampleMsg");
         handleSampleMsg();
-        dbg_leave();
         return;
     }
 
     if ((msg->arrivedOn(gidFromDcpProtocol)) && dynamic_cast<SRPUpdateSafetyData_Confirm*>(msg))
     {
-        dbg_string ("got confirm");
+        dbg.text ("got confirm");
         SRPUpdateSafetyData_Confirm* srpConf = (SRPUpdateSafetyData_Confirm*) msg;
         handleSRPUpdateSafetyDataConfirm (srpConf);
-        dbg_leave();
         return;
     }
 
     error("SRPSimpleApp::handleMessage: unknown message type");
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -109,7 +105,7 @@ SRPSimpleApp::~SRPSimpleApp ()
 
 void SRPSimpleApp::handleSampleMsg ()
 {
-    dbg_enter("handleSampleMsg");
+    EvLogging dbg(*this, "handleSampleMsg");
 
     assert (_mobility);
     auto currPosition  = _mobility->getCurrentPosition();
@@ -123,20 +119,17 @@ void SRPSimpleApp::handleSampleMsg ()
     currSD.velocity_y = currVelocity.getY();
     currSD.velocity_z = currVelocity.getZ();
 
-    dbg_prefix();
-    EV << "Position = (" << currSD.position_x
+    dbg.prefix();
+    dbg.the_stream() << "Position = (" << currSD.position_x
        << ", " << currSD.position_y
        << ", " << currSD.position_z
-       << ")" << endl;
+       << ")" << std::endl;
 
     SRPUpdateSafetyData_Request* srpReq = new SRPUpdateSafetyData_Request;
     srpReq->setSafetyData (currSD);
     sendToSRP(srpReq);
 
     scheduleAt(simTime() + par("srpGenerationPeriodDistr"), sampleMsg);
-
-    dbg_leave();
-
 }
 
 // -------------------------------------------
@@ -147,14 +140,12 @@ void SRPSimpleApp::handleSampleMsg ()
  */
 void SRPSimpleApp::findModulePointers (void)
 {
-  dbg_enter("findModulePointers");
+  EvLogging dbg(*this, "findModulePointers");
 
   cModule *host = getContainingNode (this);
   assert(host);
   _mobility     = check_and_cast<IMobility *>(host->getSubmodule("mobility"));
   assert(_mobility);
-
-  dbg_leave();
 }
 
 // -------------------------------------------
@@ -162,7 +153,7 @@ void SRPSimpleApp::findModulePointers (void)
 
 void SRPSimpleApp::handleSRPUpdateSafetyDataConfirm (SRPUpdateSafetyData_Confirm* srpConf)
 {
-    dbg_enter("handleSRPUpdateSafetyDataConfirm");
+    EvLogging dbg(*this, "handleSRPUpdateSafetyDataConfirm");
     assert(srpConf);
     assert(isActive);
 
@@ -174,9 +165,6 @@ void SRPSimpleApp::handleSRPUpdateSafetyDataConfirm (SRPUpdateSafetyData_Confirm
     {
         error("SRPSimpleApp::handleSRPUpdateSafetyDataConfirm: Not SRP_STATUS_OK");
     }
-
-    dbg_leave();
 }
 
-
-
+}
