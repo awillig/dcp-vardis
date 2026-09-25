@@ -22,12 +22,12 @@
 #include <dcpsim/bp/BPClientProtocol.h>
 #include <inet/common/IProtocolRegistrationListener.h>
 
-// ========================================================================================
-// ========================================================================================
 
 
+using namespace inet;
 using namespace dcp;
-
+using dcp::bp::BPLengthT;
+using dcp::bp::BPQueueingMode;
 
 // ========================================================================================
 // Standard OMNeT++ and class methods
@@ -40,7 +40,7 @@ void BPClientProtocol::initialize (int stage)
 
     if (stage == INITSTAGE_LAST)
     {
-        dbg_enter("BPClientProtocol::initialize");
+        EvLogging dbg(*this, "BPClientProtocol::initialize");
 
         maxPayloadSize = (BPLengthT) par("maxPayloadSize");
         assert(maxPayloadSize > 0);
@@ -54,8 +54,6 @@ void BPClientProtocol::initialize (int stage)
         // find gate identifiers for underlying BP
         gidFromBP   =  findGate("fromBP");
         gidToBP     =  findGate("toBP");
-
-        dbg_leave();
     }
 }
 
@@ -75,25 +73,24 @@ BPClientProtocol::~BPClientProtocol()
 
 bool BPClientProtocol::hasHandledMessageBPClient(cMessage* msg)
 {
-    dbg_enter("BPClientProtocol::hasHandledMessageBPClient");
+    EvLogging dbg(*this, "BPClientProtocol::hasHandledMessageBPClient");
 
     // Start the registration process
     if (msg == _registerMsg)
     {
-        dbg_string("BPClientProtocol::handleMessage: processing _registerMsg");
+        dbg.text("BPClientProtocol::handleMessage: processing _registerMsg");
         assert(!_registrationRequested);
         _registrationRequested = true;
         cancelAndDelete(_registerMsg);
         _registerMsg = nullptr;
         registerAsBPClient();
-        dbg_leave();
         return true;
     }
 
     // Check outcome of registration attempt
     if ((msg->arrivedOn(gidFromBP)) && dynamic_cast<BPRegisterProtocol_Confirm*>(msg))
      {
-        dbg_string("handling BPRegisterProtocol_Confirm");
+        dbg.text("handling BPRegisterProtocol_Confirm");
         assert(_registrationRequested);
         assert(!_successfullyRegistered);
         BPRegisterProtocol_Confirm *confMsg = (BPRegisterProtocol_Confirm*) msg;
@@ -103,14 +100,13 @@ bool BPClientProtocol::hasHandledMessageBPClient(cMessage* msg)
             _registrationRequested  = false;
         }
         delete confMsg;
-        dbg_leave();
         return true;
      }
 
     // check outcome of deregistration attempt
     if ((msg->arrivedOn(gidFromBP)) && dynamic_cast<BPDeregisterProtocol_Confirm*>(msg))
      {
-        dbg_string("handling BPDeregisterProtocol_Confirm");
+        dbg.text("handling BPDeregisterProtocol_Confirm");
         assert(!_registrationRequested);
         assert(_successfullyRegistered);
         BPDeregisterProtocol_Confirm *confMsg = (BPDeregisterProtocol_Confirm*) msg;
@@ -120,24 +116,21 @@ bool BPClientProtocol::hasHandledMessageBPClient(cMessage* msg)
             _registrationRequested  = false;
         }
         delete confMsg;
-        dbg_leave();
         return true;
      }
 
     // check outcome of BPTransmitPayload request
     if ((msg->arrivedOn(gidFromBP)) && dynamic_cast<BPTransmitPayload_Confirm*>(msg))
      {
-        dbg_string("handling BPTransmitPayload_Confirm");
+        dbg.text("handling BPTransmitPayload_Confirm");
         assert(!_registrationRequested);
         assert(_successfullyRegistered);
         BPTransmitPayload_Confirm *confMsg = (BPTransmitPayload_Confirm*) msg;
         handleBPTransmitPayload_Confirm (confMsg);
         delete confMsg;
-        dbg_leave();
         return true;
      }
 
-    dbg_leave();
     return false;
 }
 
@@ -151,7 +144,7 @@ void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolIdT protId,
                                                     bool allowMultiplePayloads,
                                                     unsigned int maxEntries)
 {
-    dbg_enter("sendRegisterProtocolRequest");
+    EvLogging dbg(*this, "sendRegisterProtocolRequest");
 
     BPRegisterProtocol_Request  *reqMsg = new BPRegisterProtocol_Request;
     reqMsg->setProtId(protId.val);
@@ -161,8 +154,6 @@ void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolIdT protId,
     reqMsg->setAllowMultiplePayloads(allowMultiplePayloads);
     reqMsg->setMaxEntries(maxEntries);
     sendToBP(reqMsg);
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -170,14 +161,11 @@ void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolIdT protId,
 
 void BPClientProtocol::sendDeregisterProtocolRequest (BPProtocolIdT protId)
 {
-    dbg_enter("sendDeregisterProtocolRequest");
+    EvLogging dbg(*this, "sendDeregisterProtocolRequest");
 
     BPDeregisterProtocol_Request  *reqMsg = new BPDeregisterProtocol_Request;
     reqMsg->setProtId(protId.val);
     sendToBP(reqMsg);
-
-    dbg_leave();
-
 }
 
 // ========================================================================================
@@ -186,7 +174,7 @@ void BPClientProtocol::sendDeregisterProtocolRequest (BPProtocolIdT protId)
 
 void BPClientProtocol::sendToBP (Message *message)
 {
-    dbg_enter("sendToBP[Message]");
+    EvLogging dbg(*this, "sendToBP[Message]");
 
     assert(message);
 
@@ -196,15 +184,13 @@ void BPClientProtocol::sendToBP (Message *message)
     req->setServicePrimitive(SP_REQUEST);
 
     send(message, gidToBP);
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
 
 void BPClientProtocol::sendToBP (Packet *packet)
 {
-    dbg_enter("sendToBP[Packet]");
+    EvLogging dbg(*this, "sendToBP[Packet]");
     assert(packet);
 
     packet->removeTagIfPresent<DispatchProtocolReq>();
@@ -213,8 +199,6 @@ void BPClientProtocol::sendToBP (Packet *packet)
     req->setServicePrimitive(SP_REQUEST);
 
     send(packet, gidToBP);
-
-    dbg_leave();
 }
 
 // ========================================================================================
@@ -223,12 +207,10 @@ void BPClientProtocol::sendToBP (Packet *packet)
 
 bool BPClientProtocol::handleBPRegisterProtocol_Confirm (BPRegisterProtocol_Confirm *pConf)
 {
-    dbg_enter("BPClientProtocol::BPRegisterProtocol_Confirm");
+    EvLogging dbg(*this, "BPClientProtocol::BPRegisterProtocol_Confirm");
     assert(pConf);
 
     handleStatus(pConf->getStatus());
-
-    dbg_leave();
 
     return (pConf->getStatus() == BP_STATUS_OK);
 }
@@ -237,12 +219,10 @@ bool BPClientProtocol::handleBPRegisterProtocol_Confirm (BPRegisterProtocol_Conf
 
 bool BPClientProtocol::handleBPDeregisterProtocol_Confirm (BPDeregisterProtocol_Confirm *pConf)
 {
-    dbg_enter("BPClientProtocol::BPDeregisterProtocol_Confirm");
+    EvLogging dbg(*this, "BPClientProtocol::BPDeregisterProtocol_Confirm");
     assert(pConf);
 
     handleStatus(pConf->getStatus());
-
-    dbg_leave();
 
     return (pConf->getStatus() == BP_STATUS_OK);
 }
@@ -251,12 +231,10 @@ bool BPClientProtocol::handleBPDeregisterProtocol_Confirm (BPDeregisterProtocol_
 
 bool BPClientProtocol::handleBPTransmitPayload_Confirm (BPTransmitPayload_Confirm *pConf)
 {
-    dbg_enter("BPClientProtocol::BPTransmitPayload_Confirm");
+    EvLogging dbg(*this,"BPClientProtocol::BPTransmitPayload_Confirm");
     assert(pConf);
 
     handleStatus(pConf->getStatus());
-
-    dbg_leave();
 
     return (pConf->getStatus() == BP_STATUS_OK);
 }
@@ -268,12 +246,8 @@ bool BPClientProtocol::handleBPTransmitPayload_Confirm (BPTransmitPayload_Confir
 
 void BPClientProtocol::handleStatus (DcpStatus status)
 {
-    dbg_enter("BPClientProtocol::handleStatus");
-
-    dbg_prefix();
-    EV << "status is " << bp_status_to_string (status) << endl;
-    dbg_leave();
-
+    EvLogging dbg(*this, "BPClientProtocol::handleStatus");
+    dbg.val ("status is ", bp_status_to_string (status));
 }
 
 

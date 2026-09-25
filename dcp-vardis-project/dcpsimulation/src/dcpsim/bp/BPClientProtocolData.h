@@ -26,10 +26,6 @@
 #include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/common/global_types_constants.h>
 
-using namespace omnetpp;
-using namespace inet;
-using dcp::bp::BPLengthT;
-using dcp::bp::BPQueueingMode;
 
 // -----------------------------------------------------------------
 
@@ -37,7 +33,7 @@ namespace dcp {
 
 
 typedef struct BPBufferEntry {
-    Ptr<const Chunk>  theChunk = nullptr;
+  inet::Ptr<const inet::Chunk>  theChunk = nullptr;
 } BPBufferEntry;
 
 
@@ -46,8 +42,8 @@ typedef struct BPBufferEntry {
 typedef struct BPClientProtocolData {
     BPProtocolIdT               protocolId;              // unique identifier of the client protocol
     std::string                 protocolName;            // human-readable name of the protocol
-    BPLengthT                   maxPayloadSizeB;         // maximum size of client protocol payload in bytes
-    BPQueueingMode              queueMode;               // queueing mode to be used for client protocol
+    dcp::bp::BPLengthT          maxPayloadSizeB;         // maximum size of client protocol payload in bytes
+    dcp::bp::BPQueueingMode     queueMode;               // queueing mode to be used for client protocol
     unsigned int                maxEntries;              // maximum number of entries in a droptail queue
     TimeStampT                  timeStampRegistration;   // time at which client protocol was registered
     std::queue<BPBufferEntry>   queue;                   // queue of all payloads when operating in mode BP_QMODE_QUEUE

@@ -28,8 +28,6 @@
 #include <dcpsim/bp/BPDeregisterProtocol_m.h>
 #include <dcpsim/bp/BPConfirmation_m.h>
 
-using dcp::bp::BPLengthT;
-using dcp::bp::BPQueueingMode;
 
 // --------------------------------------------------------------------
 
@@ -59,9 +57,9 @@ public:
 private:
 
     // data members for keeping track of registration status
-    bool        _registrationRequested  = false;
-    bool        _successfullyRegistered = false;
-    cMessage   *_registerMsg = nullptr;
+    bool                 _registrationRequested  = false;
+    bool                 _successfullyRegistered = false;
+    omnetpp::cMessage   *_registerMsg = nullptr;
 
 protected:
 
@@ -70,7 +68,7 @@ protected:
     // --------------------------------------------
 
     // Parameters
-    BPLengthT  maxPayloadSize;
+  dcp::bp::BPLengthT  maxPayloadSize;
 
     // gate identifiers for communication with BP
     int gidFromBP = -1;
@@ -102,7 +100,7 @@ protected:
      * This method should be called (directly or indirectly) by the 'handleMessage'
      * method of any client protocol.
      */
-    bool hasHandledMessageBPClient(cMessage* msg);
+    bool hasHandledMessageBPClient(omnetpp::cMessage* msg);
 
 
     /**
@@ -110,8 +108,8 @@ protected:
      * a payload for transmission will use these to hand over the finished
      * payload.
      */
-    void sendToBP (Message* message);
-    void sendToBP (Packet* packet);
+    void sendToBP (inet::Message* message);
+    void sendToBP (inet::Packet* packet);
 
     /**
      * Helper messages to send client protocol registration message,
@@ -120,8 +118,8 @@ protected:
      */
     void sendRegisterProtocolRequest (BPProtocolIdT protId,
                                       std::string protName,
-                                      BPLengthT maxPayloadLen,
-                                      BPQueueingMode queueingMode,
+                                      dcp::bp::BPLengthT maxPayloadLen,
+                                      dcp::bp::BPQueueingMode queueingMode,
                                       bool allowMultiplePayloads,
                                       unsigned int maxEntries);
 
