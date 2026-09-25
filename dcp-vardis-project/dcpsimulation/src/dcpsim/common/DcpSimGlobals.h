@@ -26,8 +26,6 @@
 #include <inet/common/Protocol.h>
 #include <dcp/common/global_types_constants.h>
 
-using namespace omnetpp;
-using namespace inet;
 
 // --------------------------------------------------------------------
 namespace dcp {
@@ -37,20 +35,20 @@ namespace dcp {
 
 
 
-class DcpSimGlobals {
-
+  class DcpSimGlobals {
+    
 public:
     DcpSimGlobals();
     virtual ~DcpSimGlobals();
-
-    static Protocol* protocolDcpBP;
-    static Protocol* protocolDcpSRP;
-    static Protocol* protocolDcpVardis;
-};
-
-// returns for the given protId a pointer to the right protocol
-// object, but only for BP client protocols
-Protocol *convertProtocolIdToProtocol(BPProtocolIdT protId);
+    
+    static inet::Protocol* protocolDcpBP;
+    static inet::Protocol* protocolDcpSRP;
+    static inet::Protocol* protocolDcpVardis;
+  };
+  
+  // returns for the given protId a pointer to the right protocol
+  // object, but only for BP client protocols
+  inet::Protocol *convertProtocolIdToProtocol(BPProtocolIdT protId);
 
 } // namespace
 

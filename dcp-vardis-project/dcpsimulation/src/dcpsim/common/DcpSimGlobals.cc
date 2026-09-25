@@ -23,6 +23,9 @@
 
 namespace dcp {
 
+using inet::Protocol;
+using omnetpp::cSimpleModule;
+
 
 static DcpSimGlobals theSimulationGlobals;
 
