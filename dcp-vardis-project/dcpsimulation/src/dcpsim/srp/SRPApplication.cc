@@ -24,6 +24,7 @@
 
 
 using namespace dcp;
+using inet::INITSTAGE_LAST;
 
 Define_Module (SRPApplication);
 
@@ -37,8 +38,8 @@ void SRPApplication::initialize(int stage)
 
     if (stage == INITSTAGE_LAST)
     {
-        dbg_enter("SRPClientProtocol::initialize");
-        dbg_leave();
+      dbg_setModuleName("SRPApplication");
+      EvLogging dbg(*this, "SRPClientProtocol::initialize");
     }
 }
 
@@ -53,11 +54,10 @@ void SRPApplication::initialize(int stage)
  * Send given message to underlying SRP protocol instance via message
  * dispatcher
  */
-void SRPApplication::sendToSRP (Message* message)
+void SRPApplication::sendToSRP (inet::Message* message)
 {
-    dbg_enter("sendToSRP/Message");
+    EvLogging dbg(*this, "sendToSRP/Message");
     sendToDcpProtocol(DcpSimGlobals::protocolDcpSRP, message);
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -66,11 +66,10 @@ void SRPApplication::sendToSRP (Message* message)
  * Send given packet to underlying SRP protocol instance via message
  * dispatcher
  */
-void SRPApplication::sendToSRP (Packet* packet)
+void SRPApplication::sendToSRP (inet::Packet* packet)
 {
-    dbg_enter("sendToSRP/Packet");
+    EvLogging dbg(*this, "sendToSRP/Packet");
     sendToDcpProtocol(DcpSimGlobals::protocolDcpSRP, packet);
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -103,18 +102,10 @@ std::string SRPApplication::getSRPStatusString(SRPStatus status)
  */
 void SRPApplication::printStatus (SRPStatus status)
 {
-    dbg_enter("SRPClientProtocol::printStatus");
+    EvLogging dbg(*this, "SRPClientProtocol::printStatus");
 
     auto statstr = getSRPStatusString(status);
-    dbg_prefix();
-    EV << "status value is "
-       << status
-       << " , text is "
-       << statstr
-       << endl;
-
-    dbg_leave();
-
+    dbg.val ("status", status, "text", statstr);
 }
 
 // ----------------------------------------------------
@@ -125,10 +116,9 @@ void SRPApplication::printStatus (SRPStatus status)
  */
 void SRPApplication::handleSRPConfirmation(SRPUpdateSafetyData_Confirm* conf)
 {
-    dbg_enter("VardisSRPProtocol::handleSRPConfirmation");
+    EvLogging dbg(*this, "VardisSRPProtocol::handleSRPConfirmation");
     assert(conf);
     printStatus(conf->getStatus());
-    dbg_leave();
 }
 
 

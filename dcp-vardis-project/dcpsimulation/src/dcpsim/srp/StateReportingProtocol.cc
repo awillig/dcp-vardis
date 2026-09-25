@@ -51,7 +51,7 @@ void StateReportingProtocol::initialize(int stage)
     if (stage == INITSTAGE_LAST)
     {
         dbg_setModuleName("SRP");
-        dbg_enter("initialize");
+        EvLogging dbg(*this, "initialize");
 
         // read and check module parameters
         _srpNeighbourTableTimeout      = par("srpNeighbourTableTimeout");
@@ -81,8 +81,6 @@ void StateReportingProtocol::initialize(int stage)
             _printNeighbourTableMsg = new cMessage("srpPrintNeighbourTableMsg");
             scheduleAt(simTime() + _srpNeighbourTablePrintPeriod, _printNeighbourTableMsg);
         }
-
-        dbg_leave();
     }
 }
 
@@ -90,62 +88,53 @@ void StateReportingProtocol::initialize(int stage)
 
 void StateReportingProtocol::handleMessage(cMessage *msg)
 {
-    dbg_assertToplevel();
-    dbg_enter("handleMessage");
+    EvLogging dbg(*this, "handleMessage");
 
     // dispatch on received message type
 
     if (hasHandledMessageBPClient(msg))
     {
-        dbg_leave();
         return;
     }
 
     if (msg == _scrubNeighbourTableMsg)
     {
-        dbg_string("handling _scrubNeighbourTableMsg");
+        dbg.text("handling _scrubNeighbourTableMsg");
         handleScrubNeighbourTableMsg();
-        dbg_leave();
         return;
     }
 
     if (msg == _printNeighbourTableMsg)
     {
-        dbg_string("handling _printNeighbourTableMsg");
+        dbg.text("handling _printNeighbourTableMsg");
         handlePrintNeighbourTableMsg();
-        dbg_leave();
         return;
     }
 
     if ((msg->arrivedOn(gidFromApplication)) && dynamic_cast<SRPUpdateSafetyData_Request*>(msg))
     {
-        dbg_string("handling _generatePayloadMsg");
+        dbg.text("handling _generatePayloadMsg");
         SRPUpdateSafetyData_Request*  srpReq = (SRPUpdateSafetyData_Request*) msg;
         handleUpdateSafetyDataRequestMsg(srpReq);
-        dbg_leave();
         return;
     }
 
     if ((msg->arrivedOn(gidFromBP)) && dynamic_cast<BPPayloadTransmitted_Indication*>(msg))
      {
-        dbg_string("handling BPPayloadTransmitted_Indication");
+        dbg.text("handling BPPayloadTransmitted_Indication");
         delete msg;
-        dbg_leave();
         return;
      }
 
     if ((msg->arrivedOn(gidFromBP)) && dynamic_cast<BPReceivePayload_Indication*>(msg))
      {
-        dbg_string("handling BPReceivePayload_Indication");
+        dbg.text("handling BPReceivePayload_Indication");
         BPReceivePayload_Indication *payload = (BPReceivePayload_Indication*) msg;
         handleReceivedPayload(payload);
-        dbg_leave();
         return;
      }
 
     error("StateReportingProtocol::handleMessage: unknown message");
-
-    dbg_leave();
 }
 
 // -------------------------------------------
@@ -166,15 +155,15 @@ StateReportingProtocol::~StateReportingProtocol()
  */
 void StateReportingProtocol::handleUpdateSafetyDataRequestMsg (SRPUpdateSafetyData_Request* srpReq)
 {
-    dbg_enter("handleUpdateSafetyDataRequestMsg");
+    EvLogging dbg(*this, "handleUpdateSafetyDataRequestMsg");
     assert(srpReq);
 
 
     // check if we are registered with BP
     if (isSuccessfullyRegisteredWithBP())
     {
-        dbg_string("handleUpdateSafetyDataRequestMsg: we are successfully registered");
-        dbg_string("handleUpdateSafetyDataRequestMsg: generating the payload");
+        dbg.text("handleUpdateSafetyDataRequestMsg: we are successfully registered");
+        dbg.text("handleUpdateSafetyDataRequestMsg: generating the payload");
 
         // create the actual SRP message content
         ExtendedSafetyDataT  extSD;
@@ -191,17 +180,15 @@ void StateReportingProtocol::handleUpdateSafetyDataRequestMsg (SRPUpdateSafetyDa
         extSD.serialize(area);
         bv.resize (area.used ());
 
-        DBG_PVAR1("generated payload size is ", bv.size());
+        dbg.val("generated payload size is ", bv.size());
 
         // construct and send payload to BP
-        dbg_string("sending the packet/payload to BP");
+        dbg.text("sending the packet/payload to BP");
         sendToBP(pldReq);
 
     }
 
     delete srpReq;
-
-    dbg_leave();
 }
 
 
@@ -213,7 +200,7 @@ void StateReportingProtocol::handleUpdateSafetyDataRequestMsg (SRPUpdateSafetyDa
  */
 void StateReportingProtocol::handleScrubNeighbourTableMsg ()
 {
-    dbg_enter("handleScrubNeighbourTableMsg");
+    EvLogging dbg(*this, "handleScrubNeighbourTableMsg");
 
     std::list<NodeIdentifierT>  toBeDeleted;
 
@@ -222,7 +209,7 @@ void StateReportingProtocol::handleScrubNeighbourTableMsg ()
     {
         if ((simTime() - nte.second.receptionTime) > _srpNeighbourTableTimeout)
         {
-            DBG_PVAR1("scrubbing node ", nte.second.nodeId);
+            dbg.val("scrubbing node ", nte.second.nodeId);
             toBeDeleted.push_front(nte.second.nodeId);
         }
     }
@@ -235,8 +222,6 @@ void StateReportingProtocol::handleScrubNeighbourTableMsg ()
 
     // Schedule next scrubbing action
     scheduleAt(simTime() + _srpNeighbourTableScrubPeriod, _scrubNeighbourTableMsg);
-
-    dbg_leave();
 }
 
 // -------------------------------------------
@@ -246,14 +231,14 @@ void StateReportingProtocol::handleScrubNeighbourTableMsg ()
  */
 void StateReportingProtocol::handlePrintNeighbourTableMsg ()
 {
-    dbg_enter("handlePrintNeighbourTableMsg");
+    EvLogging dbg(*this, "handlePrintNeighbourTableMsg");
 
     for (auto nte : neighbourTable)
     {
         NeighbourTableEntry& theEntry = nte.second;
 
-        dbg_prefix();
-        EV << "neighbour-Id " << theEntry.nodeId
+        dbg.prefix();
+        dbg.the_stream() << "neighbour-Id " << theEntry.nodeId
            << " with generation timestamp = " << theEntry.extSD.timeStamp
            << " , age = " << simTime() - theEntry.extSD.timeStamp
            << " , seqno = " << theEntry.extSD.seqno
@@ -268,8 +253,6 @@ void StateReportingProtocol::handlePrintNeighbourTableMsg ()
 
     // Schedule next scrubbing action
     scheduleAt(simTime() + _srpNeighbourTablePrintPeriod, _printNeighbourTableMsg);
-
-    dbg_leave();
 }
 
 
@@ -281,7 +264,7 @@ void StateReportingProtocol::handlePrintNeighbourTableMsg ()
  */
 void StateReportingProtocol::handleReceivedPayload(BPReceivePayload_Indication* payload)
 {
-    dbg_enter("handleReceivedPayload");
+    EvLogging dbg(*this, "handleReceivedPayload");
     assert(payload);
     assert(payload->getProtId() == BP_PROTID_SRP);
 
@@ -292,8 +275,8 @@ void StateReportingProtocol::handleReceivedPayload(BPReceivePayload_Indication* 
 
     NodeIdentifierT senderId = esd.nodeId;
 
-    dbg_prefix();
-    EV << "received payload from sender " << senderId
+    dbg.prefix();
+    dbg.the_stream() << "received payload from sender " << senderId
        << " with generation timestamp = " << esd.timeStamp
        << " , seqno = " << esd.seqno
        << " , from position ("
@@ -309,8 +292,6 @@ void StateReportingProtocol::handleReceivedPayload(BPReceivePayload_Indication* 
     entry.extSD          = esd;
     entry.receptionTime  = simTime();
     neighbourTable[senderId] = entry;
-
-    dbg_leave();
 }
 
 // ========================================================================================
@@ -319,10 +300,8 @@ void StateReportingProtocol::handleReceivedPayload(BPReceivePayload_Indication* 
 
 void StateReportingProtocol::registerAsBPClient(void)
 {
-    dbg_enter("registerAsBPClient");
+    EvLogging dbg(*this, "registerAsBPClient");
 
     // register ourselves directly as a client protocol with BP
     sendRegisterProtocolRequest(BP_PROTID_SRP, std::format("SRP -- State Reporting Protocol V{}", dcpVersionNumber), maximumSRPPayloadLength, BP_QMODE_ONCE, false, 0);
-
-    dbg_leave();
 }

@@ -28,6 +28,8 @@
 
 
 using namespace dcp;
+using inet::INITSTAGE_LAST;
+
 
 // ========================================================================================
 // Standard OMNeT++ and class methods
@@ -38,10 +40,10 @@ void VardisApplication::initialize(int stage)
     DcpApplication::initialize(stage);
 
     if (stage == INITSTAGE_LAST)
-    {
-        dbg_enter("VardisApplication::initialize");
-        dbg_leave();
-    }
+      {
+	dbg_setModuleName ("VardisApplication");
+	EvLogging dbg(*this, "VardisApplication::initialize");
+      }
 }
 
 
@@ -56,11 +58,10 @@ void VardisApplication::initialize(int stage)
  * Send given message to underlying VarDis protocol instance via message
  * dispatcher
  */
-void VardisApplication::sendToVardis (Message* message)
+void VardisApplication::sendToVardis (inet::Message* message)
 {
-    dbg_enter("sendToVardis/Message");
+    EvLogging dbg(*this, "sendToVardis/Message");
     sendToDcpProtocol(DcpSimGlobals::protocolDcpVardis, message);
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -69,11 +70,10 @@ void VardisApplication::sendToVardis (Message* message)
  * Send given packet to underlying VarDis protocol instance via message
  * dispatcher
  */
-void VardisApplication::sendToVardis (Packet* packet)
+void VardisApplication::sendToVardis (inet::Packet* packet)
 {
-    dbg_enter("sendToVardis/Packet");
+    EvLogging dbg(*this, "sendToVardis/Packet");
     sendToDcpProtocol(DcpSimGlobals::protocolDcpVardis, packet);
-    dbg_leave();
 }
 
 
@@ -84,16 +84,8 @@ void VardisApplication::sendToVardis (Packet* packet)
  */
 void VardisApplication::printStatus (DcpStatus status)
 {
-    dbg_enter("VardisApplication::printStatus");
-
-    auto statstr = vardis_status_to_string (status);
-    dbg_prefix();
-    EV << "status is "
-       << statstr
-       << endl;
-
-    dbg_leave();
-
+    EvLogging dbg(*this, "VardisApplication::printStatus");
+    dbg.val ("status", vardis_status_to_string (status));
 }
 
 // ----------------------------------------------------
@@ -104,10 +96,7 @@ void VardisApplication::printStatus (DcpStatus status)
  */
 void VardisApplication::handleVardisConfirmation(VardisConfirmation* conf)
 {
-    dbg_enter("VardisApplication::handleVardisConfirmation");
+    EvLogging dbg(*this, "VardisApplication::handleVardisConfirmation");
     assert(conf);
     printStatus(conf->getStatus());
-    dbg_leave();
 }
-
-

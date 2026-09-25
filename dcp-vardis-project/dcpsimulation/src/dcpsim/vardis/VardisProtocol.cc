@@ -50,7 +50,7 @@ void VardisProtocol::initialize(int stage)
     if (stage == INITSTAGE_LAST)
     {
         dbg_setModuleName("VarDis");
-        dbg_enter("initialize");
+        EvLogging dbg (*this, "initialize");
 
         // read and check parameters
         vardisMaxValueLength        = (size_t) par("vardisMaxValueLength");
@@ -93,7 +93,6 @@ void VardisProtocol::initialize(int stage)
         sendPayloadMsg = new cMessage ("vardisSendPayloadMsg");
         payloadSent = false;
 
-        dbg_leave();
     }
 }
 
@@ -104,15 +103,13 @@ void VardisProtocol::initialize(int stage)
  */
 void VardisProtocol::handleMessage(cMessage *msg)
 {
-    dbg_assertToplevel();
-    dbg_enter("handleMessage");
-    dbg_string("---------------------------------------------------------");
+    EvLogging dbg (*this, "handleMessage");
+    dbg.text("---------------------------------------------------------");
 
     // check if BP has already dealt with this message (e.g. registration as BP client protocol)
     if (hasHandledMessageBPClient(msg))
     {
-        dbg_string("hasHandledMessageBPClient did the job");
-        dbg_leave();
+        dbg.text("hasHandledMessageBPClient did the job");
         return;
     }
 
@@ -121,36 +118,30 @@ void VardisProtocol::handleMessage(cMessage *msg)
     if (msg->arrivedOn(gidFromApplication))
     {
         handleApplicationMessage(msg);
-        dbg_leave();
         return;
     }
 
     if (msg->arrivedOn(gidFromBP))
     {
         handleBPMessage(msg);
-        dbg_leave();
         return;
     }
 
     if (msg == bufferCheckMsg)
     {
-        dbg_string("handling bufferCheckMsg");
+        dbg.text("handling bufferCheckMsg");
         handleBufferCheckMsg();
-        dbg_leave();
         return;
     }
 
     if (msg == sendPayloadMsg)
     {
-        dbg_string("handling sendPayloadMsg");
+        dbg.text("handling sendPayloadMsg");
         handleSendPayloadMsg();
-        dbg_leave();
         return;
     }
 
     error("VardisProtocol::handleMessage: unknown message");
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -158,13 +149,12 @@ void VardisProtocol::handleMessage(cMessage *msg)
 
 void VardisProtocol::registerAsBPClient()
 {
-    dbg_enter("registerAsBPClient");
+    EvLogging dbg(*this, "registerAsBPClient");
 
-    DBG_VAR1(maxPayloadSize);
+    dbg.val("maxPayloadSize", maxPayloadSize);
 
     sendRegisterProtocolRequest(BP_PROTID_VARDIS, std::format("VarDis -- Variable Dissemination Protocol V{}", dcpVersionNumber), maxPayloadSize, BP_QMODE_QUEUE_DROPHEAD, false, 10);
 
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -172,7 +162,7 @@ void VardisProtocol::registerAsBPClient()
 
 bool VardisProtocol::handleBPRegisterProtocol_Confirm (BPRegisterProtocol_Confirm* pConf)
 {
-    dbg_enter("handleBPRegisterProtocol_Confirm");
+    EvLogging dbg(*this, "handleBPRegisterProtocol_Confirm");
 
     assert (pConf);
 
@@ -192,7 +182,6 @@ bool VardisProtocol::handleBPRegisterProtocol_Confirm (BPRegisterProtocol_Confir
         error("VardisProtocol::handleBPRegisterProtocol_Confirm: unexpected BP_STATUS value");
     }
 
-    dbg_leave();
     return BPClientProtocol::handleBPRegisterProtocol_Confirm (pConf);
 }
 
@@ -218,65 +207,57 @@ VardisProtocol::~VardisProtocol()
  */
 void VardisProtocol::handleApplicationMessage (cMessage* msg)
 {
-    dbg_enter("handleApplicationMessage");
+    EvLogging dbg(*this, "handleApplicationMessage");
 
     if (dynamic_cast<RTDBUpdate_Request*>(msg))
     {
-        dbg_string("handling RTDBUpdate_Request");
+        dbg.text("handling RTDBUpdate_Request");
         RTDBUpdate_Request* updateReq = (RTDBUpdate_Request*) msg;
         handleRTDBUpdateRequest(updateReq);
-        dbg_leave();
         return;
     }
 
     if (dynamic_cast<RTDBRead_Request*>(msg))
     {
-        dbg_string("handling RTDBRead_Request");
+        dbg.text("handling RTDBRead_Request");
         RTDBRead_Request* readReq = (RTDBRead_Request*) msg;
         handleRTDBReadRequest(readReq);
-        dbg_leave();
         return;
     }
 
     if (dynamic_cast<RTDBCreate_Request*>(msg))
     {
-        dbg_string("handling RTDBCreate_Request");
+        dbg.text("handling RTDBCreate_Request");
         RTDBCreate_Request* createReq = (RTDBCreate_Request*) msg;
         handleRTDBCreateRequest(createReq);
-        dbg_leave();
         return;
     }
 
     if (dynamic_cast<RTDBDelete_Request*>(msg))
     {
-        dbg_string("handling RTDBDelete_Request");
+        dbg.text("handling RTDBDelete_Request");
         RTDBDelete_Request* deleteReq = (RTDBDelete_Request*) msg;
         handleRTDBDeleteRequest(deleteReq);
-        dbg_leave();
         return;
     }
 
     if (dynamic_cast<RTDBDescribeDatabase_Request*>(msg))
     {
-        dbg_string("handling RTDBDescribeDatabase_Request");
+        dbg.text("handling RTDBDescribeDatabase_Request");
         RTDBDescribeDatabase_Request* descrDbReq = (RTDBDescribeDatabase_Request*) msg;
         handleRTDBDescribeDatabaseRequest(descrDbReq);
-        dbg_leave();
         return;
     }
 
     if (dynamic_cast<RTDBDescribeVariable_Request*>(msg))
     {
-        dbg_string("handling RTDBDescribeVariable_Request");
+        dbg.text("handling RTDBDescribeVariable_Request");
         RTDBDescribeVariable_Request* descrVarReq = (RTDBDescribeVariable_Request*) msg;
         handleRTDBDescribeVariableRequest(descrVarReq);
-        dbg_leave();
         return;
     }
 
     error("VardisProtocol::handleApplicationMessage: unknown message");
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -288,38 +269,33 @@ void VardisProtocol::handleApplicationMessage (cMessage* msg)
  */
 void VardisProtocol::handleBPMessage (cMessage* msg)
 {
-    dbg_enter("handleBPMessage");
+    EvLogging dbg(*this, "handleBPMessage");
 
     if (dynamic_cast<BPPayloadTransmitted_Indication*>(msg))
     {
-        dbg_string("handling BPPayloadTransmitted_Indication");
+        dbg.text("handling BPPayloadTransmitted_Indication");
         BPPayloadTransmitted_Indication* ptInd = (BPPayloadTransmitted_Indication*) msg;
         handleBPPayloadTransmittedIndication(ptInd);
-        dbg_leave();
         return;
     }
 
     if (dynamic_cast<BPReceivePayload_Indication*>(msg))
     {
-        dbg_string("handling BPReceivePayload_Indication");
+        dbg.text("handling BPReceivePayload_Indication");
         BPReceivePayload_Indication *payload = (BPReceivePayload_Indication*) msg;
         handleBPReceivedPayloadIndication(payload);
-        dbg_leave();
         return;
     }
 
     if (dynamic_cast<BPQueryNumberBufferedPayloads_Confirm*>(msg))
     {
-        dbg_string("handling BPQueryNumberBufferedPayloads_Confirm");
+        dbg.text("handling BPQueryNumberBufferedPayloads_Confirm");
         BPQueryNumberBufferedPayloads_Confirm* confMsg = (BPQueryNumberBufferedPayloads_Confirm*) msg;
         handleBPQueryNumberBufferedPayloadsConfirm(confMsg);
-        dbg_leave();
         return;
     }
 
     error("VardisProtocol::handleBPMsg: unknown message");
-
-    dbg_leave();
 }
 
 
@@ -332,7 +308,7 @@ void VardisProtocol::handleBPMessage (cMessage* msg)
  */
 void VardisProtocol::handleBufferCheckMsg()
 {
-    dbg_enter("handleBufferCheckMsg");
+    EvLogging dbg(*this, "handleBufferCheckMsg");
 
     // schedule next buffer check
     scheduleAt(simTime() + vardisBufferCheckPeriod, bufferCheckMsg);
@@ -341,8 +317,6 @@ void VardisProtocol::handleBufferCheckMsg()
     BPQueryNumberBufferedPayloads_Request  *qbpReq = new BPQueryNumberBufferedPayloads_Request;
     qbpReq->setProtId(BP_PROTID_VARDIS.val);
     sendToBP(qbpReq);
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -352,9 +326,8 @@ void VardisProtocol::handleBufferCheckMsg()
  */
 void VardisProtocol::handleSendPayloadMsg()
 {
-    dbg_enter("handleSendPayloadMsg");
+    EvLogging dbg(*this, "handleSendPayloadMsg");
     generatePayload();
-    dbg_leave();
 }
 
 
@@ -370,7 +343,7 @@ void VardisProtocol::handleSendPayloadMsg()
  */
 void VardisProtocol::handleBPPayloadTransmittedIndication (BPPayloadTransmitted_Indication* ptInd)
 {
-    dbg_enter("handleBPPayloadTransmittedIndication");
+    EvLogging dbg(*this, "handleBPPayloadTransmittedIndication");
     assert(ptInd);
     assert(ptInd->getProtId() == BP_PROTID_VARDIS);
 
@@ -382,8 +355,7 @@ void VardisProtocol::handleBPPayloadTransmittedIndication (BPPayloadTransmitted_
     payloadSent = false;
     scheduleAt(simTime() + generationDelay, sendPayloadMsg);
 
-    DBG_VAR1(generationDelay);
-    dbg_leave();
+    dbg.val("generationDelay", generationDelay);
 }
 
 // ----------------------------------------------------
@@ -395,20 +367,18 @@ void VardisProtocol::handleBPPayloadTransmittedIndication (BPPayloadTransmitted_
  */
 void VardisProtocol::handleBPQueryNumberBufferedPayloadsConfirm (BPQueryNumberBufferedPayloads_Confirm* confMsg)
 {
-    dbg_enter("handleBPQueryNumberBufferedPayloadsConfirm");
+    EvLogging dbg(*this, "handleBPQueryNumberBufferedPayloadsConfirm");
     assert(confMsg);
     assert(confMsg->getProtId() == BP_PROTID_VARDIS);
     assert(confMsg->getNumberBuffered() >= 0);
-    DBG_VAR1(confMsg->getNumberBuffered());
+    dbg.val("confMsg->getNumberBuffered", confMsg->getNumberBuffered());
 
     if ((confMsg->getNumberBuffered() == 0) && (not payloadSent) && (not sendPayloadMsg->isScheduled()))
     {
-        dbg_string("triggering transmission of new payload");
+        dbg.text("triggering transmission of new payload");
         generatePayload();
     }
     delete confMsg;
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -420,21 +390,20 @@ void VardisProtocol::handleBPQueryNumberBufferedPayloadsConfirm (BPQueryNumberBu
  */
 void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indication* payload)
 {
-    dbg_enter("handleBPReceivedPayloadIndication");
+    EvLogging dbg(*this, "handleBPReceivedPayloadIndication");
     assert(payload);
     assert(payload->getProtId() == BP_PROTID_VARDIS);
 
     if (not vardisActive())
     {
-        dbg_string ("vardis is not active");
+        dbg.text ("vardis is not active");
         delete payload;
-        dbg_leave();
         return;
     }
 
     const bytevect& bvpayload = payload->getPayload();
 
-    DBG_VAR1(bvpayload.size());
+    dbg.val("bvpayload.size", bvpayload.size());
 
     // In the first step we deconstruct the packet and put all the
     // instruction records into their own lists without yet processing
@@ -455,35 +424,35 @@ void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indicati
 	ICHeaderT icHeader;
 	icHeader.deserialize(area);
 	
-        DBG_PVAR2 ("Deserializing: considering ICType", (int) area.used(), (int) icHeader.icType.val);
+        dbg.val ("area.used", (int) area.used(), "icHeader.icType.val", (int) icHeader.icType.val);
         switch(icHeader.icType.val)
         {
         case ICTYPE_SUMMARIES:
-            dbg_string("considering ICTYPE_SUMMARIES");
+            dbg.text("considering ICTYPE_SUMMARIES");
             extractInstructionContainerElements<VarSummT> (area, icHeader, icSummaries);
             break;
         case ICTYPE_UPDATES:
-            dbg_string("considering ICTYPE_UPDATES");
+            dbg.text("considering ICTYPE_UPDATES");
             extractInstructionContainerElements<VarUpdateT> (area, icHeader, icUpdates);
             break;
         case ICTYPE_REQUEST_VARUPDATES:
-            dbg_string("considering ICTYPE_REQUEST_VARUPDATES");
+            dbg.text("considering ICTYPE_REQUEST_VARUPDATES");
             extractInstructionContainerElements<VarReqUpdateT> (area, icHeader, icRequestVarUpdates);
             break;
         case ICTYPE_REQUEST_VARCREATES:
-            dbg_string("considering ICTYPE_REQUEST_VARCREATES");
+            dbg.text("considering ICTYPE_REQUEST_VARCREATES");
             extractInstructionContainerElements<VarReqCreateT> (area, icHeader, icRequestVarCreates);
             break;
         case ICTYPE_CREATE_VARIABLES:
-            dbg_string("considering ICTYPE_CREATE_VARIABLES");
+            dbg.text("considering ICTYPE_CREATE_VARIABLES");
             extractInstructionContainerElements<VarCreateT> (area, icHeader, icCreateVariables);
             break;
         case ICTYPE_DELETE_VARIABLES:
-            dbg_string("considering ICTYPE_DELETE_VARIABLES");
+            dbg.text("considering ICTYPE_DELETE_VARIABLES");
             extractInstructionContainerElements<VarDeleteT> (area, icHeader, icDeleteVariables);
             break;
         default:
-            error("VardisProtocol::handleReceivedPayload: unknown ICType");
+            error("VardisProtocol::handleBPReceivedPayloadIndication: unknown ICType");
             break;
         }
     }
@@ -498,8 +467,6 @@ void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indicati
     processVarReqCreateList(icRequestVarCreates);
 
     delete payload;
-
-    dbg_leave();
 }
 
 
@@ -514,7 +481,7 @@ void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indicati
  */
 void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
 {
-    dbg_enter("handleRTDBCreateRequest");
+    EvLogging dbg(*this, "handleRTDBCreateRequest");
     assert(createReq);
 
     // keep a reference to the client protocol sending this, required for
@@ -527,9 +494,6 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
     // send confirmation to application and delete request
     sendRTDBCreateConfirm(crConf.status_code, crReq.spec.varId, theProtocol);
     delete createReq;
-
-    dbg_leave();
-
 }
 
 // ----------------------------------------------------
@@ -542,7 +506,7 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
  */
 void VardisProtocol::handleRTDBUpdateRequest(RTDBUpdate_Request* updateReq)
 {
-    dbg_enter("handleRTDBUpdateRequest");
+    EvLogging dbg(*this, "handleRTDBUpdateRequest");
     assert(updateReq);
 
     // keep a reference to the client protocol sending this, required for
@@ -556,8 +520,6 @@ void VardisProtocol::handleRTDBUpdateRequest(RTDBUpdate_Request* updateReq)
     // send confirmation to application and delete request
     sendRTDBUpdateConfirm(updConf.status_code, updReq.varId, theProtocol);
     delete updateReq;
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -569,7 +531,7 @@ void VardisProtocol::handleRTDBUpdateRequest(RTDBUpdate_Request* updateReq)
  */
 void VardisProtocol::handleRTDBReadRequest (RTDBRead_Request* readReq)
 {
-    dbg_enter("handleRTDBReadRequest");
+    EvLogging dbg(*this, "handleRTDBReadRequest");
     assert(readReq);
 
     // keep a reference to the client protocol sending this, required for
@@ -586,8 +548,6 @@ void VardisProtocol::handleRTDBReadRequest (RTDBRead_Request* readReq)
     readConf->setReadConf (rConf);
 
     sendConfirmation(readConf, rConf.status_code, theProtocol);
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -599,7 +559,7 @@ void VardisProtocol::handleRTDBReadRequest (RTDBRead_Request* readReq)
  */
 void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Request* descrDbReq)
 {
-    dbg_enter("handleRTDBDescribeDatabaseRequest");
+    EvLogging dbg(*this, "handleRTDBDescribeDatabaseRequest");
     assert(descrDbReq);
 
     // keep a reference to the client protocol sending this, required for
@@ -613,10 +573,9 @@ void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Req
     // check whether Vardis protocol is actually active
     if (not vardisActive())
     {
-        dbg_string("Vardis is not active, dropping request");
+        dbg.text("Vardis is not active, dropping request");
         dbConf->setDescrsArraySize (0);
         sendConfirmation(dbConf, VARDIS_STATUS_INACTIVE, theProtocol);
-        dbg_leave();
         return;
     }
 
@@ -631,7 +590,7 @@ void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Req
        DBEntry& db_entry = vardis_store_p->get_db_entry_ref (varId);
        DescribeDatabaseVariableDescription descr;
 
-       DBG_PVAR2("adding description", db_entry.varId, db_entry.prodId);
+       dbg.val("adding description, db_entry.varId", db_entry.varId, "db_entry.prodId", db_entry.prodId);
        
        descr.varId          =  db_entry.varId;
        descr.prodId         =  db_entry.prodId;
@@ -645,8 +604,6 @@ void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Req
       }    
 
     sendConfirmation(dbConf, VARDIS_STATUS_OK, theProtocol);
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -659,7 +616,7 @@ void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Req
  */
 void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Request* descrVarReq)
 {
-    dbg_enter("handleRTDBDescribeVariableRequest");
+    EvLogging dbg(*this, "handleRTDBDescribeVariableRequest");
     assert(descrVarReq);
 
     // keep a reference to the client protocol sending this, required for
@@ -674,21 +631,19 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
 
     if (not vardisActive())
     {
-        dbg_string("Vardis is not active, dropping request");
+        dbg.text("Vardis is not active, dropping request");
         sendConfirmation(varDescr, VARDIS_STATUS_INACTIVE, theProtocol);
-        dbg_leave();
         return;
     }
 
     if (not variableExists(varId))
     {
-        DBG_PVAR1("requested variable does not exist", varId);
+        dbg.val("requested variable does not exist", varId);
         sendConfirmation(varDescr, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST, theProtocol);
-        dbg_leave();
         return;
     }
 
-    DBG_PVAR1("generating description for variable", varId);
+    dbg.val("generating description for variable", varId);
 
     // retrieve variable and generate response data about it
     DBEntry& theEntry = vardis_store_p->get_db_entry_ref(varId);
@@ -705,8 +660,6 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
     varDescr->setIsDeleted (theEntry.isDeleted);
 
     sendConfirmation(varDescr, VARDIS_STATUS_OK, theProtocol);
-
-    dbg_leave();
 }
 
 
@@ -721,7 +674,7 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
 void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* deleteReq)
 {
 
-    dbg_enter("handleRTDBDeleteRequest");
+    EvLogging dbg(*this, "handleRTDBDeleteRequest");
     assert(deleteReq);
 
     // keep a reference to the client protocol sending this, required for
@@ -737,8 +690,6 @@ void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* deleteReq)
     auto deleteConf = new RTDBDelete_Confirm;
 
     sendConfirmation(deleteConf, delConf.status_code, theProtocol);
-
-    dbg_leave();
 }
 
 
@@ -757,7 +708,7 @@ void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* deleteReq)
  */
 void VardisProtocol::constructPayload(bytevect& bv, unsigned int& containers_added)
 {
-    dbg_enter("constructPayload");
+    EvLogging dbg(*this, "constructPayload");
 
     ByteVectorAssemblyArea area ("vardis-constructPayload", maxPayloadSize.val, bv);
 
@@ -769,9 +720,6 @@ void VardisProtocol::constructPayload(bytevect& bv, unsigned int& containers_add
     vardis_protocol_data_p->makeICTypeRequestVarUpdates (area, containers_added);
 
     bv.resize (area.used());
-
-    dbg_leave();
-
 }
 
 // ----------------------------------------------------
@@ -782,11 +730,11 @@ void VardisProtocol::constructPayload(bytevect& bv, unsigned int& containers_add
  */
 void VardisProtocol::generatePayload ()
 {
-    dbg_enter("generatePayload");
+    EvLogging dbg(*this, "generatePayload");
 
     if (vardisActive())
     {
-        dbg_string("we are active");
+        dbg.text("we are active");
 
         BPTransmitPayload_Request  *pldReq = new BPTransmitPayload_Request ("VardisPayload");
         bytevect& bv = pldReq->getBvdataForUpdate();
@@ -798,12 +746,12 @@ void VardisProtocol::generatePayload ()
 
         if (containers_added > 0)
         {
-            DBG_PVAR1("SENDING payload", bv.size());
+            dbg.val("SENDING payload of size", bv.size());
 
-            dbg_string("constructing the packet");
+            dbg.text("constructing the packet");
             pldReq->setProtId(BP_PROTID_VARDIS.val);
 
-            dbg_string("sending the packet/payload to BP");
+            dbg.text("sending the packet/payload to BP");
             sendToBP(pldReq);
 
             payloadSent = true;
@@ -813,8 +761,6 @@ void VardisProtocol::generatePayload ()
             delete pldReq;
         }
     }
-
-    dbg_leave();
 }
 
 
@@ -832,14 +778,12 @@ void VardisProtocol::generatePayload ()
 
 void VardisProtocol::processVarCreateList(const std::deque<VarCreateT>& creates)
 {
-  dbg_enter("processVarCreateList");
+  EvLogging dbg(*this, "processVarCreateList");
   
   for (auto it = creates.begin(); it != creates.end(); it++)
     {
       vardis_protocol_data_p->process_var_create(*it);
     }
-  
-  dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -847,14 +791,12 @@ void VardisProtocol::processVarCreateList(const std::deque<VarCreateT>& creates)
 
 void VardisProtocol::processVarDeleteList(const std::deque<VarDeleteT>& deletes)
 {
-    dbg_enter("processVarDeleteList");
+    EvLogging dbg(*this, "processVarDeleteList");
 
     for (auto it = deletes.begin(); it != deletes.end(); it++)
     {
         vardis_protocol_data_p->process_var_delete(*it);
     }
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -862,14 +804,12 @@ void VardisProtocol::processVarDeleteList(const std::deque<VarDeleteT>& deletes)
 
 void VardisProtocol::processVarUpdateList(const std::deque<VarUpdateT>& updates)
 {
-    dbg_enter("processVarUpdateList");
+    EvLogging dbg(*this, "processVarUpdateList");
 
     for (auto it = updates.begin(); it != updates.end(); it++)
     {
         vardis_protocol_data_p->process_var_update(*it);
     }
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -877,14 +817,12 @@ void VardisProtocol::processVarUpdateList(const std::deque<VarUpdateT>& updates)
 
 void VardisProtocol::processVarSummaryList(const std::deque<VarSummT>& summs)
 {
-    dbg_enter("processVarSummaryList");
+    EvLogging dbg(*this, "processVarSummaryList");
 
     for (auto it = summs.begin(); it != summs.end(); it++)
     {
         vardis_protocol_data_p->process_var_summary(*it);
     }
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -892,14 +830,12 @@ void VardisProtocol::processVarSummaryList(const std::deque<VarSummT>& summs)
 
 void VardisProtocol::processVarReqUpdateList(const std::deque<VarReqUpdateT>& requpdates)
 {
-    dbg_enter("processVarReqUpdateList");
+    EvLogging dbg(*this, "processVarReqUpdateList");
 
     for (auto it = requpdates.begin(); it != requpdates.end(); it++)
     {
         vardis_protocol_data_p->process_var_requpdate(*it);
     }
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -907,14 +843,12 @@ void VardisProtocol::processVarReqUpdateList(const std::deque<VarReqUpdateT>& re
 
 void VardisProtocol::processVarReqCreateList(const std::deque<VarReqCreateT>& reqcreates)
 {
-    dbg_enter("processVarReqCreateList");
+    EvLogging dbg(*this, "processVarReqCreateList");
 
     for (auto it = reqcreates.begin(); it != reqcreates.end(); it++)
     {
         vardis_protocol_data_p->process_var_reqcreate(*it);
     }
-
-    dbg_leave();
 }
 
 
@@ -924,7 +858,7 @@ void VardisProtocol::processVarReqCreateList(const std::deque<VarReqCreateT>& re
 
 void VardisProtocol::sendConfirmation(VardisConfirmation *confMsg, DcpStatus status, Protocol* theProtocol)
 {
-    dbg_enter("sendConfirmation");
+    EvLogging dbg(*this, "sendConfirmation");
     assert(theProtocol);
     assert(confMsg);
 
@@ -935,34 +869,28 @@ void VardisProtocol::sendConfirmation(VardisConfirmation *confMsg, DcpStatus sta
     req->setServicePrimitive(SP_INDICATION);
 
     send(confMsg, gidToApplication);
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
 
 void VardisProtocol::sendRTDBCreateConfirm(DcpStatus status, VarIdT varId, Protocol* theProtocol)
 {
-    dbg_enter("sendRTDBCreateConfirm");
+    EvLogging dbg(*this, "sendRTDBCreateConfirm");
 
     auto conf = new RTDBCreate_Confirm;
     conf->setVarId(varId.val);
     sendConfirmation(conf, status, theProtocol);
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
 
 void VardisProtocol::sendRTDBUpdateConfirm(DcpStatus status, VarIdT varId, Protocol* theProtocol)
 {
-    dbg_enter("sendRTDBUpdateConfirm");
+    EvLogging dbg(*this, "sendRTDBUpdateConfirm");
 
     auto conf = new RTDBUpdate_Confirm;
     conf->setVarId(varId.val);
     sendConfirmation(conf, status, theProtocol);
-
-    dbg_leave();
 }
 
 // ========================================================================================
@@ -977,15 +905,14 @@ void VardisProtocol::sendRTDBUpdateConfirm(DcpStatus status, VarIdT varId, Proto
  */
 Protocol* VardisProtocol::fetchSenderProtocol(Message* message)
 {
-    dbg_enter("fetchSenderProtocol");
+    EvLogging dbg(*this, "fetchSenderProtocol");
     assert(message);
 
     auto protTag = message->removeTag<DispatchProtocolInd>();
     Protocol* theProtocol = (Protocol*) protTag->getProtocol();
     assert(theProtocol);
 
-    DBG_VAR2(theProtocol->getId(), theProtocol->getDescriptiveName());
-    dbg_leave();
+    dbg.val("theProtocol->getId", theProtocol->getId(), "theProtocol->getDescriptiveName", theProtocol->getDescriptiveName());
 
     return theProtocol;
 }
