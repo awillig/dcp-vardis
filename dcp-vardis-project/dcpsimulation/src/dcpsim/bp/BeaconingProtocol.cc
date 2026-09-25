@@ -64,14 +64,14 @@ void BeaconingProtocol::initialize (int stage)
     if (stage == INITSTAGE_LAST)
     {
         dbg_setModuleName("BP");
-        dbg_enter("initialize");
+        EvLogging dbg(*this, "initialize");
 
         // reading and checking module parameters
 	bpNetworkIdentifier      =  (BPNetworkIdentifierT) par("bpNetworkIdentifier");
         bpParMaximumPacketSizeB  =  (BPLengthT) par("bpParMaximumPacketSize");
         assert(bpParMaximumPacketSizeB > 0);
 
-        DBG_VAR2(BPPayloadHeaderT::fixed_size(), BPHeaderT::fixed_size());
+        dbg.val("BPPayloadHeaderT::fixed_size", BPPayloadHeaderT::fixed_size(), "BPHeaderT::fixed_size", BPHeaderT::fixed_size());
 
         // find gate identifiers
         gidFromUWB      =  findGate("fromUWB");
@@ -86,8 +86,6 @@ void BeaconingProtocol::initialize (int stage)
         // get generation timer ticks going
         generateBeaconMsg = new cMessage("generateBeaconMsg");
         scheduleAt(simTime() + par("bpParBeaconPeriodDistr"), generateBeaconMsg);
-
-        dbg_leave();
     }
 }
 
@@ -95,24 +93,21 @@ void BeaconingProtocol::initialize (int stage)
 
 void BeaconingProtocol::handleMessage (cMessage* msg)
 {
-    dbg_assertToplevel();
-    dbg_enter("handleMessage");
+    EvLogging dbg(*this, "handleMessage");
 
     // dispatch on type of received message
 
     if (msg->arrivedOn(gidFromClients))
     {
         handleClientMessage(msg);
-        dbg_leave();
         return;
     }
 
     if ((msg->arrivedOn(gidFromUWB)) && dynamic_cast<Packet*>(msg))
      {
-        dbg_string("handling received packet");
+        dbg.text("handling received packet");
         auto packet = check_and_cast<Packet*>(msg);
         handleReceivedPacket(packet);
-        dbg_leave();
         return;
      }
 
@@ -120,7 +115,6 @@ void BeaconingProtocol::handleMessage (cMessage* msg)
     if (msg == generateBeaconMsg)
     {
         handleGenerateBeaconMsg();
-        dbg_leave();
         return;
     }
 
@@ -150,8 +144,8 @@ BeaconingProtocol::~BeaconingProtocol()
 
 Ptr<const Chunk> BeaconingProtocol::extractFittingPayload(RegisteredProtocol& rp, BPLengthT bytesUsed, BPLengthT maxBytes)
 {
-    dbg_enter("extractFittingPayload");
-    DBG_VAR2(bytesUsed, maxBytes);
+    EvLogging dbg(*this, "extractFittingPayload");
+    dbg.val("bytesUsed", bytesUsed, "maxBytes", maxBytes);
     assert(bytesUsed <= maxBytes);
 
     // how many bytes can still fit into beacon packet?
@@ -159,8 +153,8 @@ Ptr<const Chunk> BeaconingProtocol::extractFittingPayload(RegisteredProtocol& rp
 
     if (not rp.protData.queue.empty())
     {
-        dbg_prefix();
-        EV << "inspecting queue with non-empty front element of length(B) = "
+        dbg.prefix();
+        dbg.the_stream() << "inspecting queue with non-empty front element of length(B) = "
            << (rp.protData.queue.front().theChunk->getChunkLength().get() / 8)
            << endl;
     }
@@ -173,28 +167,25 @@ Ptr<const Chunk> BeaconingProtocol::extractFittingPayload(RegisteredProtocol& rp
          && (not (rp.protData.queue.empty()))
          && (((rp.protData.queue.front().theChunk->getChunkLength().get() / 8) + BPPayloadHeaderT::fixed_size()) <= remainingBytes))
     {
-        dbg_string("found payload for protocol with BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
+        dbg.text("found payload for protocol with BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
         auto qe = rp.protData.queue.front();
         rp.protData.queue.pop();
-        dbg_leave();
         return qe.theChunk;
     }
 
     // We are in one of the buffered modes -- leave if buffer is empty
     if (not rp.protData.bufferOccupied)
     {
-        dbg_string("buffer is empty, returning nothing");
-        dbg_leave();
+        dbg.text("buffer is empty, returning nothing");
         return nullptr;
     }
 
-    DBG_PVAR1("inspecting buffer with non-empty element of length(B) = ", (rp.protData.bufferEntry.theChunk->getChunkLength().get() / 8))
+    dbg.val("inspecting buffer with non-empty element of length(B) = ", (rp.protData.bufferEntry.theChunk->getChunkLength().get() / 8));
 
     //  leave if buffere element does not fit into remaining beacon
     if (((rp.protData.bufferEntry.theChunk->getChunkLength().get() / 8) + BPPayloadHeaderT::fixed_size()) > remainingBytes)
     {
-        dbg_string("buffer payload is too large, returning nothing");
-        dbg_leave();
+        dbg.text("buffer payload is too large, returning nothing");
         return nullptr;
     }
 
@@ -202,24 +193,20 @@ Ptr<const Chunk> BeaconingProtocol::extractFittingPayload(RegisteredProtocol& rp
     auto thePayload = rp.protData.bufferEntry.theChunk;
     if (rp.protData.queueMode == BP_QMODE_ONCE)
     {
-        dbg_string("found payload for protocol with BP_QMODE_ONCE");
+        dbg.text("found payload for protocol with BP_QMODE_ONCE");
         rp.protData.bufferEntry.theChunk = nullptr;
         rp.protData.bufferOccupied = false;
-        dbg_leave();
         return thePayload;
     }
 
     if (rp.protData.queueMode == BP_QMODE_REPEAT)
     {
-        dbg_string("found payload for protocol with BP_QMODE_REPEAT");
-        dbg_leave();
+        dbg.text("found payload for protocol with BP_QMODE_REPEAT");
         return thePayload;
     }
 
-
     error("BeaconingProtocol::extractFittingPayload: unknown queue type");
 
-    dbg_leave();
     return nullptr;
 }
 
@@ -240,12 +227,12 @@ void BeaconingProtocol::addPayload(RegisteredProtocol& rp,
                                    simtime_t nextBeaconGenerationEpoch
                                    )
 {
-    dbg_enter("addPayload");
+    EvLogging dbg(*this, "addPayload");
 
     // determine protocol id
     BPProtocolIdT       protId = rp.protId;
 
-    DBG_PVAR4("considering client protocol", rp.protData.protocolName, protId, bytesUsed, maxBytes);
+    dbg.val("considering client protocol", rp.protData.protocolName, "protId", protId, "bytesUsed", bytesUsed, "maxBytes", maxBytes);
 
     // retrieve the actual payload
     Ptr<const Chunk> thePayload = extractFittingPayload(rp, bytesUsed, maxBytes);
@@ -255,7 +242,7 @@ void BeaconingProtocol::addPayload(RegisteredProtocol& rp,
     {
         BPLengthT payloadSizeB = (BPLengthT) (thePayload->getChunkLength().get() / 8);
 
-        DBG_PVAR4("adding payload", payloadSizeB, rp.protData.protocolName, bytesUsed, maxBytes);
+        dbg.val("adding payload of size", payloadSizeB, "protocolName", rp.protData.protocolName, "bytesUsed", bytesUsed, "maxBytes", maxBytes);
 
         // we can add this chunk to the packet, preceded by a payload header
 
@@ -276,7 +263,7 @@ void BeaconingProtocol::addPayload(RegisteredProtocol& rp,
         bytesUsed += payloadSizeB;
         numberPayloadsAdded += 1;
 
-        DBG_PVAR2("added payload", payloadSizeB, bytesUsed);
+        dbg.val("added payload of size", payloadSizeB, "bytesUsed", bytesUsed);
 
         // send transmission indication to client protocol
         auto txInd = new BPPayloadTransmitted_Indication;
@@ -286,11 +273,7 @@ void BeaconingProtocol::addPayload(RegisteredProtocol& rp,
         req->setProtocol(convertProtocolIdToProtocol(protId));
         req->setServicePrimitive(SP_INDICATION);
         send(txInd, gidToClients);
-
-
     }
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -303,12 +286,11 @@ void BeaconingProtocol::addPayload(RegisteredProtocol& rp,
 
 void BeaconingProtocol::constructAndTransmitBeacon (std::list< Ptr<const Chunk> >& beaconChunks)
 {
-    dbg_enter("constructAndTransmitBeacon");
+    EvLogging dbg(*this, "constructAndTransmitBeacon");
 
     if (beaconChunks.empty())
     {
-        dbg_string("no client protocol had a (suitable) chunk ready for transmission, exiting");
-        dbg_leave();
+        dbg.text("no client protocol had a (suitable) chunk ready for transmission, exiting");
         return;
     }
 
@@ -318,7 +300,7 @@ void BeaconingProtocol::constructAndTransmitBeacon (std::list< Ptr<const Chunk> 
     // construct BPHeader
     bytevect bv (BPHeaderT::fixed_size());
     bv.reserve (2*BPHeaderT::fixed_size());
-    ByteVectorAssemblyArea area ("bp-constructAndTransmitBeacon", BPHeaderT::fixed_size(), bv);
+    ByteVectorAssemblyArea area ("constructAndTransmitBeacon", BPHeaderT::fixed_size(), bv);
     BPHeaderT bpHdr;
     bpHdr.version     =  bpProtocolVersion;
     bpHdr.magicNo     =  bpMagicNo;
@@ -344,8 +326,6 @@ void BeaconingProtocol::constructAndTransmitBeacon (std::list< Ptr<const Chunk> 
     theBeaconPacket->addTagIfAbsent<InterfaceReq>()->setInterfaceId(getWlanInterface()->getInterfaceId());
     theBeaconPacket->addTagIfAbsent<MacAddressReq>()->setDestAddress(MacAddress::BROADCAST_ADDRESS);
     send(theBeaconPacket, gidToUWB);
-
-    dbg_leave();
 }
 
 
@@ -361,7 +341,7 @@ void BeaconingProtocol::constructAndTransmitBeacon (std::list< Ptr<const Chunk> 
 
 void BeaconingProtocol::handleGenerateBeaconMsg ()
 {
-    dbg_enter("handleGenerateBeaconMsg");
+    EvLogging dbg(*this, "handleGenerateBeaconMsg");
 
     // Schedule next generation of beacon packet
     simtime_t nextBeaconGenerationEpoch = simTime() + par("bpParBeaconPeriodDistr");
@@ -371,8 +351,7 @@ void BeaconingProtocol::handleGenerateBeaconMsg ()
     // check if any protocols are registered, exit if not
     if (registeredProtocols.empty())
     {
-        dbg_string("no protocol registered, exiting");
-        dbg_leave();
+        dbg.text("no protocol registered, exiting");
         return;
     }
 
@@ -393,11 +372,9 @@ void BeaconingProtocol::handleGenerateBeaconMsg ()
 
     if (numPayloadsAdded > 0)
     {
-        dbg_string("found payloads, generating beacon");
+        dbg.text("found payloads, generating beacon");
         constructAndTransmitBeacon(beaconChunks);
     }
-
-    dbg_leave();
 }
 
 
@@ -410,7 +387,7 @@ void BeaconingProtocol::handleGenerateBeaconMsg ()
 
 void BeaconingProtocol::handleReceivedPacket (Packet* packet)
 {
-    dbg_enter("handleReceivedPacket");
+    EvLogging dbg(*this, "handleReceivedPacket");
 
     assert(packet);
 
@@ -425,7 +402,7 @@ void BeaconingProtocol::handleReceivedPacket (Packet* packet)
     const bytevect& bvPacket = tmpBC->getBytes();
     ByteVectorDisassemblyArea area ("bp-handleReceivedPacket", bvPacket);
 
-    DBG_PVAR1("got packet with size", bvPacket.size());
+    dbg.val("got packet with size", bvPacket.size());
 
     BPHeaderT bpHdr;
     bpHdr.deserialize (area);
@@ -436,7 +413,7 @@ void BeaconingProtocol::handleReceivedPacket (Packet* packet)
 
     uint8_t numberPayloads = bpHdr.numPayloads;
 
-    DBG_PVAR3("got packet from sender", bpHdr.senderId, (int) numberPayloads, bpHdr.seqno);
+    dbg.val("got packet from sender", bpHdr.senderId, "numberPayloads", (int) numberPayloads, "bpHdr.seqno", bpHdr.seqno);
 
     // now extract the payloads and send them to the respective client protocols
     for (int cntPayload = 0; cntPayload < numberPayloads; cntPayload++)
@@ -447,10 +424,10 @@ void BeaconingProtocol::handleReceivedPacket (Packet* packet)
         Protocol *theProtocol        = convertProtocolIdToProtocol(bpPHdr.protocolId);
         if (not theProtocol)
         {
-            DBG_VAR1(bpPHdr.protocolId);
+  	    dbg.val("bpHdr.protocolId", bpPHdr.protocolId);
             error("BeaconingProtocol::handleReceivedPacket: unknown protocol id");
         }
-        DBG_VAR3(cntPayload, bpPHdr.protocolId, theProtocol->getName());
+        dbg.val("cntPayload", cntPayload, "bpHdr.protocolId", bpPHdr.protocolId, "theProtocol->getName", theProtocol->getName());
 
         BPReceivePayload_Indication *pldInd = new BPReceivePayload_Indication;
         pldInd->setProtId(bpPHdr.protocolId.val);
@@ -472,8 +449,6 @@ void BeaconingProtocol::handleReceivedPacket (Packet* packet)
     }
 
     delete packet;
-
-    dbg_leave();
 }
 
 
@@ -489,9 +464,9 @@ void BeaconingProtocol::handleReceivedPacket (Packet* packet)
 void BeaconingProtocol::handleRegisterProtocolRequestMsg (BPRegisterProtocol_Request* regReq)
 {
 
-    dbg_enter("handleRegisterProtocolRequestMsg");
+    EvLogging dbg(*this, "handleRegisterProtocolRequestMsg");
     assert(regReq);
-    DBG_PVAR2("got BPRegisterProtocol_Request message", regReq->getProtId(), regReq->getProtName());
+    dbg.val("got BPRegisterProtocol_Request message", regReq->getProtId(), "reqReq->getProtName", regReq->getProtName());
 
     // first retrieve parameters and delete message
     BPProtocolIdT        protocolId = regReq->getProtId();
@@ -514,27 +489,24 @@ void BeaconingProtocol::handleRegisterProtocolRequestMsg (BPRegisterProtocol_Req
     // otherwise return appropriate status indication
     if (clientProtocolRegistered(protocolId))
     {
-        dbg_string ("attempting to register an already existing protocol");
+        dbg.text ("attempting to register an already existing protocol");
         sendRegisterProtocolConfirm(BP_STATUS_PROTOCOL_ALREADY_REGISTERED, theProtocol);
-        dbg_leave();
         return;
     }
 
     // check if maximum payload size is zero or less
     if (clientProtData.maxPayloadSizeB <= 0)
     {
-        dbg_string ("illegal maximum payload size -- payload too small");
+        dbg.text ("illegal maximum payload size -- payload too small");
         sendRegisterProtocolConfirm(BP_STATUS_ILLEGAL_MAX_PAYLOAD_SIZE, theProtocol);
-        dbg_leave();
         return;
     }
 
     // check if maximum payload size is too large
     if (clientProtData.maxPayloadSizeB > (bpParMaximumPacketSizeB - (BPHeaderT::fixed_size() + BPPayloadHeaderT::fixed_size())))
     {
-        dbg_string ("illegal maximum payload size -- payload too large");
+        dbg.text ("illegal maximum payload size -- payload too large");
         sendRegisterProtocolConfirm(BP_STATUS_ILLEGAL_MAX_PAYLOAD_SIZE, theProtocol);
-        dbg_leave();
         return;
     }
 
@@ -542,14 +514,13 @@ void BeaconingProtocol::handleRegisterProtocolRequestMsg (BPRegisterProtocol_Req
               || (clientProtData.queueMode == BP_QMODE_QUEUE_DROPHEAD))
          && (clientProtData.maxEntries <= 0))
     {
-        dbg_string ("illegal maxEntries value for dropping queue");
+        dbg.text ("illegal maxEntries value for dropping queue");
         sendRegisterProtocolConfirm(BP_STATUS_ILLEGAL_DROPPING_QUEUE_SIZE, theProtocol);
-        dbg_leave();
         return;
     }
 
     // register protocol
-    dbg_string ("registering new protocol");
+    dbg.text ("registering new protocol");
 
     RegisteredProtocol  rp;
     rp.protId        =  protocolId;
@@ -559,8 +530,6 @@ void BeaconingProtocol::handleRegisterProtocolRequestMsg (BPRegisterProtocol_Req
     registeredProtocols[protocolId] = rp;
 
     sendRegisterProtocolConfirm(BP_STATUS_OK, theProtocol);
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -571,9 +540,9 @@ void BeaconingProtocol::handleRegisterProtocolRequestMsg (BPRegisterProtocol_Req
  */
 void BeaconingProtocol::handleDeregisterProtocolRequestMsg (BPDeregisterProtocol_Request* deregReq)
 {
-    dbg_enter("handleDeregisterProtocolRequestMsg");
+    EvLogging dbg(*this, "handleDeregisterProtocolRequestMsg");
     assert(deregReq);
-    DBG_PVAR1("got BPDeregisterProtocol_Request message", deregReq->getProtId());
+    dbg.val("got BPDeregisterProtocol_Request message", deregReq->getProtId());
 
     // first retrieve parameters and delete message
     BPProtocolIdT   protocolId = deregReq->getProtId();
@@ -587,18 +556,14 @@ void BeaconingProtocol::handleDeregisterProtocolRequestMsg (BPDeregisterProtocol
     // status indication
     if (not clientProtocolRegistered(protocolId))
     {
-        dbg_string ("handleDeregisterProtocolRequestMsg: attempting to deregister a non-registered protocol");
+        dbg.text ("handleDeregisterProtocolRequestMsg: attempting to deregister a non-registered protocol");
         sendDeregisterProtocolConfirm(BP_STATUS_UNKNOWN_PROTOCOL, theProtocol);
-        dbg_leave();
         return;
     }
 
     registeredProtocols.erase(protocolId);
 
     sendDeregisterProtocolConfirm(BP_STATUS_OK, theProtocol);
-
-    dbg_leave();
-
 }
 
 // ----------------------------------------------------
@@ -611,7 +576,7 @@ void BeaconingProtocol::handleDeregisterProtocolRequestMsg (BPDeregisterProtocol
 
 void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Request *txplReq)
 {
-    dbg_enter("handleTransmitPayloadRequestMsg");
+    EvLogging dbg(*this, "handleTransmitPayloadRequestMsg");
     assert(txplReq);
 
     BPProtocolIdT protocolId    = txplReq->getProtId();
@@ -626,9 +591,8 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
     // check if protocol exists, and stop with error status if not
     if (not clientProtocolRegistered(protocolId))
     {
-        dbg_string ("attempting to send payload for non-registered protocol");
+        dbg.text ("attempting to send payload for non-registered protocol");
         sendTransmitPayloadConfirm(BP_STATUS_UNKNOWN_PROTOCOL, theProtocol);
-        dbg_leave();
         return;
     }
 
@@ -636,21 +600,19 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
 
     // check length of payload
     uint32_t  maxSize = (uint32_t) rp.protData.maxPayloadSizeB.val;
-    DBG_VAR3(dataChunkLengthB, maxSize, dataChunk);
+    dbg.val("dataChunkLengthB", dataChunkLengthB, "maxSize", maxSize, "dataChunk", dataChunk);
     if (    (dataChunkLengthB > maxSize)
          || (dataChunkLengthB > (bpParMaximumPacketSizeB - (BPPayloadHeaderT::fixed_size() + BPHeaderT::fixed_size()))))
     {
-        dbg_string ("payload too large");
+        dbg.text ("payload too large");
         sendTransmitPayloadConfirm(BP_STATUS_PAYLOAD_TOO_LARGE, theProtocol);
-        dbg_leave();
         return;
     }
 
     if (dataChunkLengthB == 0)
     {
-        dbg_string ("payload is empty");
+        dbg.text ("payload is empty");
         sendTransmitPayloadConfirm(BP_STATUS_EMPTY_PAYLOAD, theProtocol);
-        dbg_leave();
         return;
     }
 
@@ -659,14 +621,13 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
     // length zero
     if ((rp.protData.queueMode == BP_QMODE_ONCE) || (rp.protData.queueMode == BP_QMODE_REPEAT))
     {
-        dbg_string ("handling the case of QMODE_ONCE or QMODE_REPEAT");
+        dbg.text ("handling the case of QMODE_ONCE or QMODE_REPEAT");
 
         rp.protData.bufferOccupied        = true;
         rp.protData.bufferEntry.theChunk  = dataChunk;
 
         sendTransmitPayloadConfirm(BP_STATUS_OK, theProtocol);
 
-        dbg_leave();
         return;
     }
 
@@ -674,12 +635,12 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
     if (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
          || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPHEAD))
     {
-        dbg_string ("handling the case of BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
+        dbg.text ("handling the case of BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
 
         if (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
              && (rp.protData.queue.size() >= rp.protData.maxEntries))
         {
-            dbg_string ("dropping payload at droptail queue");
+            dbg.text ("dropping payload at droptail queue");
             sendTransmitPayloadConfirm(BP_STATUS_OK, theProtocol);
         }
         else
@@ -687,7 +648,7 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
             if (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPHEAD)
                  && (rp.protData.queue.size() >= rp.protData.maxEntries))
             {
-                dbg_string ("QMODE_DROPHEAD: dropping head-of-line element");
+                dbg.text ("QMODE_DROPHEAD: dropping head-of-line element");
                 rp.protData.queue.pop();
             }
 
@@ -697,14 +658,10 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
             sendTransmitPayloadConfirm(BP_STATUS_OK, theProtocol);
         }
 
-        dbg_leave();
         return;
     }
 
     error("handleTransmitPayloadRequestMsg: unknown / un-implemented case");
-
-    dbg_leave();
-
 }
 
 
@@ -718,7 +675,7 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
 
 void BeaconingProtocol::handleClearBufferRequestMsg (BPClearBuffer_Request *clearReq)
 {
-    dbg_enter("handleClearBufferRequestMsg");
+    EvLogging dbg(*this, "handleClearBufferRequestMsg");
     assert(clearReq);
 
     BPProtocolIdT protocolId    = clearReq->getProtId();
@@ -731,9 +688,8 @@ void BeaconingProtocol::handleClearBufferRequestMsg (BPClearBuffer_Request *clea
     // check if protocol exists, and stop with error status if not
     if (not clientProtocolRegistered(protocolId))
     {
-        dbg_string ("attempting to send payload for non-registered protocol");
+        dbg.text ("attempting to send payload for non-registered protocol");
         sendTransmitPayloadConfirm(BP_STATUS_UNKNOWN_PROTOCOL, theProtocol);
-        dbg_leave();
         return;
     }
 
@@ -741,14 +697,13 @@ void BeaconingProtocol::handleClearBufferRequestMsg (BPClearBuffer_Request *clea
 
     if ((rp.protData.queueMode == BP_QMODE_ONCE) || (rp.protData.queueMode == BP_QMODE_REPEAT))
     {
-        dbg_string ("handling the case of QMODE_ONCE or QMODE_REPEAT");
+        dbg.text ("handling the case of QMODE_ONCE or QMODE_REPEAT");
 
         rp.protData.bufferOccupied        = false;
         rp.protData.bufferEntry.theChunk  = nullptr;
 
         sendClearBufferConfirm(BP_STATUS_OK, theProtocol);
 
-        dbg_leave();
         return;
     }
 
@@ -756,7 +711,7 @@ void BeaconingProtocol::handleClearBufferRequestMsg (BPClearBuffer_Request *clea
     if (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
          || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPHEAD))
     {
-        dbg_string ("handling the case of BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
+        dbg.text ("handling the case of BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
 
         while (not rp.protData.queue.empty())
         {
@@ -765,16 +720,12 @@ void BeaconingProtocol::handleClearBufferRequestMsg (BPClearBuffer_Request *clea
 
         sendClearBufferConfirm(BP_STATUS_OK, theProtocol);
 
-        dbg_leave();
         return;
     }
 
     sendClearBufferConfirm(BP_STATUS_UNKNOWN_QUEUEING_MODE, theProtocol);
 
     error("handleClearBufferRequestMsg: unknown queueing mode");
-
-    dbg_leave();
-
 }
 
 
@@ -788,7 +739,7 @@ void BeaconingProtocol::handleClearBufferRequestMsg (BPClearBuffer_Request *clea
  */
 void BeaconingProtocol::handleQueryNumberBufferedPayloadsRequestMsg(BPQueryNumberBufferedPayloads_Request* bpReq)
 {
-    dbg_enter("handleQueryNumberBufferedPayloadsRequest");
+    EvLogging dbg(*this, "handleQueryNumberBufferedPayloadsRequest");
     assert(bpReq);
 
     BPProtocolIdT protocolId    = bpReq->getProtId();
@@ -801,9 +752,8 @@ void BeaconingProtocol::handleQueryNumberBufferedPayloadsRequestMsg(BPQueryNumbe
     // check if protocol exists, and stop with error status if not
     if (not clientProtocolRegistered(protocolId))
     {
-        dbg_string ("attempting to send payload for non-registered protocol");
+        dbg.text ("attempting to send payload for non-registered protocol");
         sendQueryNumberBufferedPayloadsConfirm(BP_STATUS_UNKNOWN_PROTOCOL, 0, protocolId, theProtocol);
-        dbg_leave();
         return;
     }
 
@@ -813,11 +763,10 @@ void BeaconingProtocol::handleQueryNumberBufferedPayloadsRequestMsg(BPQueryNumbe
     // handling buffered modes
     if ((rp.protData.queueMode == BP_QMODE_ONCE) || (rp.protData.queueMode == BP_QMODE_REPEAT))
     {
-        dbg_string ("handling the case of QMODE_ONCE or QMODE_REPEAT");
-        DBG_VAR2(rp.protData.bufferOccupied, rp.protData.protocolName);
+        dbg.text ("handling the case of QMODE_ONCE or QMODE_REPEAT");
+        dbg.val("rp.protData.bufferOccupied", rp.protData.bufferOccupied, "rp.protData.protocolName", rp.protData.protocolName);
         numberBuffered = (rp.protData.bufferOccupied) ? 1 : 0;
         sendQueryNumberBufferedPayloadsConfirm(BP_STATUS_OK, numberBuffered, protocolId, theProtocol);
-        dbg_leave();
         return;
     }
 
@@ -825,16 +774,13 @@ void BeaconingProtocol::handleQueryNumberBufferedPayloadsRequestMsg(BPQueryNumbe
     if (    (rp.protData.queueMode == BP_QMODE_QUEUE_DROPTAIL)
          || (rp.protData.queueMode == BP_QMODE_QUEUE_DROPHEAD))
     {
-        dbg_string ("handling the case of BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
+        dbg.text ("handling the case of BP_QMODE_QUEUE_DROPTAIL or BP_QMODE_QUEUE_DROPHEAD");
         numberBuffered = rp.protData.queue.size();
         sendQueryNumberBufferedPayloadsConfirm(BP_STATUS_OK, numberBuffered, protocolId, theProtocol);
-        dbg_leave();
         return;
     }
 
     error("handleQueryNumberBufferedPayloadsRequestMsg: unknown / un-implemented case");
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -844,46 +790,41 @@ void BeaconingProtocol::handleQueryNumberBufferedPayloadsRequestMsg(BPQueryNumbe
  */
 void BeaconingProtocol::handleClientMessage (cMessage* msg)
 {
-    dbg_enter("handleClientMessage");
+    EvLogging dbg(*this, "handleClientMessage");
 
     if (dynamic_cast<BPRegisterProtocol_Request*>(msg))
     {
-        dbg_string("handling protocol registration request");
+        dbg.text("handling protocol registration request");
         BPRegisterProtocol_Request *reqMsg = (BPRegisterProtocol_Request*) msg;
         handleRegisterProtocolRequestMsg (reqMsg);
-        dbg_leave();
         return;
     }
 
     if (dynamic_cast<BPDeregisterProtocol_Request*>(msg))
     {
-        dbg_string("handling protocol deregistration request");
+        dbg.text("handling protocol deregistration request");
         BPDeregisterProtocol_Request *reqMsg = (BPDeregisterProtocol_Request*) msg;
         handleDeregisterProtocolRequestMsg (reqMsg);
-        dbg_leave();
         return;
     }
 
     if (dynamic_cast<BPTransmitPayload_Request*>(msg))
     {
-        dbg_string("handling payload transmit request");
+        dbg.text("handling payload transmit request");
         BPTransmitPayload_Request *reqMsg = (BPTransmitPayload_Request*) msg;
         handleTransmitPayloadRequestMsg (reqMsg);
-        dbg_leave();
         return;
     }
 
     if (dynamic_cast<BPQueryNumberBufferedPayloads_Request*>(msg))
     {
-        dbg_string("handling query-number-buffered-payloads request");
+        dbg.text("handling query-number-buffered-payloads request");
         BPQueryNumberBufferedPayloads_Request *reqMsg = (BPQueryNumberBufferedPayloads_Request*) msg;
         handleQueryNumberBufferedPayloadsRequestMsg (reqMsg);
-        dbg_leave();
         return;
     }
 
     error("BeaconingProtocol::handleClientMessage: unknown message type");
-    dbg_leave();
 }
 
 
@@ -896,9 +837,8 @@ void BeaconingProtocol::handleClientMessage (cMessage* msg)
  */
 bool BeaconingProtocol::clientProtocolRegistered(BPProtocolIdT protocolId)
 {
-    dbg_enter("clientProtocolRegistered");
+    EvLogging dbg(*this, "clientProtocolRegistered");
     auto search = registeredProtocols.find(protocolId);
-    dbg_leave();
     return (search != registeredProtocols.end());
 }
 
@@ -910,7 +850,7 @@ bool BeaconingProtocol::clientProtocolRegistered(BPProtocolIdT protocolId)
  */
 void BeaconingProtocol::sendConfirmation(BPConfirmation *confMsg, DcpStatus status, Protocol* theProtocol)
 {
-    dbg_enter("sendConfirmation");
+    EvLogging dbg(*this, "sendConfirmation");
     assert(theProtocol);
     assert(confMsg);
 
@@ -921,8 +861,6 @@ void BeaconingProtocol::sendConfirmation(BPConfirmation *confMsg, DcpStatus stat
     req->setServicePrimitive(SP_INDICATION);
 
     send(confMsg, gidToClients);
-
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -932,12 +870,11 @@ void BeaconingProtocol::sendConfirmation(BPConfirmation *confMsg, DcpStatus stat
  */
 void BeaconingProtocol::sendRegisterProtocolConfirm(DcpStatus status, Protocol* theProtocol)
 {
-    dbg_enter("sendRegisterProtocolConfirm");
+    EvLogging dbg(*this, "sendRegisterProtocolConfirm");
     BPRegisterProtocol_Confirm*  conf = new BPRegisterProtocol_Confirm;
     conf->setStatus (status);
     conf->setOwnNodeIdentifier (getOwnNodeId());
     sendConfirmation(conf, status, theProtocol);
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -947,9 +884,8 @@ void BeaconingProtocol::sendRegisterProtocolConfirm(DcpStatus status, Protocol* 
  */
 void BeaconingProtocol::sendDeregisterProtocolConfirm(DcpStatus status, Protocol* theProtocol)
 {
-    dbg_enter("sendDeregisterProtocolConfirm");
+    EvLogging dbg(*this, "sendDeregisterProtocolConfirm");
     sendConfirmation(new BPDeregisterProtocol_Confirm, status, theProtocol);
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -959,9 +895,8 @@ void BeaconingProtocol::sendDeregisterProtocolConfirm(DcpStatus status, Protocol
  */
 void BeaconingProtocol::sendTransmitPayloadConfirm(DcpStatus status, Protocol* theProtocol)
 {
-    dbg_enter("sendTransmitPayloadConfirm");
+    EvLogging dbg(*this, "sendTransmitPayloadConfirm");
     sendConfirmation(new BPTransmitPayload_Confirm, status, theProtocol);
-    dbg_leave();
 }
 
 // ----------------------------------------------------
@@ -971,9 +906,8 @@ void BeaconingProtocol::sendTransmitPayloadConfirm(DcpStatus status, Protocol* t
  */
 void BeaconingProtocol::sendClearBufferConfirm(DcpStatus status, Protocol* theProtocol)
 {
-    dbg_enter("sendClearBufferConfirm");
+    EvLogging dbg(*this, "sendClearBufferConfirm");
     sendConfirmation(new BPClearBuffer_Confirm, status, theProtocol);
-    dbg_leave();
 }
 
 
@@ -984,12 +918,11 @@ void BeaconingProtocol::sendClearBufferConfirm(DcpStatus status, Protocol* thePr
  */
 void BeaconingProtocol::sendQueryNumberBufferedPayloadsConfirm (DcpStatus status, unsigned int numPayloads, BPProtocolIdT protocolId, Protocol* theProtocol)
 {
-    dbg_enter("sendQueryNumberBufferedPayloadsConfirm");
+    EvLogging dbg(*this, "sendQueryNumberBufferedPayloadsConfirm");
     auto confMsg = new BPQueryNumberBufferedPayloads_Confirm;
     confMsg->setNumberBuffered((int) numPayloads);
     confMsg->setProtId(protocolId.val);
     sendConfirmation(confMsg, status, theProtocol);
-    dbg_leave();
 }
 
 

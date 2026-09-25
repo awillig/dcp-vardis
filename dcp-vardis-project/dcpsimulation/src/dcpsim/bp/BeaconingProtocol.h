@@ -36,12 +36,6 @@
 #include <dcpsim/common/DcpProtocol.h>
 
 
-using namespace omnetpp;
-using namespace inet;
-
-using dcp::bp::BPHeaderT;
-using dcp::bp::BPPayloadHeaderT;
-using dcp::bp::BPNetworkIdentifierT;
 
 // -------------------------------------------------------------------
 
@@ -50,7 +44,7 @@ namespace dcp {
 struct RegisteredProtocol {
     BPProtocolIdT           protId;
     BPClientProtocolData    protData;
-    Protocol*               protProtocol;
+    inet::Protocol*         protProtocol;
 };
 
 
@@ -72,7 +66,7 @@ public:
     virtual ~BeaconingProtocol();
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
     virtual void initialize(int stage) override;
-    virtual void handleMessage (cMessage* msg) override;
+    virtual void handleMessage (omnetpp::cMessage* msg) override;
 
 
 protected:
@@ -87,10 +81,10 @@ protected:
     const uint8_t  bpProtocolVersion = 1;
 
     // parameter for maximum beacon packet size
-    BPLengthT   bpParMaximumPacketSizeB;
+    dcp::bp::BPLengthT   bpParMaximumPacketSizeB;
 
     // parameter for network identifier to use
-    BPNetworkIdentifierT  bpNetworkIdentifier = 0;
+    dcp::bp::BPNetworkIdentifierT  bpNetworkIdentifier = 0;
   
     // Beacons have sequence numbers
     uint32_t    _seqno = 0;
@@ -101,7 +95,7 @@ protected:
 
     // internal data members
     std::map<BPProtocolIdT, RegisteredProtocol>  registeredProtocols;  // contains all registered client protocols
-    cMessage*     generateBeaconMsg;   // timer self-message for beacon generations
+    omnetpp::cMessage*    generateBeaconMsg;   // timer self-message for beacon generations
 
 
     // -------------------------------------------
@@ -117,7 +111,7 @@ protected:
      * Dispatcher for all request types offered by the public BP interface
      * (e.g. BPRegisterProtocol.request, BPTransmitPayload.request)
      */
-    void handleClientMessage(cMessage* msg);
+    void handleClientMessage(omnetpp::cMessage* msg);
 
     /**
      * Processes BPRegisterProtocol.request message, allowing client
@@ -154,7 +148,7 @@ protected:
      * Processes a received BP packet, performs validity tests, extracts payloads
      * and hands them over to their respective client protocols
      */
-    void handleReceivedPacket (Packet* packet);
+    void handleReceivedPacket (inet::Packet* packet);
 
 
     // -------------------------------------------
@@ -165,44 +159,47 @@ protected:
      * Sends a confirmation message (for a previous service request) to client
      * protocol
      */
-    void sendConfirmation(BPConfirmation *confMsg, DcpStatus status, Protocol* theProtocol);
+    void sendConfirmation(BPConfirmation *confMsg, DcpStatus status, inet::Protocol* theProtocol);
 
     /**
      * Generates and sends BPRegisterProtocol.confirm message to client protocol
      */
-    void sendRegisterProtocolConfirm (DcpStatus status, Protocol* theProtocol);
+    void sendRegisterProtocolConfirm (DcpStatus status, inet::Protocol* theProtocol);
 
     /**
      * Generates and sends BPDeregisterProtocol.confirm message to client protocol
      */
-    void sendDeregisterProtocolConfirm (DcpStatus status, Protocol* theProtocol);
+    void sendDeregisterProtocolConfirm (DcpStatus status, inet::Protocol* theProtocol);
 
     /**
      * Generates and sends BPTransmitPayload.confirm message to client protocol
      */
-    void sendTransmitPayloadConfirm (DcpStatus status, Protocol* theProtocol);
+    void sendTransmitPayloadConfirm (DcpStatus status, inet::Protocol* theProtocol);
 
     /**
      * Generates and sends BPClearBuffer.confirm message to client protocol
      */
-    void sendClearBufferConfirm (DcpStatus status, Protocol* theProtocol);
+    void sendClearBufferConfirm (DcpStatus status, inet::Protocol* theProtocol);
 
 
     /**
      * Generates and sends BPQueryNumberBufferedPayloads.confirm message to client protocol
      */
-    void sendQueryNumberBufferedPayloadsConfirm (DcpStatus status, unsigned int numPayloads, BPProtocolIdT protocolId, Protocol* theProtocol);
+    void sendQueryNumberBufferedPayloadsConfirm (DcpStatus status,
+  					         unsigned int numPayloads,
+  					         BPProtocolIdT protocolId,
+					         inet::Protocol* theProtocol);
 
     /**
      * Checks whether BPHeaderT of incoming beacon is well-formed
      */
-    bool bpHeaderWellFormed (DisassemblyArea& area, BPHeaderT& bpHdr);
+    bool bpHeaderWellFormed (DisassemblyArea& area, dcp::bp::BPHeaderT& bpHdr);
 
 
     /**
      * Checks whether BPPayloadHeaderT of incoming beacon is well-formed
      */
-    bool bpPayloadHeaderWellFormed (DisassemblyArea& area, BPPayloadHeaderT& bpPHdr);
+    bool bpPayloadHeaderWellFormed (DisassemblyArea& area, dcp::bp::BPPayloadHeaderT& bpPHdr);
 
 
     /**
@@ -215,7 +212,7 @@ protected:
      * Takes the list of chunks that should go into a packet, creates the packet
      * including headers and hands it down to the lower layers for transmission
      */
-    void constructAndTransmitBeacon (std::list< Ptr<const Chunk> >& beaconChunks);
+    void constructAndTransmitBeacon (std::list< inet::Ptr<const inet::Chunk> >& beaconChunks);
 
 
     /**
@@ -223,11 +220,11 @@ protected:
      * into beacon and informs the registered protocol about this
      */
     void addPayload (RegisteredProtocol& rp,                         // the registered protocol to consider
-                     std::list< Ptr<const Chunk> >& beaconChunks,    // this collects the chunks for the packet
-                     BPLengthT& bytesUsed,                           // keeps track of # of bytes used
-                     size_t& numberPayloadsAdded,                    // keeps track of # payloads added to beacon
-                     BPLengthT maxBytes,                             // max bytes available in beacon
-                     simtime_t nextBeaconGenerationEpoch             // time of next beacon generation
+                     std::list< inet::Ptr<const inet::Chunk> >& beaconChunks,    // this collects the chunks for the packet
+                     dcp::bp::BPLengthT& bytesUsed,                           // keeps track of # of bytes used
+                     size_t& numberPayloadsAdded,                             // keeps track of # payloads added to beacon
+                     dcp::bp::BPLengthT maxBytes,                             // max bytes available in beacon
+                     omnetpp::simtime_t nextBeaconGenerationEpoch             // time of next beacon generation
                      );
 
     /**
@@ -235,7 +232,9 @@ protected:
      * fit into the remaining beacon -- returns it (after removing it) or
      * returns nullptr if there is no such payload
      */
-    Ptr<const Chunk> extractFittingPayload (RegisteredProtocol& rp, BPLengthT bytesUsed, BPLengthT maxBytes);
+    inet::Ptr<const inet::Chunk> extractFittingPayload (RegisteredProtocol& rp,
+							dcp::bp::BPLengthT bytesUsed,
+							dcp::bp::BPLengthT maxBytes);
 
 };
 
