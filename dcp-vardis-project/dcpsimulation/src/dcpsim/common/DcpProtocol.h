@@ -23,8 +23,8 @@
 #include <inet/networklayer/common/InterfaceTable.h>
 #include <dcp/common/global_types_constants.h>
 
-using namespace omnetpp;
-using namespace inet;
+
+using inet::InitStageRegistry;
 
 // --------------------------------------------------------------------------
 namespace dcp {
@@ -39,10 +39,11 @@ namespace dcp {
  * All DCP protocols should be derived from this.
  */
 
-class DcpProtocol : public cSimpleModule {
+class DcpProtocol : public omnetpp::cSimpleModule {
 
 public:
-    virtual int numInitStages() const override { return NUM_INIT_STAGES; }
+    virtual int numInitStages() const override { return NUM_INIT_STAGES; };
+  
     virtual void initialize(int stage) override;
 
     // return the node identifier (MAC address) of this node
@@ -61,9 +62,8 @@ private:
     inet::NetworkInterface  *_wlanInterface  = nullptr;
     std::string              _interfaceName;
 
-    // Supporting debug output: current module name, and keeping track of nested dbg_enter/dbg_leave calls
+    // Supporting debug output: current module name
     std::string              _dbg_module_name;
-    std::stack<std::string>  _methname_stack;
 
 
 protected:
@@ -75,170 +75,118 @@ protected:
     void  determineOwnNodeId (std::string interfaceName);
     inet::NetworkInterface  *getWlanInterface() const { return _wlanInterface; };
 
+
+  // --------------------------------------------
+  // Debug helpers
+  // --------------------------------------------
+
+  // Declare one such object at the start of a method used in the simulator
+  class EvLogging {
+  private:
+    DcpProtocol&  _prot;
+    std::string   _methname;
+  public:
+    
+    EvLogging (DcpProtocol& prot, std::string methname) : _prot(prot), _methname (methname)
+    {
+      prefix();
+      the_stream() << "entering" << std::endl;
+    };
+
+    ~EvLogging ()
+    {
+      prefix();
+      the_stream() << "leaving" << std::endl;
+    };
+
+    std::ostream& the_stream ()
+    {
+      return OPP_LOGPROXY (_prot.getThisPtr(), omnetpp::LOGLEVEL_INFO, nullptr).getStream();
+    };
+
+    void prefix ()
+    {
+      the_stream() << "t = " << omnetpp::simTime()
+		   << " - " << _prot._dbg_module_name
+		   << "[Id=" << _prot._ownNodeId
+		   << "]." << _methname
+		   << ": ";
+    };
+
+    void text (std::string str)
+    {
+      prefix();
+      the_stream() << str << std::endl;
+    };
+
+    template <typename T1>
+    void val(std::string vname, T1 v1)
+    {
+      prefix();
+      the_stream() << vname << " = " << v1 << std::endl;
+    };
+
+    template <typename T1, typename T2>
+    void val(std::string vname1, T1 v1, std::string vname2, T2 v2)
+    {
+      prefix();
+      the_stream() << vname1 << " = " << v1
+		   << " , " << vname2 << " = " << v2
+		   << std::endl;
+    };
+
+    template <typename T1, typename T2, typename T3>
+    void val(std::string vname1, T1 v1, std::string vname2, T2 v2, std::string vname3, T3 v3)
+    {
+      prefix();
+      the_stream() << vname1 << " = " << v1
+		   << " , " << vname2 << " = " << v2
+		   << " , " << vname3 << " = " << v3
+		   << std::endl;
+    };
+
+    template <typename T1, typename T2, typename T3, typename T4>
+    void val(std::string vname1, T1 v1,
+	     std::string vname2, T2 v2,
+	     std::string vname3, T3 v3,
+	     std::string vname4, T4 v4)
+    {
+      prefix();
+      the_stream() << vname1 << " = " << v1
+		   << " , " << vname2 << " = " << v2
+		   << " , " << vname3 << " = " << v3
+		   << " , " << vname4 << " = " << v4
+		   << std::endl;
+    };
+
+    template <typename T1, typename T2, typename T3, typename T4, typename T5>
+    void val(std::string vname1, T1 v1,
+	     std::string vname2, T2 v2,
+	     std::string vname3, T3 v3,
+	     std::string vname4, T4 v4,
+	     std::string vname5, T5 v5)
+    {
+      prefix();
+      the_stream() << vname1 << " = " << v1
+		   << " , " << vname2 << " = " << v2
+		   << " , " << vname3 << " = " << v3
+		   << " , " << vname4 << " = " << v4
+		   << " , " << vname5 << " = " << v5
+		   << std::endl;
+    };
+  };
+  
+  
     // --------------------------------------------
     // Debug helpers
     // --------------------------------------------
 
     /**
-     * Use this before calling dbg_enter in a 'toplevel' method to check
-     * consistency of the method name stack (allowing for nested method
-     * name logging)
-     */
-    void dbg_assertToplevel();
-
-    /**
      * Sets the current module name to use, will show up in every line
      */
     void dbg_setModuleName(std::string name);
-
-    /**
-     * Outputs the starting part of every log message: timestamp, module name,
-     * own node identifier, and the current method name
-     */
-    void dbg_prefix();
-
-    /**
-     * Declare that we now enter the given method; allows for nesting
-     */
-    void dbg_enter(std::string methname);
-
-    /**
-     * Declare that we now leave the method, allows for nesting
-     */
-    void dbg_leave();
-
-    /**
-     * generates log message with prefix and the given string
-     */
-    void dbg_string(std::string str);
-
 };
 
-// ========================================================================================
-// Some debugging / tracing macros, to be used inside a class derived
-// from DcpProtocol
-// ========================================================================================
-
-#define DBG_VAR1(a)                  \
-{                                    \
-    dbg_prefix();                    \
-    EV << #a << " = " << a           \
-    << endl;                         \
-}
-
-#define DBG_PVAR1(p,a)               \
-{                                    \
-    dbg_prefix();                    \
-    EV << p << ": "                  \
-       << #a << " = " << a           \
-       << endl;                      \
-}
-
-#define DBG_VAR2(a,b)                \
-{                                    \
-    dbg_prefix();                    \
-    EV << #a << " = " << a           \
-       << " , " << #b << " = " << b  \
-       << endl;                      \
-}
-
-#define DBG_PVAR2(p,a,b)             \
-{                                    \
-    dbg_prefix();                    \
-    EV << p << ": "                  \
-       << #a << " = " << a           \
-       << " , " << #b << " = " << b  \
-       << endl;                      \
-}
-
-
-#define DBG_VAR3(a,b,c)              \
-{                                    \
-    dbg_prefix();                    \
-    EV << #a << " = " << a           \
-       << " , " << #b << " = " << b  \
-       << " , " << #c << " = " << c  \
-       << endl;                      \
-}
-
-#define DBG_PVAR3(p,a,b,c)           \
-{                                    \
-    dbg_prefix();                    \
-    EV << p << ": "                  \
-       << #a << " = " << a           \
-       << " , " << #b << " = " << b  \
-       << " , " << #c << " = " << c  \
-       << endl;                      \
-}
-
-#define DBG_VAR4(a,b,c,d)            \
-{                                    \
-    dbg_prefix();                    \
-    EV << #a << " = " << a           \
-       << " , " << #b << " = " << b  \
-       << " , " << #c << " = " << c  \
-       << " , " << #d << " = " << d  \
-       << endl;                      \
-}
-
-#define DBG_PVAR4(p,a,b,c,d)         \
-{                                    \
-    dbg_prefix();                    \
-    EV << p << ": "                  \
-       << #a << " = " << a           \
-       << " , " << #b << " = " << b  \
-       << " , " << #c << " = " << c  \
-       << " , " << #d << " = " << d  \
-       << endl;                      \
-}
-
-#define DBG_VAR5(a,b,c,d,e)          \
-{                                    \
-    dbg_prefix();                    \
-    EV << #a << " = " << a           \
-       << " , " << #b << " = " << b  \
-       << " , " << #c << " = " << c  \
-       << " , " << #d << " = " << d  \
-       << " , " << #e << " = " << e  \
-       << endl;                      \
-}
-
-#define DBG_PVAR5(p,a,b,c,d,e)       \
-{                                    \
-    dbg_prefix();                    \
-    EV << p << ": "                  \
-       << #a << " = " << a           \
-       << " , " << #b << " = " << b  \
-       << " , " << #c << " = " << c  \
-       << " , " << #d << " = " << d  \
-       << " , " << #e << " = " << e  \
-       << endl;                      \
-}
-
-#define DBG_VAR6(a,b,c,d,e,f)        \
-{                                    \
-    dbg_prefix();                    \
-    EV << #a << " = " << a           \
-       << " , " << #b << " = " << b  \
-       << " , " << #c << " = " << c  \
-       << " , " << #d << " = " << d  \
-       << " , " << #e << " = " << e  \
-       << " , " << #f << " = " << f  \
-       << endl;                      \
-}
-
-#define DBG_PVAR6(p,a,b,c,d,e,f)     \
-{                                    \
-    dbg_prefix();                    \
-    EV << p << ": "                  \
-       << #a << " = " << a           \
-       << " , " << #b << " = " << b  \
-       << " , " << #c << " = " << c  \
-       << " , " << #d << " = " << d  \
-       << " , " << #e << " = " << e  \
-       << " , " << #f << " = " << f  \
-       << endl;                      \
-}
 
 } // namespace
 

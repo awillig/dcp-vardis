@@ -21,13 +21,16 @@
 #include <inet/networklayer/common/InterfaceTable.h>
 
 
+using inet::INITSTAGE_LAST;
+using inet::InterfaceTable;
+using inet::NetworkInterface;
+using inet::getContainingNode;
+
 // ========================================================================================
 // ========================================================================================
 
 
 using namespace dcp;
-
-Define_Module(DcpProtocol);
 
 // ========================================================================================
 // Standard OMNeT++ and class methods
@@ -38,13 +41,11 @@ void DcpProtocol::initialize(int stage)
 {
     if (stage == INITSTAGE_LAST)
     {
-        dbg_enter("DcpProtocol::initialize");
+        EvLogging dbg(*this, "DcpProtocol::initialize");
 
         // reading and checking module parameters
         _interfaceName =  par("interfaceName").stdstringValue();
         determineOwnNodeId(_interfaceName);
-
-        dbg_leave();
     }
 }
 
@@ -57,7 +58,7 @@ void DcpProtocol::initialize(int stage)
 
 void DcpProtocol::determineOwnNodeId (std::string interfaceName)
 {
-    dbg_enter("determineOwnNodeId");
+    EvLogging dbg(*this, "DcpProtocol::determineOwnNodeId");
 
     cModule *host                       = getContainingNode(this);
     assert(host);
@@ -78,23 +79,17 @@ void DcpProtocol::determineOwnNodeId (std::string interfaceName)
           iface->getMacAddress().getAddressBytes (addr_bytes);
 	  _ownNodeId     = NodeIdentifierT (addr_bytes);
 	  _wlanInterface = iface;
-	  dbg_leave();
 	  return;
         }
     }
 
     error("DcpProtocol::determineOwnNodeId: interface not found");
-    return;
 }
 
 // ===================================================================================
 // Debug helpers
 // ===================================================================================
 
-void DcpProtocol::dbg_assertToplevel()
-{
-    assert(_methname_stack.empty());
-}
 
 /**
  * Sets the current module name to use, will show up in every line
@@ -103,52 +98,4 @@ void DcpProtocol::dbg_setModuleName(std::string name)
 {
     _dbg_module_name = name;
 }
-
-/**
- * Outputs the starting part of every log message: timestamp, module name,
- * own node identifier, and the current method name
- */
-void DcpProtocol::dbg_prefix()
-{
-    EV << "t = " << simTime()
-       << " - " << _dbg_module_name
-       << "[Id=" << _ownNodeId
-       << "]." << _methname_stack.top()
-       << ": ";
-}
-
-/**
- * Declare that we now enter the given method; allows for nesting
- */
-void DcpProtocol::dbg_enter(std::string methname)
-{
-    _methname_stack.push(methname);
-    dbg_prefix();
-    EV << "entering"
-       << endl;
-}
-
-
-/**
- * Declare that we now leave the method, allows for nesting
- */
-void DcpProtocol::dbg_leave()
-{
-    dbg_prefix();
-    EV << "leaving"
-       << endl;
-    _methname_stack.pop();
-}
-
-/**
- * generates log message with prefix and the given string
- */
-void DcpProtocol::dbg_string(std::string str)
-{
-    dbg_prefix();
-    EV << str
-       << endl;
-}
-
-
 
