@@ -84,10 +84,11 @@ namespace dcp {
      *
      * Initializes the internal counters
      */
-    Area (std::string name, size_t available) :
-      _name (name),
-      bytes_available(available),
-      initial_available(available), bytes_used(0)
+    Area(std::string name, size_t available)
+        : _name(name),
+          bytes_available(available),
+          initial_available(available),
+          bytes_used(0)
     {};
 
     
@@ -240,7 +241,7 @@ namespace dcp {
      */
     virtual void serialize_uint64_n (uint64_t val)
     {
-      if (available() < sizeof(uint32_t))
+      if (available() < sizeof(uint64_t))
 	throw AssemblyAreaException(std::format ("{}.serialize_uint64_n", _name),
 				    std::format ("insufficient space, available = {}", available()));      
       serialize_byte ((byte) (val >> 56));
@@ -320,7 +321,7 @@ namespace dcp {
      */
     virtual void deserialize_uint32_n (uint32_t& val)
     {
-      if (available() < sizeof(uint16_t))
+      if (available() < sizeof(uint32_t))
 	throw DisassemblyAreaException(std::format ("{}.deserialize_uint32_n", _name),
 				       std::format ("insufficient space, available = {}", available()));
       byte b1 = deserialize_byte();
@@ -340,7 +341,7 @@ namespace dcp {
      */
     virtual void deserialize_uint64_n (uint64_t& val)
     {
-      if (available() < sizeof(uint16_t))
+      if (available() < sizeof(uint64_t))
 	throw DisassemblyAreaException(std::format ("{}.deserialize_uint64_n", _name),
 				       std::format ("insufficient space, available = {}", available()));
       byte b1 = deserialize_byte();
