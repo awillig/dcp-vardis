@@ -341,7 +341,7 @@ protected:
     template <typename T>
     void extractInstructionContainerElements (DisassemblyArea& area, const ICHeaderT& icHeader, std::deque<T>& result_list)
     {
-      EvLogging dbg (*this, "extractInstructionContainerElements");
+      EvTracing dbg (*this, "extractInstructionContainerElements");
       if (icHeader.icNumRecords == 0)
 	{
 	  error ("extractInstructionContainerElements: number of records is zero");

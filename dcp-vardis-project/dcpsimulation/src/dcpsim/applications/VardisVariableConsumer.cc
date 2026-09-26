@@ -48,7 +48,7 @@ void VardisVariableConsumer::initialize(int stage)
     if (stage == INITSTAGE_LAST)
     {
         dbg_setModuleName("VardisVariableConsumer");
-        EvLogging dbg(*this, "initialize");
+        EvTracing dbg(*this, "initialize");
         assert(getOwnNodeId() != nullNodeIdentifier);
 
         // read and check module parameters
@@ -85,7 +85,7 @@ void VardisVariableConsumer::initialize(int stage)
 
 void VardisVariableConsumer::handleMessage(cMessage *msg)
 {
-    EvLogging dbg(*this, "handleMessage");
+    EvTracing dbg(*this, "handleMessage");
     dbg.val("state", state);
 
     // dispatch on type of received message
@@ -128,7 +128,7 @@ VardisVariableConsumer::~VardisVariableConsumer()
 
 void VardisVariableConsumer::handleSampleMsg()
 {
-    EvLogging dbg(*this, "handleSampleMsg");
+    EvTracing dbg(*this, "handleSampleMsg");
     assert(state == cState_WaitForSampling);
 
     // schedule next sampling message
@@ -144,7 +144,7 @@ void VardisVariableConsumer::handleSampleMsg()
 
 void VardisVariableConsumer::handleRTDBDescribeDatabaseConfirm(RTDBDescribeDatabase_Confirm* dbConf)
 {
-    EvLogging dbg(*this, "handleRTDBDescribeDatabaseConfirm");
+    EvTracing dbg(*this, "handleRTDBDescribeDatabaseConfirm");
     assert(dbConf);
     assert(state == cState_WaitForDBDescription);
     assert(readsRequested == 0);
@@ -183,7 +183,7 @@ void VardisVariableConsumer::handleRTDBDescribeDatabaseConfirm(RTDBDescribeDatab
 
 void VardisVariableConsumer::handleRTDBReadConfirm(RTDBRead_Confirm* readConf)
 {
-    EvLogging dbg(*this, "handleRTDBReadConfirm");
+    EvTracing dbg(*this, "handleRTDBReadConfirm");
 
     RTDB_Read_Confirm rConf = readConf->getReadConf();
     

@@ -81,19 +81,19 @@ protected:
   // --------------------------------------------
 
   // Declare one such object at the start of a method used in the simulator
-  class EvLogging {
+  class EvTracing {
   private:
     DcpProtocol&  _prot;
     std::string   _methname;
   public:
     
-    EvLogging (DcpProtocol& prot, std::string methname) : _prot(prot), _methname (methname)
+    EvTracing (DcpProtocol& prot, std::string methname) : _prot(prot), _methname (methname)
     {
       prefix();
       the_stream() << "entering" << std::endl;
     };
 
-    ~EvLogging ()
+    ~EvTracing ()
     {
       prefix();
       the_stream() << "leaving" << std::endl;

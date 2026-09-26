@@ -50,7 +50,7 @@ void VardisProtocol::initialize(int stage)
     if (stage == INITSTAGE_LAST)
     {
         dbg_setModuleName("VarDis");
-        EvLogging dbg (*this, "initialize");
+        EvTracing dbg (*this, "initialize");
 
         // read and check parameters
         vardisMaxValueLength        = (size_t) par("vardisMaxValueLength");
@@ -103,7 +103,7 @@ void VardisProtocol::initialize(int stage)
  */
 void VardisProtocol::handleMessage(cMessage *msg)
 {
-    EvLogging dbg (*this, "handleMessage");
+    EvTracing dbg (*this, "handleMessage");
     dbg.text("---------------------------------------------------------");
 
     // check if BP has already dealt with this message (e.g. registration as BP client protocol)
@@ -149,7 +149,7 @@ void VardisProtocol::handleMessage(cMessage *msg)
 
 void VardisProtocol::registerAsBPClient()
 {
-    EvLogging dbg(*this, "registerAsBPClient");
+    EvTracing dbg(*this, "registerAsBPClient");
 
     dbg.val("maxPayloadSize", maxPayloadSize);
 
@@ -162,7 +162,7 @@ void VardisProtocol::registerAsBPClient()
 
 bool VardisProtocol::handleBPRegisterProtocol_Confirm (BPRegisterProtocol_Confirm* pConf)
 {
-    EvLogging dbg(*this, "handleBPRegisterProtocol_Confirm");
+    EvTracing dbg(*this, "handleBPRegisterProtocol_Confirm");
 
     assert (pConf);
 
@@ -207,7 +207,7 @@ VardisProtocol::~VardisProtocol()
  */
 void VardisProtocol::handleApplicationMessage (cMessage* msg)
 {
-    EvLogging dbg(*this, "handleApplicationMessage");
+    EvTracing dbg(*this, "handleApplicationMessage");
 
     if (dynamic_cast<RTDBUpdate_Request*>(msg))
     {
@@ -269,7 +269,7 @@ void VardisProtocol::handleApplicationMessage (cMessage* msg)
  */
 void VardisProtocol::handleBPMessage (cMessage* msg)
 {
-    EvLogging dbg(*this, "handleBPMessage");
+    EvTracing dbg(*this, "handleBPMessage");
 
     if (dynamic_cast<BPPayloadTransmitted_Indication*>(msg))
     {
@@ -308,7 +308,7 @@ void VardisProtocol::handleBPMessage (cMessage* msg)
  */
 void VardisProtocol::handleBufferCheckMsg()
 {
-    EvLogging dbg(*this, "handleBufferCheckMsg");
+    EvTracing dbg(*this, "handleBufferCheckMsg");
 
     // schedule next buffer check
     scheduleAt(simTime() + vardisBufferCheckPeriod, bufferCheckMsg);
@@ -326,7 +326,7 @@ void VardisProtocol::handleBufferCheckMsg()
  */
 void VardisProtocol::handleSendPayloadMsg()
 {
-    EvLogging dbg(*this, "handleSendPayloadMsg");
+    EvTracing dbg(*this, "handleSendPayloadMsg");
     generatePayload();
 }
 
@@ -343,7 +343,7 @@ void VardisProtocol::handleSendPayloadMsg()
  */
 void VardisProtocol::handleBPPayloadTransmittedIndication (BPPayloadTransmitted_Indication* ptInd)
 {
-    EvLogging dbg(*this, "handleBPPayloadTransmittedIndication");
+    EvTracing dbg(*this, "handleBPPayloadTransmittedIndication");
     assert(ptInd);
     assert(ptInd->getProtId() == BP_PROTID_VARDIS);
 
@@ -367,7 +367,7 @@ void VardisProtocol::handleBPPayloadTransmittedIndication (BPPayloadTransmitted_
  */
 void VardisProtocol::handleBPQueryNumberBufferedPayloadsConfirm (BPQueryNumberBufferedPayloads_Confirm* confMsg)
 {
-    EvLogging dbg(*this, "handleBPQueryNumberBufferedPayloadsConfirm");
+    EvTracing dbg(*this, "handleBPQueryNumberBufferedPayloadsConfirm");
     assert(confMsg);
     assert(confMsg->getProtId() == BP_PROTID_VARDIS);
     assert(confMsg->getNumberBuffered() >= 0);
@@ -390,7 +390,7 @@ void VardisProtocol::handleBPQueryNumberBufferedPayloadsConfirm (BPQueryNumberBu
  */
 void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indication* payload)
 {
-    EvLogging dbg(*this, "handleBPReceivedPayloadIndication");
+    EvTracing dbg(*this, "handleBPReceivedPayloadIndication");
     assert(payload);
     assert(payload->getProtId() == BP_PROTID_VARDIS);
 
@@ -481,7 +481,7 @@ void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indicati
  */
 void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
 {
-    EvLogging dbg(*this, "handleRTDBCreateRequest");
+    EvTracing dbg(*this, "handleRTDBCreateRequest");
     assert(createReq);
 
     // keep a reference to the client protocol sending this, required for
@@ -506,7 +506,7 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
  */
 void VardisProtocol::handleRTDBUpdateRequest(RTDBUpdate_Request* updateReq)
 {
-    EvLogging dbg(*this, "handleRTDBUpdateRequest");
+    EvTracing dbg(*this, "handleRTDBUpdateRequest");
     assert(updateReq);
 
     // keep a reference to the client protocol sending this, required for
@@ -531,7 +531,7 @@ void VardisProtocol::handleRTDBUpdateRequest(RTDBUpdate_Request* updateReq)
  */
 void VardisProtocol::handleRTDBReadRequest (RTDBRead_Request* readReq)
 {
-    EvLogging dbg(*this, "handleRTDBReadRequest");
+    EvTracing dbg(*this, "handleRTDBReadRequest");
     assert(readReq);
 
     // keep a reference to the client protocol sending this, required for
@@ -559,7 +559,7 @@ void VardisProtocol::handleRTDBReadRequest (RTDBRead_Request* readReq)
  */
 void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Request* descrDbReq)
 {
-    EvLogging dbg(*this, "handleRTDBDescribeDatabaseRequest");
+    EvTracing dbg(*this, "handleRTDBDescribeDatabaseRequest");
     assert(descrDbReq);
 
     // keep a reference to the client protocol sending this, required for
@@ -616,7 +616,7 @@ void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Req
  */
 void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Request* descrVarReq)
 {
-    EvLogging dbg(*this, "handleRTDBDescribeVariableRequest");
+    EvTracing dbg(*this, "handleRTDBDescribeVariableRequest");
     assert(descrVarReq);
 
     // keep a reference to the client protocol sending this, required for
@@ -674,7 +674,7 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
 void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* deleteReq)
 {
 
-    EvLogging dbg(*this, "handleRTDBDeleteRequest");
+    EvTracing dbg(*this, "handleRTDBDeleteRequest");
     assert(deleteReq);
 
     // keep a reference to the client protocol sending this, required for
@@ -708,7 +708,7 @@ void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* deleteReq)
  */
 void VardisProtocol::constructPayload(bytevect& bv, unsigned int& containers_added)
 {
-    EvLogging dbg(*this, "constructPayload");
+    EvTracing dbg(*this, "constructPayload");
 
     ByteVectorAssemblyArea area ("vardis-constructPayload", maxPayloadSize.val, bv);
 
@@ -730,7 +730,7 @@ void VardisProtocol::constructPayload(bytevect& bv, unsigned int& containers_add
  */
 void VardisProtocol::generatePayload ()
 {
-    EvLogging dbg(*this, "generatePayload");
+    EvTracing dbg(*this, "generatePayload");
 
     if (vardisActive())
     {
@@ -778,7 +778,7 @@ void VardisProtocol::generatePayload ()
 
 void VardisProtocol::processVarCreateList(const std::deque<VarCreateT>& creates)
 {
-  EvLogging dbg(*this, "processVarCreateList");
+  EvTracing dbg(*this, "processVarCreateList");
   
   for (auto it = creates.begin(); it != creates.end(); it++)
     {
@@ -791,7 +791,7 @@ void VardisProtocol::processVarCreateList(const std::deque<VarCreateT>& creates)
 
 void VardisProtocol::processVarDeleteList(const std::deque<VarDeleteT>& deletes)
 {
-    EvLogging dbg(*this, "processVarDeleteList");
+    EvTracing dbg(*this, "processVarDeleteList");
 
     for (auto it = deletes.begin(); it != deletes.end(); it++)
     {
@@ -804,7 +804,7 @@ void VardisProtocol::processVarDeleteList(const std::deque<VarDeleteT>& deletes)
 
 void VardisProtocol::processVarUpdateList(const std::deque<VarUpdateT>& updates)
 {
-    EvLogging dbg(*this, "processVarUpdateList");
+    EvTracing dbg(*this, "processVarUpdateList");
 
     for (auto it = updates.begin(); it != updates.end(); it++)
     {
@@ -817,7 +817,7 @@ void VardisProtocol::processVarUpdateList(const std::deque<VarUpdateT>& updates)
 
 void VardisProtocol::processVarSummaryList(const std::deque<VarSummT>& summs)
 {
-    EvLogging dbg(*this, "processVarSummaryList");
+    EvTracing dbg(*this, "processVarSummaryList");
 
     for (auto it = summs.begin(); it != summs.end(); it++)
     {
@@ -830,7 +830,7 @@ void VardisProtocol::processVarSummaryList(const std::deque<VarSummT>& summs)
 
 void VardisProtocol::processVarReqUpdateList(const std::deque<VarReqUpdateT>& requpdates)
 {
-    EvLogging dbg(*this, "processVarReqUpdateList");
+    EvTracing dbg(*this, "processVarReqUpdateList");
 
     for (auto it = requpdates.begin(); it != requpdates.end(); it++)
     {
@@ -843,7 +843,7 @@ void VardisProtocol::processVarReqUpdateList(const std::deque<VarReqUpdateT>& re
 
 void VardisProtocol::processVarReqCreateList(const std::deque<VarReqCreateT>& reqcreates)
 {
-    EvLogging dbg(*this, "processVarReqCreateList");
+    EvTracing dbg(*this, "processVarReqCreateList");
 
     for (auto it = reqcreates.begin(); it != reqcreates.end(); it++)
     {
@@ -858,7 +858,7 @@ void VardisProtocol::processVarReqCreateList(const std::deque<VarReqCreateT>& re
 
 void VardisProtocol::sendConfirmation(VardisConfirmation *confMsg, DcpStatus status, Protocol* theProtocol)
 {
-    EvLogging dbg(*this, "sendConfirmation");
+    EvTracing dbg(*this, "sendConfirmation");
     assert(theProtocol);
     assert(confMsg);
 
@@ -875,7 +875,7 @@ void VardisProtocol::sendConfirmation(VardisConfirmation *confMsg, DcpStatus sta
 
 void VardisProtocol::sendRTDBCreateConfirm(DcpStatus status, VarIdT varId, Protocol* theProtocol)
 {
-    EvLogging dbg(*this, "sendRTDBCreateConfirm");
+    EvTracing dbg(*this, "sendRTDBCreateConfirm");
 
     auto conf = new RTDBCreate_Confirm;
     conf->setVarId(varId.val);
@@ -886,7 +886,7 @@ void VardisProtocol::sendRTDBCreateConfirm(DcpStatus status, VarIdT varId, Proto
 
 void VardisProtocol::sendRTDBUpdateConfirm(DcpStatus status, VarIdT varId, Protocol* theProtocol)
 {
-    EvLogging dbg(*this, "sendRTDBUpdateConfirm");
+    EvTracing dbg(*this, "sendRTDBUpdateConfirm");
 
     auto conf = new RTDBUpdate_Confirm;
     conf->setVarId(varId.val);
@@ -905,7 +905,7 @@ void VardisProtocol::sendRTDBUpdateConfirm(DcpStatus status, VarIdT varId, Proto
  */
 Protocol* VardisProtocol::fetchSenderProtocol(Message* message)
 {
-    EvLogging dbg(*this, "fetchSenderProtocol");
+    EvTracing dbg(*this, "fetchSenderProtocol");
     assert(message);
 
     auto protTag = message->removeTag<DispatchProtocolInd>();

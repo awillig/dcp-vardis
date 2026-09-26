@@ -40,7 +40,7 @@ void BPClientProtocol::initialize (int stage)
 
     if (stage == INITSTAGE_LAST)
     {
-        EvLogging dbg(*this, "BPClientProtocol::initialize");
+        EvTracing dbg(*this, "BPClientProtocol::initialize");
 
         maxPayloadSize = (BPLengthT) par("maxPayloadSize");
         assert(maxPayloadSize > 0);
@@ -73,7 +73,7 @@ BPClientProtocol::~BPClientProtocol()
 
 bool BPClientProtocol::hasHandledMessageBPClient(cMessage* msg)
 {
-    EvLogging dbg(*this, "BPClientProtocol::hasHandledMessageBPClient");
+    EvTracing dbg(*this, "BPClientProtocol::hasHandledMessageBPClient");
 
     // Start the registration process
     if (msg == _registerMsg)
@@ -144,7 +144,7 @@ void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolIdT protId,
                                                     bool allowMultiplePayloads,
                                                     unsigned int maxEntries)
 {
-    EvLogging dbg(*this, "sendRegisterProtocolRequest");
+    EvTracing dbg(*this, "sendRegisterProtocolRequest");
 
     BPRegisterProtocol_Request  *reqMsg = new BPRegisterProtocol_Request;
     reqMsg->setProtId(protId.val);
@@ -161,7 +161,7 @@ void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolIdT protId,
 
 void BPClientProtocol::sendDeregisterProtocolRequest (BPProtocolIdT protId)
 {
-    EvLogging dbg(*this, "sendDeregisterProtocolRequest");
+    EvTracing dbg(*this, "sendDeregisterProtocolRequest");
 
     BPDeregisterProtocol_Request  *reqMsg = new BPDeregisterProtocol_Request;
     reqMsg->setProtId(protId.val);
@@ -174,7 +174,7 @@ void BPClientProtocol::sendDeregisterProtocolRequest (BPProtocolIdT protId)
 
 void BPClientProtocol::sendToBP (Message *message)
 {
-    EvLogging dbg(*this, "sendToBP[Message]");
+    EvTracing dbg(*this, "sendToBP[Message]");
 
     assert(message);
 
@@ -190,7 +190,7 @@ void BPClientProtocol::sendToBP (Message *message)
 
 void BPClientProtocol::sendToBP (Packet *packet)
 {
-    EvLogging dbg(*this, "sendToBP[Packet]");
+    EvTracing dbg(*this, "sendToBP[Packet]");
     assert(packet);
 
     packet->removeTagIfPresent<DispatchProtocolReq>();
@@ -207,7 +207,7 @@ void BPClientProtocol::sendToBP (Packet *packet)
 
 bool BPClientProtocol::handleBPRegisterProtocol_Confirm (BPRegisterProtocol_Confirm *pConf)
 {
-    EvLogging dbg(*this, "BPClientProtocol::BPRegisterProtocol_Confirm");
+    EvTracing dbg(*this, "BPClientProtocol::BPRegisterProtocol_Confirm");
     assert(pConf);
 
     handleStatus(pConf->getStatus());
@@ -219,7 +219,7 @@ bool BPClientProtocol::handleBPRegisterProtocol_Confirm (BPRegisterProtocol_Conf
 
 bool BPClientProtocol::handleBPDeregisterProtocol_Confirm (BPDeregisterProtocol_Confirm *pConf)
 {
-    EvLogging dbg(*this, "BPClientProtocol::BPDeregisterProtocol_Confirm");
+    EvTracing dbg(*this, "BPClientProtocol::BPDeregisterProtocol_Confirm");
     assert(pConf);
 
     handleStatus(pConf->getStatus());
@@ -231,7 +231,7 @@ bool BPClientProtocol::handleBPDeregisterProtocol_Confirm (BPDeregisterProtocol_
 
 bool BPClientProtocol::handleBPTransmitPayload_Confirm (BPTransmitPayload_Confirm *pConf)
 {
-    EvLogging dbg(*this,"BPClientProtocol::BPTransmitPayload_Confirm");
+    EvTracing dbg(*this,"BPClientProtocol::BPTransmitPayload_Confirm");
     assert(pConf);
 
     handleStatus(pConf->getStatus());
@@ -246,7 +246,7 @@ bool BPClientProtocol::handleBPTransmitPayload_Confirm (BPTransmitPayload_Confir
 
 void BPClientProtocol::handleStatus (DcpStatus status)
 {
-    EvLogging dbg(*this, "BPClientProtocol::handleStatus");
+    EvTracing dbg(*this, "BPClientProtocol::handleStatus");
     dbg.val ("status is ", bp_status_to_string (status));
 }
 

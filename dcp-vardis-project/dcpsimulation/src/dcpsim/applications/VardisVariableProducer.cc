@@ -48,7 +48,7 @@ void VardisVariableProducer::initialize(int stage)
     if (stage == INITSTAGE_LAST)
     {
         dbg_setModuleName("VardisVariableProducer");
-        EvLogging dbg(*this, "initialize");
+        EvTracing dbg(*this, "initialize");
         assert(getOwnNodeId() != nullNodeIdentifier);
 
         // read parameters
@@ -91,7 +91,7 @@ void VardisVariableProducer::initialize(int stage)
 
 void VardisVariableProducer::handleMessage(cMessage *msg)
 {
-    EvLogging dbg(*this, "handleMessage");
+    EvTracing dbg(*this, "handleMessage");
 
     // dispatch based on type of message
 
@@ -158,7 +158,7 @@ VardisVariableProducer::~VardisVariableProducer ()
  */
 void VardisVariableProducer::handleCreateMsg()
 {
-    EvLogging dbg(*this, "handleCreateMsg");
+    EvTracing dbg(*this, "handleCreateMsg");
     assert(not isActivelyGenerating);
     assert(nullNodeIdentifier != getOwnNodeId());
 
@@ -196,7 +196,7 @@ void VardisVariableProducer::handleCreateMsg()
  */
 void VardisVariableProducer::handleUpdateMsg()
 {
-    EvLogging dbg(*this, "handleUpdateMsg");
+    EvTracing dbg(*this, "handleUpdateMsg");
 
     if (isActivelyGenerating)
     {
@@ -232,7 +232,7 @@ void VardisVariableProducer::handleUpdateMsg()
  */
 void VardisVariableProducer::handleDeleteMsg()
 {
-    EvLogging dbg(*this, "handleDeleteMsg");
+    EvTracing dbg(*this, "handleDeleteMsg");
 
     isActivelyGenerating = false;
 
@@ -252,7 +252,7 @@ void VardisVariableProducer::handleDeleteMsg()
  */
 void VardisVariableProducer::handleRTDBCreateConfirm(RTDBCreate_Confirm* createConf)
 {
-    EvLogging dbg(*this, "handleRTDBCreateConfirm");
+    EvTracing dbg(*this, "handleRTDBCreateConfirm");
     assert(createConf);
     assert(not isActivelyGenerating);
 
@@ -282,7 +282,7 @@ void VardisVariableProducer::handleRTDBCreateConfirm(RTDBCreate_Confirm* createC
  */
 void VardisVariableProducer::handleRTDBDeleteConfirm(RTDBDelete_Confirm* deleteConf)
 {
-    EvLogging dbg(*this, "handleRTDBDeleteConfirm");
+    EvTracing dbg(*this, "handleRTDBDeleteConfirm");
     assert(deleteConf);
     assert(not isActivelyGenerating);
 
@@ -305,7 +305,7 @@ void VardisVariableProducer::handleRTDBDeleteConfirm(RTDBDelete_Confirm* deleteC
  */
 void VardisVariableProducer::handleRTDBUpdateConfirm(RTDBUpdate_Confirm* updateConf)
 {
-    EvLogging dbg(*this, "handleRTDBUpdateConfirm");
+    EvTracing dbg(*this, "handleRTDBUpdateConfirm");
     assert(updateConf);
 
     // extract information
@@ -337,7 +337,7 @@ void VardisVariableProducer::handleRTDBUpdateConfirm(RTDBUpdate_Confirm* updateC
  */
 void VardisVariableProducer::scheduleNextUpdate()
 {
-    EvLogging dbg(*this, "scheduleNextUpdate");
+    EvTracing dbg(*this, "scheduleNextUpdate");
 
     simtime_t updDelay = par("interUpdateTimeDistr");
 

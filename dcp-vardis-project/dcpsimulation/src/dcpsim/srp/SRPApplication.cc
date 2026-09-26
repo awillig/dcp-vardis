@@ -39,7 +39,7 @@ void SRPApplication::initialize(int stage)
     if (stage == INITSTAGE_LAST)
     {
       dbg_setModuleName("SRPApplication");
-      EvLogging dbg(*this, "SRPClientProtocol::initialize");
+      EvTracing dbg(*this, "SRPClientProtocol::initialize");
     }
 }
 
@@ -56,7 +56,7 @@ void SRPApplication::initialize(int stage)
  */
 void SRPApplication::sendToSRP (inet::Message* message)
 {
-    EvLogging dbg(*this, "sendToSRP/Message");
+    EvTracing dbg(*this, "sendToSRP/Message");
     sendToDcpProtocol(DcpSimGlobals::protocolDcpSRP, message);
 }
 
@@ -68,7 +68,7 @@ void SRPApplication::sendToSRP (inet::Message* message)
  */
 void SRPApplication::sendToSRP (inet::Packet* packet)
 {
-    EvLogging dbg(*this, "sendToSRP/Packet");
+    EvTracing dbg(*this, "sendToSRP/Packet");
     sendToDcpProtocol(DcpSimGlobals::protocolDcpSRP, packet);
 }
 
@@ -102,7 +102,7 @@ std::string SRPApplication::getSRPStatusString(SRPStatus status)
  */
 void SRPApplication::printStatus (SRPStatus status)
 {
-    EvLogging dbg(*this, "SRPClientProtocol::printStatus");
+    EvTracing dbg(*this, "SRPClientProtocol::printStatus");
 
     auto statstr = getSRPStatusString(status);
     dbg.val ("status", status, "text", statstr);
@@ -116,7 +116,7 @@ void SRPApplication::printStatus (SRPStatus status)
  */
 void SRPApplication::handleSRPConfirmation(SRPUpdateSafetyData_Confirm* conf)
 {
-    EvLogging dbg(*this, "VardisSRPProtocol::handleSRPConfirmation");
+    EvTracing dbg(*this, "VardisSRPProtocol::handleSRPConfirmation");
     assert(conf);
     printStatus(conf->getStatus());
 }

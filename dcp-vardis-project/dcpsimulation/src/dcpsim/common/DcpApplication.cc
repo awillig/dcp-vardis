@@ -43,7 +43,7 @@ void DcpApplication::initialize(int stage)
 
     if (stage == INITSTAGE_LAST)
     {
-        EvLogging dbg(*this, "DcpApplication::initialize");
+        EvTracing dbg(*this, "DcpApplication::initialize");
 
         // find gate identifiers
         gidFromDcpProtocol =  findGate("fromDcpProtocol");
@@ -68,7 +68,7 @@ DcpApplication::~DcpApplication ()
  */
 void DcpApplication::createProtocol(const char* descr1, const char* descr2)
 {
-    EvLogging dbg(*this, "DcpApplication::createProtocol");
+    EvTracing dbg(*this, "DcpApplication::createProtocol");
     assert(!theProtocol);
 
     theProtocol = new Protocol(descr1, descr2);
@@ -83,7 +83,7 @@ void DcpApplication::createProtocol(const char* descr1, const char* descr2)
  */
 void DcpApplication::sendToDcpProtocol (Protocol* targetProtocol, Message* message)
 {
-    EvLogging dbg(*this, "sendToDcpProtocol/Message");
+    EvTracing dbg(*this, "sendToDcpProtocol/Message");
     assert(targetProtocol);
     assert(message);
     assert(getProtocol());
@@ -109,7 +109,7 @@ void DcpApplication::sendToDcpProtocol (Protocol* targetProtocol, Message* messa
  */
 void DcpApplication::sendToDcpProtocol (Protocol* targetProtocol, Packet* packet)
 {
-    EvLogging dbg(*this, "sendToSRP/Packet");
+    EvTracing dbg(*this, "sendToSRP/Packet");
     assert(targetProtocol);
     assert(packet);
     assert(getProtocol());

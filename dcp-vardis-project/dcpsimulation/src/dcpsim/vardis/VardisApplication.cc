@@ -42,7 +42,7 @@ void VardisApplication::initialize(int stage)
     if (stage == INITSTAGE_LAST)
       {
 	dbg_setModuleName ("VardisApplication");
-	EvLogging dbg(*this, "VardisApplication::initialize");
+	EvTracing dbg(*this, "VardisApplication::initialize");
       }
 }
 
@@ -60,7 +60,7 @@ void VardisApplication::initialize(int stage)
  */
 void VardisApplication::sendToVardis (inet::Message* message)
 {
-    EvLogging dbg(*this, "sendToVardis/Message");
+    EvTracing dbg(*this, "sendToVardis/Message");
     sendToDcpProtocol(DcpSimGlobals::protocolDcpVardis, message);
 }
 
@@ -72,7 +72,7 @@ void VardisApplication::sendToVardis (inet::Message* message)
  */
 void VardisApplication::sendToVardis (inet::Packet* packet)
 {
-    EvLogging dbg(*this, "sendToVardis/Packet");
+    EvTracing dbg(*this, "sendToVardis/Packet");
     sendToDcpProtocol(DcpSimGlobals::protocolDcpVardis, packet);
 }
 
@@ -84,7 +84,7 @@ void VardisApplication::sendToVardis (inet::Packet* packet)
  */
 void VardisApplication::printStatus (DcpStatus status)
 {
-    EvLogging dbg(*this, "VardisApplication::printStatus");
+    EvTracing dbg(*this, "VardisApplication::printStatus");
     dbg.val ("status", vardis_status_to_string (status));
 }
 
@@ -96,7 +96,7 @@ void VardisApplication::printStatus (DcpStatus status)
  */
 void VardisApplication::handleVardisConfirmation(VardisConfirmation* conf)
 {
-    EvLogging dbg(*this, "VardisApplication::handleVardisConfirmation");
+    EvTracing dbg(*this, "VardisApplication::handleVardisConfirmation");
     assert(conf);
     printStatus(conf->getStatus());
 }

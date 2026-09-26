@@ -43,7 +43,7 @@ void SRPSimpleApp::initialize(int stage)
     if (stage == INITSTAGE_LAST)
     {
         dbg_setModuleName("SRPSimpleApp");
-        EvLogging dbg(*this, "initialize");
+        EvTracing dbg(*this, "initialize");
         assert(getOwnNodeId() != nullNodeIdentifier);
 
         // read parameters
@@ -74,7 +74,7 @@ void SRPSimpleApp::initialize(int stage)
 
 void SRPSimpleApp::handleMessage(cMessage *msg)
 {
-    EvLogging dbg(*this, "handleMessage");
+    EvTracing dbg(*this, "handleMessage");
 
     if (msg == sampleMsg)
     {
@@ -105,7 +105,7 @@ SRPSimpleApp::~SRPSimpleApp ()
 
 void SRPSimpleApp::handleSampleMsg ()
 {
-    EvLogging dbg(*this, "handleSampleMsg");
+    EvTracing dbg(*this, "handleSampleMsg");
 
     assert (_mobility);
     auto currPosition  = _mobility->getCurrentPosition();
@@ -140,7 +140,7 @@ void SRPSimpleApp::handleSampleMsg ()
  */
 void SRPSimpleApp::findModulePointers (void)
 {
-  EvLogging dbg(*this, "findModulePointers");
+  EvTracing dbg(*this, "findModulePointers");
 
   cModule *host = getContainingNode (this);
   assert(host);
@@ -153,7 +153,7 @@ void SRPSimpleApp::findModulePointers (void)
 
 void SRPSimpleApp::handleSRPUpdateSafetyDataConfirm (SRPUpdateSafetyData_Confirm* srpConf)
 {
-    EvLogging dbg(*this, "handleSRPUpdateSafetyDataConfirm");
+    EvTracing dbg(*this, "handleSRPUpdateSafetyDataConfirm");
     assert(srpConf);
     assert(isActive);
 

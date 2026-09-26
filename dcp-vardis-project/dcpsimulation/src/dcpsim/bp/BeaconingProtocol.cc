@@ -64,7 +64,7 @@ void BeaconingProtocol::initialize (int stage)
     if (stage == INITSTAGE_LAST)
     {
         dbg_setModuleName("BP");
-        EvLogging dbg(*this, "initialize");
+        EvTracing dbg(*this, "initialize");
 
         // reading and checking module parameters
 	bpNetworkIdentifier      =  (BPNetworkIdentifierT) par("bpNetworkIdentifier");
@@ -93,7 +93,7 @@ void BeaconingProtocol::initialize (int stage)
 
 void BeaconingProtocol::handleMessage (cMessage* msg)
 {
-    EvLogging dbg(*this, "handleMessage");
+    EvTracing dbg(*this, "handleMessage");
 
     // dispatch on type of received message
 
@@ -144,7 +144,7 @@ BeaconingProtocol::~BeaconingProtocol()
 
 Ptr<const Chunk> BeaconingProtocol::extractFittingPayload(RegisteredProtocol& rp, BPLengthT bytesUsed, BPLengthT maxBytes)
 {
-    EvLogging dbg(*this, "extractFittingPayload");
+    EvTracing dbg(*this, "extractFittingPayload");
     dbg.val("bytesUsed", bytesUsed, "maxBytes", maxBytes);
     assert(bytesUsed <= maxBytes);
 
@@ -227,7 +227,7 @@ void BeaconingProtocol::addPayload(RegisteredProtocol& rp,
                                    simtime_t nextBeaconGenerationEpoch
                                    )
 {
-    EvLogging dbg(*this, "addPayload");
+    EvTracing dbg(*this, "addPayload");
 
     // determine protocol id
     BPProtocolIdT       protId = rp.protId;
@@ -286,7 +286,7 @@ void BeaconingProtocol::addPayload(RegisteredProtocol& rp,
 
 void BeaconingProtocol::constructAndTransmitBeacon (std::list< Ptr<const Chunk> >& beaconChunks)
 {
-    EvLogging dbg(*this, "constructAndTransmitBeacon");
+    EvTracing dbg(*this, "constructAndTransmitBeacon");
 
     if (beaconChunks.empty())
     {
@@ -341,7 +341,7 @@ void BeaconingProtocol::constructAndTransmitBeacon (std::list< Ptr<const Chunk> 
 
 void BeaconingProtocol::handleGenerateBeaconMsg ()
 {
-    EvLogging dbg(*this, "handleGenerateBeaconMsg");
+    EvTracing dbg(*this, "handleGenerateBeaconMsg");
 
     // Schedule next generation of beacon packet
     simtime_t nextBeaconGenerationEpoch = simTime() + par("bpParBeaconPeriodDistr");
@@ -387,7 +387,7 @@ void BeaconingProtocol::handleGenerateBeaconMsg ()
 
 void BeaconingProtocol::handleReceivedPacket (Packet* packet)
 {
-    EvLogging dbg(*this, "handleReceivedPacket");
+    EvTracing dbg(*this, "handleReceivedPacket");
 
     assert(packet);
 
@@ -464,7 +464,7 @@ void BeaconingProtocol::handleReceivedPacket (Packet* packet)
 void BeaconingProtocol::handleRegisterProtocolRequestMsg (BPRegisterProtocol_Request* regReq)
 {
 
-    EvLogging dbg(*this, "handleRegisterProtocolRequestMsg");
+    EvTracing dbg(*this, "handleRegisterProtocolRequestMsg");
     assert(regReq);
     dbg.val("got BPRegisterProtocol_Request message", regReq->getProtId(), "reqReq->getProtName", regReq->getProtName());
 
@@ -540,7 +540,7 @@ void BeaconingProtocol::handleRegisterProtocolRequestMsg (BPRegisterProtocol_Req
  */
 void BeaconingProtocol::handleDeregisterProtocolRequestMsg (BPDeregisterProtocol_Request* deregReq)
 {
-    EvLogging dbg(*this, "handleDeregisterProtocolRequestMsg");
+    EvTracing dbg(*this, "handleDeregisterProtocolRequestMsg");
     assert(deregReq);
     dbg.val("got BPDeregisterProtocol_Request message", deregReq->getProtId());
 
@@ -576,7 +576,7 @@ void BeaconingProtocol::handleDeregisterProtocolRequestMsg (BPDeregisterProtocol
 
 void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Request *txplReq)
 {
-    EvLogging dbg(*this, "handleTransmitPayloadRequestMsg");
+    EvTracing dbg(*this, "handleTransmitPayloadRequestMsg");
     assert(txplReq);
 
     BPProtocolIdT protocolId    = txplReq->getProtId();
@@ -675,7 +675,7 @@ void BeaconingProtocol::handleTransmitPayloadRequestMsg (BPTransmitPayload_Reque
 
 void BeaconingProtocol::handleClearBufferRequestMsg (BPClearBuffer_Request *clearReq)
 {
-    EvLogging dbg(*this, "handleClearBufferRequestMsg");
+    EvTracing dbg(*this, "handleClearBufferRequestMsg");
     assert(clearReq);
 
     BPProtocolIdT protocolId    = clearReq->getProtId();
@@ -739,7 +739,7 @@ void BeaconingProtocol::handleClearBufferRequestMsg (BPClearBuffer_Request *clea
  */
 void BeaconingProtocol::handleQueryNumberBufferedPayloadsRequestMsg(BPQueryNumberBufferedPayloads_Request* bpReq)
 {
-    EvLogging dbg(*this, "handleQueryNumberBufferedPayloadsRequest");
+    EvTracing dbg(*this, "handleQueryNumberBufferedPayloadsRequest");
     assert(bpReq);
 
     BPProtocolIdT protocolId    = bpReq->getProtId();
@@ -790,7 +790,7 @@ void BeaconingProtocol::handleQueryNumberBufferedPayloadsRequestMsg(BPQueryNumbe
  */
 void BeaconingProtocol::handleClientMessage (cMessage* msg)
 {
-    EvLogging dbg(*this, "handleClientMessage");
+    EvTracing dbg(*this, "handleClientMessage");
 
     if (dynamic_cast<BPRegisterProtocol_Request*>(msg))
     {
@@ -837,7 +837,7 @@ void BeaconingProtocol::handleClientMessage (cMessage* msg)
  */
 bool BeaconingProtocol::clientProtocolRegistered(BPProtocolIdT protocolId)
 {
-    EvLogging dbg(*this, "clientProtocolRegistered");
+    EvTracing dbg(*this, "clientProtocolRegistered");
     auto search = registeredProtocols.find(protocolId);
     return (search != registeredProtocols.end());
 }
@@ -850,7 +850,7 @@ bool BeaconingProtocol::clientProtocolRegistered(BPProtocolIdT protocolId)
  */
 void BeaconingProtocol::sendConfirmation(BPConfirmation *confMsg, DcpStatus status, Protocol* theProtocol)
 {
-    EvLogging dbg(*this, "sendConfirmation");
+    EvTracing dbg(*this, "sendConfirmation");
     assert(theProtocol);
     assert(confMsg);
 
@@ -870,7 +870,7 @@ void BeaconingProtocol::sendConfirmation(BPConfirmation *confMsg, DcpStatus stat
  */
 void BeaconingProtocol::sendRegisterProtocolConfirm(DcpStatus status, Protocol* theProtocol)
 {
-    EvLogging dbg(*this, "sendRegisterProtocolConfirm");
+    EvTracing dbg(*this, "sendRegisterProtocolConfirm");
     BPRegisterProtocol_Confirm*  conf = new BPRegisterProtocol_Confirm;
     conf->setStatus (status);
     conf->setOwnNodeIdentifier (getOwnNodeId());
@@ -884,7 +884,7 @@ void BeaconingProtocol::sendRegisterProtocolConfirm(DcpStatus status, Protocol* 
  */
 void BeaconingProtocol::sendDeregisterProtocolConfirm(DcpStatus status, Protocol* theProtocol)
 {
-    EvLogging dbg(*this, "sendDeregisterProtocolConfirm");
+    EvTracing dbg(*this, "sendDeregisterProtocolConfirm");
     sendConfirmation(new BPDeregisterProtocol_Confirm, status, theProtocol);
 }
 
@@ -895,7 +895,7 @@ void BeaconingProtocol::sendDeregisterProtocolConfirm(DcpStatus status, Protocol
  */
 void BeaconingProtocol::sendTransmitPayloadConfirm(DcpStatus status, Protocol* theProtocol)
 {
-    EvLogging dbg(*this, "sendTransmitPayloadConfirm");
+    EvTracing dbg(*this, "sendTransmitPayloadConfirm");
     sendConfirmation(new BPTransmitPayload_Confirm, status, theProtocol);
 }
 
@@ -906,7 +906,7 @@ void BeaconingProtocol::sendTransmitPayloadConfirm(DcpStatus status, Protocol* t
  */
 void BeaconingProtocol::sendClearBufferConfirm(DcpStatus status, Protocol* theProtocol)
 {
-    EvLogging dbg(*this, "sendClearBufferConfirm");
+    EvTracing dbg(*this, "sendClearBufferConfirm");
     sendConfirmation(new BPClearBuffer_Confirm, status, theProtocol);
 }
 
@@ -918,7 +918,7 @@ void BeaconingProtocol::sendClearBufferConfirm(DcpStatus status, Protocol* thePr
  */
 void BeaconingProtocol::sendQueryNumberBufferedPayloadsConfirm (DcpStatus status, unsigned int numPayloads, BPProtocolIdT protocolId, Protocol* theProtocol)
 {
-    EvLogging dbg(*this, "sendQueryNumberBufferedPayloadsConfirm");
+    EvTracing dbg(*this, "sendQueryNumberBufferedPayloadsConfirm");
     auto confMsg = new BPQueryNumberBufferedPayloads_Confirm;
     confMsg->setNumberBuffered((int) numPayloads);
     confMsg->setProtId(protocolId.val);

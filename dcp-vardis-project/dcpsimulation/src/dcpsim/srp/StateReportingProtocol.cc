@@ -51,7 +51,7 @@ void StateReportingProtocol::initialize(int stage)
     if (stage == INITSTAGE_LAST)
     {
         dbg_setModuleName("SRP");
-        EvLogging dbg(*this, "initialize");
+        EvTracing dbg(*this, "initialize");
 
         // read and check module parameters
         _srpNeighbourTableTimeout      = par("srpNeighbourTableTimeout");
@@ -88,7 +88,7 @@ void StateReportingProtocol::initialize(int stage)
 
 void StateReportingProtocol::handleMessage(cMessage *msg)
 {
-    EvLogging dbg(*this, "handleMessage");
+    EvTracing dbg(*this, "handleMessage");
 
     // dispatch on received message type
 
@@ -155,7 +155,7 @@ StateReportingProtocol::~StateReportingProtocol()
  */
 void StateReportingProtocol::handleUpdateSafetyDataRequestMsg (SRPUpdateSafetyData_Request* srpReq)
 {
-    EvLogging dbg(*this, "handleUpdateSafetyDataRequestMsg");
+    EvTracing dbg(*this, "handleUpdateSafetyDataRequestMsg");
     assert(srpReq);
 
 
@@ -200,7 +200,7 @@ void StateReportingProtocol::handleUpdateSafetyDataRequestMsg (SRPUpdateSafetyDa
  */
 void StateReportingProtocol::handleScrubNeighbourTableMsg ()
 {
-    EvLogging dbg(*this, "handleScrubNeighbourTableMsg");
+    EvTracing dbg(*this, "handleScrubNeighbourTableMsg");
 
     std::list<NodeIdentifierT>  toBeDeleted;
 
@@ -231,7 +231,7 @@ void StateReportingProtocol::handleScrubNeighbourTableMsg ()
  */
 void StateReportingProtocol::handlePrintNeighbourTableMsg ()
 {
-    EvLogging dbg(*this, "handlePrintNeighbourTableMsg");
+    EvTracing dbg(*this, "handlePrintNeighbourTableMsg");
 
     for (auto nte : neighbourTable)
     {
@@ -264,7 +264,7 @@ void StateReportingProtocol::handlePrintNeighbourTableMsg ()
  */
 void StateReportingProtocol::handleReceivedPayload(BPReceivePayload_Indication* payload)
 {
-    EvLogging dbg(*this, "handleReceivedPayload");
+    EvTracing dbg(*this, "handleReceivedPayload");
     assert(payload);
     assert(payload->getProtId() == BP_PROTID_SRP);
 
@@ -300,7 +300,7 @@ void StateReportingProtocol::handleReceivedPayload(BPReceivePayload_Indication* 
 
 void StateReportingProtocol::registerAsBPClient(void)
 {
-    EvLogging dbg(*this, "registerAsBPClient");
+    EvTracing dbg(*this, "registerAsBPClient");
 
     // register ourselves directly as a client protocol with BP
     sendRegisterProtocolRequest(BP_PROTID_SRP, std::format("SRP -- State Reporting Protocol V{}", dcpVersionNumber), maximumSRPPayloadLength, BP_QMODE_ONCE, false, 0);

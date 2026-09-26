@@ -41,7 +41,7 @@ void DcpProtocol::initialize(int stage)
 {
     if (stage == INITSTAGE_LAST)
     {
-        EvLogging dbg(*this, "DcpProtocol::initialize");
+        EvTracing dbg(*this, "DcpProtocol::initialize");
 
         // reading and checking module parameters
         _interfaceName =  par("interfaceName").stdstringValue();
@@ -58,7 +58,7 @@ void DcpProtocol::initialize(int stage)
 
 void DcpProtocol::determineOwnNodeId (std::string interfaceName)
 {
-    EvLogging dbg(*this, "DcpProtocol::determineOwnNodeId");
+    EvTracing dbg(*this, "DcpProtocol::determineOwnNodeId");
 
     cModule *host                       = getContainingNode(this);
     assert(host);
