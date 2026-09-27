@@ -35,6 +35,7 @@ using inet::INITSTAGE_LAST;
 // Standard OMNeT++ and class methods
 // ========================================================================================
 
+
 void VardisApplication::initialize(int stage)
 {
     DcpApplication::initialize(stage);

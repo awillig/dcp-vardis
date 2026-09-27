@@ -63,8 +63,6 @@ namespace dcp::vardis {
      */
     virtual ~VardisProtocol();
     
-    virtual int numInitStages() const override { return NUM_INIT_STAGES; };
-
 
     /**
      * @brief Initialization, reads and checks module parameters, gate

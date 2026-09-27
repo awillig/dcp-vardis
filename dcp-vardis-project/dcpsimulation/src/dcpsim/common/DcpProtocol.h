@@ -24,8 +24,6 @@
 #include <dcp/common/global_types_constants.h>
 
 
-using inet::InitStageRegistry;
-
 // --------------------------------------------------------------------------
 namespace dcp {
 
@@ -42,8 +40,7 @@ namespace dcp {
 class DcpProtocol : public omnetpp::cSimpleModule {
 
 public:
-    virtual int numInitStages() const override { return NUM_INIT_STAGES; };
-  
+    virtual int numInitStages() const override;
     virtual void initialize(int stage) override;
 
     // return the node identifier (MAC address) of this node

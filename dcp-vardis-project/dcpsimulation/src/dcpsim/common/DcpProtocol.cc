@@ -25,16 +25,26 @@ using inet::INITSTAGE_LAST;
 using inet::InterfaceTable;
 using inet::NetworkInterface;
 using inet::getContainingNode;
+using inet::InitStageRegistry;
 
 // ========================================================================================
 // ========================================================================================
 
 
-using namespace dcp;
+namespace dcp {
 
 // ========================================================================================
 // Standard OMNeT++ and class methods
 // ========================================================================================
+
+
+int DcpProtocol::numInitStages () const
+{
+  return NUM_INIT_STAGES;
+}
+
+
+// -----------------------------------------
 
 
 void DcpProtocol::initialize(int stage)
@@ -99,3 +109,6 @@ void DcpProtocol::dbg_setModuleName(std::string name)
     _dbg_module_name = name;
 }
 
+
+
+}  // namespace

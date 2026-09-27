@@ -37,6 +37,8 @@ using inet::SP_REQUEST;
 // Standard OMNeT++ and class methods
 // ========================================================================================
 
+
+
 void DcpApplication::initialize(int stage)
 {
     DcpProtocol::initialize(stage);

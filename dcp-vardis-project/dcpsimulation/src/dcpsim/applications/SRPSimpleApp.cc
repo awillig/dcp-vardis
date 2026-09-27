@@ -24,6 +24,7 @@
 using inet::getContainingNode;
 using inet::IMobility;
 using inet::INITSTAGE_LAST;
+using inet::InitStageRegistry;
 using omnetpp::cMessage;
 using omnetpp::simTime;
 

@@ -40,7 +40,6 @@ class DcpApplication : public DcpProtocol {
 
 public:
     virtual ~DcpApplication();
-    virtual int numInitStages() const override { return NUM_INIT_STAGES; }
     virtual void initialize(int stage) override;
 
 protected:

@@ -39,14 +39,18 @@
 using namespace omnetpp;
 using namespace inet;
 using namespace dcp;
-using namespace dcp::bp;
+
+
+namespace dcp::bp {
 
 Define_Module(BeaconingProtocol);
-
 
 // ========================================================================================
 // Standard OMNeT++ and class methods
 // ========================================================================================
+
+
+// ----------------------------------------------------
 
 
 void BeaconingProtocol::initialize (int stage)
@@ -926,4 +930,4 @@ void BeaconingProtocol::sendQueryNumberBufferedPayloadsConfirm (DcpStatus status
 }
 
 
-
+}  // namespace

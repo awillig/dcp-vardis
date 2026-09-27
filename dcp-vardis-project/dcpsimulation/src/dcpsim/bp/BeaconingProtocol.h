@@ -39,7 +39,7 @@
 
 // -------------------------------------------------------------------
 
-namespace dcp {
+namespace dcp::bp {
 
 struct RegisteredProtocol {
     BPProtocolIdT           protId;
@@ -64,7 +64,6 @@ class BeaconingProtocol : public DcpProtocol {
 
 public:
     virtual ~BeaconingProtocol();
-    virtual int numInitStages() const override { return NUM_INIT_STAGES; }
     virtual void initialize(int stage) override;
     virtual void handleMessage (omnetpp::cMessage* msg) override;
 
