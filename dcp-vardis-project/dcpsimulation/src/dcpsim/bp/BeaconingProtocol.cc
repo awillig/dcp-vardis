@@ -109,9 +109,7 @@ void BeaconingProtocol::handleMessage (cMessage* msg)
 
     if ((msg->arrivedOn(gidFromUWB)) && dynamic_cast<Packet*>(msg))
      {
-        dbg.text("handling received packet");
-        auto packet = check_and_cast<Packet*>(msg);
-        handleReceivedPacket(packet);
+        handleReceivedPacket((Packet*) msg);
         return;
      }
 
@@ -798,33 +796,25 @@ void BeaconingProtocol::handleClientMessage (cMessage* msg)
 
     if (dynamic_cast<BPRegisterProtocol_Request*>(msg))
     {
-        dbg.text("handling protocol registration request");
-        BPRegisterProtocol_Request *reqMsg = (BPRegisterProtocol_Request*) msg;
-        handleRegisterProtocolRequestMsg (reqMsg);
+        handleRegisterProtocolRequestMsg ((BPRegisterProtocol_Request*) msg);
         return;
     }
 
     if (dynamic_cast<BPDeregisterProtocol_Request*>(msg))
     {
-        dbg.text("handling protocol deregistration request");
-        BPDeregisterProtocol_Request *reqMsg = (BPDeregisterProtocol_Request*) msg;
-        handleDeregisterProtocolRequestMsg (reqMsg);
+        handleDeregisterProtocolRequestMsg ((BPDeregisterProtocol_Request*) msg);
         return;
     }
 
     if (dynamic_cast<BPTransmitPayload_Request*>(msg))
     {
-        dbg.text("handling payload transmit request");
-        BPTransmitPayload_Request *reqMsg = (BPTransmitPayload_Request*) msg;
-        handleTransmitPayloadRequestMsg (reqMsg);
+        handleTransmitPayloadRequestMsg ((BPTransmitPayload_Request*) msg);
         return;
     }
 
     if (dynamic_cast<BPQueryNumberBufferedPayloads_Request*>(msg))
     {
-        dbg.text("handling query-number-buffered-payloads request");
-        BPQueryNumberBufferedPayloads_Request *reqMsg = (BPQueryNumberBufferedPayloads_Request*) msg;
-        handleQueryNumberBufferedPayloadsRequestMsg (reqMsg);
+        handleQueryNumberBufferedPayloadsRequestMsg ((BPQueryNumberBufferedPayloads_Request*) msg);
         return;
     }
 

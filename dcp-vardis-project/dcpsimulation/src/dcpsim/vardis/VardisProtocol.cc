@@ -137,7 +137,7 @@ void VardisProtocol::handleMessage(cMessage *msg)
     if (msg == sendPayloadMsg)
     {
         dbg.text("handling sendPayloadMsg");
-        handleSendPayloadMsg();
+        generatePayload();
         return;
     }
 
@@ -211,49 +211,37 @@ void VardisProtocol::handleApplicationMessage (cMessage* msg)
 
     if (dynamic_cast<RTDBUpdate_Request*>(msg))
     {
-        dbg.text("handling RTDBUpdate_Request");
-        RTDBUpdate_Request* updateReq = (RTDBUpdate_Request*) msg;
-        handleRTDBUpdateRequest(updateReq);
+        handleRTDBUpdateRequest((RTDBUpdate_Request*) msg);
         return;
     }
 
     if (dynamic_cast<RTDBRead_Request*>(msg))
     {
-        dbg.text("handling RTDBRead_Request");
-        RTDBRead_Request* readReq = (RTDBRead_Request*) msg;
-        handleRTDBReadRequest(readReq);
+        handleRTDBReadRequest((RTDBRead_Request*) msg);
         return;
     }
 
     if (dynamic_cast<RTDBCreate_Request*>(msg))
     {
-        dbg.text("handling RTDBCreate_Request");
-        RTDBCreate_Request* createReq = (RTDBCreate_Request*) msg;
-        handleRTDBCreateRequest(createReq);
+        handleRTDBCreateRequest((RTDBCreate_Request*) msg);
         return;
     }
 
     if (dynamic_cast<RTDBDelete_Request*>(msg))
     {
-        dbg.text("handling RTDBDelete_Request");
-        RTDBDelete_Request* deleteReq = (RTDBDelete_Request*) msg;
-        handleRTDBDeleteRequest(deleteReq);
+        handleRTDBDeleteRequest((RTDBDelete_Request*) msg);
         return;
     }
 
     if (dynamic_cast<RTDBDescribeDatabase_Request*>(msg))
     {
-        dbg.text("handling RTDBDescribeDatabase_Request");
-        RTDBDescribeDatabase_Request* descrDbReq = (RTDBDescribeDatabase_Request*) msg;
-        handleRTDBDescribeDatabaseRequest(descrDbReq);
+        handleRTDBDescribeDatabaseRequest((RTDBDescribeDatabase_Request*) msg);
         return;
     }
 
     if (dynamic_cast<RTDBDescribeVariable_Request*>(msg))
     {
-        dbg.text("handling RTDBDescribeVariable_Request");
-        RTDBDescribeVariable_Request* descrVarReq = (RTDBDescribeVariable_Request*) msg;
-        handleRTDBDescribeVariableRequest(descrVarReq);
+        handleRTDBDescribeVariableRequest((RTDBDescribeVariable_Request*) msg);
         return;
     }
 
@@ -273,25 +261,19 @@ void VardisProtocol::handleBPMessage (cMessage* msg)
 
     if (dynamic_cast<BPPayloadTransmitted_Indication*>(msg))
     {
-        dbg.text("handling BPPayloadTransmitted_Indication");
-        BPPayloadTransmitted_Indication* ptInd = (BPPayloadTransmitted_Indication*) msg;
-        handleBPPayloadTransmittedIndication(ptInd);
+        handleBPPayloadTransmittedIndication((BPPayloadTransmitted_Indication*) msg);
         return;
     }
 
     if (dynamic_cast<BPReceivePayload_Indication*>(msg))
     {
-        dbg.text("handling BPReceivePayload_Indication");
-        BPReceivePayload_Indication *payload = (BPReceivePayload_Indication*) msg;
-        handleBPReceivedPayloadIndication(payload);
+        handleBPReceivedPayloadIndication((BPReceivePayload_Indication*) msg);
         return;
     }
 
     if (dynamic_cast<BPQueryNumberBufferedPayloads_Confirm*>(msg))
     {
-        dbg.text("handling BPQueryNumberBufferedPayloads_Confirm");
-        BPQueryNumberBufferedPayloads_Confirm* confMsg = (BPQueryNumberBufferedPayloads_Confirm*) msg;
-        handleBPQueryNumberBufferedPayloadsConfirm(confMsg);
+        handleBPQueryNumberBufferedPayloadsConfirm((BPQueryNumberBufferedPayloads_Confirm*) msg);
         return;
     }
 
@@ -318,18 +300,6 @@ void VardisProtocol::handleBufferCheckMsg()
     qbpReq->setProtId(BP_PROTID_VARDIS.val);
     sendToBP(qbpReq);
 }
-
-// ----------------------------------------------------
-
-/**
- * Generate a payload and submit it to BP
- */
-void VardisProtocol::handleSendPayloadMsg()
-{
-    EvTracing dbg(*this, "handleSendPayloadMsg");
-    generatePayload();
-}
-
 
 
 // ========================================================================================

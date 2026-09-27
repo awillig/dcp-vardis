@@ -146,13 +146,6 @@ protected:
 
     
     /**
-     * @brief Triggers generation of a Vardis payload and hands it
-     *        over to BP
-     */
-    virtual void handleSendPayloadMsg ();
-
-    
-    /**
      * @brief Second-level message dispatcher for any message coming
      *        from Vardis applications
      *
@@ -323,8 +316,8 @@ protected:
     void processVarSummaryList(const std::deque<VarSummT>& summs);
     void processVarReqUpdateList(const std::deque<VarReqUpdateT>& requpdates);
     void processVarReqCreateList(const std::deque<VarReqCreateT>& reqcreates);
-    
 
+    
     /**
      * @brief Extracts / parses an entire instruction container (its
      *        instruction records, which are stored in a list)
