@@ -43,10 +43,7 @@
  * This module provides the 'official API' available to a SRP client.
  */
 
-using dcp::srp::SafetyDataT;
-using dcp::srp::ExtendedSafetyDataT;
-using dcp::srp::DefaultSRPStoreType;
-using dcp::srp::NodeInformation;
+
 
 namespace dcp {
 
@@ -61,7 +58,7 @@ namespace dcp {
      * @brief This member holds access to the SRP store (in shared
      *        memory)
      */
-    DefaultSRPStoreType srp_store;
+    dcp::srp::DefaultSRPStoreType srp_store;
 
     
   public:
@@ -123,7 +120,7 @@ namespace dcp {
      * regularly refreshed to keep transmission of the own safety data
      * going.
      */
-    DcpStatus set_own_safety_data (const SafetyDataT& new_sd);
+    DcpStatus set_own_safety_data (const dcp::srp::SafetyDataT& new_sd);
 
 
     /****************************************************************
@@ -138,7 +135,7 @@ namespace dcp {
      * @param neighbour_list: output value containing list of
      *        NodeInformation records of all current neighbours
      */
-    DcpStatus get_all_neighbours_node_information (std::list<NodeInformation>& neighbour_list);
+    DcpStatus get_all_neighbours_node_information (std::list<dcp::srp::NodeInformation>& neighbour_list);
 
 
     /**
@@ -151,8 +148,8 @@ namespace dcp {
      * @param neighbour_list: output parameter collecting NodeInformation
      *        records for all neighbours for whom the predicate matches
      */
-    DcpStatus get_matching_neighbours_node_information (std::function<bool (const ExtendedSafetyDataT&)> predicate,
-							std::list<NodeInformation>& neighbour_list);
+    DcpStatus get_matching_neighbours_node_information (std::function<bool (const dcp::srp::ExtendedSafetyDataT&)> predicate,
+							std::list<dcp::srp::NodeInformation>& neighbour_list);
     
   };
   

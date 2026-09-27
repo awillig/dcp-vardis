@@ -27,7 +27,6 @@
 #include <dcp/vardis/vardis_store_array.h>
 
 
-using namespace boost::interprocess;
 
 /**
  * @brief This module provides an array-based variable store that is
@@ -45,7 +44,7 @@ namespace dcp::vardis {
    */
   class GlobalStateShm : public GlobalStateBase {
   public:
-    interprocess_mutex mutex;
+    boost::interprocess::interprocess_mutex mutex;
   };
 
 

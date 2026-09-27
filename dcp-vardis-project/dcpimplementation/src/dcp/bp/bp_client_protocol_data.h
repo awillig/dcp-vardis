@@ -30,8 +30,6 @@
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcp/bp/bp_shm_control_segment.h>
 
-using std::ostream;
-
 
 namespace dcp::bp {
 

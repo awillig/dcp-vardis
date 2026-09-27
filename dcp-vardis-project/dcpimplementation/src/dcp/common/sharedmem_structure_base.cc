@@ -22,6 +22,8 @@
 #include <dcp/common/exceptions.h>
 #include <dcp/common/sharedmem_structure_base.h>
 
+using namespace boost::interprocess;
+
 namespace dcp {
 
   ShmStructureBase::ShmStructureBase ()

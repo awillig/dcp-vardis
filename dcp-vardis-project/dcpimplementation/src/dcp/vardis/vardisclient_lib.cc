@@ -24,25 +24,8 @@
 #include <dcp/vardis/vardisclient_lib.h>
 
 
-using dcp::vardis::VardisActivate_Confirm;
-using dcp::vardis::VardisActivate_Request;
-using dcp::vardis::VardisDeactivate_Confirm;
-using dcp::vardis::VardisDeactivate_Request;
-using dcp::vardis::VardisDescribeDatabase_Confirm;
-using dcp::vardis::VardisDescribeDatabase_Request;
-using dcp::vardis::VardisDescribeVariable_Confirm;
-using dcp::vardis::VardisDescribeVariable_Request;
-using dcp::vardis::VardisGetStatistics_Request;
-using dcp::vardis::VardisGetStatistics_Confirm;
-using dcp::vardis::VardisRegister_Request;
-using dcp::vardis::VardisRegister_Confirm;
-using dcp::vardis::VardisDeregister_Request;
-using dcp::vardis::VardisDeregister_Confirm;
-using dcp::vardis::VardisShutdown_Request;
-using dcp::vardis::vardisCommandSocketBufferSize;
+using namespace dcp::vardis;
 
-using dcp::vardis::MAX_maxValueLength;
-using dcp::vardis::MAX_maxDescriptionLength;
 
 namespace dcp {
 

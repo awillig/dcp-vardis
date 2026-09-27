@@ -22,8 +22,11 @@
 #include <dcp/bp/bpclient_lib.h>
 
 
+using dcp::bp_status_to_string;
 using dcp::BPClientConfiguration;
 using dcp::BPClientRuntime;
+using dcp::DcpStatus;
+using dcp::BP_STATUS_OK;
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -32,6 +35,7 @@ using std::size_t;
 using dcp::DcpException;
 
 namespace po = boost::program_options;
+namespace trivial = boost::log::trivial;
 
 using namespace dcp::bp;
 

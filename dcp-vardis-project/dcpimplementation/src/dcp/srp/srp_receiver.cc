@@ -28,7 +28,7 @@
 #include <dcp/srp/srp_receiver.h>
 #include <dcp/srp/srp_transmissible_types.h>
 
-
+using dcp::bp::BPLengthT;
 
 namespace dcp::srp {
 

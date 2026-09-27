@@ -28,11 +28,7 @@
 #include <dcp/common/configuration.h>
 
 
-
-namespace sources  = boost::log::sources;
-namespace trivial  = boost::log::trivial;
-
-typedef sources::severity_channel_logger<trivial::severity_level, std::string> logger_type;
+typedef boost::log::sources::severity_channel_logger<boost::log::trivial::severity_level, std::string> logger_type;
 
 
 /**
@@ -49,19 +45,19 @@ namespace dcp {
   /**
    * @brief Contains the minimum severity level required for logging
    */
-  extern trivial::severity_level   minimumSeverityLevel;
+  extern boost::log::trivial::severity_level   minimumSeverityLevel;
   
 
   /**
    * @brief Converts a string to boost::log::trivial::severity_level. Throws exception when unknown.
    */
-  trivial::severity_level string_to_severity_level (const std::string& str);
+  boost::log::trivial::severity_level string_to_severity_level (const std::string& str);
 
 
   /**
    * @brief Converts a boost::log::trivial::severity_level to a string
    */
-  std::string severity_level_to_string (const trivial::severity_level level);
+  std::string severity_level_to_string (const boost::log::trivial::severity_level level);
 
 
   /**
@@ -156,18 +152,18 @@ namespace dcp {
  */
 #ifdef __DCPSIMULATION__
 #include <omnetpp.h>
-using namespace omnetpp;
+using omnetpp::getThisPtr;
 #define DCPLOG_TRACE(logstream) EV_TRACE
 #define DCPLOG_INFO(logstream) EV_INFO
 #define DCPLOG_WARNING(logstream) EV_WARN  
 #define DCPLOG_ERROR(logstream) EV_ERROR
 #define DCPLOG_FATAL(logstream) EV_FATAL
 #else
-#define DCPLOG_TRACE(logstream) BOOST_LOG_SEV(logstream,trivial::trace)
-#define DCPLOG_INFO(logstream) BOOST_LOG_SEV(logstream,trivial::info)
-#define DCPLOG_WARNING(logstream) BOOST_LOG_SEV(logstream,trivial::warning)
-#define DCPLOG_ERROR(logstream) BOOST_LOG_SEV(logstream,trivial::error)
-#define DCPLOG_FATAL(logstream) BOOST_LOG_SEV(logstream,trivial::fatal)
+#define DCPLOG_TRACE(logstream) BOOST_LOG_SEV(logstream,boost::log::trivial::trace)
+#define DCPLOG_INFO(logstream) BOOST_LOG_SEV(logstream,boost::log::trivial::info)
+#define DCPLOG_WARNING(logstream) BOOST_LOG_SEV(logstream,boost::log::trivial::warning)
+#define DCPLOG_ERROR(logstream) BOOST_LOG_SEV(logstream,boost::log::trivial::error)
+#define DCPLOG_FATAL(logstream) BOOST_LOG_SEV(logstream,boost::log::trivial::fatal)
 #endif
   
 

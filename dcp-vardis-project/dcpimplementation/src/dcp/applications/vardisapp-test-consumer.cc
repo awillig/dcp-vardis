@@ -20,14 +20,12 @@
 #include <ncurses.h>   
 
 
-using dcp::vardis::defaultVardisCommandSocketFileName;
-using dcp::vardis::defaultVardisStoreShmName;
 using std::cerr;
 using std::cout;
 using std::endl;
-using dcp::vardis::VarSeqnoT;
 
 using namespace dcp;
+using namespace dcp::vardis;
 
 
 const std::string defaultVardisClientShmName = "shm-vardisapp-test-consumer";

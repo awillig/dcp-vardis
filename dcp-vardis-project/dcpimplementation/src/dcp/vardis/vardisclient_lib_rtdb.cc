@@ -25,17 +25,8 @@
 #include <dcp/vardis/vardis_service_primitives.h>
 #include <dcp/vardis/vardis_shm_control_segment.h>
 
-using dcp::vardis::DBEntry;
-using dcp::vardis::PayloadQueue;
-using dcp::vardis::RTDB_Create_Confirm;
-using dcp::vardis::RTDB_Create_Request;
-using dcp::vardis::RTDB_Delete_Confirm;
-using dcp::vardis::RTDB_Delete_Request;
-using dcp::vardis::RTDB_Read_Confirm;
-using dcp::vardis::RTDB_Read_Request;
-using dcp::vardis::RTDB_Update_Confirm;
-using dcp::vardis::RTDB_Update_Request;
-using dcp::vardis::ConfirmQueue;
+
+using namespace dcp::vardis;
 
 
 namespace dcp {

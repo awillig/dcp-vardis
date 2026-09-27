@@ -34,10 +34,6 @@
 #include <dcp/common/memblock.h>
 
 
-using std::chrono::time_point;
-using std::chrono::high_resolution_clock;
-
-
 /**
  * @brief This module contains types that are relevant throughout the
  *        entire DCP implementation, plus some associated
@@ -251,9 +247,9 @@ namespace dcp {
    *
    * Allows other code to be independent of timestamp representation
    */
-  class TimeStampT : public TransmissibleType<sizeof(time_point<high_resolution_clock>)> {
+  class TimeStampT : public TransmissibleType<sizeof(std::chrono::time_point<std::chrono::high_resolution_clock>)> {
   public:
-    time_point<high_resolution_clock> tStamp;
+    std::chrono::time_point<std::chrono::high_resolution_clock> tStamp;
 
     TimeStampT () {};
     TimeStampT (const TimeStampT& other) : tStamp (other.tStamp) {};

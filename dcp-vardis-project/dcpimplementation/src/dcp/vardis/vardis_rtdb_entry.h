@@ -23,7 +23,6 @@
 #include <dcp/common/global_types_constants.h>
 #include <dcp/vardis/vardis_transmissible_types.h>
 
-using dcp::TimeStampT;
 
 // -----------------------------------------
 
@@ -47,15 +46,15 @@ namespace dcp::vardis {
     VarIdT            varId;
     NodeIdentifierT   prodId;
     VarRepCntT        repCnt;
-    TimeStampT        creationTime;
+    dcp::TimeStampT   creationTime;
     VarTimeoutT       timeout;
     
-    VarSeqnoT       seqno;                   /*!< Last received sequence number for this variable */
-    TimeStampT      tStamp;                  /*!< Timestamp where the last update (or create) instruction has been processed */
-    VarRepCntT      countUpdate = 0;         /*!< Repetition counter for VarUpdateT instructions */
-    VarRepCntT      countCreate = 0;         /*!< Repetition counter for VarCreateT instructions */
-    VarRepCntT      countDelete = 0;         /*!< Repetition counter for VarDeleteT instructions */
-    bool            isDeleted   = false;     /*!< Indicates whether variable is marked as deleted */
+    VarSeqnoT        seqno;                   /*!< Last received sequence number for this variable */
+    dcp::TimeStampT  tStamp;                  /*!< Timestamp where the last update (or create) instruction has been processed */
+    VarRepCntT       countUpdate = 0;         /*!< Repetition counter for VarUpdateT instructions */
+    VarRepCntT       countCreate = 0;         /*!< Repetition counter for VarCreateT instructions */
+    VarRepCntT       countDelete = 0;         /*!< Repetition counter for VarDeleteT instructions */
+    bool             isDeleted   = false;     /*!< Indicates whether variable is marked as deleted */
   } DBEntry;
 
 };  // namespace dcp::vardis

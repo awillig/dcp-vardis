@@ -28,7 +28,6 @@
 #include <dcp/bp/bp_configuration.h>
 #include <dcp/bp/bp_client_protocol_data.h>
 
-using dcp::CommandSocket;
 
 namespace dcp::bp {
 
@@ -100,7 +99,7 @@ namespace dcp::bp {
      * @brief Socket used for command / service interface
      */
     // int commandSocket = -1;
-    CommandSocket  commandSocket;
+    dcp::CommandSocket  commandSocket;
     
 
     /*********************************************************************

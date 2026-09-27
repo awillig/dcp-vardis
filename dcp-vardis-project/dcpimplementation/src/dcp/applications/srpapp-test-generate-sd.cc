@@ -22,6 +22,7 @@ using std::cerr;
 using dcp::srp::defaultSRPStoreShmName;
 
 using namespace dcp;
+using namespace dcp::srp;
 
 void print_version ()
 {

@@ -28,7 +28,6 @@
 #include <dcp/common/sharedmem_structure_base.h>
 #include <dcp/vardis/vardis_shm_control_segment.h>
 
-using std::ostream;
 
 /**
  * @brief The class VardisClientProtocolData holds the data that the
@@ -84,7 +83,7 @@ namespace dcp::vardis {
      * Auxiliary methods
      *************************************************************/
     
-    friend ostream& operator<<(ostream& os, const VardisClientProtocolData& client);
+    friend std::ostream& operator<<(std::ostream& os, const VardisClientProtocolData& client);
     
   } VardisClientProtocolData;
   

@@ -25,9 +25,6 @@
 #include <dcp/bp/bpclient_configuration.h>
 #include <dcp/vardis/vardis_constants.h>
 
-namespace po = boost::program_options;
-
-using std::iostream;
 
 namespace dcp::vardis {
 
@@ -137,7 +134,7 @@ namespace dcp::vardis {
     /**
      * @brief Add Vardis configuration information to configuration options record
      */
-    virtual void add_options (po::options_description& cfgdesc);
+    virtual void add_options (boost::program_options::options_description& cfgdesc);
 
 
     /**
@@ -190,7 +187,7 @@ namespace dcp::vardis {
      * @brief Build the description of all demon configuration options
      *        for the BOOST configuration file parser
      */
-    virtual void build_description (po::options_description& cfgdesc)
+    virtual void build_description (boost::program_options::options_description& cfgdesc)
     {
       BPClientConfiguration::build_description (cfgdesc);
       logging_conf.add_options (cfgdesc);

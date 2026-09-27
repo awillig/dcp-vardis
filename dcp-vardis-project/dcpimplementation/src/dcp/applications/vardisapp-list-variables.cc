@@ -19,11 +19,9 @@
 using std::cerr;
 using std::cout;
 using std::endl;
-using dcp::vardis::defaultVardisStoreShmName;
-using dcp::vardis::defaultVardisCommandSocketFileName;
 
 using namespace dcp;
-
+using namespace dcp::vardis;
 
 void print_version ()
 {

@@ -29,8 +29,6 @@
 #include <dcp/vardis/vardis_store_interface.h>
 
 
-using dcp::FixedMemRingBuffer;
-
 
 /**
  * @brief This module provides a generic array-based variable store
@@ -239,7 +237,7 @@ namespace dcp::vardis {
       /**
        * @brief Free list for buffers
        */
-      FixedMemRingBuffer<FreeListEntry, get_number_buffers()+1>  freeList;
+      dcp::FixedMemRingBuffer<FreeListEntry, get_number_buffers()+1>  freeList;
 
 
       /**

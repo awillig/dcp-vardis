@@ -25,7 +25,6 @@
 #include <boost/interprocess/mapped_region.hpp>
 #include <dcp/common/global_types_constants.h>
 
-using namespace boost::interprocess;
 
 /**
  * @brief Module providing base support for creating and attaching to
@@ -41,8 +40,8 @@ namespace dcp {
   class ShmStructureBase {
   protected:
     
-    shared_memory_object shm_obj;      /*!< Boost shared memory object */
-    mapped_region region;              /*!< Boost shared memory region, holds information about the region (address, size) */
+    boost::interprocess::shared_memory_object shm_obj;      /*!< Boost shared memory object */
+    boost::interprocess::mapped_region region;              /*!< Boost shared memory region, holds information about the region (address, size) */
     bool    isCreator      = false;    /*!< Indicates whether user of this object is the one creating the shared memory segmeng */
     byte*   memory_address = nullptr;  /*!< Memory address of shared memory segment */
     size_t  structure_size = 0;        /*!< Size of shared memory segment */

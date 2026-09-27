@@ -27,7 +27,9 @@
 #include <dcp/srp/srp_logging.h>
 
 
+using dcp::bp::BPLengthT;
 using dcp::bp::BPTransmitPayload_Request;
+using dcp::bp::BPShmControlSegment;
 
 
 namespace dcp::srp {

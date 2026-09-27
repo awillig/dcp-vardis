@@ -21,6 +21,7 @@
 
 #include <dcp/common/debug_helpers.h>
 
+using dcp::byte;
 
 std::string byte_array_to_string (byte* bytes, size_t len)
 {

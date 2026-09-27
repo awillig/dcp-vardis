@@ -24,10 +24,9 @@
 #include <iomanip>
 #include <dcp/common/foundation_types.h>
 
-using dcp::byte;
 
 /**
  * @brief Represents (parts of) a byte array as a string showing the
  *        individual bytes (shown in hex)
  */
-std::string byte_array_to_string (byte* bytes, size_t len);
+std::string byte_array_to_string (dcp::byte* bytes, size_t len);

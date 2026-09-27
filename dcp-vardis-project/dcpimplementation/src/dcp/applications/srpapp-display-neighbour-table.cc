@@ -26,6 +26,7 @@ using dcp::srp::defaultSRPStoreShmName;
 using dcp::DcpException;
 
 using namespace dcp;
+using namespace dcp::srp;
 
 void print_version ()
 {

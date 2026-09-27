@@ -26,6 +26,8 @@
 
 namespace dcp {
 
+  using namespace srp;
+  
   // -----------------------------------------------------------------------------------
 
   SRPClientRuntime::SRPClientRuntime (const SRPClientConfiguration& client_conf)

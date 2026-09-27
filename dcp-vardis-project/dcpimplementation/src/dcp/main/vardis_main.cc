@@ -23,12 +23,13 @@
 #include <dcp/vardis/vardisclient_lib.h>
 
 
+using dcp::DcpException;
 using std::cerr;
 using std::cout;
 using std::endl;
 using std::exception;
 using std::size_t;
-using dcp::DcpException;
+using dcp::DcpStatus;
 using dcp::VardisClientRuntime;
 using dcp::VardisClientConfiguration;
 using dcp::vardis_status_to_string;

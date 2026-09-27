@@ -27,7 +27,6 @@
 #include <dcp/srp/srp_store_fixedmem.h>
 
 
-using namespace boost::interprocess;
 
 /**
  * @brief This module provides an SRP store that is stored in a
@@ -48,8 +47,8 @@ namespace dcp::srp {
    */
   class GlobalStateShm : public GlobalStateBase {
   public:
-    interprocess_mutex neighbour_table_mutex;
-    interprocess_mutex own_sd_mutex;
+    boost::interprocess::interprocess_mutex neighbour_table_mutex;
+    boost::interprocess::interprocess_mutex own_sd_mutex;
   };
 
 

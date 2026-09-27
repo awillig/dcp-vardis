@@ -27,9 +27,6 @@
 #include <dcp/common/logging_helpers.h>
 #include <dcp/bp/bp_configuration.h>
 
-namespace po = boost::program_options;
-
-using std::ostream;
 
 namespace dcp::bp {
       
@@ -152,7 +149,7 @@ namespace dcp::bp {
       /**
        * @brief Add BP option descriptions to config file reader
        */
-      virtual void add_options (po::options_description& cfgdesc);
+      virtual void add_options (boost::program_options::options_description& cfgdesc);
 
 
       /**
@@ -201,7 +198,7 @@ namespace dcp::bp {
      * @brief Build description structure for BP configuration, adding
      *        all the options of the contained configuration blocks
      */
-    virtual void build_description (po::options_description& cfgdesc)
+    virtual void build_description (boost:: program_options::options_description& cfgdesc)
     {
       logging_conf.add_options (cfgdesc);
       cmdsock_conf.add_options (cfgdesc);
@@ -221,7 +218,7 @@ namespace dcp::bp {
     };
 
     
-    friend ostream& operator<<(ostream& os, const dcp::bp::BPConfiguration& cfg);
+    friend std::ostream& operator<<(std::ostream& os, const dcp::bp::BPConfiguration& cfg);
     
   } BPConfiguration;
       

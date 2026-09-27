@@ -31,7 +31,7 @@
 
 
 using dcp::bp::BPTransmitPayload_Request;
-
+using dcp::bp::BPShmControlSegment;
 
 namespace dcp::vardis {
 

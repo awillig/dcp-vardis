@@ -35,7 +35,6 @@
  *        locks for the SRP neighbour store shared memory area
  */
 
-using dcp::bp::BPStaticClientInfo;
 
 namespace dcp::srp {
 
@@ -62,7 +61,7 @@ namespace dcp::srp {
      * registration) and also initializes the SRP store (global shared
      * memory segment)
      */
-    SRPRuntimeData (const BPStaticClientInfo static_client_info,
+    SRPRuntimeData (const dcp::bp::BPStaticClientInfo static_client_info,
 		    const SRPConfiguration cfg)
       : BPClientRuntime (cfg, static_client_info, false),   // generateTransmitPayloadConfirms
 	srp_store (cfg.shm_conf.shmAreaName.c_str(),

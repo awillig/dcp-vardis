@@ -41,7 +41,6 @@
  *
  */
 
-
 namespace dcp {
 
 
@@ -136,9 +135,9 @@ namespace dcp {
     byte buffer_space [numberBuffers * get_actual_buffer_size()];    /*!< the actual buffer space storing user data */
 
     
-    interprocess_mutex      mutex;               /*!< mutex protecting access to the finite queue */
-    interprocess_condition  cond_empty;          /*!< condition variable telling whether queue is empty or not */
-    interprocess_condition  cond_full;           /*!< condition variable telling whether queue is full or not */
+    boost::interprocess::interprocess_mutex      mutex;               /*!< mutex protecting access to the finite queue */
+    boost::interprocess::interprocess_condition  cond_empty;          /*!< condition variable telling whether queue is empty or not */
+    boost::interprocess::interprocess_condition  cond_full;           /*!< condition variable telling whether queue is full or not */
     bool                    has_data = false;    /*!< flag indicating whether queue has data or not */
 
 
@@ -225,7 +224,7 @@ namespace dcp {
      */
     void report_sizes (unsigned int& queue_size, unsigned int& free_size)
     {
-      scoped_lock<interprocess_mutex> lock (mutex);
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock (mutex);
       queue_size = queue.stored_elements ();
       free_size  = freeList.stored_elements ();
     };
@@ -241,7 +240,7 @@ namespace dcp {
      */
     inline void reset ()
     {
-      scoped_lock<interprocess_mutex> lock (mutex);
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock (mutex);
       initialize_queue_and_freelist();
     };
 
@@ -253,7 +252,7 @@ namespace dcp {
      */
     inline unsigned int stored_elements ()
     {
-      scoped_lock<interprocess_mutex> lock (mutex);
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock (mutex);
       return queue.stored_elements ();
     };
     
@@ -290,7 +289,7 @@ namespace dcp {
       
       const boost::posix_time::ptime timeout (boost::get_system_time() + boost::posix_time::milliseconds(timeoutMS));
       
-      scoped_lock<interprocess_mutex> lock (mutex, timeout);
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock (mutex, timeout);
       
       if (!lock.owns())
 	{
@@ -359,7 +358,7 @@ namespace dcp {
       
       const boost::posix_time::ptime timeout (boost::get_system_time() + boost::posix_time::milliseconds(timeoutMS));
       
-      scoped_lock<interprocess_mutex> lock (mutex, timeout);
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock (mutex, timeout);
       
       if (!lock.owns())
 	{
@@ -419,7 +418,7 @@ namespace dcp {
       
       const boost::posix_time::ptime timeout (boost::get_system_time() + boost::posix_time::milliseconds(timeoutMS));
       
-      scoped_lock<interprocess_mutex> lock (mutex, timeout);
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock (mutex, timeout);
       
       if (!lock.owns())
 	{
@@ -477,7 +476,7 @@ namespace dcp {
       
       const boost::posix_time::ptime timeout (boost::get_system_time() + boost::posix_time::milliseconds(timeoutMS));
       
-      scoped_lock<interprocess_mutex> lock (mutex, timeout);
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock (mutex, timeout);
       
       if (!lock.owns())
 	{
@@ -544,7 +543,7 @@ namespace dcp {
       
       const boost::posix_time::ptime timeout (boost::get_system_time() + boost::posix_time::milliseconds(timeoutMS));
       
-      scoped_lock<interprocess_mutex> lock (mutex, timeout);
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock (mutex, timeout);
       
       if (!lock.owns())
 	{
@@ -599,7 +598,7 @@ namespace dcp {
       
       const boost::posix_time::ptime timeout (boost::get_system_time() + boost::posix_time::milliseconds(timeoutMS));
       
-      scoped_lock<interprocess_mutex> lock (mutex, timeout);
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock (mutex, timeout);
       
       if (!lock.owns())
 	{
@@ -662,7 +661,7 @@ namespace dcp {
       
       const boost::posix_time::ptime timeout (boost::get_system_time() + boost::posix_time::milliseconds(timeoutMS));
       
-      scoped_lock<interprocess_mutex> lock (mutex, timeout);
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock (mutex, timeout);
       
       if (!lock.owns())
 	{
@@ -719,7 +718,7 @@ namespace dcp {
       
       const boost::posix_time::ptime timeout (boost::get_system_time() + boost::posix_time::milliseconds(timeoutMS));
       
-      scoped_lock<interprocess_mutex> lock (mutex, timeout);
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock (mutex, timeout);
       
       if (!lock.owns())
 	{
@@ -772,7 +771,7 @@ namespace dcp {
       
       const boost::posix_time::ptime timeout (boost::get_system_time() + boost::posix_time::milliseconds(timeoutMS));
       
-      scoped_lock<interprocess_mutex> lock (mutex, timeout);
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock (mutex, timeout);
       
       if (!lock.owns())
 	{

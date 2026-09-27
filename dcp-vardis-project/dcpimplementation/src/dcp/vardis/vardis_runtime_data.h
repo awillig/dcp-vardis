@@ -39,8 +39,6 @@
  *        locks for certain parts of the runtime data
  */
 
-using dcp::bp::BPStaticClientInfo;
-
 namespace dcp::vardis {
 
 
@@ -69,7 +67,7 @@ namespace dcp::vardis {
      * the demon does not request or process
      * BP-TransmitPayload.confirm primitives
      */
-    VardisRuntimeData (const BPStaticClientInfo static_client_info,
+    VardisRuntimeData (const dcp::bp::BPStaticClientInfo static_client_info,
 		       const VardisConfiguration cfg)
       : BPClientRuntime (cfg, static_client_info, false),
 	variable_store (cfg.vardis_shm_vardb_conf.shmAreaName.c_str(),

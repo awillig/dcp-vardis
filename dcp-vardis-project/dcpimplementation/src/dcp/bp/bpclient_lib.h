@@ -37,22 +37,6 @@
 
 
 
-
-using dcp::BP_STATUS_OK;
-using dcp::bp_status_to_string;
-using dcp::DcpStatus;
-using dcp::ShmException;
-using dcp::ShmStructureBase;
-using dcp::bp::BPDeregisterProtocol_Confirm;
-using dcp::bp::BPDeregisterProtocol_Request;
-using dcp::bp::BPLengthT;
-using dcp::bp::BPQueueingMode;
-using dcp::bp::BPRegisteredProtocolDataDescription;
-using dcp::bp::BPRegisterProtocol_Confirm;
-using dcp::bp::BPRegisterProtocol_Request;
-using dcp::bp::BPShmControlSegment;
-using dcp::bp::BPStaticClientInfo;
-
 /**
  * @brief This module collects the data and operations that a BP
  *        client protocol needs, except operations for payload
@@ -155,7 +139,7 @@ namespace dcp {
      *        this flag is checked regularly and waiting is aborted if
      *        it becomes true.
      */
-    DcpStatus receive_payload_helper (BPLengthT& result_length,
+    DcpStatus receive_payload_helper (dcp::bp::BPLengthT& result_length,
 				      byte* result_buffer,
 				      bool& more_payloads,
 				      bool waiting,
@@ -178,7 +162,7 @@ namespace dcp {
      * @brief Pointer to the actual shared memory area. Set after
      *        shared memory area access has been achieved.
      */
-    BPShmControlSegment*               pSCS = nullptr;
+    dcp::bp::BPShmControlSegment*      pSCS = nullptr;
 
     
 
@@ -194,7 +178,9 @@ namespace dcp {
      * @param gen_pld_conf: specify whether client protocol expects BP
      *        demon to generate BP-TransmitPayload.confirm primitives
      */
-    BPClientRuntime (BPClientConfiguration client_conf, BPStaticClientInfo static_client_info, bool gen_pld_conf);
+    BPClientRuntime (BPClientConfiguration client_conf,
+		     bp::BPStaticClientInfo static_client_info,
+		     bool gen_pld_conf);
 
 
     /**
@@ -274,7 +260,7 @@ namespace dcp {
      * @param descrs: output parameter containing a list of
      *        descriptions of registered protocols
      */
-    DcpStatus list_registered_protocols (std::list<BPRegisteredProtocolDataDescription>& descrs);
+    DcpStatus list_registered_protocols (std::list<bp::BPRegisteredProtocolDataDescription>& descrs);
 
 
     /**
@@ -314,7 +300,8 @@ namespace dcp {
      * Note: this method can only be used when the client protocol is
      * registered with BP, otherwise it throws.
      */
-    DcpStatus transmit_payload (BPLengthT length, byte* payload);
+    DcpStatus transmit_payload (dcp::bp::BPLengthT length,
+				byte* payload);
 
 
     /**
@@ -341,14 +328,19 @@ namespace dcp {
      * Note: this method can only be used when the client protocol is
      * registered with BP, otherwise it throws.
      */
-    DcpStatus receive_payload_nowait (BPLengthT& result_length, byte* result_buffer, bool& more_payloads);
+    DcpStatus receive_payload_nowait (dcp::bp::BPLengthT& result_length,
+				      byte* result_buffer,
+				      bool& more_payloads);
 
 
     /**
      * @brief Like receive_payload_nowait() but blocks caller until a
      *        payload is available or the exitFlag is true
      */
-    DcpStatus receive_payload_wait (BPLengthT& result_length, byte* result_buffer, bool& more_payloads, bool& exitFlag);
+    DcpStatus receive_payload_wait (dcp::bp::BPLengthT& result_length,
+				    byte* result_buffer,
+				    bool& more_payloads,
+				    bool& exitFlag);
 
     
     /**

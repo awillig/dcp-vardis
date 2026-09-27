@@ -29,7 +29,7 @@
 #include <dcp/vardis/vardis_logging.h>
 #include <dcp/vardis/vardis_receiver.h>
 
-
+using dcp::bp::BPLengthT;
 
 namespace dcp::vardis {
 

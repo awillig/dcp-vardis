@@ -34,19 +34,6 @@
 #include <dcp/vardis/vardis_store_array_shm.h>
 
 
-using dcp::vardis::DescribeDatabaseVariableDescription;
-using dcp::vardis::vardisCommandSocketBufferSize;
-using dcp::vardis::VardisProtocolStatistics;
-using dcp::vardis::VardisShmControlSegment;
-using dcp::vardis::VardisVariableStoreShm;
-using dcp::vardis::VariableStoreI;
-using dcp::vardis::DescribeVariableDescription;
-using dcp::vardis::VarIdT;
-using dcp::vardis::VarLenT;
-using dcp::vardis::VarSpecT;
-using dcp::vardis::VarValueT;
-
-
 
 
 /**
@@ -97,7 +84,7 @@ namespace dcp {
      * @brief Pointer to the actual shared memory region. Valid after
      *        successful registration
      */
-    VardisShmControlSegment*          pSCS = nullptr;
+    vardis::VardisShmControlSegment*  pSCS = nullptr;
 
 
     /**
@@ -110,7 +97,7 @@ namespace dcp {
      * @brief The Vardis variable store -- contains all variables and
      *        their descriptions
      */
-    VardisVariableStoreShm variable_store;
+    vardis::VardisVariableStoreShm variable_store;
 
 
     /**
@@ -201,7 +188,7 @@ namespace dcp {
      *        retrieved variable descriptions. Only valid if this
      *        returns VARDIS_STATUS_OK
      */
-    DcpStatus describe_database (std::list<DescribeDatabaseVariableDescription>& db_descr);
+    DcpStatus describe_database (std::list<vardis::DescribeDatabaseVariableDescription>& db_descr);
 
 
     /**
@@ -218,8 +205,8 @@ namespace dcp {
      *        parameter. The buffer must be large enough to
      *        accommodate a maximum sized variable.
      */
-    DcpStatus describe_variable (VarIdT varId,
-				 DescribeVariableDescription& var_descr,
+    DcpStatus describe_variable (vardis::VarIdT varId,
+				 vardis::DescribeVariableDescription& var_descr,
 				 byte* buffer);
     
 
@@ -231,7 +218,7 @@ namespace dcp {
      *        statistics object, only valid if this returns
      *        VARDIS_STATUS_OK
      */
-    DcpStatus retrieve_statistics (VardisProtocolStatistics& stats);
+    DcpStatus retrieve_statistics (vardis::VardisProtocolStatistics& stats);
 
     
     /****************************************************************
@@ -246,7 +233,8 @@ namespace dcp {
      *        creationTime need to be valid)
      * @param value: initial value of variable
      */
-    DcpStatus rtdb_create (const VarSpecT& spec, const VarValueT& value);
+    DcpStatus rtdb_create (const vardis::VarSpecT& spec,
+			   const vardis::VarValueT& value);
 
 
     /**
@@ -254,13 +242,14 @@ namespace dcp {
      *
      * @param varId: Identifier of variable to be deleted
      */
-    DcpStatus rtdb_delete (VarIdT varId);
+    DcpStatus rtdb_delete (vardis::VarIdT varId);
 
 
     /**
      * @brief Update a variable
      */
-    DcpStatus rtdb_update (VarIdT varId, const VarValueT& value);
+    DcpStatus rtdb_update (vardis::VarIdT varId,
+			   const vardis::VarValueT& value);
 
 
     /**
@@ -288,9 +277,9 @@ namespace dcp {
      *         variable exists but is deleted then VARDIS_STATUS_VARIABLE_IS_DELETED
      *         is returned, otherwise VARDIS_STATUS_OK.
      */
-    DcpStatus rtdb_read   (VarIdT varId,
-			   VarIdT& responseVarId,
-			   VarLenT& responseVarLen,
+    DcpStatus rtdb_read   (vardis::VarIdT varId,
+			   vardis::VarIdT& responseVarId,
+			   vardis::VarLenT& responseVarLen,
 			   TimeStampT& responseTimeStamp,
 			   size_t value_bufsize,
 			   byte* value_buffer);

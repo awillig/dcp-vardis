@@ -40,7 +40,6 @@
  */
 
 
-using dcp::PushHandler;
 
 namespace dcp::bp {
 
@@ -128,7 +127,7 @@ namespace dcp::bp {
      * of a payload from the BP, it essentially implements the
      * BP-TransmitPayload service.
      */
-    DcpStatus transmit_payload (PushHandler handler);
+    DcpStatus transmit_payload (dcp::PushHandler handler);
       
 
     /**

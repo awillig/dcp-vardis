@@ -9,10 +9,9 @@ using std::cerr;
 using std::cout;
 using std::endl;
 
-using dcp::vardis::defaultVardisCommandSocketFileName;
-using dcp::vardis::defaultVardisStoreShmName;
-
 using namespace dcp;
+using namespace dcp::vardis;
+
 
 const std::string defaultVardisClientShmName = "shm-vardisapp-delete-variable";
 
