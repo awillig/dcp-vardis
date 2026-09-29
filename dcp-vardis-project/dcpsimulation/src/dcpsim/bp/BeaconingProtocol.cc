@@ -43,7 +43,7 @@ using namespace dcp;
 
 namespace dcp::bp {
 
-Define_Module(BeaconingProtocol);
+  Define_Module(BeaconingProtocol);
 
 // ========================================================================================
 // Standard OMNeT++ and class methods
@@ -97,30 +97,28 @@ void BeaconingProtocol::initialize (int stage)
 
 void BeaconingProtocol::handleMessage (cMessage* msg)
 {
-    EvTracing dbg(*this, "handleMessage");
+  EvTracing dbg(*this, "handleMessage");
 
-    // dispatch on type of received message
-
-    if (msg->arrivedOn(gidFromClients))
+  if (msg->arrivedOn(gidFromClients))
     {
-        handleClientMessage(msg);
-        return;
+      handleClientMessage(msg);
+      return;
     }
-
-    if ((msg->arrivedOn(gidFromUWB)) && dynamic_cast<Packet*>(msg))
-     {
-        handleReceivedPacket((Packet*) msg);
-        return;
-     }
-
-
-    if (msg == generateBeaconMsg)
+  
+  if ((msg->arrivedOn(gidFromUWB)) && dynamic_cast<Packet*>(msg))
     {
-        handleGenerateBeaconMsg();
-        return;
+      handleReceivedPacket((Packet*) msg);
+      return;
     }
-
-    error("BeaconingProtocol::handleMessage: unknown message");
+  
+  
+  if (msg == generateBeaconMsg)
+    {
+      handleGenerateBeaconMsg();
+      return;
+    }
+  
+  error("BeaconingProtocol::handleMessage: unknown message");
 }
 
 // ----------------------------------------------------

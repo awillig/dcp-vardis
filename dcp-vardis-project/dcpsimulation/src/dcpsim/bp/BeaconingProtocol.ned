@@ -20,7 +20,7 @@ package dcpsimulation.dcpsim.bp;
 
 import dcpsimulation.dcpsim.common.DcpProtocol;
 
-@namespace(dcp);
+@namespace(dcp::bp);
 
 simple BeaconingProtocol extends DcpProtocol
 {
