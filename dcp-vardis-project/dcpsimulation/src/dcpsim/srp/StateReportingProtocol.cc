@@ -99,23 +99,19 @@ void StateReportingProtocol::handleMessage(cMessage *msg)
 
     if (msg == _scrubNeighbourTableMsg)
     {
-        dbg.text("handling _scrubNeighbourTableMsg");
         handleScrubNeighbourTableMsg();
         return;
     }
 
     if (msg == _printNeighbourTableMsg)
     {
-        dbg.text("handling _printNeighbourTableMsg");
         handlePrintNeighbourTableMsg();
         return;
     }
 
     if ((msg->arrivedOn(gidFromApplication)) && dynamic_cast<SRPUpdateSafetyData_Request*>(msg))
     {
-        dbg.text("handling _generatePayloadMsg");
-        SRPUpdateSafetyData_Request*  srpReq = (SRPUpdateSafetyData_Request*) msg;
-        handleUpdateSafetyDataRequestMsg(srpReq);
+        handleUpdateSafetyDataRequestMsg((SRPUpdateSafetyData_Request*) msg);
         return;
     }
 
@@ -128,9 +124,7 @@ void StateReportingProtocol::handleMessage(cMessage *msg)
 
     if ((msg->arrivedOn(gidFromBP)) && dynamic_cast<BPReceivePayload_Indication*>(msg))
      {
-        dbg.text("handling BPReceivePayload_Indication");
-        BPReceivePayload_Indication *payload = (BPReceivePayload_Indication*) msg;
-        handleReceivedPayload(payload);
+        handleReceivedPayload((BPReceivePayload_Indication*) msg);
         return;
      }
 
