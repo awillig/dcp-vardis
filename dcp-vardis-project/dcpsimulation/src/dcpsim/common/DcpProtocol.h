@@ -19,6 +19,7 @@
 #pragma once
 
 #include <stack>
+#include <source_location>
 #include <omnetpp.h>
 #include <inet/networklayer/common/InterfaceTable.h>
 #include <dcp/common/global_types_constants.h>
@@ -84,7 +85,7 @@ protected:
     std::string   _methname;
   public:
     
-    EvTracing (DcpProtocol& prot, std::string methname) : _prot(prot), _methname (methname)
+    EvTracing (DcpProtocol& prot, const std::string methname = std::source_location::current().function_name()) : _prot(prot), _methname (methname)
     {
       prefix();
       the_stream() << "entering" << std::endl;
