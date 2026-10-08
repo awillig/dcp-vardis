@@ -23,27 +23,38 @@
 #include <cstdint>
 #include <string>
 
+
+/**
+ * @brief This module provides definition of the queueing mode type,
+ *        a set of pre-defined queueing mode values, and a helper
+ *        function to convert a queueing mode to a string
+ */
+
+
 namespace dcp::bp {
 
-  /**
-   * @brief This module provides definition of the queueing mode type,
-   *        a set of pre-defined queueing mode values, and a helper
-   *        function to convert a queueing mode to a string
-   */
-
-  
-  typedef uint16_t BPQueueingMode;
-
-  const BPQueueingMode BP_QMODE_ONCE             = 0;
-  const BPQueueingMode BP_QMODE_REPEAT           = 1;
-  const BPQueueingMode BP_QMODE_QUEUE_DROPTAIL   = 2;
-  const BPQueueingMode BP_QMODE_QUEUE_DROPHEAD   = 3;
-
-  /**
-   * @brief Converts queueing mode to string
-   *
-   * Throws for unknown queueing mode.
-   */
-  std::string bp_queueing_mode_to_string (BPQueueingMode qm);
+   enum class BPQueueingMode {Once, Repeat, Q_DropTail, Q_DropHead };
   
 };  // namespace dcp::bp
+
+
+/**
+ * @brief Converts queueing mode to string
+ *
+ * Throws for unknown queueing mode.
+ */
+constexpr std::string_view to_string (dcp::bp::BPQueueingMode qm) {
+  switch (qm)
+    {
+    case dcp::bp::BPQueueingMode::Once        :  return "BP_QMODE_ONCE";
+    case dcp::bp::BPQueueingMode::Repeat      :  return "BP_QMODE_REPEAT";
+    case dcp::bp::BPQueueingMode::Q_DropTail  :  return "BP_QMODE_QUEUE_DROPTAIL";
+    case dcp::bp::BPQueueingMode::Q_DropHead  :  return "BP_QMODE_QUEUE_DROPHEAD";
+    default:
+      throw std::invalid_argument("to_string: unknown queueing mode");
+    }
+  return "";
+}
+
+
+std::ostream& operator<< (std::ostream& os, const dcp::bp::BPQueueingMode qm);

@@ -31,7 +31,6 @@ extern "C" {
 }
 #include <dcp/common/command_socket.h>
 #include <dcp/common/other_helpers.h>
-#include <dcp/common/services_status.h>
 #include <dcp/bp/bp_management_command.h>
 #include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/bp/bp_service_primitives.h>
@@ -55,10 +54,10 @@ namespace dcp::bp {
   
   // ------------------------------------------------------------------
 
-  void sendRegisterConfirmation (BPRuntimeData& runtime, DcpStatus statcode)
+  void sendRegisterConfirmation (BPRuntimeData& runtime, BPStatus statcode)
   {
     BPRegisterProtocol_Confirm conf;
-    conf.status_code        = statcode;
+    conf.status_code        = static_cast<uint16_t> (statcode);
     conf.ownNodeIdentifier  = runtime.ownNodeIdentifier;
     runtime.commandSocket.send_raw_confirmation (log_mgmt_command, conf, sizeof(BPRegisterProtocol_Confirm), runtime.bp_exitFlag);
   }
@@ -66,9 +65,9 @@ namespace dcp::bp {
   // ------------------------------------------------------------------
 
   template <typename CT>
-  void send_simple_confirmation (BPRuntimeData& runtime, DcpStatus statcode)
+  void send_simple_confirmation (BPRuntimeData& runtime, BPStatus statcode)
   {
-    runtime.commandSocket.send_simple_confirmation<CT>(log_mgmt_command, statcode, runtime.bp_exitFlag);
+    runtime.commandSocket.send_simple_confirmation<CT>(log_mgmt_command, static_cast<uint16_t>(statcode), runtime.bp_exitFlag);
   }
   
   // ------------------------------------------------------------------
@@ -100,13 +99,13 @@ namespace dcp::bp {
 	    << ". Exiting"
           ;
 	runtime.bp_exitFlag = true;
-	send_simple_confirmation<BPActivate_Confirm>(runtime, BP_STATUS_INTERNAL_ERROR);
+	send_simple_confirmation<BPActivate_Confirm>(runtime, BPStatus::Internal_Error);
 	return;
       }
 
     DCPLOG_INFO(log_mgmt_command) << "Processing request: Activate";
     runtime.bp_isActive = true;
-    send_simple_confirmation<BPActivate_Confirm>(runtime, BP_STATUS_OK);
+    send_simple_confirmation<BPActivate_Confirm>(runtime, BPStatus::Ok);
     return;
   }
 
@@ -122,13 +121,13 @@ namespace dcp::bp {
 	    << ". Exiting."
            ;
 	runtime.bp_exitFlag = true;
-	send_simple_confirmation<BPDeactivate_Confirm>(runtime, BP_STATUS_INTERNAL_ERROR);
+	send_simple_confirmation<BPDeactivate_Confirm>(runtime, BPStatus::Internal_Error);
 	return;
       }
 
     DCPLOG_INFO(log_mgmt_command) << "Processing request: Deactivate";
     runtime.bp_isActive = false;
-    send_simple_confirmation<BPDeactivate_Confirm>(runtime, BP_STATUS_OK);
+    send_simple_confirmation<BPDeactivate_Confirm>(runtime, BPStatus::Ok);
     return;
   }
   
@@ -144,12 +143,11 @@ namespace dcp::bp {
 	    << ". Exiting."
            ;
 	runtime.bp_exitFlag = true;
-	send_simple_confirmation<BPGetStatistics_Confirm>(runtime, BP_STATUS_INTERNAL_ERROR);
+	send_simple_confirmation<BPGetStatistics_Confirm>(runtime, BPStatus::Internal_Error);
 	return;
       }
 
-    BPGetStatistics_Confirm gs_conf;
-    gs_conf.status_code              = BP_STATUS_OK;
+    BPGetStatistics_Confirm gs_conf (BPStatus::Ok);
     gs_conf.avg_inter_beacon_time    = runtime.avg_inter_beacon_reception_time;
     gs_conf.avg_beacon_size          = runtime.avg_received_beacon_size;
     gs_conf.number_received_beacons  = runtime.cntBPPayloads;
@@ -169,7 +167,7 @@ namespace dcp::bp {
 	    << ". Exiting"
            ;
 	runtime.bp_exitFlag = true;
-	sendRegisterConfirmation(runtime, BP_STATUS_INTERNAL_ERROR);
+	sendRegisterConfirmation(runtime, BPStatus::Internal_Error);
 	return;
       }
 
@@ -179,7 +177,7 @@ namespace dcp::bp {
       << "Processing request: RegisterProtocol, protocolId = " << sci.protocolId
       << " , name = " << sci.protocolName
       << " , maxPayloadSize = " << sci.maxPayloadSize
-      << " , queueingMode = " << bp_queueing_mode_to_string (sci.queueingMode)
+      << " , queueingMode = " << to_string (sci.queueingMode)
       << " , maxEntries = " << sci.maxEntries
       << " , allowMultiplePayloads = " << sci.allowMultiplePayloads;
 
@@ -189,7 +187,7 @@ namespace dcp::bp {
 	DCPLOG_ERROR(log_mgmt_command)
 	  << "Processing BPRegisterProtocol request: protocol already exists";
 
-	sendRegisterConfirmation(runtime, BP_STATUS_PROTOCOL_ALREADY_REGISTERED);
+	sendRegisterConfirmation(runtime, BPStatus::Protocol_Already_Registered);
 	return;
       }
 
@@ -199,7 +197,7 @@ namespace dcp::bp {
 	DCPLOG_ERROR(log_mgmt_command)
 	  << "Processing BPRegisterProtocol request: max payload size <= 0";
 
-	sendRegisterConfirmation(runtime, BP_STATUS_ILLEGAL_MAX_PAYLOAD_SIZE);
+	sendRegisterConfirmation(runtime, BPStatus::Illegal_Max_Payload_Size);
 	return;
       }
 
@@ -209,19 +207,19 @@ namespace dcp::bp {
 	DCPLOG_ERROR(log_mgmt_command)
 	  << "Processing BPRegisterProtocol request: max payload size exceeds allowed maximum";
 
-	sendRegisterConfirmation(runtime, BP_STATUS_ILLEGAL_MAX_PAYLOAD_SIZE);
+	sendRegisterConfirmation(runtime, BPStatus::Illegal_Max_Payload_Size);
 	return;
       }
 
     // check maxEntries value
-    if (    (    (sci.queueingMode == BP_QMODE_QUEUE_DROPTAIL)
-	      || (sci.queueingMode == BP_QMODE_QUEUE_DROPHEAD))
+    if (    (    (sci.queueingMode == BPQueueingMode::Q_DropTail)
+	      || (sci.queueingMode == BPQueueingMode::Q_DropHead))
 	 && (sci.maxEntries <= 0))
       {
 	DCPLOG_ERROR(log_mgmt_command)
 	  << "Processing BPRegisterProtocol request: illegal dropping queue size";
 
-	sendRegisterConfirmation(runtime, BP_STATUS_ILLEGAL_DROPPING_QUEUE_SIZE);
+	sendRegisterConfirmation(runtime, BPStatus::Illegal_Dropping_Queue_Size);
 	return;
       }
 
@@ -244,7 +242,7 @@ namespace dcp::bp {
       << sci.protocolId
       << ", runtime.clientProt.pSCS = " << (void*) runtime.clientProtocols[sci.protocolId].pSCS
       ; 
-    sendRegisterConfirmation(runtime, BP_STATUS_OK);
+    sendRegisterConfirmation(runtime, BPStatus::Ok);
 
     DCPLOG_INFO(log_mgmt_command)
       << "Processing BPRegisterProtocol request: FINISHING";
@@ -262,7 +260,7 @@ namespace dcp::bp {
 	    << ". Exiting."
            ;
 	runtime.bp_exitFlag = true;
-	send_simple_confirmation<BPDeregisterProtocol_Confirm>(runtime, BP_STATUS_INTERNAL_ERROR);
+	send_simple_confirmation<BPDeregisterProtocol_Confirm>(runtime, BPStatus::Internal_Error);
 	return;
       }
 
@@ -275,7 +273,7 @@ namespace dcp::bp {
       {
 	DCPLOG_INFO(log_mgmt_command)
 	  << "Processing BPDerregisterProtocol request: protocol is not registered";
-	send_simple_confirmation<BPDeregisterProtocol_Confirm>(runtime, BP_STATUS_UNKNOWN_PROTOCOL);
+	send_simple_confirmation<BPDeregisterProtocol_Confirm>(runtime, BPStatus::Unknown_Protocol);
 	return;
       }
 
@@ -295,7 +293,7 @@ namespace dcp::bp {
     runtime.clientProtocols.erase(pReq->protocolId);
     
     DCPLOG_INFO(log_mgmt_command) << "Processing BPDeregisterProtocol request: erased registered protocol";
-    send_simple_confirmation<BPDeregisterProtocol_Confirm>(runtime, BP_STATUS_OK);
+    send_simple_confirmation<BPDeregisterProtocol_Confirm>(runtime, BPStatus::Ok);
   }
 
 
@@ -303,16 +301,15 @@ namespace dcp::bp {
 
   void handleBPListRegisteredProtocols_Request (BPRuntimeData& runtime, byte*, size_t nbytes)
   {
-    BPListRegisteredProtocols_Confirm conf;
     
     if (nbytes != sizeof(BPListRegisteredProtocols_Request))
       {
 	DCPLOG_FATAL(log_mgmt_command) << "Processing BPListRegisteredProtocols request: wrong data size = " << nbytes;
 	runtime.bp_exitFlag = true;
-	
+
+	BPListRegisteredProtocols_Confirm conf (BPStatus::Internal_Error);
 	conf.numberProtocols = 0;
 	conf.bpIsActive      = false;
-	conf.status_code     = BP_STATUS_INTERNAL_ERROR;
 	runtime.commandSocket.send_raw_confirmation (log_mgmt_command, conf, sizeof(conf), runtime.bp_exitFlag);
 
 	return;
@@ -321,7 +318,7 @@ namespace dcp::bp {
     DCPLOG_INFO(log_mgmt_command) << "Processing request: ListRegisteredProtocols";
 
     // send confirmation primitive as header
-    conf.status_code      = BP_STATUS_OK;
+    BPListRegisteredProtocols_Confirm conf (BPStatus::Ok);
     conf.numberProtocols  = runtime.clientProtocols.size();
     conf.bpIsActive       = runtime.bp_isActive;
     runtime.commandSocket.send_raw_confirmation (log_mgmt_command, conf, sizeof(conf), runtime.bp_exitFlag);
@@ -370,7 +367,7 @@ namespace dcp::bp {
 	    << nbytes
            ;
 	runtime.bp_exitFlag = true;
-	send_simple_confirmation<CT> (runtime, BP_STATUS_INTERNAL_ERROR);
+	send_simple_confirmation<CT> (runtime, BPStatus::Internal_Error);
 	return;
       }
 
@@ -392,7 +389,7 @@ namespace dcp::bp {
 	    << " request: unknown protocol id = "
 	    << pReq->protocolId
            ;
-	send_simple_confirmation<CT> (runtime, BP_STATUS_UNKNOWN_PROTOCOL);
+	send_simple_confirmation<CT> (runtime, BPStatus::Unknown_Protocol);
 	return;
       }
 
@@ -417,29 +414,29 @@ namespace dcp::bp {
 	{    
 	  switch(clientProt.static_info.queueingMode)
 	    {
-	    case BP_QMODE_ONCE:
-	    case BP_QMODE_REPEAT:
+	    case BPQueueingMode::Once:
+	    case BPQueueingMode::Repeat:
 	      {
 		CS.buffer.reset ();
 		//clientProt.bufferOccupied = false;
-		send_simple_confirmation<BPClearBuffer_Confirm> (runtime, BP_STATUS_OK);
+		send_simple_confirmation<BPClearBuffer_Confirm> (runtime, BPStatus::Ok);
 		return;
 	      }
-	    case BP_QMODE_QUEUE_DROPHEAD:
-	    case BP_QMODE_QUEUE_DROPTAIL:
+	    case BPQueueingMode::Q_DropHead:
+	    case BPQueueingMode::Q_DropTail:
 	      {
 		CS.queue.reset ();
-		send_simple_confirmation<BPClearBuffer_Confirm> (runtime, BP_STATUS_OK);
+		send_simple_confirmation<BPClearBuffer_Confirm> (runtime, BPStatus::Ok);
 		return;
 	      }
 	    default:
 	      {
 		DCPLOG_FATAL(log_mgmt_command)
 	            << "Processing BPClearBuffer request: unknown queueing mode = "
-   	            << clientProt.static_info.queueingMode;
+   	            << to_string (clientProt.static_info.queueingMode);
 		   ;
    	        runtime.bp_exitFlag = true;
-		send_simple_confirmation<BPClearBuffer_Confirm> (runtime, BP_STATUS_INTERNAL_ERROR);
+		send_simple_confirmation<BPClearBuffer_Confirm> (runtime, BPStatus::Internal_Error);
 		return;
 	      }
 	    }
@@ -460,16 +457,16 @@ namespace dcp::bp {
 	{
 	  switch(clientProt.static_info.queueingMode)
 	    {
-	    case BP_QMODE_ONCE:
-	    case BP_QMODE_REPEAT:
+	    case BPQueueingMode::Once:
+	    case BPQueueingMode::Repeat:
 	      {
 		//conf.num_payloads_buffered = clientProt.bufferOccupied ? 1 : 0;
 		conf.num_payloads_buffered = clientProt.pSCS->buffer.stored_elements ();
 		runtime.commandSocket.send_raw_confirmation (log_mgmt_command, conf, sizeof(conf), runtime.bp_exitFlag);
 		return;
 	      }
-	    case BP_QMODE_QUEUE_DROPHEAD:
-	    case BP_QMODE_QUEUE_DROPTAIL:
+	    case BPQueueingMode::Q_DropHead:
+	    case BPQueueingMode::Q_DropTail:
 	      {
 		conf.num_payloads_buffered = CS.queue.stored_elements();
 		runtime.commandSocket.send_raw_confirmation (log_mgmt_command, conf, sizeof(conf), runtime.bp_exitFlag);
@@ -479,10 +476,10 @@ namespace dcp::bp {
 	      {
 		DCPLOG_FATAL(log_mgmt_command)
 	            << "Processing BPQueryNumberBufferedPayloads request: unknown queueing mode = "
-   	            << clientProt.static_info.queueingMode;
+   	            << to_string(clientProt.static_info.queueingMode);
 		   ;
 		runtime.bp_exitFlag = true;
-		send_simple_confirmation<BPQueryNumberBufferedPayloads_Confirm> (runtime, BP_STATUS_INTERNAL_ERROR);
+		send_simple_confirmation<BPQueryNumberBufferedPayloads_Confirm> (runtime, BPStatus::Internal_Error);
 		return;
 	      }
 	    }
@@ -496,64 +493,68 @@ namespace dcp::bp {
 
   void handle_command_socket (BPRuntimeData& runtime)
   {
-    DcpServiceType serv_type;
+    std::uint16_t stype;
     byte buffer [command_sock_buffer_size];
-    int nbytes      = runtime.commandSocket.start_read_command (log_mgmt_command, buffer, command_sock_buffer_size, serv_type, runtime.bp_exitFlag);
-
-    if (nbytes <= 0) return;
+    int nbytes  = runtime.commandSocket.start_read_command (log_mgmt_command, buffer, command_sock_buffer_size, stype, runtime.bp_exitFlag);
     
-    DCPLOG_INFO(log_mgmt_command) << "Command loop: service type is " << bp_service_type_to_string(serv_type);
+    if (nbytes <= 0) return;
+
+    BPServiceType serv_type = static_cast<BPServiceType>(stype);
+    DCPLOG_INFO(log_mgmt_command)
+      << "Command loop: service type is "
+      << to_string(serv_type);
+    
     switch (serv_type)
       {
 	
-      case stBP_RegisterProtocol:
+      case BPServiceType::RegisterProtocol:
 	runtime.clientProtocols_mutex.lock();
 	handleBPRegisterProtocol_Request (runtime, buffer, nbytes);
 	runtime.clientProtocols_mutex.unlock();
 	break;
 	
-      case stBP_DeregisterProtocol:
+      case BPServiceType::DeregisterProtocol:
 	runtime.clientProtocols_mutex.lock();
 	handleBPDeregisterProtocol_Request (runtime, buffer, nbytes);
 	runtime.clientProtocols_mutex.unlock();
 	break;
 	
-      case stBP_ListRegisteredProtocols:
+      case BPServiceType::ListRegisteredProtocols:
 	runtime.clientProtocols_mutex.lock();
 	handleBPListRegisteredProtocols_Request (runtime, buffer, nbytes);
 	runtime.clientProtocols_mutex.unlock();
 	break;
 	
-      case stBP_ShutDown:
+      case BPServiceType::ShutDown:
 	handleBPShutDown_Request (runtime, buffer, nbytes);
 	break;
 	
-      case stBP_Activate:
+      case BPServiceType::Activate:
 	handleBPActivate_Request (runtime, buffer, nbytes);
 	break;
 	
-      case stBP_Deactivate:
+      case BPServiceType::Deactivate:
 	handleBPDeactivate_Request (runtime, buffer, nbytes);
 	break;
 
-      case stBP_GetStatistics:
+      case BPServiceType::GetStatistics:
 	handleBPGetStatistics_Request (runtime, buffer, nbytes);
 	break;
 	
-      case stBP_ClearBuffer:
+      case BPServiceType::ClearBuffer:
 	runtime.clientProtocols_mutex.lock();
 	handleBPClearBuffer_Request (runtime, buffer, nbytes);
 	runtime.clientProtocols_mutex.unlock();
 	break;
 
-      case stBP_QueryNumberBufferedPayloads:
+      case BPServiceType::QueryNumberBufferedPayloads:
 	runtime.clientProtocols_mutex.lock();
 	handleBPQueryNumberBufferedPayloads_Request (runtime, buffer, nbytes);
 	runtime.clientProtocols_mutex.unlock();
 	break;
 	
       default:
-	DCPLOG_FATAL(log_mgmt_command) << "Command loop: unknown service type, val = " << serv_type;
+	DCPLOG_FATAL(log_mgmt_command) << "Command loop: unknown service type, val = " << to_string(serv_type);
 	runtime.bp_exitFlag = true;
 	
       }

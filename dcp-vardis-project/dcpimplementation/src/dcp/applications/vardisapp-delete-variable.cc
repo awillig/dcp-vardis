@@ -1,7 +1,6 @@
 #include <iostream>
 #include <dcp/common/exceptions.h>
 #include <dcp/common/other_helpers.h>
-#include <dcp/common/services_status.h>
 #include <dcp/vardis/vardisclient_configuration.h>
 #include <dcp/vardis/vardisclient_lib.h>
 
@@ -101,14 +100,22 @@ int main (int argc, char* argv [])
   try {
     VardisClientRuntime cl_rt (cl_conf);
 
-    DcpStatus delete_status = cl_rt.rtdb_delete (varId);
-    if (delete_status != VARDIS_STATUS_OK)
+    VardisStatus delete_status = cl_rt.rtdb_delete (varId);
+    if (delete_status != VardisStatus::Ok)
       {
-	cout << "Deleting variable " << varId << " failed with status " << vardis_status_to_string (delete_status) << ". Exiting." << endl;
+	cout << "Deleting variable "
+	     << varId
+	     << " failed with status "
+	     << to_string (delete_status)
+	     << ". Exiting."
+	     << endl;
 	return EXIT_FAILURE;
       }
 
-    cout << "Deleted variable " << varId << " successfully. Exiting." << endl;
+    cout << "Deleted variable "
+	 << varId
+	 << " successfully. Exiting."
+	 << endl;
   }
   catch (DcpException& e)
     {

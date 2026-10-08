@@ -58,63 +58,63 @@ namespace dcp::bp {
     return ss.str();
   }
     
-  DcpStatus BPShmControlSegment::transmit_payload (PushHandler handler)
+  BPStatus BPShmControlSegment::transmit_payload (PushHandler handler)
   {
     bool timed_out;
     BPQueueingMode queueingMode = static_client_info.queueingMode;
     
-    if (   (queueingMode == BP_QMODE_ONCE)
-        or (queueingMode == BP_QMODE_REPEAT))
+    if (    (queueingMode == BPQueueingMode::Once)
+         || (queueingMode == BPQueueingMode::Repeat))
       {
 	buffer.reset ();
 	buffer.push_wait (handler, timed_out);
 	
 	if (timed_out) 
-	  return BP_STATUS_INTERNAL_SHARED_MEMORY_ERROR;	
+	  return BPStatus::Internal_Shared_Memory_Error;	
 	else 
-	  return BP_STATUS_OK;    
+	  return BPStatus::Ok;    
       }
     
     
-    if (   (queueingMode == BP_QMODE_QUEUE_DROPTAIL)
-	or (queueingMode == BP_QMODE_QUEUE_DROPHEAD))
+    if (    (queueingMode == BPQueueingMode::Q_DropTail)
+	 || (queueingMode == BPQueueingMode::Q_DropHead))
       {
 	
-	if (queueingMode == BP_QMODE_QUEUE_DROPHEAD)
+	if (queueingMode == BPQueueingMode::Q_DropHead)
 	  {
 	    queue.push_wait_force (handler, timed_out);
 	    if (timed_out)
-	      return BP_STATUS_INTERNAL_SHARED_MEMORY_ERROR;
+	      return BPStatus::Internal_Shared_Memory_Error;
 	    else
-	      return BP_STATUS_OK;	      
+	      return BPStatus::Ok;	      
 	  }
 	
 	
-	if (    (queueingMode == BP_QMODE_QUEUE_DROPTAIL)
+	if (    (queueingMode == BPQueueingMode::Q_DropTail)
 	    and (queue.stored_elements () >= static_client_info.maxEntries))
 	  {
-	    return BP_STATUS_OK;
+	    return BPStatus::Ok;
 	  }
 	
 	queue.push_wait (handler, timed_out);
 	if (timed_out)
-	  return BP_STATUS_INTERNAL_SHARED_MEMORY_ERROR;
+	  return BPStatus::Internal_Shared_Memory_Error;
 	else
-	  return BP_STATUS_OK;	      	  
+	  return BPStatus::Ok;	      	  
       }
     
-    return BP_STATUS_INTERNAL_ERROR;
+    return BPStatus::Internal_Error;
   }
   
   
 
-  DcpStatus BPShmControlSegment::transmit_payload (BPLengthT length, byte* payload)
+  BPStatus BPShmControlSegment::transmit_payload (BPLengthT length, byte* payload)
   {
     if ((length == 0) or (!payload))
-      return BP_STATUS_EMPTY_PAYLOAD;
+      return BPStatus::Empty_Payload;
     
     if (length > (static_client_info.maxPayloadSize + sizeof(BPTransmitPayload_Request)))
-      return  BP_STATUS_PAYLOAD_TOO_LARGE;
+      return  BPStatus::Payload_Too_Large;
     
     PushHandler handler = [&] (byte* memaddr, size_t)
     {

@@ -23,20 +23,9 @@
 #include <stdexcept>
 #include <dcp/bp/bp_queueing_mode.h>
 
-namespace dcp::bp {
 
-  std::string bp_queueing_mode_to_string (BPQueueingMode qm)
-  {
-    switch (qm)
-      {
-      case BP_QMODE_ONCE             :  return "BP_QMODE_ONCE";
-      case BP_QMODE_REPEAT           :  return "BP_QMODE_REPEAT";
-      case BP_QMODE_QUEUE_DROPTAIL   :  return "BP_QMODE_QUEUE_DROPTAIL";
-      case BP_QMODE_QUEUE_DROPHEAD   :  return "BP_QMODE_QUEUE_DROPHEAD";
-      default:
-	throw std::invalid_argument("queueing_mode_to_string: unknown queueing mode");
-      }
-    return "";
-  }
-  
-};  // namespace dcp::bp
+std::ostream& operator<< (std::ostream& os, const dcp::bp::BPQueueingMode qm)
+{
+  os << to_string(qm);
+  return os;
+}

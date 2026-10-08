@@ -20,7 +20,6 @@
 
 #include <exception>
 #include <list>
-#include <dcp/common/services_status.h>
 #include <dcp/vardis/vardis_constants.h>
 #include <dcp/vardis/vardis_logging.h>
 #include <dcp/vardis/vardis_management_command.h>
@@ -32,9 +31,11 @@ namespace dcp::vardis {
   // -------------------------------------------------------------------
 
   template <typename CT>
-  void send_simple_confirmation (VardisRuntimeData& runtime, DcpStatus statcode)
+  void send_simple_confirmation (VardisRuntimeData& runtime, VardisStatus statcode)
   {
-    runtime.vardisCommandSock.send_simple_confirmation<CT>(log_mgmt_command, statcode, runtime.vardis_exitFlag);
+    runtime.vardisCommandSock.send_simple_confirmation<CT>(log_mgmt_command,
+							   static_cast<uint16_t>(statcode),
+							   runtime.vardis_exitFlag);
   }
   
   // -------------------------------------------------------------------
@@ -50,7 +51,7 @@ namespace dcp::vardis {
 	  << nbytes
 	  << ". Exiting.";
 	runtime.vardis_exitFlag = true;
-	send_simple_confirmation <CT> (runtime, VARDIS_STATUS_INTERNAL_ERROR);
+	send_simple_confirmation <CT> (runtime, VardisStatus::Internal_Error);
 	return true;
       }
     return false;
@@ -75,7 +76,7 @@ namespace dcp::vardis {
 	  << "Processing VardisRegister request: application already exists.";
 	if (not pReq->delete_old_registration)
 	  {
-	    send_simple_confirmation<VardisRegister_Confirm> (runtime, VARDIS_STATUS_APPLICATION_ALREADY_REGISTERED);
+	    send_simple_confirmation<VardisRegister_Confirm> (runtime, VardisStatus::Application_Already_Registered);
 	    return;
 	  }
 	else
@@ -96,7 +97,7 @@ namespace dcp::vardis {
 
     DCPLOG_INFO(log_mgmt_command)
       << "Processing VardisRegister request: completed successful registration";
-    VardisRegister_Confirm conf (VARDIS_STATUS_OK, runtime.protocol_data.ownNodeIdentifier);
+    VardisRegister_Confirm conf (VardisStatus::Ok, runtime.protocol_data.ownNodeIdentifier);
     runtime.vardisCommandSock.send_raw_data (log_mgmt_command, (byte*) &conf, sizeof(VardisRegister_Confirm), runtime.vardis_exitFlag);
   }
 
@@ -118,7 +119,7 @@ namespace dcp::vardis {
 	  << "handleVardisDeregisterRequest: vardis application / client with shmname "
 	  << pReq->shm_area_name
 	  << " is not registered";
-	send_simple_confirmation<VardisDeregister_Confirm>(runtime, VARDIS_STATUS_UNKNOWN_APPLICATION);
+	send_simple_confirmation<VardisDeregister_Confirm>(runtime, VardisStatus::Unknown_Application);
 	return;
       }
     
@@ -126,7 +127,7 @@ namespace dcp::vardis {
 
     DCPLOG_INFO(log_mgmt_command)
       << "Processing VardisDeregister request: erased registered application";
-    send_simple_confirmation<VardisDeregister_Confirm>(runtime, VARDIS_STATUS_OK);
+    send_simple_confirmation<VardisDeregister_Confirm>(runtime, VardisStatus::Ok);
 
   }
   
@@ -147,7 +148,7 @@ namespace dcp::vardis {
     DCPLOG_INFO(log_mgmt_command) << "Processing VardisActivate request.";
     runtime.variable_store.set_vardis_isactive (true);
 
-    send_simple_confirmation<VardisActivate_Confirm>(runtime, VARDIS_STATUS_OK);
+    send_simple_confirmation<VardisActivate_Confirm>(runtime, VardisStatus::Ok);
   }
   
   // -------------------------------------------------------------------
@@ -160,7 +161,7 @@ namespace dcp::vardis {
     
     runtime.variable_store.set_vardis_isactive (false);
 
-    send_simple_confirmation<VardisDeactivate_Confirm>(runtime, VARDIS_STATUS_OK);
+    send_simple_confirmation<VardisDeactivate_Confirm>(runtime, VardisStatus::Ok);
   }
 
   // -------------------------------------------------------------------
@@ -213,8 +214,7 @@ namespace dcp::vardis {
 	}    
     }
     
-    VardisDescribeDatabase_Confirm conf;
-    conf.status_code                 = VARDIS_STATUS_OK;
+    VardisDescribeDatabase_Confirm conf (VardisStatus::Ok);
     conf.numberVariableDescriptions  = var_descriptions.size();
 
     runtime.vardisCommandSock.send_raw_data (log_mgmt_command, (byte*) &conf, sizeof(VardisDescribeDatabase_Confirm), runtime.vardis_exitFlag);
@@ -272,13 +272,12 @@ namespace dcp::vardis {
 
     if (not found)
       {
-	send_simple_confirmation<VardisDescribeVariable_Confirm>(runtime, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST);
+	send_simple_confirmation<VardisDescribeVariable_Confirm>(runtime, VardisStatus::Variable_Does_Not_Exist);
       }
     else
       {
-	VardisDescribeVariable_Confirm dv_conf;
+	VardisDescribeVariable_Confirm dv_conf (VardisStatus::Ok);
 	dv_conf.var_description = var_descr;
-	dv_conf.status_code     = VARDIS_STATUS_OK;
 	
 	runtime.vardisCommandSock.send_raw_data (log_mgmt_command, (byte*) &dv_conf, sizeof(VardisDescribeVariable_Confirm), runtime.vardis_exitFlag);
 	runtime.vardisCommandSock.send_raw_data (log_mgmt_command, val_buffer, var_descr.value_length.val, runtime.vardis_exitFlag);
@@ -291,60 +290,62 @@ namespace dcp::vardis {
 
   void handle_command_socket (VardisRuntimeData& runtime)
   {
-    DcpServiceType serv_type;
+    std::uint16_t stype;
     byte buffer [vardisCommandSocketBufferSize];
-    int nbytes = runtime.vardisCommandSock.start_read_command (log_mgmt_command, buffer, vardisCommandSocketBufferSize, serv_type, runtime.vardis_exitFlag);
+    int nbytes = runtime.vardisCommandSock.start_read_command (log_mgmt_command, buffer, vardisCommandSocketBufferSize, stype, runtime.vardis_exitFlag);
 
     if (nbytes <= 0) return;
-    
+
+    VardisServiceType serv_type = static_cast<VardisServiceType>(stype);
     DCPLOG_TRACE(log_mgmt_command)
       << "Command loop: service type is "
-      << vardis_service_type_to_string(serv_type);
+      << to_string(serv_type);
+    
     switch (serv_type)
       {
 	
-      case stVardis_Register:
+      case VardisServiceType::Register:
 	{
 	  ScopedClientApplicationsMutex ca_mtx (runtime);
 	  handleVardisRegisterRequest (runtime, buffer, nbytes);
 	}
 	break;
 
-      case stVardis_Deregister:
+      case VardisServiceType::Deregister:
 	{
 	  ScopedClientApplicationsMutex ca_mtx (runtime);
 	  handleVardisDeregisterRequest (runtime, buffer, nbytes);
 	}
 	break;
 
-      case stVardis_Shutdown:
+      case VardisServiceType::ShutDown:
 	handleVardisShutdownRequest (runtime, buffer, nbytes);
 	break;
 
-      case stVardis_Activate:
+      case VardisServiceType::Activate:
 	handleVardisActivateRequest (runtime, buffer, nbytes);
 	break;
 
-      case stVardis_Deactivate:
+      case VardisServiceType::Deactivate:
 	handleVardisDeactivateRequest (runtime, buffer, nbytes);
 	break;
 
-      case stVardis_GetStatistics:
+      case VardisServiceType::GetStatistics:
 	handleVardisGetStatisticsRequest (runtime, buffer, nbytes);
 	break;
 	
-      case stVardis_RTDB_DescribeDatabase:
+      case VardisServiceType::RTDB_DescribeDatabase:
 	handleVardisRTDBDescribeDatabaseRequest (runtime, buffer, nbytes);
 	break;
 
-      case stVardis_RTDB_DescribeVariable:
+      case VardisServiceType::RTDB_DescribeVariable:
 	handleVardisRTDBDescribeVariableRequest (runtime, buffer, nbytes);
 	break;
 	
       default:
 	DCPLOG_FATAL(log_mgmt_command)
 	  << "Command loop: unknown or un-implemented service type, val = "
-	  << serv_type;
+	  << stype;
 	runtime.vardis_exitFlag = true;
       }
     

@@ -20,13 +20,14 @@
 
 #include <dcp/bp/bp_service_primitives.h>
 #include <dcp/bp/bp_queueing_mode.h>
+#include <dcp/bp/bp_services_status.h>
 
 
 namespace dcp::bp {
 
   std::ostream& operator<<(std::ostream& os, const BPRegisterProtocol_Request& req)
   {
-    os << "BPRegisterProtocol_Request{s_type = " << bp_service_type_to_string(req.s_type)
+    os << "BPRegisterProtocol_Request{s_type = " << to_string(req.stype())
        << ", static_client_info=" << req.static_info
        << ", generatePayloadConfirms=" << req.generateTransmitPayloadConfirms
        << ", shm_area_name=" << req.shm_area_name
@@ -36,8 +37,8 @@ namespace dcp::bp {
   
   std::ostream& operator<<(std::ostream& os, const BPRegisterProtocol_Confirm& conf)
   {
-    os << "BPRegisterProtocol_Confirm{s_type = " << bp_service_type_to_string (conf.s_type)
-       << ", status_code = " << bp_status_to_string (conf.status_code)
+    os << "BPRegisterProtocol_Confirm{s_type = " << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << ", ownNodeIdentifier = " << conf.ownNodeIdentifier
        << " }";
     return os;
@@ -45,7 +46,7 @@ namespace dcp::bp {
 
   std::ostream& operator<<(std::ostream& os, const BPDeregisterProtocol_Request& req)
   {
-    os << "BPDeregisterProtocol_Request{s_type = " << bp_service_type_to_string(req.s_type)
+    os << "BPDeregisterProtocol_Request{s_type = " << to_string(req.stype())
        << ", protocolId=" << req.protocolId
        << "}";
     return os;
@@ -53,15 +54,15 @@ namespace dcp::bp {
 
   std::ostream& operator<<(std::ostream& os, const BPDeregisterProtocol_Confirm& conf)
   {
-    os << "BPDeregisterProtocol_Confirm{s_type = " << bp_service_type_to_string (conf.s_type)
-       << ", status_code = " << bp_status_to_string (conf.status_code)
+    os << "BPDeregisterProtocol_Confirm{s_type = " << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << " }";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const BPListRegisteredProtocols_Request& req)
   {
-    os << "BPListRegisteredProtocols_Request{s_type = " << bp_service_type_to_string(req.s_type)
+    os << "BPListRegisteredProtocols_Request{s_type = " << to_string(req.stype())
        << "}";
     return os;
   }
@@ -71,7 +72,7 @@ namespace dcp::bp {
     os << "BPRegisteredProtocolDataDescription{protocolId = " << descr.protocolId
        << ", protocolName = " << descr.protocolName
        << ", maxPayloadSize = " << descr.maxPayloadSize
-       << ", queueingMode = " << bp_queueing_mode_to_string (descr.queueingMode)
+       << ", queueingMode = " << to_string (descr.queueingMode)
        << ", timeStampRegistration = " << descr.timeStampRegistration
        << ", maxEntries = " << descr.maxEntries
        << ", allowMultiplePayloads = " << descr.allowMultiplePayloads
@@ -85,8 +86,8 @@ namespace dcp::bp {
 
   std::ostream& operator<<(std::ostream& os, const BPListRegisteredProtocols_Confirm& conf)
   {
-    os << "BPListRegisteredProtocols_Confirm{s_type = " << bp_service_type_to_string (conf.s_type)
-       << ", status_code = " << bp_status_to_string (conf.status_code)
+    os << "BPListRegisteredProtocols_Confirm{s_type = " << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << ", numberProtocols = " << conf.numberProtocols
        << ", bpIsActive = " << conf.bpIsActive
        << " }";
@@ -95,7 +96,7 @@ namespace dcp::bp {
 
   std::ostream& operator<<(std::ostream& os, const BPReceivePayload_Indication& ind)
   {
-    os << "BPReceivePayload_Indication{s_type = " << bp_service_type_to_string (ind.s_type)
+    os << "BPReceivePayload_Indication{s_type = " << to_string (ind.stype())
        << ", length = " << (int) ind.length.val
        << " }";
     return os;
@@ -103,7 +104,7 @@ namespace dcp::bp {
 
   std::ostream& operator<<(std::ostream& os, const BPTransmitPayload_Request& req)
   {
-    os << "BPTransmitPayload_Request{s_type = " << bp_service_type_to_string(req.s_type)
+    os << "BPTransmitPayload_Request{s_type = " << to_string(req.stype())
        << ", protocolId = " << (int) req.protocolId.val
        << ", length = " << (int) req.length.val
        << "}";
@@ -112,15 +113,15 @@ namespace dcp::bp {
 
   std::ostream& operator<<(std::ostream& os, const BPTransmitPayload_Confirm& conf)
   {
-    os << "BPTransmitPayload_Confirm{s_type = " << bp_service_type_to_string (conf.s_type)
-       << ", status_code = " << bp_status_to_string (conf.status_code)
+    os << "BPTransmitPayload_Confirm{s_type = " << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << " }";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const BPClearBuffer_Request& req)
   {
-    os << "BPClearBuffer_Request{s_type = " << bp_service_type_to_string(req.s_type)
+    os << "BPClearBuffer_Request{s_type = " << to_string(req.stype())
        << ", protocolId = " << (int) req.protocolId.val
        << "}";
     return os;
@@ -128,15 +129,15 @@ namespace dcp::bp {
 
   std::ostream& operator<<(std::ostream& os, const BPClearBuffer_Confirm& conf)
   {
-    os << "BPClearBuffer_Confirm{s_type = " << bp_service_type_to_string (conf.s_type)
-       << ", status_code = " << bp_status_to_string (conf.status_code)
+    os << "BPClearBuffer_Confirm{s_type = " << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << " }";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const BPQueryNumberBufferedPayloads_Request& req)
   {
-    os << "BPQueryNumberBufferedPayloads_Request{s_type = " << bp_service_type_to_string(req.s_type)
+    os << "BPQueryNumberBufferedPayloads_Request{s_type = " << to_string(req.stype())
        << ", protocolId = " << (int) req.protocolId.val
        << "}";
     return os;
@@ -144,8 +145,8 @@ namespace dcp::bp {
 
   std::ostream& operator<<(std::ostream& os, const BPQueryNumberBufferedPayloads_Confirm& conf)
   {
-    os << "BPQueryNumberBufferedPayloads_Confirm{s_type = " << bp_service_type_to_string (conf.s_type)
-       << ", status_code = " << bp_status_to_string (conf.status_code)
+    os << "BPQueryNumberBufferedPayloads_Confirm{s_type = " << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << ", num_payloads_buffered = " << conf.num_payloads_buffered
        << " }";
     return os;
@@ -153,37 +154,37 @@ namespace dcp::bp {
 
   std::ostream& operator<<(std::ostream& os, const BPShutDown_Request& req)
   {
-    os << "BPShutDown_Request{s_type = " << bp_service_type_to_string(req.s_type)
+    os << "BPShutDown_Request{s_type = " << to_string(req.stype())
        << "}";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const BPActivate_Request& req)
   {
-    os << "BPActivate_Request{s_type = " << bp_service_type_to_string(req.s_type)
+    os << "BPActivate_Request{s_type = " << to_string(req.stype())
        << "}";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const BPActivate_Confirm& conf)
   {
-    os << "BPActivate_Confirm{s_type = " << bp_service_type_to_string (conf.s_type)
-       << ", status_code = " << bp_status_to_string (conf.status_code)
+    os << "BPActivate_Confirm{s_type = " << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << " }";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const BPDeactivate_Request& req)
   {
-    os << "BPDeactivate_Request{s_type = " << bp_service_type_to_string(req.s_type)
+    os << "BPDeactivate_Request{s_type = " << to_string(req.stype())
        << "}";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const BPDeactivate_Confirm& conf)
   {
-    os << "BPDeactivate_Confirm{s_type = " << bp_service_type_to_string (conf.s_type)
-       << ", status_code = " << bp_status_to_string (conf.status_code)
+    os << "BPDeactivate_Confirm{s_type = " << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << " }";
     return os;
   }
@@ -194,15 +195,15 @@ namespace dcp::bp {
 
   std::ostream& operator<<(std::ostream& os, const BPGetStatistics_Request& req)
   {
-    os << "BPGetStatistics_Request{s_type = " << bp_service_type_to_string(req.s_type)
+    os << "BPGetStatistics_Request{s_type = " << to_string(req.stype())
        << "}";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const BPGetStatistics_Confirm& conf)
   {
-    os << "BPGetStatistics_Confirm{s_type = " << bp_service_type_to_string (conf.s_type)
-       << ", status_code = " << bp_status_to_string (conf.status_code)
+    os << "BPGetStatistics_Confirm{s_type = " << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << ", avg_inter_beacon_time = " << conf.avg_inter_beacon_time
        << ", avg_beacon_size = " << conf.avg_beacon_size
        << " }";

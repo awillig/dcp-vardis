@@ -32,7 +32,6 @@ extern "C" {
 }
 #include <dcp/common/debug_helpers.h>
 #include <dcp/common/memblock.h>
-#include <dcp/common/services_status.h>
 #include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/bp/bp_service_primitives.h>
 #include <dcp/bp/bp_logging.h>
@@ -48,42 +47,6 @@ using namespace std::chrono_literals;
 
 namespace dcp::bp {
 
-  // ------------------------------------------------------------------
-  
-  void send_transmit_payload_confirmation (BPRuntimeData& runtime,
-					   BPShmControlSegment& CS,
-					   DcpStatus status_code)
-  {
-    // Check first whether generation of confirms is suppressed
-    if (not CS.generateTransmitPayloadConfirms)
-      return;
-
-    bool timed_out = false;
-    PushHandler handler = [&] (byte* memaddr, size_t max_buffer_size)
-    {
-      if (sizeof(BPTransmitPayload_Confirm) > max_buffer_size)
-	{
-	  DCPLOG_FATAL(log_mgmt_payload) << "send_transmit_payload_confirmation: buffer too small for payload. Exiting.";
-	  runtime.bp_exitFlag = true;
-	  return (size_t) 0;
-	}
-      
-      BPTransmitPayload_Confirm* pConf = new (memaddr) BPTransmitPayload_Confirm;
-      pConf->status_code = status_code;
-      return sizeof(BPTransmitPayload_Confirm);
-    };
-
-    
-    CS.pqTransmitPayloadConfirm.push_wait (handler, timed_out);
-
-    if (timed_out)
-      {
-	DCPLOG_FATAL(log_mgmt_payload) << "send_transmit_payload_confirmation: timeout for confirm queue. Exiting.";
-	runtime.bp_exitFlag = true;
-	return;
-      }
-  }
-  
   // ------------------------------------------------------------------
 
   void handle_payload_from_client (BPRuntimeData& runtime)

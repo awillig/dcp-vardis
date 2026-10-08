@@ -23,7 +23,7 @@
 #include <dcp/common/global_types_constants.h>
 #include <dcp/common/sharedmem_finite_queue.h>
 #include <dcp/bp/bp_service_primitives.h>
-
+#include <dcp/bp/bp_services_status.h>
 
 
 /**
@@ -127,7 +127,7 @@ namespace dcp::bp {
      * of a payload from the BP, it essentially implements the
      * BP-TransmitPayload service.
      */
-    DcpStatus transmit_payload (dcp::PushHandler handler);
+    BPStatus transmit_payload (dcp::PushHandler handler);
       
 
     /**
@@ -141,7 +141,7 @@ namespace dcp::bp {
      * of a payload from the BP, it essentially implements the
      * BP-TransmitPayload service.
      */
-    DcpStatus transmit_payload (BPLengthT length, byte* payload);
+    BPStatus transmit_payload (BPLengthT length, byte* payload);
 
     
     

@@ -215,11 +215,14 @@ int main (int argc, char* argv [])
 		
 	    std::list<DescribeDatabaseVariableDescription> db_list;
 	
-	    DcpStatus dd_status = cl_rt.describe_database (db_list);
-	    if (dd_status != VARDIS_STATUS_OK)
+	    VardisStatus dd_status = cl_rt.describe_database (db_list);
+	    if (dd_status != VardisStatus::Ok)
 	      {
 		endwin ();
-		cout << "Obtaining database description failed with status " << vardis_status_to_string (dd_status) << ", exiting." << endl;
+		cout << "Obtaining database description failed with status "
+		     << to_string (dd_status)
+		     << ", exiting."
+		     << endl;
 		return EXIT_FAILURE;
 	      }
 
@@ -233,27 +236,43 @@ int main (int argc, char* argv [])
 		    VarLenT     respVarLen;
 		    TimeStampT  respTimeStamp;
 		    const size_t read_buffer_size = 1000;
-		    byte     read_buffer [read_buffer_size];
-		    DcpStatus read_status = cl_rt.rtdb_read (descr.varId, respVarId, respVarLen, respTimeStamp, read_buffer_size, read_buffer);
+		    byte         read_buffer [read_buffer_size];
+		    VardisStatus read_status = cl_rt.rtdb_read (descr.varId, respVarId, respVarLen, respTimeStamp, read_buffer_size, read_buffer);
 		    
-		    if ((read_status != VARDIS_STATUS_OK) and (read_status != VARDIS_STATUS_VARIABLE_IS_DELETED))
+		    if ((read_status != VardisStatus::Ok) and (read_status != VardisStatus::Variable_Is_Deleted))
 		      {
 			endwin ();
-			cout << "Reading varId " << descr.varId << " failed with status " << vardis_status_to_string (read_status) << endl;
+			cout << "Reading varId "
+			     << descr.varId
+			     << " failed with status "
+			     << to_string (read_status)
+			     << endl;
 			return EXIT_FAILURE;
 		      }
 		    
-		    if ((read_status == VARDIS_STATUS_OK) and (respVarId != descr.varId))
+		    if ((read_status == VardisStatus::Ok) and (respVarId != descr.varId))
 		      {
 			endwin ();
-			cout << "Submitted read request for varId " << descr.varId << " but got response for varId " << respVarId << ", exiting." << endl;
+			cout << "Submitted read request for varId "
+			     << descr.varId
+			     << " but got response for varId "
+			     << respVarId
+			     << ", exiting."
+			     << endl;
 			return EXIT_FAILURE;
 		      }
 		    
-		    if ((read_status == VARDIS_STATUS_OK) and (respVarLen != sizeof(VardisTestVariable)))
+		    if ((read_status == VardisStatus::Ok) and (respVarLen != sizeof(VardisTestVariable)))
 		      {
 			endwin ();
-			cout << "Submitted read request for varId " << descr.varId << ", got respVarLen = " << respVarLen << " but expected length " << sizeof(VardisTestVariable) << ", exiting." << endl;
+			cout << "Submitted read request for varId "
+			     << descr.varId
+			     << ", got respVarLen = "
+			     << respVarLen
+			     << " but expected length "
+			     << sizeof(VardisTestVariable)
+			     << ", exiting."
+			     << endl;
 			return EXIT_FAILURE;
 		      }
 		    
@@ -269,7 +288,7 @@ int main (int argc, char* argv [])
 				   tv_ptr->seqno,
 				   tv_ptr->value,
 				   age,
-				   (read_status == VARDIS_STATUS_VARIABLE_IS_DELETED) ? true : false);
+				   (read_status == VardisStatus::Variable_Is_Deleted));
 		    line++;		    
 		  }
 	      }

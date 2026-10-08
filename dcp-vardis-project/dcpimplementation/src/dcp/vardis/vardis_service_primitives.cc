@@ -24,7 +24,7 @@ namespace dcp::vardis {
 
   std::ostream& operator<<(std::ostream& os, const VardisRegister_Request& req)
   {
-    os << "VardisRegister_Request{s_type=" << vardis_service_type_to_string(req.s_type)
+    os << "VardisRegister_Request{s_type=" << to_string(req.stype())
        << ", shm_area_name = " << req.shm_area_name
        << ", delete_old_registration = " << req.delete_old_registration
        << " }";
@@ -33,8 +33,8 @@ namespace dcp::vardis {
 
   std::ostream& operator<<(std::ostream& os, const VardisRegister_Confirm& conf)
   {
-    os << "VardisRegister_Confirm{s_type=" << vardis_service_type_to_string (conf.s_type)
-       << ", status_code = " << vardis_status_to_string (conf.status_code)
+    os << "VardisRegister_Confirm{s_type=" << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << ", own_node_identifier = " << conf.own_node_identifier
        << " }";
     return os;
@@ -42,7 +42,7 @@ namespace dcp::vardis {
 
   std::ostream& operator<<(std::ostream& os, const VardisDeregister_Request& req)
   {
-    os << "VardisDeregister_Request{s_type=" << vardis_service_type_to_string(req.s_type)
+    os << "VardisDeregister_Request{s_type=" << to_string(req.stype())
        << ", shm_area_name = " << req.shm_area_name
        << " }";
     return os;
@@ -50,60 +50,60 @@ namespace dcp::vardis {
 
   std::ostream& operator<<(std::ostream& os, const VardisDeregister_Confirm& conf)
   {
-    os << "VardisDeregister_Confirm{s_type=" << vardis_service_type_to_string (conf.s_type)
-       << ", status_code = " << vardis_status_to_string (conf.status_code)
+    os << "VardisDeregister_Confirm{s_type=" << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << " }";
     return os;
   }
 
-  std::ostream& operator<<(std::ostream& os, const VardisShutdown_Request& req)
+  std::ostream& operator<<(std::ostream& os, const VardisShutDown_Request& req)
   {
-    os << "VardisShutdown_Request{s_type=" << vardis_service_type_to_string(req.s_type)
+    os << "VardisShutDown_Request{s_type=" << to_string(req.stype())
        << " }";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const VardisActivate_Request& req)
   {
-    os << "VardisActivate_Request{s_type=" << vardis_service_type_to_string(req.s_type)
+    os << "VardisActivate_Request{s_type=" << to_string(req.stype())
        << " }";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const VardisActivate_Confirm& conf)
   {
-    os << "VardisActivate_Confirm{s_type=" << vardis_service_type_to_string (conf.s_type)
-       << ", status_code = " << vardis_status_to_string (conf.status_code)
+    os << "VardisActivate_Confirm{s_type=" << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << " }";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const VardisDeactivate_Request& req)
   {
-    os << "VardisDeactivate_Request{s_type=" << vardis_service_type_to_string(req.s_type)
+    os << "VardisDeactivate_Request{s_type=" << to_string(req.stype())
        << " }";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const VardisDeactivate_Confirm& conf)
   {
-    os << "VardisDeactivate_Confirm{s_type=" << vardis_service_type_to_string (conf.s_type)
-       << ", status_code = " << vardis_status_to_string (conf.status_code)
+    os << "VardisDeactivate_Confirm{s_type=" << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << " }";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const VardisGetStatistics_Request& req)
   {
-    os << "VardisGetStatistics_Request{s_type=" << vardis_service_type_to_string(req.s_type)
+    os << "VardisGetStatistics_Request{s_type=" << to_string(req.stype())
        << " }";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const VardisGetStatistics_Confirm& conf)
   {
-    os << "VardisGetStatistics_Confirm{s_type=" << vardis_service_type_to_string (conf.s_type)
-       << ", status_code = " << vardis_status_to_string (conf.status_code)
+    os << "VardisGetStatistics_Confirm{s_type=" << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << ", protocol_stats = " << conf.protocol_stats
        << " }";
     return os;
@@ -111,15 +111,15 @@ namespace dcp::vardis {
   
   std::ostream& operator<<(std::ostream& os, const VardisDescribeDatabase_Request& req)
   {
-    os << "VardisDescribeDatabase_Request{s_type=" << vardis_service_type_to_string(req.s_type)
+    os << "VardisDescribeDatabase_Request{s_type=" << to_string(req.stype())
        << " }";
     return os;
   }
 
   std::ostream& operator<<(std::ostream& os, const VardisDescribeDatabase_Confirm& conf)
   {
-    os << "VardisGetStatistics_Confirm{s_type=" << vardis_service_type_to_string (conf.s_type)
-       << ", status_code = " << vardis_status_to_string (conf.status_code)
+    os << "VardisGetStatistics_Confirm{s_type=" << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << ", numberVariableDescriptions = " << conf.numberVariableDescriptions
        << " }";
     return os;
@@ -141,7 +141,7 @@ namespace dcp::vardis {
 
   std::ostream& operator<<(std::ostream& os, const VardisDescribeVariable_Request& req)
   {
-    os << "VardisDescribeVariable_Request{s_type=" << vardis_service_type_to_string(req.s_type)
+    os << "VardisDescribeVariable_Request{s_type=" << to_string(req.stype())
        << " }";
     return os;
   }
@@ -167,8 +167,8 @@ namespace dcp::vardis {
 
   std::ostream& operator<<(std::ostream& os, const VardisDescribeVariable_Confirm& conf)
   {
-    os << "VardisDescribeVariable_Confirm{s_type=" << vardis_service_type_to_string (conf.s_type)
-       << ", status_code = " << vardis_status_to_string (conf.status_code)
+    os << "VardisDescribeVariable_Confirm{s_type=" << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << ", var_description = " << conf.var_description
        << " }";
     return os;
@@ -176,7 +176,7 @@ namespace dcp::vardis {
   
   std::ostream& operator<<(std::ostream& os, const RTDB_Create_Request& req)
   {
-    os << "RTDB_Create_Request{s_type=" << vardis_service_type_to_string(req.s_type)
+    os << "RTDB_Create_Request{s_type=" << to_string(req.stype())
        << ", spec = " << req.spec
        << ", value = " << req.value
        << " }";
@@ -185,8 +185,8 @@ namespace dcp::vardis {
 
   std::ostream& operator<<(std::ostream& os, const RTDB_Create_Confirm& conf)
   {
-    os << "RTDB_Create_Confirm{s_type=" << vardis_service_type_to_string (conf.s_type)
-       << ", status_code = " << vardis_status_to_string (conf.status_code)
+    os << "RTDB_Create_Confirm{s_type=" << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << ", varId = " << (int) conf.varId.val
        << " }";
     return os;
@@ -194,7 +194,7 @@ namespace dcp::vardis {
   
   std::ostream& operator<<(std::ostream& os, const RTDB_Delete_Request& req)
   {
-    os << "RTDB_Delete_Request{s_type=" << vardis_service_type_to_string(req.s_type)
+    os << "RTDB_Delete_Request{s_type=" << to_string(req.stype())
        << ", varId = " << req.varId
        << " }";
     return os;
@@ -202,8 +202,8 @@ namespace dcp::vardis {
 
   std::ostream& operator<<(std::ostream& os, const RTDB_Delete_Confirm& conf)
   {
-    os << "RTDB_Delete_Confirm{s_type=" << vardis_service_type_to_string (conf.s_type)
-       << ", status_code = " << vardis_status_to_string (conf.status_code)
+    os << "RTDB_Delete_Confirm{s_type=" << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << ", varId = " << (int) conf.varId.val
        << " }";
     return os;
@@ -211,7 +211,7 @@ namespace dcp::vardis {
   
   std::ostream& operator<<(std::ostream& os, const RTDB_Update_Request& req)
   {
-    os << "RTDB_Update_Request{s_type=" << vardis_service_type_to_string(req.s_type)
+    os << "RTDB_Update_Request{s_type=" << to_string(req.stype())
        << ", varId = " << req.varId
        << ", value = " << req.value
        << " }";
@@ -220,8 +220,8 @@ namespace dcp::vardis {
 
   std::ostream& operator<<(std::ostream& os, const RTDB_Update_Confirm& conf)
   {
-    os << "RTDB_Update_Confirm{s_type=" << vardis_service_type_to_string (conf.s_type)
-       << ", status_code = " << vardis_status_to_string (conf.status_code)
+    os << "RTDB_Update_Confirm{s_type=" << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << ", varId = " << (int) conf.varId.val
        << " }";
     return os;
@@ -229,7 +229,7 @@ namespace dcp::vardis {
   
   std::ostream& operator<<(std::ostream& os, const RTDB_Read_Request& req)
   {
-    os << "RTDB_Read_Request{s_type=" << vardis_service_type_to_string(req.s_type)
+    os << "RTDB_Read_Request{s_type=" << to_string(req.stype())
        << ", varId = " << req.varId
        << " }";
     return os;
@@ -237,8 +237,8 @@ namespace dcp::vardis {
   
   std::ostream& operator<<(std::ostream& os, const RTDB_Read_Confirm& conf)
   {
-    os << "RTDB_Read_Confirm{s_type=" << vardis_service_type_to_string (conf.s_type)
-       << ", status_code = " << vardis_status_to_string (conf.status_code)
+    os << "RTDB_Read_Confirm{s_type=" << to_string (conf.stype())
+       << ", status_code = " << to_string (conf.stat())
        << ", varId = " << (int) conf.varId.val
        << ", value = " << conf.value
        << ", tStamp = " << conf.tStamp

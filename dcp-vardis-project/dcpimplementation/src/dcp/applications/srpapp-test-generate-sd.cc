@@ -172,10 +172,13 @@ int main (int argc, char* argv [])
 
 	srp::SafetyDataT new_sd = generate_new_sd (dx, dy, dz);
 	
-	DcpStatus update_status = cl_rt.set_own_safety_data(new_sd);
-	if (update_status != SRP_STATUS_OK)
+	SRPStatus update_status = cl_rt.set_own_safety_data(new_sd);
+	if (update_status != SRPStatus::Ok)
 	  {
-	    cout << "Update of own safety data failed with status " << srp_status_to_string (update_status) << ". Exiting." << endl;
+	    cout << "Update of own safety data failed with status "
+		 << to_string (update_status)
+		 << ". Exiting."
+		 << endl;
 	    exitFlag = true;
 	  }
       }    

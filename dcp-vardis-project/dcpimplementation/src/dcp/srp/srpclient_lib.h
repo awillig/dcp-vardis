@@ -23,8 +23,8 @@
 #include <list>
 #include <dcp/common/command_socket.h>
 #include <dcp/common/exceptions.h>
-#include <dcp/common/services_status.h>
 #include <dcp/srp/srpclient_configuration.h>
+#include <dcp/srp/srp_services_status.h>
 #include <dcp/srp/srp_store_fixedmem_shm.h>
 #include <dcp/srp/srp_transmissible_types.h>
 
@@ -95,14 +95,14 @@ namespace dcp {
      * @brief Request SRP demon to activate, i.e. resume processing of
      *        received payloads and generating payloads
      */
-    DcpStatus activate_srp ();
+    dcp::srp::SRPStatus activate_srp ();
 
 
     /**
      * @brief Request SRP demon to deactivate, i.e. stop processing
      *        received payloads and stop generating own payloads
      */
-    DcpStatus deactivate_srp ();
+    dcp::srp::SRPStatus deactivate_srp ();
 
     
     /****************************************************************
@@ -120,7 +120,7 @@ namespace dcp {
      * regularly refreshed to keep transmission of the own safety data
      * going.
      */
-    DcpStatus set_own_safety_data (const dcp::srp::SafetyDataT& new_sd);
+    dcp::srp::SRPStatus set_own_safety_data (const dcp::srp::SafetyDataT& new_sd);
 
 
     /****************************************************************
@@ -135,7 +135,7 @@ namespace dcp {
      * @param neighbour_list: output value containing list of
      *        NodeInformation records of all current neighbours
      */
-    DcpStatus get_all_neighbours_node_information (std::list<dcp::srp::NodeInformation>& neighbour_list);
+    dcp::srp::SRPStatus get_all_neighbours_node_information (std::list<dcp::srp::NodeInformation>& neighbour_list);
 
 
     /**
@@ -148,8 +148,8 @@ namespace dcp {
      * @param neighbour_list: output parameter collecting NodeInformation
      *        records for all neighbours for whom the predicate matches
      */
-    DcpStatus get_matching_neighbours_node_information (std::function<bool (const dcp::srp::ExtendedSafetyDataT&)> predicate,
-							std::list<dcp::srp::NodeInformation>& neighbour_list);
+    dcp::srp::SRPStatus get_matching_neighbours_node_information (std::function<bool (const dcp::srp::ExtendedSafetyDataT&)> predicate,
+								  std::list<dcp::srp::NodeInformation>& neighbour_list);
     
   };
   

@@ -24,7 +24,6 @@
 #include <thread>
 #include <chrono>
 #include <dcp/common/area.h>
-#include <dcp/common/services_status.h>
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/srp/srp_logging.h>
 #include <dcp/srp/srp_scrubber.h>

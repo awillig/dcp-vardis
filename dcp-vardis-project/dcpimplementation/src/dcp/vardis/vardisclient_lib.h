@@ -23,7 +23,6 @@
 #include <list>
 #include <dcp/common/command_socket.h>
 #include <dcp/common/exceptions.h>
-#include <dcp/common/services_status.h>
 #include <dcp/common/sharedmem_structure_base.h>
 #include <dcp/vardis/vardisclient_configuration.h>
 #include <dcp/vardis/vardis_constants.h>
@@ -61,7 +60,7 @@ namespace dcp {
      * If registration is successful this establishes access to the
      * shared memory segment.
      */
-    DcpStatus register_with_vardis (bool delete_old_registration = false);
+    vardis::VardisStatus register_application (bool delete_old_registration = false);
 
     
     /**
@@ -71,7 +70,7 @@ namespace dcp {
      * segment. The client will detach when the lifetime of this
      * object ends
      */
-    DcpStatus deregister_with_vardis ();
+    vardis::VardisStatus deregister_application ();
 
 
     /**
@@ -161,7 +160,7 @@ namespace dcp {
      * After calling this no further service requests should be sent
      * to the Vardis demon, otherwise undefined behaviour might result
      */
-    DcpStatus shutdown_vardis ();
+    vardis::VardisStatus shutdown ();
 
 
     /**
@@ -169,7 +168,7 @@ namespace dcp {
      *        of received payloads, generating payloads and processing
      *        of RTDB service requests
      */
-    DcpStatus activate_vardis ();
+    vardis::VardisStatus activate ();
 
 
     /**
@@ -177,7 +176,7 @@ namespace dcp {
      *        of received payloads, stop generating own payloads, and stop
      *        processing RTDB service requests
      */
-    DcpStatus deactivate_vardis ();
+    vardis::VardisStatus deactivate ();
 
 
     /**
@@ -188,7 +187,7 @@ namespace dcp {
      *        retrieved variable descriptions. Only valid if this
      *        returns VARDIS_STATUS_OK
      */
-    DcpStatus describe_database (std::list<vardis::DescribeDatabaseVariableDescription>& db_descr);
+    vardis::VardisStatus describe_database (std::list<vardis::DescribeDatabaseVariableDescription>& db_descr);
 
 
     /**
@@ -205,9 +204,9 @@ namespace dcp {
      *        parameter. The buffer must be large enough to
      *        accommodate a maximum sized variable.
      */
-    DcpStatus describe_variable (vardis::VarIdT varId,
-				 vardis::DescribeVariableDescription& var_descr,
-				 byte* buffer);
+    vardis::VardisStatus describe_variable (vardis::VarIdT varId,
+					    vardis::DescribeVariableDescription& var_descr,
+					    byte* buffer);
     
 
     
@@ -218,7 +217,7 @@ namespace dcp {
      *        statistics object, only valid if this returns
      *        VARDIS_STATUS_OK
      */
-    DcpStatus retrieve_statistics (vardis::VardisProtocolStatistics& stats);
+    vardis::VardisStatus retrieve_statistics (vardis::VardisProtocolStatistics& stats);
 
     
     /****************************************************************
@@ -233,8 +232,8 @@ namespace dcp {
      *        creationTime need to be valid)
      * @param value: initial value of variable
      */
-    DcpStatus rtdb_create (const vardis::VarSpecT& spec,
-			   const vardis::VarValueT& value);
+    vardis::VardisStatus rtdb_create (const vardis::VarSpecT& spec,
+				      const vardis::VarValueT& value);
 
 
     /**
@@ -242,15 +241,15 @@ namespace dcp {
      *
      * @param varId: Identifier of variable to be deleted
      */
-    DcpStatus rtdb_delete (vardis::VarIdT varId);
+    vardis::VardisStatus rtdb_delete (vardis::VarIdT varId);
 
 
     /**
      * @brief Update a variable
      */
-    DcpStatus rtdb_update (vardis::VarIdT varId,
-			   const vardis::VarValueT& value);
-
+    vardis::VardisStatus rtdb_update (vardis::VarIdT varId,
+				      const vardis::VarValueT& value);
+    
 
     /**
      * @brief Read a variable.
@@ -277,12 +276,12 @@ namespace dcp {
      *         variable exists but is deleted then VARDIS_STATUS_VARIABLE_IS_DELETED
      *         is returned, otherwise VARDIS_STATUS_OK.
      */
-    DcpStatus rtdb_read   (vardis::VarIdT varId,
-			   vardis::VarIdT& responseVarId,
-			   vardis::VarLenT& responseVarLen,
-			   TimeStampT& responseTimeStamp,
-			   size_t value_bufsize,
-			   byte* value_buffer);
+    vardis::VardisStatus rtdb_read   (vardis::VarIdT varId,
+				      vardis::VarIdT& responseVarId,
+				      vardis::VarLenT& responseVarLen,
+				      TimeStampT& responseTimeStamp,
+				      size_t value_bufsize,
+				      byte* value_buffer);
     
   };
   

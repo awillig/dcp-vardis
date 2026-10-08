@@ -50,16 +50,16 @@ namespace dcp::vardis {
     del_req.varId = 10;
     RTDB_Read_Request read_req;
     read_req.varId = 10;
-    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).status_code, VARDIS_STATUS_INACTIVE);
-    EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).status_code, VARDIS_STATUS_INACTIVE);
-    EXPECT_EQ (protData.handle_rtdb_read_request (read_req).status_code, VARDIS_STATUS_INACTIVE);
-    EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).status_code, VARDIS_STATUS_INACTIVE);
+    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).stat(), VardisStatus::Inactive);
+    EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).stat(), VardisStatus::Inactive);
+    EXPECT_EQ (protData.handle_rtdb_read_request (read_req).stat(), VardisStatus::Inactive);
+    EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).stat(), VardisStatus::Inactive);
 
     protData.vardis_store.set_vardis_isactive (true);
-    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).status_code, VARDIS_STATUS_OK);
-    EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).status_code, VARDIS_STATUS_OK);
-    EXPECT_EQ (protData.handle_rtdb_read_request (read_req).status_code, VARDIS_STATUS_OK);
-    EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).status_code, VARDIS_STATUS_OK);
+    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).stat(), VardisStatus::Ok);
+    EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).stat(), VardisStatus::Ok);
+    EXPECT_EQ (protData.handle_rtdb_read_request (read_req).stat(), VardisStatus::Ok);
+    EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).stat(), VardisStatus::Ok);
     
   }
 
@@ -81,10 +81,10 @@ namespace dcp::vardis {
       cr_req1.value        = VarValueT (sizeof(double), (byte*) &dval);
       EXPECT_EQ (protData.createQ.size(), 0);
       EXPECT_EQ (protData.summaryQ.size(), 0);
-      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req1).status_code, VARDIS_STATUS_OK);
+      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req1).stat(), VardisStatus::Ok);
       EXPECT_EQ (protData.createQ.size(), 1);
       EXPECT_EQ (protData.summaryQ.size(), 1);
-      //EXPECT_EQ (protData.handle_rtdb_create_request (cr_req1).status_code, VARDIS_STATUS_VARIABLE_EXISTS);
+      //EXPECT_EQ (protData.handle_rtdb_create_request (cr_req1).stat(), VardisStatus::Variable_Exists);
     }
 
     // Check handling of maximum description length (default value 32)
@@ -96,9 +96,9 @@ namespace dcp::vardis {
       cr_req2.spec.repCnt  = 3;
       cr_req2.spec.descr   = StringT ("012345678901234567890123456789012");
       cr_req2.value        = VarValueT (sizeof(double), (byte*) &ddval);
-      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req2).status_code, VARDIS_STATUS_VARIABLE_DESCRIPTION_TOO_LONG);
+      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req2).stat(), VardisStatus::Description_Too_Long);
       cr_req2.spec.descr   = StringT ("01234567890123456789012345678901");
-      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req2).status_code, VARDIS_STATUS_OK);
+      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req2).stat(), VardisStatus::Ok);
     }
 
     // Check handling of maximum value length (default value 32)
@@ -110,9 +110,9 @@ namespace dcp::vardis {
       cr_req3.spec.repCnt  = 3;
       cr_req3.spec.descr   = StringT ("hello");
       cr_req3.value        = VarValueT (33, buffer);
-      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req3).status_code, VARDIS_STATUS_VALUE_TOO_LONG);
+      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req3).stat(), VardisStatus::Value_Too_Long);
       cr_req3.value        = VarValueT (32, buffer);
-      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req3).status_code, VARDIS_STATUS_OK);
+      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req3).stat(), VardisStatus::Ok);
     }
 
     // Check handling of zero value length
@@ -124,9 +124,9 @@ namespace dcp::vardis {
       cr_req4.spec.repCnt  = 3;
       cr_req4.spec.descr   = StringT ("hello");
       cr_req4.value        = VarValueT (0, buffer);
-      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req4).status_code, VARDIS_STATUS_EMPTY_VALUE);
+      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req4).stat(), VardisStatus::Empty_Value);
       cr_req4.value        = VarValueT (1, buffer);
-      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req4).status_code, VARDIS_STATUS_OK);
+      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req4).stat(), VardisStatus::Ok);
     }
 
     // Check handling of repcount value (larger than zero, default maximum is five)
@@ -138,11 +138,11 @@ namespace dcp::vardis {
       cr_req5.spec.repCnt  = 0;
       cr_req5.spec.descr   = StringT ("hello");
       cr_req5.value        = VarValueT (20, buffer);
-      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req5).status_code, VARDIS_STATUS_ILLEGAL_REPCOUNT);
+      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req5).stat(), VardisStatus::Illegal_Repcount);
       cr_req5.spec.repCnt  = 6;
-      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req5).status_code, VARDIS_STATUS_ILLEGAL_REPCOUNT);
+      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req5).stat(), VardisStatus::Illegal_Repcount);
       cr_req5.spec.repCnt  = 5;
-      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req5).status_code, VARDIS_STATUS_OK);
+      EXPECT_EQ (protData.handle_rtdb_create_request (cr_req5).stat(), VardisStatus::Ok);
     }
     
   }
@@ -162,7 +162,7 @@ namespace dcp::vardis {
     cr_req.spec.repCnt  = 3;
     cr_req.spec.descr   = StringT ("hello");
     cr_req.value        = VarValueT (sizeof(double), (byte*) &dval);
-    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).status_code, VARDIS_STATUS_OK);
+    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).stat(), VardisStatus::Ok);
 
     // Check status of queues for successful update
     {
@@ -172,7 +172,7 @@ namespace dcp::vardis {
       EXPECT_EQ (protData.summaryQ.size(), 1);
       EXPECT_EQ (protData.createQ.size(), 1);
       EXPECT_EQ (protData.updateQ.size(), 0);
-      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).status_code, VARDIS_STATUS_OK);
+      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).stat(), VardisStatus::Ok);
       EXPECT_EQ (protData.summaryQ.size(), 1);
       EXPECT_EQ (protData.createQ.size(), 1);
       EXPECT_EQ (protData.updateQ.size(), 1);
@@ -184,7 +184,7 @@ namespace dcp::vardis {
       RTDB_Update_Request upd_req;
       upd_req.varId = 20;
       upd_req.value = VarValueT (sizeof(double), (byte*) &dval);
-      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).status_code, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST);
+      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).stat(), VardisStatus::Variable_Does_Not_Exist);
     }
 
     // Check attempted update on variable for which I am not the producer
@@ -194,7 +194,7 @@ namespace dcp::vardis {
       upd_req.varId = 10;
       protData.ownNodeIdentifier = addr2;
       upd_req.value = VarValueT (sizeof(double), (byte*) &dval);
-      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).status_code, VARDIS_STATUS_NOT_PRODUCER);
+      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).stat(), VardisStatus::Not_Producer);
       protData.ownNodeIdentifier = addr1;
     }
 
@@ -204,7 +204,7 @@ namespace dcp::vardis {
       RTDB_Update_Request upd_req;
       upd_req.varId = 10;
       upd_req.value = VarValueT (0, (byte*) &dval);
-      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).status_code, VARDIS_STATUS_EMPTY_VALUE);
+      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).stat(), VardisStatus::Empty_Value);
     }
 
     // Check attempted update with a too long value
@@ -213,21 +213,21 @@ namespace dcp::vardis {
       RTDB_Update_Request upd_req;
       upd_req.varId = 10;
       upd_req.value = VarValueT (33, buffer);
-      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).status_code, VARDIS_STATUS_VALUE_TOO_LONG);
+      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).stat(), VardisStatus::Value_Too_Long);
       upd_req.value = VarValueT (32, buffer);
-      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).status_code, VARDIS_STATUS_OK);
+      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).stat(), VardisStatus::Ok);
     }
     
     // Check attempted update on a variable that is to be deleted
     {
       RTDB_Delete_Request del_req;
       del_req.varId = 10;
-      EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).status_code, VARDIS_STATUS_OK);
+      EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).stat(), VardisStatus::Ok);
       double dval = 3.14;
       RTDB_Update_Request upd_req;
       upd_req.varId = 10;
       upd_req.value = VarValueT (sizeof(double), (byte*) &dval);
-      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).status_code, VARDIS_STATUS_VARIABLE_IS_DELETED);
+      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).stat(), VardisStatus::Variable_Is_Deleted);
     }
     
   }
@@ -246,13 +246,13 @@ namespace dcp::vardis {
     cr_req.spec.repCnt  = 3;
     cr_req.spec.descr   = StringT ("hello");
     cr_req.value        = VarValueT (sizeof(double), (byte*) &dval);
-    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).status_code, VARDIS_STATUS_OK);
+    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).stat(), VardisStatus::Ok);
 
     // Check attempted delete on non-existing variable
     {
       RTDB_Delete_Request del_req;
       del_req.varId = 20;
-      EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).status_code, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST);
+      EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).stat(), VardisStatus::Variable_Does_Not_Exist);
     }
 
     // Check attempted delete on variable for which I am not the owner
@@ -260,7 +260,7 @@ namespace dcp::vardis {
       RTDB_Delete_Request del_req;
       del_req.varId = 10;
       protData.ownNodeIdentifier = addr2;
-      EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).status_code, VARDIS_STATUS_NOT_PRODUCER);
+      EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).stat(), VardisStatus::Not_Producer);
       protData.ownNodeIdentifier = addr1;
     }
 
@@ -271,11 +271,11 @@ namespace dcp::vardis {
       EXPECT_EQ (protData.createQ.size(), 1);
       EXPECT_EQ (protData.summaryQ.size(), 1);
       EXPECT_EQ (protData.deleteQ.size(), 0);
-      EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).status_code, VARDIS_STATUS_OK);
+      EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).stat(), VardisStatus::Ok);
       EXPECT_EQ (protData.createQ.size(), 0);
       EXPECT_EQ (protData.summaryQ.size(), 0);
       EXPECT_EQ (protData.deleteQ.size(), 1);
-      EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).status_code, VARDIS_STATUS_VARIABLE_IS_DELETED);
+      EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).stat(), VardisStatus::Variable_Is_Deleted);
     }
     
   }
@@ -294,13 +294,13 @@ namespace dcp::vardis {
     cr_req.spec.repCnt  = 3;
     cr_req.spec.descr   = StringT ("hello");
     cr_req.value        = VarValueT (sizeof(double), (byte*) &dval);
-    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).status_code, VARDIS_STATUS_OK);
+    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).stat(), VardisStatus::Ok);
 
     // Check attempted read on non-existing variable
     {
       RTDB_Read_Request read_req;
       read_req.varId = 20;
-      EXPECT_EQ (protData.handle_rtdb_read_request (read_req).status_code, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST);
+      EXPECT_EQ (protData.handle_rtdb_read_request (read_req).stat(), VardisStatus::Variable_Does_Not_Exist);
     }
 
     // Check attempted read on a variable already being deleted
@@ -309,8 +309,8 @@ namespace dcp::vardis {
       del_req.varId = 10;
       RTDB_Read_Request read_req;
       read_req.varId = 10;
-      EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).status_code, VARDIS_STATUS_OK);
-      EXPECT_EQ (protData.handle_rtdb_read_request (read_req).status_code, VARDIS_STATUS_VARIABLE_IS_DELETED);
+      EXPECT_EQ (protData.handle_rtdb_delete_request (del_req).stat(), VardisStatus::Ok);
+      EXPECT_EQ (protData.handle_rtdb_read_request (read_req).stat(), VardisStatus::Variable_Is_Deleted);
     }
     
   }
@@ -331,15 +331,15 @@ namespace dcp::vardis {
     cr_req.spec.repCnt  = 3;
     cr_req.spec.descr   = StringT ("hello");
     cr_req.value        = VarValueT (sizeof(double), (byte*) &dval);
-    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).status_code, VARDIS_STATUS_OK);
+    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).stat(), VardisStatus::Ok);
 
     // Check that I can read back the initial value
     {
       RTDB_Read_Request read_req;
       read_req.varId = 10;
       RTDB_Read_Confirm read_conf = protData.handle_rtdb_read_request (read_req);
-      EXPECT_EQ (read_conf.status_code, VARDIS_STATUS_OK);
-      EXPECT_EQ (read_conf.s_type, stVardis_RTDB_Read);
+      EXPECT_EQ (read_conf.stat(), VardisStatus::Ok);
+      EXPECT_EQ (read_conf.stype(), VardisServiceType::RTDB_Read);
       EXPECT_EQ (read_conf.value.length, sizeof(double));
       EXPECT_NE (read_conf.value.data, nullptr);
       double* pdval = (double*) read_conf.value.data;
@@ -353,13 +353,13 @@ namespace dcp::vardis {
       RTDB_Update_Request upd_req;
       upd_req.varId = 10;
       upd_req.value = VarValueT (sizeof(double), (byte*) &dval);
-      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).status_code, VARDIS_STATUS_OK);
+      EXPECT_EQ (protData.handle_rtdb_update_request (upd_req).stat(), VardisStatus::Ok);
 
       RTDB_Read_Request read_req;
       read_req.varId = 10;
       RTDB_Read_Confirm read_conf = protData.handle_rtdb_read_request (read_req);
-      EXPECT_EQ (read_conf.status_code, VARDIS_STATUS_OK);
-      EXPECT_EQ (read_conf.s_type, stVardis_RTDB_Read);
+      EXPECT_EQ (read_conf.stat(), VardisStatus::Ok);
+      EXPECT_EQ (read_conf.stype(), VardisServiceType::RTDB_Read);
       EXPECT_EQ (read_conf.value.length, sizeof(double));
       EXPECT_NE (read_conf.value.data, nullptr);
       double* pdval = (double*) read_conf.value.data;
@@ -382,7 +382,7 @@ namespace dcp::vardis {
     cr_req.spec.repCnt  = 3;
     cr_req.spec.descr   = StringT ("hello");
     cr_req.value        = VarValueT (sizeof(double), (byte*) &dval);
-    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).status_code, VARDIS_STATUS_OK);
+    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).stat(), VardisStatus::Ok);
 
     VarCreateT valid_create;
     valid_create.spec.varId      = 20;
@@ -406,7 +406,7 @@ namespace dcp::vardis {
     RTDB_Update_Request test_upd_req;
     test_upd_req.varId  =  20;
     test_upd_req.value  =  VarValueT (sizeof(double), (byte*) &ddval);
-    EXPECT_EQ (protData.handle_rtdb_update_request (test_upd_req).status_code, VARDIS_STATUS_NOT_PRODUCER);
+    EXPECT_EQ (protData.handle_rtdb_update_request (test_upd_req).stat(), VardisStatus::Not_Producer);
 
     
     // Test attempted create on an already existing variable (by
@@ -420,7 +420,7 @@ namespace dcp::vardis {
       RTDB_Read_Request read_req;
       read_req.varId = 10;
       auto rd_conf = protData.handle_rtdb_read_request (read_req);
-      EXPECT_EQ (rd_conf.status_code, VARDIS_STATUS_OK);
+      EXPECT_EQ (rd_conf.stat(), VardisStatus::Ok);
       EXPECT_EQ (rd_conf.value.length, sizeof(double));
       EXPECT_NE (dddval, *((double*) rd_conf.value.data));
     }
@@ -437,17 +437,17 @@ namespace dcp::vardis {
       RTDB_Read_Request read_req;
       read_req.varId = 30;
       auto rd_conf = protData.handle_rtdb_read_request (read_req);
-      EXPECT_EQ (rd_conf.status_code, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST);
+      EXPECT_EQ (rd_conf.stat(), VardisStatus::Variable_Does_Not_Exist);
 
       wrong_create.spec.descr  = StringT ("012345678901234567890123456789012");
       protData.process_var_create (wrong_create);
       rd_conf = protData.handle_rtdb_read_request (read_req);
-      EXPECT_EQ (rd_conf.status_code, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST);
+      EXPECT_EQ (rd_conf.stat(), VardisStatus::Variable_Does_Not_Exist);
 
       wrong_create.spec.descr  = StringT ("01234567890123456789012345678901");
       protData.process_var_create (wrong_create);
       rd_conf = protData.handle_rtdb_read_request (read_req);
-      EXPECT_EQ (rd_conf.status_code, VARDIS_STATUS_OK);
+      EXPECT_EQ (rd_conf.stat(), VardisStatus::Ok);
     }
 
     
@@ -463,17 +463,17 @@ namespace dcp::vardis {
       RTDB_Read_Request read_req;
       read_req.varId = 40;
       auto rd_conf = protData.handle_rtdb_read_request (read_req);
-      EXPECT_EQ (rd_conf.status_code, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST);
+      EXPECT_EQ (rd_conf.stat(), VardisStatus::Variable_Does_Not_Exist);
 
       wrong_create.update.value  = VarValueT (33, buffer);
       protData.process_var_create (wrong_create);
       rd_conf = protData.handle_rtdb_read_request (read_req);
-      EXPECT_EQ (rd_conf.status_code, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST);
+      EXPECT_EQ (rd_conf.stat(), VardisStatus::Variable_Does_Not_Exist);
 
       wrong_create.update.value  = VarValueT (32, buffer);
       protData.process_var_create (wrong_create);
       rd_conf = protData.handle_rtdb_read_request (read_req);
-      EXPECT_EQ (rd_conf.status_code, VARDIS_STATUS_OK);
+      EXPECT_EQ (rd_conf.stat(), VardisStatus::Ok);
     }
 
 
@@ -490,17 +490,17 @@ namespace dcp::vardis {
       RTDB_Read_Request read_req;
       read_req.varId = 50;
       auto rd_conf = protData.handle_rtdb_read_request (read_req);
-      EXPECT_EQ (rd_conf.status_code, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST);
+      EXPECT_EQ (rd_conf.stat(), VardisStatus::Variable_Does_Not_Exist);
 
       wrong_create.spec.repCnt  = 6;
       protData.process_var_create (wrong_create);
       rd_conf = protData.handle_rtdb_read_request (read_req);
-      EXPECT_EQ (rd_conf.status_code, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST);
+      EXPECT_EQ (rd_conf.stat(), VardisStatus::Variable_Does_Not_Exist);
 
       wrong_create.spec.repCnt = 5;
       protData.process_var_create (wrong_create);
       rd_conf = protData.handle_rtdb_read_request (read_req);
-      EXPECT_EQ (rd_conf.status_code, VARDIS_STATUS_OK);
+      EXPECT_EQ (rd_conf.stat(), VardisStatus::Ok);
     }
     
   }
@@ -519,7 +519,7 @@ namespace dcp::vardis {
     cr_req.spec.repCnt  = 3;
     cr_req.spec.descr   = StringT ("hello");
     cr_req.value        = VarValueT (sizeof(double), (byte*) &dval);
-    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).status_code, VARDIS_STATUS_OK);
+    EXPECT_EQ (protData.handle_rtdb_create_request (cr_req).stat(), VardisStatus::Ok);
 
     // Check that a delete is not accepted when I am the producer
     VarDeleteT del_req;
@@ -527,12 +527,12 @@ namespace dcp::vardis {
     protData.process_var_delete (del_req);
     RTDB_Read_Request read_req;
     read_req.varId = 10;
-    EXPECT_EQ (protData.handle_rtdb_read_request (read_req).status_code, VARDIS_STATUS_OK);
+    EXPECT_EQ (protData.handle_rtdb_read_request (read_req).stat(), VardisStatus::Ok);
 
     // Check that a delete is accepted when I am not the producer
     protData.ownNodeIdentifier = addr2;
     protData.process_var_delete (del_req);
-    EXPECT_EQ (protData.handle_rtdb_read_request (read_req).status_code, VARDIS_STATUS_VARIABLE_IS_DELETED);
+    EXPECT_EQ (protData.handle_rtdb_read_request (read_req).stat(), VardisStatus::Variable_Is_Deleted);
     
   }
   

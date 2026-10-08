@@ -84,10 +84,13 @@ int main (int argc, char* argv [])
 
     std::list<DescribeDatabaseVariableDescription> db_list;
     
-    DcpStatus dd_status = cl_rt.describe_database (db_list);
-    if (dd_status != VARDIS_STATUS_OK)
+    VardisStatus dd_status = cl_rt.describe_database (db_list);
+    if (dd_status != VardisStatus::Ok)
       {
-	cout << "Obtaining database description failed with status " << vardis_status_to_string (dd_status) << ". Exiting." << endl;
+	cout << "Obtaining database description failed with status "
+	     << to_string (dd_status)
+	     << ". Exiting."
+	     << endl;
 	return EXIT_FAILURE;
       }
     

@@ -13,7 +13,6 @@
 #include <dcp/common/exceptions.h>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/common/other_helpers.h>
-#include <dcp/common/services_status.h>
 #include <dcp/vardis/vardis_constants.h>
 #include <dcp/vardis/vardis_transmissible_types.h>
 #include <dcp/vardis/vardisclient_configuration.h>
@@ -186,10 +185,13 @@ int main (int argc, char* argv [])
     VardisTestVariable initial_varval = generate_new_value (distribution);
     VarValueT initial_value (sizeof(VardisTestVariable), (byte*) &initial_varval);
     
-    DcpStatus create_status = cl_rt.rtdb_create (spec, initial_value);
-    if (create_status != VARDIS_STATUS_OK)
+    VardisStatus create_status = cl_rt.rtdb_create (spec, initial_value);
+    if (create_status != VardisStatus::Ok)
       {
-	cout << "Creation of Vardis variable failed with status " << vardis_status_to_string (create_status) << ". Exiting." << endl;
+	cout << "Creation of Vardis variable failed with status "
+	     << to_string (create_status)
+	     << ". Exiting."
+	     << endl;
 	return EXIT_FAILURE;
       }
   
@@ -206,10 +208,13 @@ int main (int argc, char* argv [])
 	VardisTestVariable varval = generate_new_value (distribution);
 	VarValueT value (sizeof(VardisTestVariable), (byte*) &varval);
 	
-	DcpStatus update_status = cl_rt.rtdb_update (varId, value);
-	if (update_status != VARDIS_STATUS_OK)
+	VardisStatus update_status = cl_rt.rtdb_update (varId, value);
+	if (update_status != VardisStatus::Ok)
 	  {
-	    cout << "Update of Vardis variable failed with status " << vardis_status_to_string (update_status) << ". Exiting." << endl;
+	    cout << "Update of Vardis variable failed with status "
+		 << to_string (update_status)
+		 << ". Exiting."
+		 << endl;
 	    exitFlag = true;
 	  }
       }
@@ -219,10 +224,13 @@ int main (int argc, char* argv [])
     // Leave: delete variable
     // ============================================
     
-    DcpStatus delete_status = cl_rt.rtdb_delete (varId);
-    if (delete_status != VARDIS_STATUS_OK)
+    VardisStatus delete_status = cl_rt.rtdb_delete (varId);
+    if (delete_status != VardisStatus::Ok)
       {
-	cout << "Deleting variable failed with status " << vardis_status_to_string (delete_status) << ". Exiting." << endl;
+	cout << "Deleting variable failed with status "
+	     << to_string (delete_status)
+	     << ". Exiting."
+	     << endl;
 	return EXIT_FAILURE;
       }
     
@@ -236,7 +244,10 @@ int main (int argc, char* argv [])
     }
   catch (std::exception& e)
     {
-      cout << "Caught an exception, got " << e.what() << ". Exiting." << endl;
+      cout << "Caught an exception, got "
+	   << e.what()
+	   << ". Exiting."
+	   << endl;
       return EXIT_FAILURE;
     }
 }

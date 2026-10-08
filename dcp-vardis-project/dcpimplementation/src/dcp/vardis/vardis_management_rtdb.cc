@@ -67,7 +67,7 @@ namespace dcp::vardis {
       
       DCPLOG_TRACE(log_mgmt_rtdb)
 	<< "handle_request_queue: status code after processing = "
-	<< vardis_status_to_string (theConfirm.status_code);
+	<< to_string (theConfirm.stat());
       
       confirmQueue.push_nowait (conf_handler, conf_timed_out, conf_is_full);
       

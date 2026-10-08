@@ -23,6 +23,7 @@
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/bp/bp_shm_control_segment.h>
 #include <dcp/bp/bp_service_primitives.h>
+#include <dcp/bp/bp_services_status.h>
 
 using dcp::bp::BPTransmitPayload_Request;
 using dcp::bp::BPTransmitPayload_Confirm;
@@ -36,7 +37,7 @@ namespace dcp {
   // ---------------------------------------------------------------
 
   
-  DcpStatus BPClientRuntime::transmit_payload (BPLengthT length, byte* payload)
+  BPStatus BPClientRuntime::transmit_payload (BPLengthT length, byte* payload)
   {
     if (not _isRegistered)
       throw BPClientLibException ("transmit_payload",
@@ -56,7 +57,7 @@ namespace dcp {
 
   // ---------------------------------------------------------------
 
-  DcpStatus BPClientRuntime::receive_payload_helper (BPLengthT& result_length,
+  BPStatus BPClientRuntime::receive_payload_helper (BPLengthT& result_length,
 						     byte* result_buffer,
 						     bool& more_payloads,
 						     bool waiting,
@@ -65,7 +66,7 @@ namespace dcp {
     result_length = 0;
     more_payloads = false;
     BPLengthT max_length = static_client_info.maxPayloadSize;
-    DcpStatus retval     = BP_STATUS_OK;
+    BPStatus retval      = BPStatus::Ok;
     
     if (not _isRegistered)
       throw BPClientLibException ("receive_payload",
@@ -86,7 +87,7 @@ namespace dcp {
 	  BPReceivePayload_Indication* pInd         = (BPReceivePayload_Indication*) memaddr;
 	  const byte*                  payload_ptr  = memaddr + sizeof(BPReceivePayload_Indication);              
 	  
-	  if (pInd->s_type != stBP_ReceivePayload)
+	  if (pInd->stype() != BPServiceType::ReceivePayload)
 	    throw BPClientLibException ("receive_payload",
 					std::format("incorrect service type {}", pInd->s_type));
 	  if (pInd->length == 0)
@@ -94,12 +95,12 @@ namespace dcp {
 					"got payload of zero length");
 	  if (pInd->length > max_length)
 	    {
-	      retval = BP_STATUS_PAYLOAD_TOO_LARGE;
+	      retval = BPStatus::Payload_Too_Large;
 	      return;
 	    }
 	  if (pInd->length != len - sizeof(bp::BPReceivePayload_Indication))
 	    {
-	      retval = BP_STATUS_INTERNAL_ERROR;
+	      retval = BPStatus::Internal_Error;
 	      return;
 	    }
 
@@ -124,7 +125,7 @@ namespace dcp {
   // ---------------------------------------------------------------
   
 
-  DcpStatus BPClientRuntime::receive_payload_nowait (BPLengthT& result_length, byte* result_buffer, bool& more_payloads)
+  BPStatus BPClientRuntime::receive_payload_nowait (BPLengthT& result_length, byte* result_buffer, bool& more_payloads)
   {
     bool dummy_exitFlag = false;
     return receive_payload_helper (result_length, result_buffer, more_payloads, false, dummy_exitFlag);    
@@ -133,10 +134,10 @@ namespace dcp {
   // ---------------------------------------------------------------
   
   
-  DcpStatus BPClientRuntime::receive_payload_wait (BPLengthT& result_length,
-						   byte* result_buffer,
-						   bool& more_payloads,
-						   bool& exitFlag)
+  BPStatus BPClientRuntime::receive_payload_wait (BPLengthT& result_length,
+						  byte* result_buffer,
+						  bool& more_payloads,
+						  bool& exitFlag)
   {
     return receive_payload_helper (result_length, result_buffer, more_payloads, true, exitFlag);
   }

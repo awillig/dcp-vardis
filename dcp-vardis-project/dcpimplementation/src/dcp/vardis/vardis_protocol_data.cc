@@ -819,7 +819,7 @@ namespace dcp::vardis {
     
     if (not vardis_store.get_vardis_isactive())
       {
-	return RTDB_Create_Confirm (VARDIS_STATUS_INACTIVE, varId);
+	return RTDB_Create_Confirm (VardisStatus::Inactive, varId);
       }
     
     if (variableExists(spec.varId))
@@ -828,28 +828,28 @@ namespace dcp::vardis {
 	variable_exists = true;
 	if (oldent.prodId != ownNodeIdentifier)
 	  {
-	    return RTDB_Create_Confirm (VARDIS_STATUS_VARIABLE_EXISTS, varId);
+	    return RTDB_Create_Confirm (VardisStatus::Variable_Exists, varId);
 	  }
       }
     
     if (spec.descr.length > maxDescriptionLength)
       {
-	return RTDB_Create_Confirm (VARDIS_STATUS_VARIABLE_DESCRIPTION_TOO_LONG, varId);
+	return RTDB_Create_Confirm (VardisStatus::Description_Too_Long, varId);
       }
     
     if (value.length > maxValueLength)
       {
-	return RTDB_Create_Confirm (VARDIS_STATUS_VALUE_TOO_LONG, varId);
+	return RTDB_Create_Confirm (VardisStatus::Value_Too_Long, varId);
       }
     
     if (value.length == 0)
       {
-	return RTDB_Create_Confirm (VARDIS_STATUS_EMPTY_VALUE, varId);
+	return RTDB_Create_Confirm (VardisStatus::Empty_Value, varId);
       }
     
     if ((spec.repCnt == 0) || (spec.repCnt > maxRepetitions))
       {
-	return RTDB_Create_Confirm (VARDIS_STATUS_ILLEGAL_REPCOUNT, varId);
+	return RTDB_Create_Confirm (VardisStatus::Illegal_Repcount, varId);
       }
 
     DCPLOG_TRACE(log_mgmt_rtdb) << "Processing RTDB-Create request for variable " << spec.varId;
@@ -892,7 +892,7 @@ namespace dcp::vardis {
     vardis_store.get_vardis_protocol_statistics_ref().count_handle_rtdb_create++;
     
     // send confirmation
-    return RTDB_Create_Confirm (VARDIS_STATUS_OK, varId);
+    return RTDB_Create_Confirm (VardisStatus::Ok, varId);
   }
 
   // ----------------------------------------------------
@@ -908,34 +908,34 @@ namespace dcp::vardis {
 
     if (not vardis_store.get_vardis_isactive())
     {
-      return RTDB_Update_Confirm (VARDIS_STATUS_INACTIVE, varId);
+      return RTDB_Update_Confirm (VardisStatus::Inactive, varId);
     }
     
     if (not variableExists(varId))
     {
-      return RTDB_Update_Confirm (VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST, varId);
+      return RTDB_Update_Confirm (VardisStatus::Variable_Does_Not_Exist, varId);
     }
     
     DBEntry& theEntry = vardis_store.get_db_entry_ref(varId);
 
     if (not producerIsMe(varId))
     {
-      return RTDB_Update_Confirm (VARDIS_STATUS_NOT_PRODUCER, varId);
+      return RTDB_Update_Confirm (VardisStatus::Not_Producer, varId);
     }
 
     if (theEntry.isDeleted)
     {
-      return RTDB_Update_Confirm (VARDIS_STATUS_VARIABLE_IS_DELETED, varId);
+      return RTDB_Update_Confirm (VardisStatus::Variable_Is_Deleted, varId);
     }
 
     if (varLen > maxValueLength)
     {
-      return RTDB_Update_Confirm (VARDIS_STATUS_VALUE_TOO_LONG, varId);
+      return RTDB_Update_Confirm (VardisStatus::Value_Too_Long, varId);
     }
 
     if (varLen == 0)
     {
-      return RTDB_Update_Confirm (VARDIS_STATUS_EMPTY_VALUE, varId);
+      return RTDB_Update_Confirm (VardisStatus::Empty_Value, varId);
     }
     
     // update the DB entry
@@ -956,7 +956,7 @@ namespace dcp::vardis {
     // Maintain statistics
     vardis_store.get_vardis_protocol_statistics_ref().count_handle_rtdb_update++;
     
-    return RTDB_Update_Confirm (VARDIS_STATUS_OK, varId);
+    return RTDB_Update_Confirm (VardisStatus::Ok, varId);
   }
 
   // ----------------------------------------------------
@@ -971,24 +971,24 @@ namespace dcp::vardis {
 
     if (not vardis_store.get_vardis_isactive())
       {
-	return RTDB_Delete_Confirm (VARDIS_STATUS_INACTIVE, varId);
+	return RTDB_Delete_Confirm (VardisStatus::Inactive, varId);
       }
     
     if (not variableExists(varId))
       {
-	return RTDB_Delete_Confirm (VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST, varId);
+	return RTDB_Delete_Confirm (VardisStatus::Variable_Does_Not_Exist, varId);
       }
 
     if (not producerIsMe(varId))
       {
-	return RTDB_Delete_Confirm (VARDIS_STATUS_NOT_PRODUCER, varId);
+	return RTDB_Delete_Confirm (VardisStatus::Not_Producer, varId);
       }
 
     DBEntry& theEntry = vardis_store.get_db_entry_ref(varId);
 
     if (theEntry.isDeleted)
     {
-      return RTDB_Delete_Confirm (VARDIS_STATUS_VARIABLE_IS_DELETED, varId);
+      return RTDB_Delete_Confirm (VardisStatus::Variable_Is_Deleted, varId);
     }
 
     DCPLOG_TRACE(log_mgmt_rtdb) << "Handling RTDB-Delete request for variable " << varId;
@@ -1014,7 +1014,7 @@ namespace dcp::vardis {
     // Maintain statistics
     vardis_store.get_vardis_protocol_statistics_ref().count_handle_rtdb_delete++;
     
-    return RTDB_Delete_Confirm (VARDIS_STATUS_OK, varId);
+    return RTDB_Delete_Confirm (VardisStatus::Ok, varId);
   }
 
 
@@ -1030,25 +1030,25 @@ namespace dcp::vardis {
 
     if (not vardis_store.get_vardis_isactive())
       {
-	return RTDB_Read_Confirm (VARDIS_STATUS_INACTIVE, varId);
+	return RTDB_Read_Confirm (VardisStatus::Inactive, varId);
       }
     
     if (not variableExists(varId))
       {
-	return RTDB_Read_Confirm (VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST, varId);
+	return RTDB_Read_Confirm (VardisStatus::Variable_Does_Not_Exist, varId);
       }
 
     DBEntry& theEntry = vardis_store.get_db_entry_ref(varId);
 
     if (theEntry.isDeleted)
     {
-      return RTDB_Read_Confirm (VARDIS_STATUS_VARIABLE_IS_DELETED, varId);
+      return RTDB_Read_Confirm (VardisStatus::Variable_Is_Deleted, varId);
     }
 
     DCPLOG_TRACE(log_mgmt_rtdb) << "Handling RTDB-Delete request for variable " << varId;
 
     VarValueT the_value = vardis_store.read_value (varId);
-    RTDB_Read_Confirm conf (VARDIS_STATUS_OK, varId, the_value.length, the_value.data);
+    RTDB_Read_Confirm conf (VardisStatus::Ok, varId, the_value.length, the_value.data);
     conf.tStamp = theEntry.tStamp;
 
     // Maintain statistics

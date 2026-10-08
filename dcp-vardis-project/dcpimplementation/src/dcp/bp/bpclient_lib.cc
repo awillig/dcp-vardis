@@ -31,7 +31,6 @@ extern "C" {
 #include <dcp/common/command_socket.h>
 #include <dcp/common/debug_helpers.h>
 #include <dcp/common/other_helpers.h>
-#include <dcp/common/services_status.h>
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/bp/bp_service_primitives.h>
 
@@ -61,10 +60,10 @@ namespace dcp {
     check_protocol_name (static_client_info.protocolName);
     check_shm_area_name (shmAreaName);
     
-    DcpStatus reg_status = register_with_bp (generateTransmitPayloadConfirms);
-    if (reg_status != BP_STATUS_OK)
+    BPStatus reg_status = register_with_bp (generateTransmitPayloadConfirms);
+    if (reg_status != BPStatus::Ok)
       throw BPClientLibException ("BPClientRuntime, ",
-				  std::format("registration failed, status code = {}", bp_status_to_string(reg_status)));
+				  std::format("registration failed, status code = {}", to_string(reg_status)));
     
     pSSB = std::make_shared<ShmStructureBase> (shmAreaName.c_str(), 0, false);
     pSCS = (BPShmControlSegment*) pSSB->get_memory_address ();
@@ -118,7 +117,7 @@ namespace dcp {
   
   // -----------------------------------------------------------------------------------
   
-  DcpStatus BPClientRuntime::shutdown_bp ()
+  BPStatus BPClientRuntime::shutdown_bp ()
   {
     ScopedClientSocket cl_sock (commandSock);
     BPShutDown_Request sdReq;
@@ -129,28 +128,28 @@ namespace dcp {
     // already have shut down
     _isRegistered = false;
     
-    return BP_STATUS_OK;
+    return BPStatus::Ok;
   }
   
 
   // -----------------------------------------------------------------------------------
 
-  DcpStatus BPClientRuntime::activate_bp ()
+  BPStatus BPClientRuntime::activate_bp ()
   {
-    return simple_request_confirm_service<BPActivate_Request, BPActivate_Confirm> ("activate_bp");
+    return static_cast<BPStatus> (simple_request_confirm_service<BPActivate_Request, BPActivate_Confirm> ("activate_bp"));
   }
   
   
   // -----------------------------------------------------------------------------------
   
-  DcpStatus BPClientRuntime::deactivate_bp ()
+  BPStatus BPClientRuntime::deactivate_bp ()
   {
-    return simple_request_confirm_service<BPDeactivate_Request, BPDeactivate_Confirm> ("deactivate_bp");
+    return static_cast<BPStatus> (simple_request_confirm_service<BPDeactivate_Request, BPDeactivate_Confirm> ("deactivate_bp"));
   }
 
   // -----------------------------------------------------------------------------------
 
-  DcpStatus BPClientRuntime::register_with_bp (const bool generateTransmitPayloadConfirms)
+  BPStatus BPClientRuntime::register_with_bp (const bool generateTransmitPayloadConfirms)
   {
     ScopedClientSocket cl_sock (commandSock);
         
@@ -170,27 +169,27 @@ namespace dcp {
     
     BPRegisterProtocol_Confirm *pConf = (BPRegisterProtocol_Confirm*) buffer;
     
-    if (pConf->s_type != stBP_RegisterProtocol) cl_sock.abort ("register_with_bp: response has wrong service type");
+    if (pConf->stype() != BPServiceType::RegisterProtocol) cl_sock.abort ("register_with_bp: response has wrong service type");
 
     ownNodeIdentifier = pConf->ownNodeIdentifier;
     
-    if (pConf->status_code != BP_STATUS_OK)
+    if (pConf->stat() != BPStatus::Ok)
       throw BPClientLibException ("register_with_bp",
-				  std::format("registration failed, status code = {}", bp_status_to_string (pConf->status_code)));
+				  std::format("registration failed, status code = {}", to_string (pConf->stat())));
     
     _isRegistered = true;
     
-    return pConf->status_code;
+    return pConf->stat();
   }
   
   // -----------------------------------------------------------------------------------
   
-  DcpStatus BPClientRuntime::deregister_with_bp ()
+  BPStatus BPClientRuntime::deregister_with_bp ()
   {
     BPDeregisterProtocol_Confirm rpConf;
-    DcpStatus rv = simple_bp_request_confirm_service <BPDeregisterProtocol_Request, BPDeregisterProtocol_Confirm> ("deregister_with_bp", rpConf);
+    BPStatus rv = static_cast<BPStatus> (simple_bp_request_confirm_service <BPDeregisterProtocol_Request, BPDeregisterProtocol_Confirm> ("deregister_with_bp", rpConf));
 
-    if (rv == BP_STATUS_OK)
+    if (rv == BPStatus::Ok)
       _isRegistered = false;
     
     return rv;
@@ -198,20 +197,20 @@ namespace dcp {
   
   // -----------------------------------------------------------------------------------
 
-  DcpStatus BPClientRuntime::clear_buffer ()
+  BPStatus BPClientRuntime::clear_buffer ()
   {
     if (not _isRegistered)
       throw BPClientLibException ("clear_buffer",
 				  "not registered with BP");
     
-    return simple_request_confirm_service<BPClearBuffer_Request, BPClearBuffer_Confirm> ("clear_buffer");
+    return static_cast<BPStatus> (simple_request_confirm_service<BPClearBuffer_Request, BPClearBuffer_Confirm> ("clear_buffer"));
   }
 
   // -----------------------------------------------------------------------------------
   
-  DcpStatus BPClientRuntime::get_runtime_statistics (double& avg_inter_beacon_time,
-						     double& avg_beacon_size,
-						     unsigned int& number_received_payloads)
+  BPStatus BPClientRuntime::get_runtime_statistics (double& avg_inter_beacon_time,
+						    double& avg_beacon_size,
+						    unsigned int& number_received_payloads)
   {
     ScopedClientSocket cl_sock (commandSock);
     BPGetStatistics_Request gs_req;
@@ -224,30 +223,30 @@ namespace dcp {
 
     BPGetStatistics_Confirm* pConf = (BPGetStatistics_Confirm*) buffer;
 
-    if (pConf->s_type != stBP_GetStatistics)
+    if (pConf->stype() != BPServiceType::GetStatistics)
       cl_sock.abort ("get_runtime_statistics: response has wrong service type");
 
-    if (pConf->status_code == BP_STATUS_OK)
+    if (pConf->stat() == BPStatus::Ok)
       {
 	avg_inter_beacon_time     = pConf->avg_inter_beacon_time;
 	avg_beacon_size           = pConf->avg_beacon_size;
 	number_received_payloads  = pConf->number_received_beacons;
       }
     
-    return pConf->status_code;
+    return pConf->stat();
   }
 
   
   // -----------------------------------------------------------------------------------
 
-  DcpStatus BPClientRuntime::query_number_buffered_payloads (unsigned long& num_payloads_buffered)
+  BPStatus BPClientRuntime::query_number_buffered_payloads (unsigned long& num_payloads_buffered)
   {
     if (not _isRegistered)
       throw BPClientLibException ("query_number_buffered_payloads",
 				  "not registered with BP");
     
     BPQueryNumberBufferedPayloads_Confirm conf;
-    DcpStatus stat = simple_bp_request_confirm_service<BPQueryNumberBufferedPayloads_Request, BPQueryNumberBufferedPayloads_Confirm> ("query_number_buffered_payloads", conf);
+    BPStatus stat = static_cast<BPStatus>(simple_bp_request_confirm_service<BPQueryNumberBufferedPayloads_Request, BPQueryNumberBufferedPayloads_Confirm> ("query_number_buffered_payloads", conf));
     num_payloads_buffered = conf.num_payloads_buffered;
     return stat;
   }
@@ -255,7 +254,7 @@ namespace dcp {
 
   // -----------------------------------------------------------------------------------
 
-  DcpStatus BPClientRuntime::list_registered_protocols (std::list<BPRegisteredProtocolDataDescription>& descrs)
+  BPStatus BPClientRuntime::list_registered_protocols (std::list<BPRegisteredProtocolDataDescription>& descrs)
   {
     ScopedClientSocket cl_sock (commandSock);
     BPListRegisteredProtocols_Request lrpReq;
@@ -268,10 +267,10 @@ namespace dcp {
 
     BPListRegisteredProtocols_Confirm* pConf = (BPListRegisteredProtocols_Confirm*) buffer;
 
-    if (pConf->s_type != stBP_ListRegisteredProtocols)
+    if (pConf->stype() != BPServiceType::ListRegisteredProtocols)
       cl_sock.abort (std::format("list_registered_protocols: response has wrong service type {}", pConf->s_type));
 
-    if (pConf->status_code == BP_STATUS_OK)
+    if (pConf->stat() == BPStatus::Ok)
       {
 	int data_size = nrcvd - sizeof(BPListRegisteredProtocols_Confirm);
 	if (data_size % sizeof(BPRegisteredProtocolDataDescription) != 0)
@@ -288,7 +287,7 @@ namespace dcp {
 	  }
       }
     
-    return pConf->status_code;
+    return pConf->stat();
   }
 
   

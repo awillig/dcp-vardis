@@ -22,13 +22,13 @@
 #include <thread>
 #include <chrono>
 #include <dcp/common/area.h>
-#include <dcp/common/services_status.h>
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/srp/srp_logging.h>
 #include <dcp/srp/srp_receiver.h>
 #include <dcp/srp/srp_transmissible_types.h>
 
 using dcp::bp::BPLengthT;
+using dcp::bp::BPStatus;
 
 namespace dcp::srp {
 
@@ -51,14 +51,14 @@ namespace dcp::srp {
 	  
 	  // check if we have received a payload
 	  BPLengthT result_length = 0;
-	  DcpStatus rx_stat;
+	  BPStatus rx_stat;
 	  byte rx_buffer [rx_buffer_length];
 	  bool more_payloads = false;
 	  
 	  do {
 	    rx_stat = runtime.receive_payload_wait (result_length, rx_buffer, more_payloads, runtime.srp_exitFlag);
 	    
-	    if ((rx_stat == BP_STATUS_OK) and (result_length == sizeof(ExtendedSafetyDataT)))
+	    if ((rx_stat == BPStatus::Ok) and (result_length == sizeof(ExtendedSafetyDataT)))
 	      {
 		DCPLOG_TRACE(log_rx) << "Processing payload of correct length";
 		ExtendedSafetyDataT *pESD = (ExtendedSafetyDataT*) rx_buffer;
@@ -71,11 +71,11 @@ namespace dcp::srp {
 	      }
 	    else
 	      {
-		if (rx_stat != BP_STATUS_OK)
+		if (rx_stat != BPStatus::Ok)
 		  {
 		    DCPLOG_INFO(log_rx)
 		      << "Retrieving received payload issued error "
-		      << bp_status_to_string (rx_stat);
+		      << to_string (rx_stat);
 		  }
 		else if (result_length != 0)
 		  {

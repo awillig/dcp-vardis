@@ -34,7 +34,7 @@ namespace dcp {
   // --------------------------------------
 
   template <typename CT>
-  DcpStatus rtdb_helper (PayloadQueue& requestQueue,
+  VardisStatus rtdb_helper (PayloadQueue& requestQueue,
 			 ConfirmQueue& confirmQueue,
 			 PushHandler req_handler)
   {
@@ -43,10 +43,10 @@ namespace dcp {
     bool timed_out;
     requestQueue.push_wait (req_handler, timed_out);
     if (timed_out)
-      return VARDIS_STATUS_INTERNAL_SHARED_MEMORY_ERROR;
+      return VardisStatus::Internal_Shared_Memory_Error;
 
-    DcpStatus retval;
-    bool      further_entries;
+    VardisStatus retval;
+    bool         further_entries;
 
     PopHandler conf_handler = [&] (byte* memaddr, size_t len)
     {
@@ -54,14 +54,14 @@ namespace dcp {
       
       CT conf;
       conf.deserialize (area);
-      retval = conf.status_code;
+      retval = conf.stat();
     };
     
     confirmQueue.pop_wait (conf_handler, timed_out, further_entries);
     if (timed_out)
-      return VARDIS_STATUS_INTERNAL_SHARED_MEMORY_ERROR;
+      return VardisStatus::Internal_Shared_Memory_Error;
     if (further_entries)
-      return VARDIS_STATUS_INTERNAL_ERROR;
+      return VardisStatus::Internal_Error;
     
     return retval;
 
@@ -69,7 +69,7 @@ namespace dcp {
   
   // --------------------------------------
   
-  DcpStatus VardisClientRuntime::rtdb_create (const VarSpecT& spec, const VarValueT& value)
+  VardisStatus VardisClientRuntime::rtdb_create (const VarSpecT& spec, const VarValueT& value)
   {
     VardisShmControlSegment& CS = *pSCS;
 
@@ -86,7 +86,7 @@ namespace dcp {
 
   // --------------------------------------
 
-  DcpStatus VardisClientRuntime::rtdb_delete (VarIdT varId)
+  VardisStatus VardisClientRuntime::rtdb_delete (VarIdT varId)
   {
     VardisShmControlSegment& CS = *pSCS;
 
@@ -104,7 +104,7 @@ namespace dcp {
 
   // --------------------------------------
 
-  DcpStatus VardisClientRuntime::rtdb_update (VarIdT varId, const VarValueT& value)
+  VardisStatus VardisClientRuntime::rtdb_update (VarIdT varId, const VarValueT& value)
   {
     VardisShmControlSegment& CS = *pSCS;
 
@@ -122,7 +122,7 @@ namespace dcp {
 
   // --------------------------------------
 
-  DcpStatus VardisClientRuntime::rtdb_read   (VarIdT varId,
+  VardisStatus VardisClientRuntime::rtdb_read   (VarIdT varId,
 					      VarIdT& responseVarId,
 					      VarLenT& responseVarLen,
 					      TimeStampT& responseTimeStamp,
@@ -154,10 +154,10 @@ namespace dcp {
       }
     variable_store.unlock ();
 
-    if (not isAllocated) return VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST;
-    if (isDeleted) return VARDIS_STATUS_VARIABLE_IS_DELETED;
+    if (not isAllocated) return VardisStatus::Variable_Does_Not_Exist;
+    if (isDeleted) return VardisStatus::Variable_Is_Deleted;
     
-    return VARDIS_STATUS_OK;
+    return VardisStatus::Ok;
     
   }
 

@@ -27,10 +27,10 @@
 #include <dcp/common/command_socket.h>
 #include <dcp/common/foundation_types.h>
 #include <dcp/common/global_types_constants.h>
-#include <dcp/common/services_status.h>
 #include <dcp/common/sharedmem_structure_base.h>
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcp/bp/bp_service_primitives.h>
+#include <dcp/bp/bp_services_status.h>
 #include <dcp/bp/bp_shm_control_segment.h>
 #include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/bp/bpclient_configuration.h>
@@ -95,7 +95,7 @@ namespace dcp {
      * After successful registration, BP can process payloads related
        to this client protocol if it is active.
      */
-    DcpStatus register_with_bp (const bool generateTransmitPayloadConfirms);
+    dcp::bp::BPStatus register_with_bp (const bool generateTransmitPayloadConfirms);
 
 
     /**
@@ -106,7 +106,7 @@ namespace dcp {
      * area remains in place after de-registration, until the lifetime
      * of this object ends
      */
-    DcpStatus deregister_with_bp ();
+    dcp::bp::BPStatus deregister_with_bp ();
 
     
     /**
@@ -139,11 +139,11 @@ namespace dcp {
      *        this flag is checked regularly and waiting is aborted if
      *        it becomes true.
      */
-    DcpStatus receive_payload_helper (dcp::bp::BPLengthT& result_length,
-				      byte* result_buffer,
-				      bool& more_payloads,
-				      bool waiting,
-				      bool& exitFlag);
+    dcp::bp::BPStatus receive_payload_helper (dcp::bp::BPLengthT& result_length,
+					      byte* result_buffer,
+					      bool& more_payloads,
+					      bool waiting,
+					      bool& exitFlag);
     
     
   public:
@@ -234,14 +234,14 @@ namespace dcp {
     /**
      * @brief Ask BP demon to exit
      */
-    DcpStatus shutdown_bp ();
+    dcp::bp::BPStatus shutdown_bp ();
 
 
     /**
      * @brief Ask BP demon to activate itself (i.e. to resume
      *        processing payloads)
      */
-    DcpStatus activate_bp ();
+    dcp::bp::BPStatus activate_bp ();
 
 
     /**
@@ -250,7 +250,7 @@ namespace dcp {
      *
      * The BP demon will continue to run even if de-activated.
      */
-    DcpStatus deactivate_bp ();
+    dcp::bp::BPStatus deactivate_bp ();
 
 
     /**
@@ -260,7 +260,7 @@ namespace dcp {
      * @param descrs: output parameter containing a list of
      *        descriptions of registered protocols
      */
-    DcpStatus list_registered_protocols (std::list<bp::BPRegisteredProtocolDataDescription>& descrs);
+    dcp::bp::BPStatus list_registered_protocols (std::list<bp::BPRegisteredProtocolDataDescription>& descrs);
 
 
     /**
@@ -273,9 +273,9 @@ namespace dcp {
      * @param number_received_payloads: output parameter holding the
      *        number of beacons received by BP (with or without errors)
      */
-    DcpStatus get_runtime_statistics (double& avg_inter_beacon_time,
-				      double& avg_beacon_size,
-				      unsigned int& number_received_payloads);
+    dcp::bp::BPStatus get_runtime_statistics (double& avg_inter_beacon_time,
+					      double& avg_beacon_size,
+					      unsigned int& number_received_payloads);
     
     
     /********************************************************************************
@@ -291,7 +291,7 @@ namespace dcp {
      * @param length: length of payload block
      * @param payload: pointer to payload block
      *
-     * @return DcpStatus value
+     * @return BPStatus value
      *
      * Throws on processing errors (e.g. invalid or empty payload,
      * inability to access shared memory, or timeout upon shared
@@ -300,8 +300,8 @@ namespace dcp {
      * Note: this method can only be used when the client protocol is
      * registered with BP, otherwise it throws.
      */
-    DcpStatus transmit_payload (dcp::bp::BPLengthT length,
-				byte* payload);
+    dcp::bp::BPStatus transmit_payload (dcp::bp::BPLengthT length,
+					byte* payload);
 
 
     /**
@@ -317,7 +317,7 @@ namespace dcp {
      * @param more_payloads: says whether there are more received
      *        payloads available
      *
-     * @return DcpStatus value
+     * @return BPStatus value
      *
      * This method does not block to wait for an incoming payload when
      * no payload is available
@@ -328,30 +328,30 @@ namespace dcp {
      * Note: this method can only be used when the client protocol is
      * registered with BP, otherwise it throws.
      */
-    DcpStatus receive_payload_nowait (dcp::bp::BPLengthT& result_length,
-				      byte* result_buffer,
-				      bool& more_payloads);
+    dcp::bp::BPStatus receive_payload_nowait (dcp::bp::BPLengthT& result_length,
+					      byte* result_buffer,
+					      bool& more_payloads);
 
 
     /**
      * @brief Like receive_payload_nowait() but blocks caller until a
      *        payload is available or the exitFlag is true
      */
-    DcpStatus receive_payload_wait (dcp::bp::BPLengthT& result_length,
-				    byte* result_buffer,
-				    bool& more_payloads,
-				    bool& exitFlag);
+    dcp::bp::BPStatus receive_payload_wait (dcp::bp::BPLengthT& result_length,
+					    byte* result_buffer,
+					    bool& more_payloads,
+					    bool& exitFlag);
 
     
     /**
      * @brief Delete all BP payloads for the client protocol
      *
-     * @return DcpStatus value
+     * @return BPStatus value
      *
      * Note: this method can only be used when the client protocol is
      * registered with BP, otherwise it throws.
      */
-    DcpStatus clear_buffer ();
+    dcp::bp::BPStatus clear_buffer ();
 
 
     /**
@@ -360,12 +360,12 @@ namespace dcp {
      * @param num_payloads_buffered: output parameter containing
      *        number of buffered payloads
      *
-     * @return DcpStatus value
+     * @return BPStatus value
      *
      * Note: this method can only be used when the client protocol is
      * registered with BP, otherwise it throws.
      */
-    DcpStatus query_number_buffered_payloads (unsigned long& num_payloads_buffered);
+    dcp::bp::BPStatus query_number_buffered_payloads (unsigned long& num_payloads_buffered);
 
 
     /*********************************************************************************
@@ -381,7 +381,7 @@ namespace dcp {
      *        confirmation primitive
      */
     template <class RT, class CT>
-    DcpStatus simple_bp_request_confirm_service (const std::string& methname, CT& conf)
+    dcp::bp::BPStatus simple_bp_request_confirm_service (const std::string& methname, CT& conf)
     {
       ScopedClientSocket cl_sock (commandSock);
       RT req;
@@ -395,10 +395,10 @@ namespace dcp {
 	CT *pConf = (CT*) buffer;
 	conf = *pConf;
 	
-	if (pConf->s_type != req.s_type)
+	if (pConf->stype() != req.stype())
 	  cl_sock.abort (methname + ": response has wrong service type");
 	
-	return pConf->status_code;
+	return pConf->stat();
     }
     
   };

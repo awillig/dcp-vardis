@@ -29,8 +29,7 @@
 #include <dcp/common/exceptions.h>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/common/logging_helpers.h>
-#include <dcp/common/services_status.h>
-
+#include <dcp/common/service_primitives.h>
 
 namespace dcp {
 
@@ -145,7 +144,7 @@ namespace dcp {
      * @param exitFlag: output value, will be set to true when processing error
      *        occured and caller is expected to exit the server demon
      */
-    int start_read_command (logger_type& log, byte* buffer, size_t buflen, DcpServiceType& serv_t, bool& exitFlag);
+    int start_read_command (logger_type& log, byte* buffer, size_t buflen, std::uint16_t& serv_t, bool& exitFlag);
 
 
     /**
@@ -172,7 +171,7 @@ namespace dcp {
      *        occured and caller is expected to exit the server demon
      */
     template <typename CT>
-    void send_simple_confirmation (logger_type& log, DcpStatus statcode, bool& exitFlag)
+    void send_simple_confirmation (logger_type& log, std::uint16_t statcode, bool& exitFlag)
     {
       CT conf;
       conf.status_code = statcode;
@@ -398,7 +397,7 @@ namespace dcp {
      * ServiceRequest and has its s_type (service type) field set
      */
     template <typename RT, typename CT>
-    DcpStatus simple_request_confirm_service (const std::string& methname)
+    std::uint16_t simple_request_confirm_service (const std::string& methname)
     {
       ScopedClientSocket cl_sock (commandSock);
       RT srReq;

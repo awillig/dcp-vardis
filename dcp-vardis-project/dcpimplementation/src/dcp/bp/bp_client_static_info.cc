@@ -28,7 +28,7 @@ namespace dcp::bp {
     os << "BPStaticClientInfo{protocolId=" << sci.protocolId
        << ", protocolName=" << sci.protocolName
        << ", maxPayloadSize=" << sci.maxPayloadSize
-       << ", queueingMode=" << bp_queueing_mode_to_string (sci.queueingMode)
+       << ", queueingMode=" << to_string (sci.queueingMode)
        << ", maxEntries=" << sci.maxEntries
        << ", allowMultiplePayloads=" << (sci.allowMultiplePayloads ? "true" : "false")
        << "}";

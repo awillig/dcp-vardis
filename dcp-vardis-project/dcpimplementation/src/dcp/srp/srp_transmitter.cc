@@ -30,6 +30,7 @@
 using dcp::bp::BPLengthT;
 using dcp::bp::BPTransmitPayload_Request;
 using dcp::bp::BPShmControlSegment;
+using dcp::bp::BPStatus;
 
 
 namespace dcp::srp {
@@ -83,12 +84,12 @@ namespace dcp::srp {
 	  pESD->seqno      = runtime.srp_store.get_own_sequence_number ();
 	  runtime.srp_store.set_own_sequence_number (pESD->seqno + 1);
 	  
-	  DcpStatus retval = CS.transmit_payload (BPLengthT(sizeof(BPTransmitPayload_Request) + sizeof(ExtendedSafetyDataT)), pld_buffer);
-	  if (retval != BP_STATUS_OK)
+	  BPStatus retval = CS.transmit_payload (BPLengthT(sizeof(BPTransmitPayload_Request) + sizeof(ExtendedSafetyDataT)), pld_buffer);
+	  if (retval != BPStatus::Ok)
 	    {
 	      DCPLOG_FATAL(log_tx)
 		<< "transmit payload request failed, status = "
-		<< bp_status_to_string (retval)
+		<< to_string (retval)
 		<< ". Exiting.";
 	      runtime.srp_exitFlag = true;
 	      return;

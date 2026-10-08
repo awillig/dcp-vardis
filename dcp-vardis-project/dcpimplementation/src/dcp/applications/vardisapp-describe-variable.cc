@@ -2,7 +2,6 @@
 #include <dcp/common/debug_helpers.h>
 #include <dcp/common/exceptions.h>
 #include <dcp/common/other_helpers.h>
-#include <dcp/common/services_status.h>
 #include <dcp/vardis/vardisclient_configuration.h>
 #include <dcp/vardis/vardisclient_lib.h>
 
@@ -101,10 +100,15 @@ int main (int argc, char* argv [])
     DescribeVariableDescription var_descr;
     byte buffer [MAX_maxValueLength + 128];
 
-    DcpStatus describe_status = cl_rt.describe_variable (varId, var_descr, buffer);
-    if (describe_status != VARDIS_STATUS_OK)
+    VardisStatus describe_status = cl_rt.describe_variable (varId, var_descr, buffer);
+    if (describe_status != VardisStatus::Ok)
       {
-	cout << "Describing variable " << varId << " failed with status " << vardis_status_to_string (describe_status) << ". Exiting." << endl;
+	cout << "Describing variable "
+	     << varId
+	     << " failed with status "
+	     << to_string (describe_status)
+	     << ". Exiting."
+	     << endl;
 	return EXIT_FAILURE;
       }
 

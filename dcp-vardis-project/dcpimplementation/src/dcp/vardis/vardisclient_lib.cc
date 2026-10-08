@@ -60,10 +60,10 @@ namespace dcp {
 
     if (do_register)
       {
-	DcpStatus reg_response = register_with_vardis(delete_old_registration);
-	if (reg_response != VARDIS_STATUS_OK)
+	VardisStatus reg_response = register_application(delete_old_registration);
+	if (reg_response != VardisStatus::Ok)
 	  throw VardisClientLibException ("VardisClientRuntime",
-					  std::format("registration with Vardis failed, status code = {}", vardis_status_to_string(reg_response)));
+					  std::format("registration with Vardis failed, status code = {}", to_string(reg_response)));
 
 	pSSB = std::make_shared<ShmStructureBase> (client_conf.shm_conf_client.shmAreaName.c_str(), 0, false);
 	pSCS = (VardisShmControlSegment*) pSSB->get_memory_address ();
@@ -78,7 +78,7 @@ namespace dcp {
   {
     if (_isRegistered)
       {
-        deregister_with_vardis();
+        deregister_application();
       }
   }
 
@@ -94,39 +94,39 @@ namespace dcp {
    * client will be fast enough to retrieve the response
    * (confirmation) data from that socket before it is removed.
    */
-  DcpStatus VardisClientRuntime::shutdown_vardis ()
+  VardisStatus VardisClientRuntime::shutdown ()
   {
     ScopedClientSocket cl_sock (commandSock);
-    VardisShutdown_Request sdReq;
-    cl_sock.sendRequest<VardisShutdown_Request>(sdReq);
+    VardisShutDown_Request sdReq;
+    cl_sock.sendRequest<VardisShutDown_Request>(sdReq);
 
     // This prevents the destructor from attempting to send a
     // deregistration service primitive to a Vardis demon that may
     // already have shut down
     _isRegistered = false;
     
-    return VARDIS_STATUS_OK;
+    return VardisStatus::Ok;
   }
   
 
   // -----------------------------------------------------------------------------------
 
-  DcpStatus VardisClientRuntime::activate_vardis ()
+  VardisStatus VardisClientRuntime::activate ()
   {
-    return simple_request_confirm_service<VardisActivate_Request, VardisActivate_Confirm> ("activate_vardis");
+    return static_cast<VardisStatus> (simple_request_confirm_service<VardisActivate_Request, VardisActivate_Confirm> ("activate_vardis"));
   }
   
   
   // -----------------------------------------------------------------------------------
   
-  DcpStatus VardisClientRuntime::deactivate_vardis ()
+  VardisStatus VardisClientRuntime::deactivate ()
   {
-    return simple_request_confirm_service<VardisDeactivate_Request, VardisDeactivate_Confirm> ("deactivate_vardis");
+    return static_cast<VardisStatus> (simple_request_confirm_service<VardisDeactivate_Request, VardisDeactivate_Confirm> ("deactivate_vardis"));
   }
 
   // -----------------------------------------------------------------------------------
 
-  DcpStatus VardisClientRuntime::register_with_vardis (bool delete_old_registration)
+  VardisStatus VardisClientRuntime::register_application (bool delete_old_registration)
   {
     ScopedClientSocket cl_sock (commandSock);
         
@@ -138,28 +138,28 @@ namespace dcp {
 
     if (nrcvd != sizeof(VardisRegister_Confirm))
       {	
-	cl_sock.abort (std::format("register_with_vardis: response has wrong size {} (expected: {})",
+	cl_sock.abort (std::format("register_application: response has wrong size {} (expected: {})",
 				   nrcvd,
 				   sizeof(VardisRegister_Confirm)));
       }
     
     VardisRegister_Confirm *pConf = (VardisRegister_Confirm*) buffer;
     
-    if (pConf->s_type != stVardis_Register)
-      cl_sock.abort (std::format("register_with_vardis: response has wrong service type {}", pConf->s_type));
+    if (pConf->stype() != VardisServiceType::Register)
+      cl_sock.abort (std::format("register_application: response has wrong service type {}", pConf->s_type));
 
-    if (pConf->status_code == VARDIS_STATUS_OK)
+    if (pConf->stat() == VardisStatus::Ok)
       {
 	_isRegistered     =  true;
 	ownNodeIdentifier =  pConf->own_node_identifier;
       }
     
-    return pConf->status_code;
+    return pConf->stat();
   }
   
   // -----------------------------------------------------------------------------------
   
-  DcpStatus VardisClientRuntime::deregister_with_vardis ()
+  VardisStatus VardisClientRuntime::deregister_application ()
   {
     ScopedClientSocket cl_sock (commandSock);
     VardisDeregister_Request drpReq;
@@ -169,25 +169,25 @@ namespace dcp {
     int nrcvd = cl_sock.sendRequestAndReadResponseBlock<VardisDeregister_Request> (drpReq, buffer, vardisCommandSocketBufferSize);
     
     if (nrcvd != sizeof(VardisDeregister_Confirm))
-      cl_sock.abort (std::format("deregister_with_vardis: response has wrong size {} (expected: {})",
+      cl_sock.abort (std::format("deregister_application: response has wrong size {} (expected: {})",
 				 nrcvd,
 				 sizeof(VardisDeregister_Confirm)));
     
     VardisDeregister_Confirm *pConf = (VardisDeregister_Confirm*) buffer;
     
-    if (pConf->s_type != stVardis_Deregister)
-      cl_sock.abort (std::format("deregister_with_vardis: response has wrong service type {}", pConf->s_type));
+    if (pConf->stype() != VardisServiceType::Deregister)
+      cl_sock.abort (std::format("deregister_application: response has wrong service type {}", pConf->s_type));
 
-    if (pConf->status_code == VARDIS_STATUS_OK)
+    if (pConf->stat() == VardisStatus::Ok)
       _isRegistered = false;
     
-    return pConf->status_code;
+    return pConf->stat();
   }
     
 
   // -----------------------------------------------------------------------------------
 
-  DcpStatus VardisClientRuntime::describe_database (std::list<DescribeDatabaseVariableDescription>& db_descr_list)
+  VardisStatus VardisClientRuntime::describe_database (std::list<DescribeDatabaseVariableDescription>& db_descr_list)
   {
     ScopedClientSocket cl_sock (commandSock);
     VardisDescribeDatabase_Request dd_req;
@@ -212,12 +212,12 @@ namespace dcp {
 	db_descr_list.push_back (*((DescribeDatabaseVariableDescription*) descbuffer));
       }
 
-    return pConf->status_code;
+    return pConf->stat();
   }
 
   // -----------------------------------------------------------------------------------
 
-  DcpStatus VardisClientRuntime::describe_variable (VarIdT varId,
+  VardisStatus VardisClientRuntime::describe_variable (VarIdT varId,
 						    vardis::DescribeVariableDescription& var_descr,
 						    byte* buffer)
   {
@@ -242,12 +242,12 @@ namespace dcp {
     if ((size_t) nread < var_descr.value_length.val)
       cl_sock.abort (std::format ("describe_variable: response for variable value has insufficient size {}", nread));
 
-    return pConf->status_code;
+    return pConf->stat();
   }
 
   // -----------------------------------------------------------------------------------
 
-  DcpStatus VardisClientRuntime::retrieve_statistics (VardisProtocolStatistics& stats)
+  VardisStatus VardisClientRuntime::retrieve_statistics (VardisProtocolStatistics& stats)
   {
     ScopedClientSocket cl_sock (commandSock);
     vardis::VardisGetStatistics_Request gs_req;
@@ -262,7 +262,7 @@ namespace dcp {
 
     stats = pConf->protocol_stats;
     
-    return pConf->status_code;
+    return pConf->stat();
   }
   
   // -----------------------------------------------------------------------------------

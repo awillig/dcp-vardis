@@ -22,9 +22,10 @@
 
 #include <cstdint>
 #include <dcp/common/global_types_constants.h>
-#include <dcp/common/services_status.h>
+#include <dcp/common/service_primitives.h>
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcp/bp/bp_client_static_info.h>
+#include <dcp/bp/bp_services_status.h>
 #include <dcp/bp/bp_transmissible_types.h>
 
 
@@ -51,7 +52,7 @@ namespace dcp::bp {
    ************************************************************************/
 
   
-  typedef struct BPRegisterProtocol_Request : ServiceRequest {
+  typedef struct BPRegisterProtocol_Request : public BPServiceRequest {
     /**
      * @brief These are the parameters according to the protocol specification
      */
@@ -64,7 +65,7 @@ namespace dcp::bp {
     bool      generateTransmitPayloadConfirms = false;  /*!< Specify whether client protocol wants BP demon to send BP-TransmitPayload.confirm primitives */
 
     
-    BPRegisterProtocol_Request () : ServiceRequest(stBP_RegisterProtocol) {};
+    BPRegisterProtocol_Request () : BPServiceRequest(BPServiceType::RegisterProtocol) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPRegisterProtocol_Request& req);
     
@@ -73,11 +74,11 @@ namespace dcp::bp {
 
   // -------------------------------------------------------------
   
-  typedef struct BPRegisterProtocol_Confirm : ServiceConfirm {
+  typedef struct BPRegisterProtocol_Confirm : BPServiceConfirm {
     NodeIdentifierT ownNodeIdentifier;
     
-    BPRegisterProtocol_Confirm () : ServiceConfirm(stBP_RegisterProtocol) {};
-    BPRegisterProtocol_Confirm (DcpStatus scode) : ServiceConfirm(stBP_RegisterProtocol, scode) {};
+    BPRegisterProtocol_Confirm () : BPServiceConfirm(BPServiceType::RegisterProtocol) {};
+    BPRegisterProtocol_Confirm (BPStatus scode) : BPServiceConfirm(BPServiceType::RegisterProtocol, scode) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPRegisterProtocol_Confirm& conf);
   } BPRegisterProtocol_Confirm;
@@ -87,10 +88,10 @@ namespace dcp::bp {
    * Service BPDeregisterProtocol
    ************************************************************************/
   
-  typedef struct BPDeregisterProtocol_Request : ServiceRequest {
+  typedef struct BPDeregisterProtocol_Request : BPServiceRequest {
     BPProtocolIdT     protocolId;
 
-    BPDeregisterProtocol_Request () : ServiceRequest(stBP_DeregisterProtocol) {};
+    BPDeregisterProtocol_Request () : BPServiceRequest(BPServiceType::DeregisterProtocol) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPDeregisterProtocol_Request& req);
   } BPDeregisterProtocol_Request;
@@ -98,9 +99,9 @@ namespace dcp::bp {
 
   // -------------------------------------------------------------
   
-  typedef struct BPDeregisterProtocol_Confirm : ServiceConfirm {
-    BPDeregisterProtocol_Confirm () : ServiceConfirm(stBP_DeregisterProtocol) {};
-    BPDeregisterProtocol_Confirm (DcpStatus scode) : ServiceConfirm(stBP_DeregisterProtocol, scode) {};
+  typedef struct BPDeregisterProtocol_Confirm : BPServiceConfirm {
+    BPDeregisterProtocol_Confirm () : BPServiceConfirm(BPServiceType::DeregisterProtocol) {};
+    BPDeregisterProtocol_Confirm (BPStatus scode) : BPServiceConfirm(BPServiceType::DeregisterProtocol, scode) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPDeregisterProtocol_Confirm& conf);
   } BPDeregisterProtocol_Confirm;
@@ -111,8 +112,8 @@ namespace dcp::bp {
    ************************************************************************/
   
 
-  typedef struct BPListRegisteredProtocols_Request : ServiceRequest {
-    BPListRegisteredProtocols_Request () : ServiceRequest(stBP_ListRegisteredProtocols) {};
+  typedef struct BPListRegisteredProtocols_Request : BPServiceRequest {
+    BPListRegisteredProtocols_Request () : BPServiceRequest(BPServiceType::ListRegisteredProtocols) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPListRegisteredProtocols_Request& req);
   } BPListRegisteredProtocols_Request;
@@ -142,7 +143,7 @@ namespace dcp::bp {
 
   // -------------------------------------------------------------
 
-  typedef struct BPListRegisteredProtocols_Confirm : ServiceConfirm {
+  typedef struct BPListRegisteredProtocols_Confirm : BPServiceConfirm {
 
     /**
      * @brief Number of BPRegisteredProtocolDataDescription records that follow.
@@ -150,8 +151,8 @@ namespace dcp::bp {
     uint64_t  numberProtocols;
     bool      bpIsActive;
     
-    BPListRegisteredProtocols_Confirm () : ServiceConfirm(stBP_ListRegisteredProtocols) {};
-    BPListRegisteredProtocols_Confirm (DcpStatus scode) : ServiceConfirm(stBP_ListRegisteredProtocols, scode) {};
+    BPListRegisteredProtocols_Confirm () : BPServiceConfirm(BPServiceType::ListRegisteredProtocols) {};
+    BPListRegisteredProtocols_Confirm (BPStatus scode) : BPServiceConfirm(BPServiceType::ListRegisteredProtocols, scode) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPListRegisteredProtocols_Confirm& conf);
   } BPListRegisteredProtocols_Confirm;
@@ -163,13 +164,13 @@ namespace dcp::bp {
     
 
   
-  typedef struct BPReceivePayload_Indication : ServiceIndication {
+  typedef struct BPReceivePayload_Indication : BPServiceIndication {
     /**
      * @brief Indicates how many bytes follow immediately after this struct
      */
     BPLengthT   length;
     
-    BPReceivePayload_Indication () : ServiceIndication(stBP_ReceivePayload) {};
+    BPReceivePayload_Indication () : BPServiceIndication(BPServiceType::ReceivePayload) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPReceivePayload_Indication& ind);
   } BPReceivePayload_Indication;
@@ -180,19 +181,19 @@ namespace dcp::bp {
    * Service BPTransmitPayload
    ************************************************************************/
     
-  typedef struct BPTransmitPayload_Request : ServiceRequest {
+  typedef struct BPTransmitPayload_Request : BPServiceRequest {
     BPProtocolIdT     protocolId;
     BPLengthT         length;
 
-    BPTransmitPayload_Request () : ServiceRequest (stBP_TransmitPayload) {};
+    BPTransmitPayload_Request () : BPServiceRequest (BPServiceType::TransmitPayload) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPTransmitPayload_Request& req);
   } BPTransmitPayload_Request;
 
   // -------------------------------------------------------------
   
-  typedef struct BPTransmitPayload_Confirm : ServiceConfirm {
-    BPTransmitPayload_Confirm () : ServiceConfirm (stBP_TransmitPayload) {};
+  typedef struct BPTransmitPayload_Confirm : BPServiceConfirm {
+    BPTransmitPayload_Confirm () : BPServiceConfirm (BPServiceType::TransmitPayload) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPTransmitPayload_Confirm& conf);
   } BPTransmitPayload_Confirm;
@@ -202,17 +203,17 @@ namespace dcp::bp {
    * Service ClearBuffer
    ************************************************************************/
 
-  typedef struct BPClearBuffer_Request : ServiceRequest {
+  typedef struct BPClearBuffer_Request : BPServiceRequest {
     BPProtocolIdT   protocolId;
-    BPClearBuffer_Request () : ServiceRequest (stBP_ClearBuffer) {};
+    BPClearBuffer_Request () : BPServiceRequest (BPServiceType::ClearBuffer) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPClearBuffer_Request& req);
   } BPClearBuffer_Request;
 
   // -------------------------------------------------------------
 
-  typedef struct BPClearBuffer_Confirm : ServiceConfirm {
-    BPClearBuffer_Confirm () : ServiceConfirm (stBP_ClearBuffer) {};
+  typedef struct BPClearBuffer_Confirm : BPServiceConfirm {
+    BPClearBuffer_Confirm () : BPServiceConfirm (BPServiceType::ClearBuffer) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPClearBuffer_Confirm& conf);
   } BPClearBuffer_Confirm;
@@ -222,18 +223,18 @@ namespace dcp::bp {
    * Service QueryNumberBufferedPayloads
    ************************************************************************/
 
-  typedef struct BPQueryNumberBufferedPayloads_Request : ServiceRequest {
+  typedef struct BPQueryNumberBufferedPayloads_Request : BPServiceRequest {
     BPProtocolIdT   protocolId;
-    BPQueryNumberBufferedPayloads_Request () : ServiceRequest (stBP_QueryNumberBufferedPayloads) {};
+    BPQueryNumberBufferedPayloads_Request () : BPServiceRequest (BPServiceType::QueryNumberBufferedPayloads) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPQueryNumberBufferedPayloads_Request& req);
   } BPQueryNumberBufferedPayloads_Request;
 
   // -------------------------------------------------------------
 
-  typedef struct BPQueryNumberBufferedPayloads_Confirm : ServiceConfirm {
+  typedef struct BPQueryNumberBufferedPayloads_Confirm : BPServiceConfirm {
     unsigned long num_payloads_buffered;
-    BPQueryNumberBufferedPayloads_Confirm () : ServiceConfirm (stBP_QueryNumberBufferedPayloads) {};
+    BPQueryNumberBufferedPayloads_Confirm () : BPServiceConfirm (BPServiceType::QueryNumberBufferedPayloads) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPQueryNumberBufferedPayloads_Confirm& conf);
   } BPQueryNumberBufferedPayloads_Confirm;
@@ -251,8 +252,8 @@ namespace dcp::bp {
    * when the client attempts to read a response from it
    */
   
-  typedef struct BPShutDown_Request : ServiceRequest {
-    BPShutDown_Request () : ServiceRequest(stBP_ShutDown) {};
+  typedef struct BPShutDown_Request : BPServiceRequest {
+    BPShutDown_Request () : BPServiceRequest(BPServiceType::ShutDown) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPShutDown_Request& req);
   } BPShutDown_Request;
@@ -262,17 +263,17 @@ namespace dcp::bp {
    * Service Activate
    ************************************************************************/
 
-  typedef struct BPActivate_Request : ServiceRequest {
-    BPActivate_Request () : ServiceRequest(stBP_Activate) {};
+  typedef struct BPActivate_Request : BPServiceRequest {
+    BPActivate_Request () : BPServiceRequest(BPServiceType::Activate) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPActivate_Request& req);
   } BPActivate_Request;
 
   // -------------------------------------------------------------
   
-  typedef struct BPActivate_Confirm : ServiceConfirm {
-    BPActivate_Confirm () : ServiceConfirm(stBP_Activate) {};
-    BPActivate_Confirm (DcpStatus scode) : ServiceConfirm(stBP_Activate, scode) {};
+  typedef struct BPActivate_Confirm : BPServiceConfirm {
+    BPActivate_Confirm () : BPServiceConfirm(BPServiceType::Activate) {};
+    BPActivate_Confirm (BPStatus scode) : BPServiceConfirm(BPServiceType::Activate, scode) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPActivate_Confirm& conf);
   } BPActivate_Confirm;
@@ -282,17 +283,17 @@ namespace dcp::bp {
    * Service Deactivate
    ************************************************************************/
     
-  typedef struct BPDeactivate_Request : ServiceRequest {
-    BPDeactivate_Request () : ServiceRequest(stBP_Deactivate) {};
+  typedef struct BPDeactivate_Request : BPServiceRequest {
+    BPDeactivate_Request () : BPServiceRequest(BPServiceType::Deactivate) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPDeactivate_Request& req);
   } BPDeactivate_Request;
   
   // -------------------------------------------------------------
   
-  typedef struct BPDeactivate_Confirm : ServiceConfirm {
-    BPDeactivate_Confirm () : ServiceConfirm(stBP_Deactivate) {};
-    BPDeactivate_Confirm (DcpStatus scode) : ServiceConfirm(stBP_Deactivate, scode) {};
+  typedef struct BPDeactivate_Confirm : BPServiceConfirm {
+    BPDeactivate_Confirm () : BPServiceConfirm(BPServiceType::Deactivate) {};
+    BPDeactivate_Confirm (BPStatus scode) : BPServiceConfirm(BPServiceType::Deactivate, scode) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPDeactivate_Confirm& conf);
   } BPDeactivate_Confirm;
@@ -301,20 +302,20 @@ namespace dcp::bp {
    * Service BP Statistics
    ************************************************************************/
     
-  typedef struct BPGetStatistics_Request : ServiceRequest {
-    BPGetStatistics_Request () : ServiceRequest(stBP_GetStatistics) {};
+  typedef struct BPGetStatistics_Request : BPServiceRequest {
+    BPGetStatistics_Request () : BPServiceRequest(BPServiceType::GetStatistics) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPGetStatistics_Request& req);
   } BPGetStatistics_Request;
   
   // -------------------------------------------------------------
   
-  typedef struct BPGetStatistics_Confirm : ServiceConfirm {
+  typedef struct BPGetStatistics_Confirm : BPServiceConfirm {
     double        avg_inter_beacon_time;
     double        avg_beacon_size;
     unsigned int  number_received_beacons;
-    BPGetStatistics_Confirm () : ServiceConfirm(stBP_GetStatistics) {};
-    BPGetStatistics_Confirm (DcpStatus scode) : ServiceConfirm(stBP_GetStatistics, scode) {};
+    BPGetStatistics_Confirm () : BPServiceConfirm(BPServiceType::GetStatistics) {};
+    BPGetStatistics_Confirm (BPStatus scode) : BPServiceConfirm(BPServiceType::GetStatistics, scode) {};
 
     friend std::ostream& operator<<(std::ostream& os, const BPGetStatistics_Confirm& conf);
   } BPGetStatistics_Confirm;

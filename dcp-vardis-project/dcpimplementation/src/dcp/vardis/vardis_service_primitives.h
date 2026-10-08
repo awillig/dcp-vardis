@@ -23,10 +23,11 @@
 #include <cstdint>
 #include <iostream>
 #include <dcp/common/area.h>
-#include <dcp/common/services_status.h>
+#include <dcp/common/service_primitives.h>
 #include <dcp/common/transmissible_type.h>
 #include <dcp/vardis/vardis_constants.h>
 #include <dcp/vardis/vardis_protocol_statistics.h>
+#include <dcp/vardis/vardis_services_status.h>
 #include <dcp/vardis/vardis_transmissible_types.h>
 
 
@@ -63,21 +64,21 @@ namespace dcp::vardis {
    * also carries a flag indicating whether an already existing
    * registration should be removed before creating a new one.
    */
-  typedef struct VardisRegister_Request : ServiceRequest {
+  typedef struct VardisRegister_Request : VardisServiceRequest {
     char  shm_area_name [maxShmAreaNameLength+1];
     bool  delete_old_registration = false;
-    VardisRegister_Request () : ServiceRequest (stVardis_Register) {};
+    VardisRegister_Request () : VardisServiceRequest (VardisServiceType::Register) {};
     friend std::ostream& operator<<(std::ostream& os, const VardisRegister_Request& req);
   } VardisRegister_Request;
 
   
-  typedef struct VardisRegister_Confirm : ServiceConfirm {
+  typedef struct VardisRegister_Confirm : VardisServiceConfirm {
     NodeIdentifierT own_node_identifier = nullNodeIdentifier;
     
-    VardisRegister_Confirm () : ServiceConfirm (stVardis_Register) {};
-    VardisRegister_Confirm (DcpStatus statcode) : ServiceConfirm(stVardis_Register, statcode) {};
-    VardisRegister_Confirm (DcpStatus statcode, NodeIdentifierT node_id)
-    : ServiceConfirm(stVardis_Register, statcode),
+    VardisRegister_Confirm () : VardisServiceConfirm (VardisServiceType::Register) {};
+    VardisRegister_Confirm (VardisStatus statcode) : VardisServiceConfirm(VardisServiceType::Register, statcode) {};
+    VardisRegister_Confirm (VardisStatus statcode, NodeIdentifierT node_id)
+    : VardisServiceConfirm(VardisServiceType::Register, statcode),
     own_node_identifier (node_id)
     {};
     friend std::ostream& operator<<(std::ostream& os, const VardisRegister_Confirm& conf);
@@ -94,15 +95,15 @@ namespace dcp::vardis {
    * The request primitive carries the name of the shared memory area
    * used between Vardis demon and Vardis client application
    */
-  typedef struct VardisDeregister_Request : ServiceRequest {
+  typedef struct VardisDeregister_Request : VardisServiceRequest {
     char  shm_area_name [maxShmAreaNameLength+1];
-    VardisDeregister_Request () : ServiceRequest (stVardis_Deregister) {};
+    VardisDeregister_Request () : VardisServiceRequest (VardisServiceType::Deregister) {};
     friend std::ostream& operator<<(std::ostream& os, const VardisDeregister_Request& req);
   } VardisDeregister_Request;
 
   
-  typedef struct VardisDeregister_Confirm : ServiceConfirm {
-    VardisDeregister_Confirm () : ServiceConfirm (stVardis_Deregister) {};
+  typedef struct VardisDeregister_Confirm : VardisServiceConfirm {
+    VardisDeregister_Confirm () : VardisServiceConfirm (VardisServiceType::Deregister) {};
     friend std::ostream& operator<<(std::ostream& os, const VardisDeregister_Confirm& conf);
   } VardisDeregister_Confirm;
 
@@ -111,7 +112,7 @@ namespace dcp::vardis {
 
   
   /**
-   * @brief VardisShutdown request service primitive, exchanged via
+   * @brief VardisShutDown request service primitive, exchanged via
    *        command socket
    *
    * Note: There is *no* confirm primitive, as in response to
@@ -119,10 +120,10 @@ namespace dcp::vardis {
    *       socket and there is no guarantee it will still be available
    *       when the client attempts to read an answer
    */
-  typedef struct VardisShutdown_Request : ServiceRequest {
-    VardisShutdown_Request () : ServiceRequest (stVardis_Shutdown) {};
-    friend std::ostream& operator<<(std::ostream& os, const VardisShutdown_Request& req);
-  } VardisShutdown_Request;
+  typedef struct VardisShutDown_Request : VardisServiceRequest {
+    VardisShutDown_Request () : VardisServiceRequest (VardisServiceType::ShutDown) {};
+    friend std::ostream& operator<<(std::ostream& os, const VardisShutDown_Request& req);
+  } VardisShutDown_Request;
   
 
   // -----------------------------------
@@ -132,14 +133,14 @@ namespace dcp::vardis {
    * @brief VardisActivate service primitives, exchanged via command
    *        socket
    */
-  typedef struct VardisActivate_Request : ServiceRequest {
-    VardisActivate_Request () : ServiceRequest (stVardis_Activate) {};
+  typedef struct VardisActivate_Request : VardisServiceRequest {
+    VardisActivate_Request () : VardisServiceRequest (VardisServiceType::Activate) {};
     friend std::ostream& operator<<(std::ostream& os, const VardisActivate_Request& req);
   } VardisActivate_Request;
 
   
-  typedef struct VardisActivate_Confirm : ServiceConfirm {
-    VardisActivate_Confirm () : ServiceConfirm (stVardis_Activate) {};
+  typedef struct VardisActivate_Confirm : VardisServiceConfirm {
+    VardisActivate_Confirm () : VardisServiceConfirm (VardisServiceType::Activate) {};
     friend std::ostream& operator<<(std::ostream& os, const VardisActivate_Confirm& confirm);
   } VardisActivate_Confirm;
 
@@ -151,14 +152,14 @@ namespace dcp::vardis {
    * @brief VardisDeactivate service primitives, exchanged via command
    *        socket
    */
-  typedef struct VardisDeactivate_Request : ServiceRequest {
-    VardisDeactivate_Request () : ServiceRequest (stVardis_Deactivate) {};
+  typedef struct VardisDeactivate_Request : VardisServiceRequest {
+    VardisDeactivate_Request () : VardisServiceRequest (VardisServiceType::Deactivate) {};
     friend std::ostream& operator<<(std::ostream& os, const VardisDeactivate_Request& req);
   } VardisDeactivate_Request;
 
   
-  typedef struct VardisDeactivate_Confirm : ServiceConfirm {
-    VardisDeactivate_Confirm () : ServiceConfirm (stVardis_Deactivate) {};
+  typedef struct VardisDeactivate_Confirm : VardisServiceConfirm {
+    VardisDeactivate_Confirm () : VardisServiceConfirm (VardisServiceType::Deactivate) {};
     friend std::ostream& operator<<(std::ostream& os, const VardisDeactivate_Confirm& conf);
   } VardisDectivate_Confirm;
 
@@ -170,16 +171,16 @@ namespace dcp::vardis {
    *        Vardis, exchanged via command socket
    */
   
-  typedef struct VardisGetStatistics_Request : ServiceRequest {
-    VardisGetStatistics_Request () : ServiceRequest (stVardis_GetStatistics) {};
+  typedef struct VardisGetStatistics_Request : VardisServiceRequest {
+    VardisGetStatistics_Request () : VardisServiceRequest (VardisServiceType::GetStatistics) {};
     friend std::ostream& operator<<(std::ostream& os, const VardisGetStatistics_Request& req);
   } VardisGetStatistics_Request;
 
   
-  typedef struct VardisGetStatistics_Confirm : ServiceConfirm {
+  typedef struct VardisGetStatistics_Confirm : VardisServiceConfirm {
     VardisProtocolStatistics protocol_stats;
     
-    VardisGetStatistics_Confirm () : ServiceConfirm (stVardis_GetStatistics) {};
+    VardisGetStatistics_Confirm () : VardisServiceConfirm (VardisServiceType::GetStatistics) {};
     friend std::ostream& operator<<(std::ostream& os, const VardisGetStatistics_Confirm& conf);
   } VardisGetStatistics_Confirm;
   
@@ -192,8 +193,8 @@ namespace dcp::vardis {
    * @brief VardisDescribeDatabase request primitive, exchanged via command
    *        socket
    */
-  typedef struct VardisDescribeDatabase_Request : ServiceRequest {
-    VardisDescribeDatabase_Request () : ServiceRequest (stVardis_RTDB_DescribeDatabase) {};
+  typedef struct VardisDescribeDatabase_Request : VardisServiceRequest {
+    VardisDescribeDatabase_Request () : VardisServiceRequest (VardisServiceType::RTDB_DescribeDatabase) {};
     friend std::ostream& operator<<(std::ostream& os, const VardisDescribeDatabase_Request& req);
   } VardisDescribeDatabase_Request;
 
@@ -224,9 +225,10 @@ namespace dcp::vardis {
    * actual descriptions follow immediately after (written
    * contiguously)
    */
-  typedef struct VardisDescribeDatabase_Confirm : ServiceConfirm {
+  typedef struct VardisDescribeDatabase_Confirm : VardisServiceConfirm {
     uint64_t           numberVariableDescriptions = 0;
-    VardisDescribeDatabase_Confirm () : ServiceConfirm (stVardis_RTDB_DescribeDatabase) {};
+    VardisDescribeDatabase_Confirm () : VardisServiceConfirm (VardisServiceType::RTDB_DescribeDatabase) {};
+    VardisDescribeDatabase_Confirm (VardisStatus stat) : VardisServiceConfirm (VardisServiceType::RTDB_DescribeDatabase, stat) {};
     friend std::ostream& operator<<(std::ostream& os, const VardisDescribeDatabase_Confirm& confirm);
   } VardisDescribeDatabase_Confirm;
 
@@ -237,9 +239,9 @@ namespace dcp::vardis {
    * @brief VardisDescribeVariable request primitive, exchanged via command
    *        socket
    */
-  typedef struct VardisDescribeVariable_Request : ServiceRequest {
+  typedef struct VardisDescribeVariable_Request : VardisServiceRequest {
     VarIdT  varId;
-    VardisDescribeVariable_Request () : ServiceRequest (stVardis_RTDB_DescribeVariable) {};
+    VardisDescribeVariable_Request () : VardisServiceRequest (VardisServiceType::RTDB_DescribeVariable) {};
     friend std::ostream& operator<<(std::ostream& os, const VardisDescribeVariable_Request& req);
   } VardisDescribeVariable_Request;
 
@@ -278,9 +280,10 @@ namespace dcp::vardis {
    * variable, followed by a variable number of bytes with the
    * variable value (written contiguously)
    */
-  typedef struct VardisDescribeVariable_Confirm : ServiceConfirm {
+  typedef struct VardisDescribeVariable_Confirm : VardisServiceConfirm {
     DescribeVariableDescription var_description;
-    VardisDescribeVariable_Confirm () : ServiceConfirm (stVardis_RTDB_DescribeVariable) {};
+    VardisDescribeVariable_Confirm () : VardisServiceConfirm (VardisServiceType::RTDB_DescribeVariable) {};
+    VardisDescribeVariable_Confirm (VardisStatus stat) : VardisServiceConfirm (VardisServiceType::RTDB_DescribeVariable, stat) {};
     friend std::ostream& operator<<(std::ostream& os, const VardisDescribeVariable_Confirm& req);
   } VardisDescribeVariable_Confirm;
 
@@ -291,20 +294,20 @@ namespace dcp::vardis {
    * use of serialization / deserialization facilities
    ************************************************************************/
 
-  class RTDBServiceRequest : public ServiceRequest {
+  class RTDBServiceRequest : public VardisServiceRequest {
   public:
     RTDBServiceRequest () = delete;
-    RTDBServiceRequest (DcpServiceType st) : ServiceRequest (st) {};
+    RTDBServiceRequest (VardisServiceType st) : VardisServiceRequest (st) {};
     void serialize    (AssemblyArea& area) const { area.serialize_uint16_n (s_type); };
     void deserialize  (DisassemblyArea& area) { area.deserialize_uint16_n (s_type); };
   };
   
 
-  class RTDBServiceConfirm : public ServiceConfirm {
+  class RTDBServiceConfirm : public VardisServiceConfirm {
   public:
     RTDBServiceConfirm () = delete;
-    RTDBServiceConfirm (DcpServiceType st) : ServiceConfirm (st) {};
-    RTDBServiceConfirm (DcpServiceType st, DcpStatus stat) : ServiceConfirm (st, stat) {};
+    RTDBServiceConfirm (VardisServiceType st) : VardisServiceConfirm (st) {};
+    RTDBServiceConfirm (VardisServiceType st, VardisStatus stat) : VardisServiceConfirm (st, stat) {};
     void serialize    (AssemblyArea& area) const
     {
       area.serialize_uint16_n (s_type);
@@ -334,7 +337,7 @@ namespace dcp::vardis {
     VarSpecT   spec;
     VarValueT  value;
     
-    RTDB_Create_Request () : RTDBServiceRequest (stVardis_RTDB_Create) {};
+    RTDB_Create_Request () : RTDBServiceRequest (VardisServiceType::RTDB_Create) {};
 
 
     /**
@@ -381,9 +384,9 @@ namespace dcp::vardis {
    */
   typedef struct RTDB_Create_Confirm : RTDBServiceConfirm {
     VarIdT  varId;
-    RTDB_Create_Confirm () : RTDBServiceConfirm(stVardis_RTDB_Create) {};
-    RTDB_Create_Confirm (DcpStatus scode) : RTDBServiceConfirm(stVardis_RTDB_Create, scode) {};
-    RTDB_Create_Confirm (DcpStatus scode, VarIdT vid) : RTDBServiceConfirm(stVardis_RTDB_Create, scode), varId (vid) {};
+    RTDB_Create_Confirm () : RTDBServiceConfirm(VardisServiceType::RTDB_Create) {};
+    RTDB_Create_Confirm (VardisStatus scode) : RTDBServiceConfirm(VardisServiceType::RTDB_Create, scode) {};
+    RTDB_Create_Confirm (VardisStatus scode, VarIdT vid) : RTDBServiceConfirm(VardisServiceType::RTDB_Create, scode), varId (vid) {};
 
     void serialize (AssemblyArea& area) const
     {
@@ -413,7 +416,7 @@ namespace dcp::vardis {
   typedef struct RTDB_Delete_Request : RTDBServiceRequest {
     VarIdT   varId;
     
-    RTDB_Delete_Request () : RTDBServiceRequest (stVardis_RTDB_Delete) {};
+    RTDB_Delete_Request () : RTDBServiceRequest (VardisServiceType::RTDB_Delete) {};
 
     void serialize (AssemblyArea& area) const
     {
@@ -434,9 +437,9 @@ namespace dcp::vardis {
   typedef struct RTDB_Delete_Confirm : RTDBServiceConfirm {
     VarIdT  varId;
 
-    RTDB_Delete_Confirm () : RTDBServiceConfirm(stVardis_RTDB_Delete) {};
-    RTDB_Delete_Confirm (DcpStatus scode) : RTDBServiceConfirm(stVardis_RTDB_Delete, scode) {};
-    RTDB_Delete_Confirm (DcpStatus scode, VarIdT vid) : RTDBServiceConfirm(stVardis_RTDB_Delete, scode), varId (vid) {};
+    RTDB_Delete_Confirm () : RTDBServiceConfirm(VardisServiceType::RTDB_Delete) {};
+    RTDB_Delete_Confirm (VardisStatus scode) : RTDBServiceConfirm(VardisServiceType::RTDB_Delete, scode) {};
+    RTDB_Delete_Confirm (VardisStatus scode, VarIdT vid) : RTDBServiceConfirm(VardisServiceType::RTDB_Delete, scode), varId (vid) {};
 
     void serialize (AssemblyArea& area) const
     {
@@ -469,7 +472,7 @@ namespace dcp::vardis {
     VarIdT     varId;
     VarValueT  value;
     
-    RTDB_Update_Request () : RTDBServiceRequest (stVardis_RTDB_Update) {};
+    RTDB_Update_Request () : RTDBServiceRequest (VardisServiceType::RTDB_Update) {};
 
 
     /**
@@ -513,9 +516,9 @@ namespace dcp::vardis {
 
   typedef struct RTDB_Update_Confirm : RTDBServiceConfirm {
     VarIdT   varId;
-    RTDB_Update_Confirm () : RTDBServiceConfirm(stVardis_RTDB_Update) {};
-    RTDB_Update_Confirm (DcpStatus scode) : RTDBServiceConfirm(stVardis_RTDB_Update, scode) {};
-    RTDB_Update_Confirm (DcpStatus scode, VarIdT vid) : RTDBServiceConfirm(stVardis_RTDB_Update, scode), varId(vid) {};
+    RTDB_Update_Confirm () : RTDBServiceConfirm(VardisServiceType::RTDB_Update) {};
+    RTDB_Update_Confirm (VardisStatus scode) : RTDBServiceConfirm(VardisServiceType::RTDB_Update, scode) {};
+    RTDB_Update_Confirm (VardisStatus scode, VarIdT vid) : RTDBServiceConfirm(VardisServiceType::RTDB_Update, scode), varId(vid) {};
 
     void serialize (AssemblyArea& area) const
     {
@@ -545,7 +548,7 @@ namespace dcp::vardis {
   typedef struct RTDB_Read_Request : RTDBServiceRequest {
     VarIdT     varId;
     
-    RTDB_Read_Request () : RTDBServiceRequest (stVardis_RTDB_Read) {};
+    RTDB_Read_Request () : RTDBServiceRequest (VardisServiceType::RTDB_Read) {};
 
     void serialize (AssemblyArea& area) const
     {
@@ -575,10 +578,10 @@ namespace dcp::vardis {
     /**
      * @brief Regular constructors
      */
-    RTDB_Read_Confirm () : RTDBServiceConfirm(stVardis_RTDB_Read) {};
-    RTDB_Read_Confirm (DcpStatus scode) : RTDBServiceConfirm(stVardis_RTDB_Read, scode) {};
-    RTDB_Read_Confirm (DcpStatus scode, VarIdT vid)
-      : RTDBServiceConfirm(stVardis_RTDB_Read, scode)
+    RTDB_Read_Confirm () : RTDBServiceConfirm(VardisServiceType::RTDB_Read) {};
+    RTDB_Read_Confirm (VardisStatus scode) : RTDBServiceConfirm(VardisServiceType::RTDB_Read, scode) {};
+    RTDB_Read_Confirm (VardisStatus scode, VarIdT vid)
+      : RTDBServiceConfirm(VardisServiceType::RTDB_Read, scode)
       , varId(vid)
     {};
 
@@ -586,8 +589,8 @@ namespace dcp::vardis {
     /**
      * @brief Constructor, initializes value without copying it from memory
      */
-    RTDB_Read_Confirm (DcpStatus scode, VarIdT vid, VarLenT len, byte* pb)
-      : RTDBServiceConfirm(stVardis_RTDB_Read, scode)
+    RTDB_Read_Confirm (VardisStatus scode, VarIdT vid, VarLenT len, byte* pb)
+      : RTDBServiceConfirm(VardisServiceType::RTDB_Read, scode)
       , varId (vid)
       , value (len, pb)
     {};

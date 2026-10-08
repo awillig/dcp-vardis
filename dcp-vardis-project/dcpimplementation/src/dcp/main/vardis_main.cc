@@ -10,7 +10,6 @@
 #include <boost/program_options.hpp>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/common/other_helpers.h>
-#include <dcp/common/services_status.h>
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/vardis/vardis_configuration.h>
 #include <dcp/vardis/vardis_logging.h>
@@ -29,10 +28,8 @@ using std::cout;
 using std::endl;
 using std::exception;
 using std::size_t;
-using dcp::DcpStatus;
 using dcp::VardisClientRuntime;
 using dcp::VardisClientConfiguration;
-using dcp::vardis_status_to_string;
 using dcp::bp::BPStaticClientInfo;
 
 
@@ -81,7 +78,7 @@ int run_vardis_demon (const std::string cfg_filename)
   client_info.protocolId      =  dcp::BP_PROTID_VARDIS;
   std::strncpy (client_info.protocolName, get_protocol_name().c_str(), dcp::bp::maximumProtocolNameLength);
   client_info.maxPayloadSize         =  vdconfig.vardis_conf.maxPayloadSize;
-  client_info.queueingMode           =  dcp::bp::BP_QMODE_QUEUE_DROPHEAD;
+  client_info.queueingMode           =  dcp::bp::BPQueueingMode::Q_DropHead;
   client_info.maxEntries             =  vdconfig.vardis_conf.queueMaxEntries;
   client_info.allowMultiplePayloads  =  false;
 
@@ -141,17 +138,17 @@ int run_vardis_management_command (MgmtCommand cmd, const std::string cfg_filena
   vdconfig.read_from_config_file (cfg_filename, true);
   VardisClientRuntime cl_rt (vdconfig);
   
-  DcpStatus result;
+  VardisStatus result;
   VardisProtocolStatistics protocol_stats;
   switch (cmd)
     {
-    case Shutdown:        result = cl_rt.shutdown_vardis(); break;
-    case Activate:        result = cl_rt.activate_vardis(); break;
-    case Deactivate:      result = cl_rt.deactivate_vardis(); break;
+    case Shutdown:        result = cl_rt.shutdown(); break;
+    case Activate:        result = cl_rt.activate(); break;
+    case Deactivate:      result = cl_rt.deactivate(); break;
     case GetStatistics:
       {
 	result = cl_rt.retrieve_statistics(protocol_stats);
-	if (result == dcp::VARDIS_STATUS_OK)
+	if (result == VardisStatus::Ok)
 	  {
 	    cout << "Vardis demon protocol runtime statistics:\n"
 		 << "    RTDB services: create: " << protocol_stats.count_handle_rtdb_create
@@ -174,9 +171,9 @@ int run_vardis_management_command (MgmtCommand cmd, const std::string cfg_filena
       return EXIT_FAILURE;
     }
 
-  if (result != dcp::VARDIS_STATUS_OK)
+  if (result != VardisStatus::Ok)
     {
-      cout << "Management command failed with status code " << vardis_status_to_string (result) << endl;
+      cout << "Management command failed with status code " << to_string (result) << endl;
       return EXIT_FAILURE;
     }
   

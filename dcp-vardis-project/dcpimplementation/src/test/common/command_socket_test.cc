@@ -3,16 +3,14 @@
 #include <dcp/common/command_socket.h>
 #include <dcp/common/exceptions.h>
 #include <dcp/common/logging_helpers.h>
-#include <dcp/common/services_status.h>
+#include <dcp/bp/bp_services_status.h>
 
 
 using dcp::byte;
 using dcp::CommandSocket;
-using dcp::SocketException;
-using dcp::ServiceConfirm;
-using dcp::BP_STATUS_OK;
-using dcp::DcpServiceType;
 using dcp::ScopedClientSocket;
+using dcp::ServiceConfirm;
+using dcp::SocketException;
 
 namespace keywords = boost::log::keywords;
 
@@ -44,8 +42,9 @@ TEST (CmdSockTest, BasicTest) {
 }
 
 
-typedef struct TestServiceConfirm : public ServiceConfirm {
-  TestServiceConfirm () : ServiceConfirm (5555) {};
+typedef struct TestServiceConfirm {
+  std::uint16_t s_type;
+  std::uint16_t status_code;
   int theval;
 } TestServiceConfirm;
 
@@ -64,7 +63,7 @@ void csclient (int startval, int numvals)
       TestServiceConfirm* pConf = (TestServiceConfirm*) buffer;
       EXPECT_EQ (pConf->theval, theval);
       EXPECT_EQ (pConf->s_type, 5555);
-      EXPECT_EQ (pConf->status_code, BP_STATUS_OK);
+      EXPECT_EQ (pConf->status_code, 0);
     }
 }
 
@@ -84,15 +83,16 @@ TEST (CmdSockTest, ClientServerTest) {
   byte buffer [100];
   do {
     bool exitFlag = false;
-    DcpServiceType serv_t = 0x7050;
+    std::uint16_t serv_t = 0x7050;
     rbytes = cs.start_read_command (log_null, buffer, 100, serv_t, exitFlag);
     EXPECT_FALSE (exitFlag);
     if (rbytes == sizeof(int))
       {
 	int* pInt = (int*) buffer;
 	TestServiceConfirm conf;
-	conf.theval = *pInt;
-	conf.status_code = BP_STATUS_OK;
+        conf.theval = *pInt;
+        conf.status_code = 0;
+	conf.s_type = 5555;        
 	cs.send_raw_data (log_null, (byte*) &conf, sizeof(TestServiceConfirm), exitFlag);
 	EXPECT_FALSE (exitFlag);
 	cs.stop_read_command (log_null, exitFlag);

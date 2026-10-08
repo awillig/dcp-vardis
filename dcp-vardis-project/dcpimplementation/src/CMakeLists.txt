@@ -60,8 +60,7 @@ if (DEFINED ENV{__omnetpp_root_dir})
   message("Building libraries suitable for OMNeT++, OPP_INCLUDE_PATH=${OPP_INCLUDE_PATH}")
   add_library(dcplib-common-sim SHARED
     dcp/common/debug_helpers.cc
-    dcp/common/global_types_constants.cc
-    dcp/common/services_status.cc)
+    dcp/common/global_types_constants.cc)
   add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
   add_library(dcplib-bp-sim SHARED
     dcp/bp/bp_queueing_mode.cc

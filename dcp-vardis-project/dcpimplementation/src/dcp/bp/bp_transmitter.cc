@@ -97,18 +97,18 @@ namespace dcp::bp {
 
     switch (queueingMode)
       {
-      case BP_QMODE_QUEUE_DROPTAIL:
-      case BP_QMODE_QUEUE_DROPHEAD:
+      case BPQueueingMode::Q_DropTail:
+      case BPQueueingMode::Q_DropHead:
 	{
 	  CS.queue.pop_nowait (handler, timed_out, more_payloads);
 	  break;
 	}
-      case BP_QMODE_ONCE:
+      case BPQueueingMode::Once:
 	{
 	  CS.buffer.pop_nowait (handler, timed_out, more_payloads);
 	  break;
 	}
-      case BP_QMODE_REPEAT:
+      case BPQueueingMode::Repeat:
 	{
 	  CS.buffer.peek_nowait (handler, timed_out);
 	  break;

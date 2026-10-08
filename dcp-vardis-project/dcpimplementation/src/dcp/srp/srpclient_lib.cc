@@ -44,19 +44,19 @@ namespace dcp {
 
   // -----------------------------------------------------------------------------------
 
-  DcpStatus SRPClientRuntime::set_own_safety_data (const SafetyDataT& new_sd)
+  SRPStatus SRPClientRuntime::set_own_safety_data (const SafetyDataT& new_sd)
   {
     srp_store.lock_own_safety_data ();
     srp_store.set_own_safety_data (new_sd);
     srp_store.unlock_own_safety_data ();
     
-    return SRP_STATUS_OK;
+    return SRPStatus::Ok;
   }
 
   
   // -----------------------------------------------------------------------------------
 
-  DcpStatus SRPClientRuntime::get_all_neighbours_node_information (std::list<NodeInformation>& neighbour_list)
+  SRPStatus SRPClientRuntime::get_all_neighbours_node_information (std::list<NodeInformation>& neighbour_list)
   {
     std::function<bool (const ExtendedSafetyDataT&)> all_predicate =
       [] (const srp::ExtendedSafetyDataT&)
@@ -68,20 +68,20 @@ namespace dcp {
     neighbour_list = srp_store.list_matching_node_information (all_predicate);
     srp_store.unlock_neighbour_table ();
     
-    return SRP_STATUS_OK;
+    return SRPStatus::Ok;
   }
 
   
   // -----------------------------------------------------------------------------------
 
-  DcpStatus SRPClientRuntime::get_matching_neighbours_node_information (std::function<bool (const ExtendedSafetyDataT&)> predicate,
+  SRPStatus SRPClientRuntime::get_matching_neighbours_node_information (std::function<bool (const ExtendedSafetyDataT&)> predicate,
 									std::list<NodeInformation>& neighbour_list)
   {
     srp_store.lock_neighbour_table ();
     neighbour_list = srp_store.list_matching_node_information (predicate);
     srp_store.unlock_neighbour_table ();
     
-    return SRP_STATUS_OK;
+    return SRPStatus::Ok;
   }
   
   

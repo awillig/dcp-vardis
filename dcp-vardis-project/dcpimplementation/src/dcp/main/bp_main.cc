@@ -10,7 +10,6 @@
 #include <dcp/common/exceptions.h>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/common/other_helpers.h>
-#include <dcp/common/services_status.h>
 #include <dcp/bp/bpclient_configuration.h>
 #include <dcp/bp/bp_configuration.h>
 #include <dcp/bp/bp_runtime_data.h>
@@ -22,11 +21,9 @@
 #include <dcp/bp/bpclient_lib.h>
 
 
-using dcp::bp_status_to_string;
 using dcp::BPClientConfiguration;
 using dcp::BPClientRuntime;
-using dcp::DcpStatus;
-using dcp::BP_STATUS_OK;
+using dcp::bp::BPStatus;
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -106,7 +103,7 @@ void run_bp_management_command (MgmtCommand cmd, const std::string cfg_filename)
   
   BPClientRuntime cl_rt (bpconfig);
   
-  DcpStatus sd_status;
+  BPStatus sd_status;
   switch (cmd)
     {
     case Shutdown:     sd_status = cl_rt.shutdown_bp (); break;
@@ -118,7 +115,7 @@ void run_bp_management_command (MgmtCommand cmd, const std::string cfg_filename)
 	double avg_beacon_size;
 	unsigned int number_received_payloads;
 	sd_status = cl_rt.get_runtime_statistics (avg_inter_beacon_time, avg_beacon_size, number_received_payloads);
-	if (sd_status == BP_STATUS_OK)
+	if (sd_status == BPStatus::Ok)
 	  {
 	    cout << "Average inter-beacon time (ms):      " << avg_inter_beacon_time << endl;
 	    cout << "Average beacon size (B):             " << avg_beacon_size << endl;
@@ -133,7 +130,7 @@ void run_bp_management_command (MgmtCommand cmd, const std::string cfg_filename)
       }
     default:           cout << "Unknown type of management command: " << cmd << endl; return;
     }
-  cout << "BP return status = " << bp_status_to_string (sd_status) << endl;
+  cout << "BP return status = " << to_string (sd_status) << endl;
 }
 
 
@@ -146,9 +143,9 @@ void run_query_client_protocols (const std::string cfg_filename)
   BPClientRuntime cl_rt (bpconfig);
 
   std::list<BPRegisteredProtocolDataDescription> descr_list;
-  DcpStatus qcp_status = cl_rt.list_registered_protocols (descr_list);
+  BPStatus qcp_status = cl_rt.list_registered_protocols (descr_list);
 
-  if (qcp_status == BP_STATUS_OK)
+  if (qcp_status == BPStatus::Ok)
     {
       if (descr_list.size() > 0)
 	{
@@ -157,7 +154,7 @@ void run_query_client_protocols (const std::string cfg_filename)
 	    {
 	      cout << "Protocol " << it->protocolName << " (protocolId = " << it->protocolId << "):" << endl
 		   << "    maxPayloadSize                 = " << it->maxPayloadSize << endl
-		   << "    queueingMode                   = " << bp_queueing_mode_to_string(it->queueingMode) << endl
+		   << "    queueingMode                   = " << to_string(it->queueingMode) << endl
 		   << "    timeStampRegistration          = " << it->timeStampRegistration << endl
 		   << "    maxEntries                     = " << it->maxEntries << endl
 		   << "    allowMultiplePayloads          = " << it->allowMultiplePayloads << endl
@@ -175,7 +172,7 @@ void run_query_client_protocols (const std::string cfg_filename)
     }
   else
     {
-      cout << "Query client protocols: return status = " << bp_status_to_string (qcp_status) << endl;
+      cout << "Query client protocols: return status = " << to_string (qcp_status) << endl;
     }
 }
 

@@ -206,10 +206,8 @@ namespace dcp {
 
   // -----------------------------------------------------------------------------------------
 
-  int CommandSocket::start_read_command (logger_type& log, byte* buffer, size_t buflen, DcpServiceType& serv_t, bool& exitFlag)
+  int CommandSocket::start_read_command (logger_type& log, byte* buffer, size_t buflen, std::uint16_t& serv_t, bool& exitFlag)
   {
-    serv_t = InvalidServiceType;
-    
     if (data_socket != (-1))
       {
 	DCPLOG_FATAL(log) << "CommandSocket::start_read_command: socket still in use. Exiting.";
@@ -234,7 +232,7 @@ namespace dcp {
     if (nbytes == 0)
       return nbytes;
     
-    if (((size_t) nbytes) < sizeof(DcpServiceType))
+    if (((size_t) nbytes) < sizeof(std::uint16_t))
       {
 	DCPLOG_FATAL(log) << "CommandSocket::start_read_command: truncated service type, nbytes = " << nbytes;
 	close (data_socket);
@@ -244,7 +242,7 @@ namespace dcp {
       }
     
     // dispatch on actual service type
-    serv_t = *((DcpServiceType*) buffer);
+    serv_t = *((std::uint16_t*) buffer);
     
     return nbytes;
   };
