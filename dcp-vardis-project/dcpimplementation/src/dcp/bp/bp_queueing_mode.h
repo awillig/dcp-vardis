@@ -33,7 +33,7 @@
 
 namespace dcp::bp {
 
-   enum class BPQueueingMode {Once, Repeat, Q_DropTail, Q_DropHead };
+  enum class BPQueueingMode : std::uint16_t {Once, Repeat, Q_DropTail, Q_DropHead };
   
 };  // namespace dcp::bp
 
