@@ -32,7 +32,7 @@ using namespace omnetpp;
 using namespace inet;
 using namespace dcp;
 
-using dcp::bp::BP_QMODE_ONCE;
+using dcp::bp::BPQueueingMode;
 
 Define_Module(StateReportingProtocol);
 
@@ -297,5 +297,5 @@ void StateReportingProtocol::registerAsBPClient(void)
     EvTracing dbg(*this, "registerAsBPClient");
 
     // register ourselves directly as a client protocol with BP
-    sendRegisterProtocolRequest(BP_PROTID_SRP, std::format("SRP -- State Reporting Protocol V{}", dcpVersionNumber), maximumSRPPayloadLength, BP_QMODE_ONCE, false, 0);
+    sendRegisterProtocolRequest(BP_PROTID_SRP, std::format("SRP -- State Reporting Protocol V{}", dcpVersionNumber), maximumSRPPayloadLength, BPQueueingMode::Once, false, 0);
 }

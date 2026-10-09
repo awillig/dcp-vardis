@@ -20,8 +20,8 @@
 
 #include <inet/common/packet/Message.h>
 #include <inet/common/packet/Packet.h>
-#include <dcp/common/services_status.h>
 #include <dcp/common/global_types_constants.h>
+#include <dcp/vardis/vardis_services_status.h>
 #include <dcpsim/common/DcpApplication.h>
 #include <dcpsim/vardis/VardisRTDBConfirmation_m.h>
 
@@ -51,7 +51,7 @@ protected:
     /**
      * Prints received VarDis status as string to logging output
      */
-    void printStatus (DcpStatus status);
+    void printStatus (dcp::vardis::VardisStatus status);
 
     /**
      * Default reaction to any received status value from a VarDis confirm

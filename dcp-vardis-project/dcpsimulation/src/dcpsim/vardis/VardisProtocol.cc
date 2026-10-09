@@ -21,6 +21,7 @@
 #include <format>
 #include <inet/common/IProtocolRegistrationListener.h>
 #include <dcp/bp/bp_queueing_mode.h>
+#include <dcp/bp/bp_services_status.h>
 #include <dcpsim/bp/BPTransmitPayload_m.h>
 #include <dcpsim/bp/BPPayloadTransmitted_m.h>
 #include <dcpsim/common/DcpSimGlobals.h>
@@ -33,8 +34,8 @@ using namespace omnetpp;
 using namespace inet;
 using namespace dcp;
 using namespace dcp::vardis;
-
-using dcp::bp::BP_QMODE_QUEUE_DROPHEAD;
+using dcp::bp::BPQueueingMode;
+using dcp::bp::BPStatus;
 
 Define_Module(VardisProtocol);
 
@@ -153,7 +154,7 @@ void VardisProtocol::registerAsBPClient()
 
     dbg.val("maxPayloadSize", maxPayloadSize);
 
-    sendRegisterProtocolRequest(BP_PROTID_VARDIS, std::format("VarDis -- Variable Dissemination Protocol V{}", dcpVersionNumber), maxPayloadSize, BP_QMODE_QUEUE_DROPHEAD, false, 10);
+    sendRegisterProtocolRequest(BP_PROTID_VARDIS, std::format("VarDis -- Variable Dissemination Protocol V{}", dcpVersionNumber), maxPayloadSize, BPQueueingMode::Q_DropHead, false, 10);
 
 }
 
@@ -166,7 +167,7 @@ bool VardisProtocol::handleBPRegisterProtocol_Confirm (BPRegisterProtocol_Confir
 
     assert (pConf);
 
-    if (pConf->getStatus() == BP_STATUS_OK)
+    if (static_cast<BPStatus>(pConf->getStatus()) == BPStatus::Ok)
     {
       vardis_store_p = std::make_unique<VardisVariableStoreInMemory> (true,
 								      vardisMaxSummaries,
@@ -462,7 +463,9 @@ void VardisProtocol::handleRTDBCreateRequest(RTDBCreate_Request* createReq)
     RTDB_Create_Confirm crConf = vardis_protocol_data_p->handle_rtdb_create_request (crReq);
     
     // send confirmation to application and delete request
-    sendRTDBCreateConfirm(crConf.status_code, crReq.spec.varId, theProtocol);
+    sendRTDBCreateConfirm(static_cast<VardisStatus>(crConf.status_code),
+                          crReq.spec.varId,
+                          theProtocol);
     delete createReq;
 }
 
@@ -488,7 +491,10 @@ void VardisProtocol::handleRTDBUpdateRequest(RTDBUpdate_Request* updateReq)
     
 
     // send confirmation to application and delete request
-    sendRTDBUpdateConfirm(updConf.status_code, updReq.varId, theProtocol);
+    sendRTDBUpdateConfirm(static_cast<VardisStatus>(updConf.status_code),
+                          updReq.varId,
+                          theProtocol);
+
     delete updateReq;
 }
 
@@ -517,7 +523,9 @@ void VardisProtocol::handleRTDBReadRequest (RTDBRead_Request* readReq)
     auto readConf = new RTDBRead_Confirm;
     readConf->setReadConf (rConf);
 
-    sendConfirmation(readConf, rConf.status_code, theProtocol);
+    sendConfirmation(readConf,
+                     static_cast<VardisStatus>(rConf.status_code),
+                     theProtocol);
 }
 
 // ----------------------------------------------------
@@ -545,7 +553,7 @@ void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Req
     {
         dbg.text("Vardis is not active, dropping request");
         dbConf->setDescrsArraySize (0);
-        sendConfirmation(dbConf, VARDIS_STATUS_INACTIVE, theProtocol);
+        sendConfirmation(dbConf, VardisStatus::Inactive, theProtocol);
         return;
     }
 
@@ -573,7 +581,7 @@ void VardisProtocol::handleRTDBDescribeDatabaseRequest (RTDBDescribeDatabase_Req
        i++;	
       }    
 
-    sendConfirmation(dbConf, VARDIS_STATUS_OK, theProtocol);
+    sendConfirmation(dbConf, VardisStatus::Ok, theProtocol);
 }
 
 // ----------------------------------------------------
@@ -602,14 +610,14 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
     if (not vardisActive())
     {
         dbg.text("Vardis is not active, dropping request");
-        sendConfirmation(varDescr, VARDIS_STATUS_INACTIVE, theProtocol);
+        sendConfirmation(varDescr, VardisStatus::Inactive, theProtocol);
         return;
     }
 
     if (not variableExists(varId))
     {
         dbg.val("requested variable does not exist", varId);
-        sendConfirmation(varDescr, VARDIS_STATUS_VARIABLE_DOES_NOT_EXIST, theProtocol);
+        sendConfirmation(varDescr, VardisStatus::Variable_Does_Not_Exist, theProtocol);
         return;
     }
 
@@ -629,7 +637,7 @@ void VardisProtocol::handleRTDBDescribeVariableRequest (RTDBDescribeVariable_Req
     varDescr->setCountDelete (theEntry.countDelete);
     varDescr->setIsDeleted (theEntry.isDeleted);
 
-    sendConfirmation(varDescr, VARDIS_STATUS_OK, theProtocol);
+    sendConfirmation(varDescr, VardisStatus::Ok, theProtocol);
 }
 
 
@@ -659,7 +667,9 @@ void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* deleteReq)
     // generate and initialize confirmation
     auto deleteConf = new RTDBDelete_Confirm;
 
-    sendConfirmation(deleteConf, delConf.status_code, theProtocol);
+    sendConfirmation(deleteConf,
+                     static_cast<VardisStatus>(delConf.status_code),
+                     theProtocol);
 }
 
 
@@ -826,13 +836,13 @@ void VardisProtocol::processVarReqCreateList(const std::deque<VarReqCreateT>& re
 // Helpers for sending standard confirmations to higher layers
 // ========================================================================================
 
-void VardisProtocol::sendConfirmation(VardisConfirmation *confMsg, DcpStatus status, Protocol* theProtocol)
+void VardisProtocol::sendConfirmation(VardisConfirmation *confMsg, VardisStatus status, Protocol* theProtocol)
 {
     EvTracing dbg(*this, "sendConfirmation");
     assert(theProtocol);
     assert(confMsg);
 
-    confMsg->setStatus(status);
+    confMsg->setStatus(static_cast<uint16_t>(status));
 
     auto req = confMsg->addTagIfAbsent<DispatchProtocolReq>();
     req->setProtocol(theProtocol);
@@ -843,7 +853,7 @@ void VardisProtocol::sendConfirmation(VardisConfirmation *confMsg, DcpStatus sta
 
 // ----------------------------------------------------
 
-void VardisProtocol::sendRTDBCreateConfirm(DcpStatus status, VarIdT varId, Protocol* theProtocol)
+void VardisProtocol::sendRTDBCreateConfirm(VardisStatus status, VarIdT varId, Protocol* theProtocol)
 {
     EvTracing dbg(*this, "sendRTDBCreateConfirm");
 
@@ -854,7 +864,7 @@ void VardisProtocol::sendRTDBCreateConfirm(DcpStatus status, VarIdT varId, Proto
 
 // ----------------------------------------------------
 
-void VardisProtocol::sendRTDBUpdateConfirm(DcpStatus status, VarIdT varId, Protocol* theProtocol)
+void VardisProtocol::sendRTDBUpdateConfirm(VardisStatus status, VarIdT varId, Protocol* theProtocol)
 {
     EvTracing dbg(*this, "sendRTDBUpdateConfirm");
 

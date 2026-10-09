@@ -258,14 +258,14 @@ void VardisVariableProducer::handleRTDBCreateConfirm(RTDBCreate_Confirm* createC
 
     // extract information
     handleVardisConfirmation(createConf);
-    DcpStatus status = createConf->getStatus();
-    VarIdT    varId  = createConf->getVarId();
+    VardisStatus status = static_cast<VardisStatus>(createConf->getStatus());
+    VarIdT       varId  = createConf->getVarId();
     delete createConf;
 
     dbg.val("got confirm for varId", varId, "status", status);
 
     // check outcome
-    if (status != VARDIS_STATUS_OK)
+    if (status != VardisStatus::Ok)
     {
         error("VardisVariableProducer::handleRTDBCreateConfirm: variable creation failed, stopping with error");
     }
@@ -288,11 +288,11 @@ void VardisVariableProducer::handleRTDBDeleteConfirm(RTDBDelete_Confirm* deleteC
 
     // extract information
     handleVardisConfirmation(deleteConf);
-    DcpStatus status = deleteConf->getStatus();
+    VardisStatus status = static_cast<VardisStatus>(deleteConf->getStatus());
     delete deleteConf;
 
     // check outcome
-    if (status != VARDIS_STATUS_OK)
+    if (status != VardisStatus::Ok)
     {
         error("VardisVariableProducer::handleRTDBDeleteConfirm: variable deletion failed, stopping with error");
     }
@@ -310,15 +310,15 @@ void VardisVariableProducer::handleRTDBUpdateConfirm(RTDBUpdate_Confirm* updateC
 
     // extract information
     handleVardisConfirmation(updateConf);
-    DcpStatus status  = updateConf->getStatus();
-    VarIdT    cVarId  = updateConf->getVarId();
+    VardisStatus status  = static_cast<VardisStatus>(updateConf->getStatus());
+    VarIdT       cVarId  = updateConf->getVarId();
     delete updateConf;
 
     dbg.val("got confirm for varId", cVarId, "status", status);
 
     // check outcome
     assert(cVarId == varId);
-    if (status != VARDIS_STATUS_OK)
+    if (status != VardisStatus::Ok)
     {
         error("VardisVariableProducer::handleRTDBUpdateConfirm: variable update failed, stopping with error");
     }

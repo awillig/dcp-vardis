@@ -23,9 +23,9 @@
 #include <inet/common/InitStages.h>
 #include <inet/common/Protocol.h>
 #include <inet/networklayer/common/InterfaceTable.h>
+#include <dcp/bp/bp_services_status.h>
 #include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/common/global_types_constants.h>
-#include <dcp/common/services_status.h>
 #include <dcpsim/bp/BPDeregisterProtocol_m.h>
 #include <dcpsim/bp/BPRegisterProtocol_m.h>
 #include <dcpsim/bp/BPTransmitPayload_m.h>
@@ -34,6 +34,7 @@
 #include <dcpsim/bp/BPQueryNumberBufferedPayloads_m.h>
 #include <dcpsim/bp/BPClientProtocolData.h>
 #include <dcpsim/common/DcpProtocol.h>
+#include <dcpsim/common/DcpSimGlobals.h>
 
 
 
@@ -158,48 +159,31 @@ protected:
      * Sends a confirmation message (for a previous service request) to client
      * protocol
      */
-    void sendConfirmation(BPConfirmation *confMsg, DcpStatus status, inet::Protocol* theProtocol);
+    void sendConfirmation(BPConfirmation *confMsg, BPStatus status, inet::Protocol* theProtocol);
 
+    template <typename T>
+    void sendEmptyConfirm(const std::string methname, BPStatus status,
+			  BPProtocolIdT protocolId)
+    {
+      EvTracing(*this, methname);
+      inet::Protocol *theProtocol = dcp::convertProtocolIdToProtocol(protocolId);
+      assert(theProtocol);
+      sendConfirmation (new T, status, theProtocol);
+    };
+    
     /**
      * Generates and sends BPRegisterProtocol.confirm message to client protocol
      */
-    void sendRegisterProtocolConfirm (DcpStatus status, inet::Protocol* theProtocol);
-
-    /**
-     * Generates and sends BPDeregisterProtocol.confirm message to client protocol
-     */
-    void sendDeregisterProtocolConfirm (DcpStatus status, inet::Protocol* theProtocol);
-
-    /**
-     * Generates and sends BPTransmitPayload.confirm message to client protocol
-     */
-    void sendTransmitPayloadConfirm (DcpStatus status, inet::Protocol* theProtocol);
-
-    /**
-     * Generates and sends BPClearBuffer.confirm message to client protocol
-     */
-    void sendClearBufferConfirm (DcpStatus status, inet::Protocol* theProtocol);
+    void sendRegisterProtocolConfirm (BPStatus status, inet::Protocol* theProtocol);
 
 
     /**
      * Generates and sends BPQueryNumberBufferedPayloads.confirm message to client protocol
      */
-    void sendQueryNumberBufferedPayloadsConfirm (DcpStatus status,
+    void sendQueryNumberBufferedPayloadsConfirm (BPStatus status,
   					         unsigned int numPayloads,
   					         BPProtocolIdT protocolId,
 					         inet::Protocol* theProtocol);
-
-    /**
-     * Checks whether BPHeaderT of incoming beacon is well-formed
-     */
-    bool bpHeaderWellFormed (DisassemblyArea& area, dcp::bp::BPHeaderT& bpHdr);
-
-
-    /**
-     * Checks whether BPPayloadHeaderT of incoming beacon is well-formed
-     */
-    bool bpPayloadHeaderWellFormed (DisassemblyArea& area, dcp::bp::BPPayloadHeaderT& bpPHdr);
-
 
     /**
      * Checks whether a protocol with given ProtocolId is registered as client protocol

@@ -28,6 +28,7 @@ using namespace inet;
 using namespace dcp;
 using dcp::bp::BPLengthT;
 using dcp::bp::BPQueueingMode;
+using dcp::bp::BPStatus;
 
 // ========================================================================================
 // Standard OMNeT++ and class methods
@@ -150,7 +151,7 @@ void BPClientProtocol::sendRegisterProtocolRequest (BPProtocolIdT protId,
     reqMsg->setProtId(protId.val);
     reqMsg->setProtName(protName.c_str());
     reqMsg->setMaxPayloadSizeB(maxPayloadLenB.val);
-    reqMsg->setQueueingMode(queueingMode);
+    reqMsg->setQueueingMode(static_cast<uint16_t>(queueingMode));
     reqMsg->setAllowMultiplePayloads(allowMultiplePayloads);
     reqMsg->setMaxEntries(maxEntries);
     sendToBP(reqMsg);
@@ -209,10 +210,8 @@ bool BPClientProtocol::handleBPRegisterProtocol_Confirm (BPRegisterProtocol_Conf
 {
     EvTracing dbg(*this, "BPClientProtocol::BPRegisterProtocol_Confirm");
     assert(pConf);
-
-    handleStatus(pConf->getStatus());
-
-    return (pConf->getStatus() == BP_STATUS_OK);
+    handleStatus(static_cast<BPStatus>(pConf->getStatus()));
+    return (static_cast<BPStatus>(pConf->getStatus()) == BPStatus::Ok);
 }
 
 // ----------------------------------------------------
@@ -221,10 +220,8 @@ bool BPClientProtocol::handleBPDeregisterProtocol_Confirm (BPDeregisterProtocol_
 {
     EvTracing dbg(*this, "BPClientProtocol::BPDeregisterProtocol_Confirm");
     assert(pConf);
-
-    handleStatus(pConf->getStatus());
-
-    return (pConf->getStatus() == BP_STATUS_OK);
+    handleStatus(static_cast<BPStatus>(pConf->getStatus()));
+    return (static_cast<BPStatus>(pConf->getStatus()) == BPStatus::Ok);
 }
 
 // ----------------------------------------------------
@@ -233,10 +230,8 @@ bool BPClientProtocol::handleBPTransmitPayload_Confirm (BPTransmitPayload_Confir
 {
     EvTracing dbg(*this,"BPClientProtocol::BPTransmitPayload_Confirm");
     assert(pConf);
-
-    handleStatus(pConf->getStatus());
-
-    return (pConf->getStatus() == BP_STATUS_OK);
+    handleStatus(static_cast<BPStatus>(pConf->getStatus()));
+    return (static_cast<BPStatus>(pConf->getStatus()) == BPStatus::Ok);
 }
 
 // ========================================================================================
@@ -244,10 +239,10 @@ bool BPClientProtocol::handleBPTransmitPayload_Confirm (BPTransmitPayload_Confir
 // ========================================================================================
 
 
-void BPClientProtocol::handleStatus (DcpStatus status)
+void BPClientProtocol::handleStatus (BPStatus status)
 {
     EvTracing dbg(*this, "BPClientProtocol::handleStatus");
-    dbg.val ("status is ", bp_status_to_string (status));
+    dbg.val ("status is ", to_string (status));
 }
 
 

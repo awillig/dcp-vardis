@@ -21,8 +21,8 @@
 #include <inet/common/packet/Message.h>
 #include <inet/common/packet/Packet.h>
 #include <dcp/bp/bp_queueing_mode.h>
+#include <dcp/bp/bp_services_status.h>
 #include <dcp/bp/bp_transmissible_types.h>
-#include <dcp/common/services_status.h>
 #include <dcpsim/common/DcpProtocol.h>
 #include <dcpsim/bp/BPRegisterProtocol_m.h>
 #include <dcpsim/bp/BPDeregisterProtocol_m.h>
@@ -137,7 +137,7 @@ protected:
      * when a confirmation is to be processed) and return whether or not
      * the confirmation status was BP_STATUS_OK (return value of true).
      */
-    void handleStatus (DcpStatus status);
+    void handleStatus (dcp::bp::BPStatus status);
     virtual bool handleBPRegisterProtocol_Confirm (BPRegisterProtocol_Confirm *pConf);
     virtual bool handleBPDeregisterProtocol_Confirm (BPDeregisterProtocol_Confirm *pConf);
     virtual bool handleBPTransmitPayload_Confirm (BPTransmitPayload_Confirm *pConf);

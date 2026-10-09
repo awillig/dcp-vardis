@@ -22,9 +22,9 @@
 #include <omnetpp.h>
 #include <inet/common/InitStages.h>
 #include <dcp/common/area.h>
-#include <dcp/common/services_status.h>
 #include <dcp/vardis/vardis_protocol_data.h>
 #include <dcp/vardis/vardis_rtdb_entry.h>
+#include <dcp/vardis/vardis_services_status.h>
 #include <dcp/vardis/vardis_store_array_inmemory.h>
 #include <dcp/vardis/vardis_transmissible_types.h>
 #include <dcpsim/bp/BPClientProtocol.h>
@@ -361,7 +361,7 @@ protected:
      * @param theProtocol: the OMNeT++/INET protocol object to send
      *        the message to (through message dispatcher)
      */
-    void sendConfirmation(VardisConfirmation *confMsg, DcpStatus status, inet::Protocol* theProtocol);
+    void sendConfirmation(VardisConfirmation *confMsg, VardisStatus status, inet::Protocol* theProtocol);
 
     
     /**
@@ -373,7 +373,7 @@ protected:
      * @param varId: the variable identifier this message relates to
      * @param theProtocol: the OMNeT++/INET protocol object to send
      *        the message to (through message dispatcher)     */
-    void sendRTDBCreateConfirm (DcpStatus status, VarIdT varId, inet::Protocol* theProtocol);
+    void sendRTDBCreateConfirm (VardisStatus status, VarIdT varId, inet::Protocol* theProtocol);
 
     
     /**
@@ -383,7 +383,7 @@ protected:
      * @param varId: the variable identifier this message relates to
      * @param theProtocol: the OMNeT++/INET protocol object to send
      *        the message to (through message dispatcher)     */
-    void sendRTDBUpdateConfirm (DcpStatus status, VarIdT varId, inet::Protocol* theProtocol);
+    void sendRTDBUpdateConfirm (VardisStatus status, VarIdT varId, inet::Protocol* theProtocol);
 
 
 

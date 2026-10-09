@@ -29,7 +29,7 @@
 
 using namespace dcp;
 using inet::INITSTAGE_LAST;
-
+using dcp::vardis::VardisStatus;
 
 // ========================================================================================
 // Standard OMNeT++ and class methods
@@ -83,10 +83,10 @@ void VardisApplication::sendToVardis (inet::Packet* packet)
 /**
  * prints VarDis status value in a log message
  */
-void VardisApplication::printStatus (DcpStatus status)
+void VardisApplication::printStatus (VardisStatus status)
 {
     EvTracing dbg(*this, "VardisApplication::printStatus");
-    dbg.val ("status", vardis_status_to_string (status));
+    dbg.val ("status", to_string (status));
 }
 
 // ----------------------------------------------------
@@ -99,5 +99,5 @@ void VardisApplication::handleVardisConfirmation(VardisConfirmation* conf)
 {
     EvTracing dbg(*this, "VardisApplication::handleVardisConfirmation");
     assert(conf);
-    printStatus(conf->getStatus());
+    printStatus(static_cast<VardisStatus>(conf->getStatus()));
 }
