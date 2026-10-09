@@ -23,14 +23,14 @@
 
 
 
-std::ostream& operator<<(std::ostream& os, const dcp::vardis::VardisServiceType& st)
+std::ostream& operator<<(std::ostream& os, const dcp::vardis::VardisServiceType st)
   {
     os << "VardisServiceType-" << to_string (st);
     return os;
   }
 
 
-std::ostream& operator<<(std::ostream& os, const dcp::vardis::VardisStatus& stat)
+std::ostream& operator<<(std::ostream& os, const dcp::vardis::VardisStatus stat)
   {
     os << "VardisStatus-" << to_string (stat);
     return os;
