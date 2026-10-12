@@ -21,7 +21,7 @@
 #include <inet/common/packet/Message.h>
 #include <inet/common/packet/Packet.h>
 #include <dcp/common/global_types_constants.h>
-#include <dcp/vardis/vardis_services_status.h>
+#include <dcp/vardis/vardis_status.h>
 #include <dcpsim/common/DcpApplication.h>
 #include <dcpsim/vardis/VardisRTDBConfirmation_m.h>
 

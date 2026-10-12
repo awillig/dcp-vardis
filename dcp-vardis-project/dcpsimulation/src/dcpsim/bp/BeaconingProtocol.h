@@ -23,7 +23,7 @@
 #include <inet/common/InitStages.h>
 #include <inet/common/Protocol.h>
 #include <inet/networklayer/common/InterfaceTable.h>
-#include <dcp/bp/bp_services_status.h>
+#include <dcp/bp/bp_status.h>
 #include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/common/global_types_constants.h>
 #include <dcpsim/bp/BPDeregisterProtocol_m.h>

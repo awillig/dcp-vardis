@@ -21,7 +21,7 @@
 #include <inet/common/packet/Message.h>
 #include <inet/common/packet/Packet.h>
 #include <dcp/bp/bp_queueing_mode.h>
-#include <dcp/bp/bp_services_status.h>
+#include <dcp/bp/bp_status.h>
 #include <dcp/bp/bp_transmissible_types.h>
 #include <dcpsim/common/DcpProtocol.h>
 #include <dcpsim/bp/BPRegisterProtocol_m.h>
