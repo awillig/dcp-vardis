@@ -24,7 +24,7 @@
 #include <dcp/common/area.h>
 #include <dcp/vardis/vardis_protocol_data.h>
 #include <dcp/vardis/vardis_rtdb_entry.h>
-#include <dcp/vardis/vardis_services_status.h>
+#include <dcp/vardis/vardis_status.h>
 #include <dcp/vardis/vardis_store_array_inmemory.h>
 #include <dcp/vardis/vardis_transmissible_types.h>
 #include <dcpsim/bp/BPClientProtocol.h>
@@ -298,54 +298,6 @@ protected:
      */
     void generatePayload();
 
-
-    // ---------------------------------------------------------------------
-    // Helpers for deconstructing and processing received packets
-    // ---------------------------------------------------------------------
-    
-    
-    /**
-     * @brief These methods iterate over the records of a received
-     *        instruction container (given as a list) and call the
-     *        'processX' methods (from the VardisProtocolData type of
-     *        the DCP implementation) to process individual records
-     */
-    void processVarCreateList(const std::deque<VarCreateT>& creates);
-    void processVarDeleteList(const std::deque<VarDeleteT>& deletes);
-    void processVarUpdateList(const std::deque<VarUpdateT>& updates);
-    void processVarSummaryList(const std::deque<VarSummT>& summs);
-    void processVarReqUpdateList(const std::deque<VarReqUpdateT>& requpdates);
-    void processVarReqCreateList(const std::deque<VarReqCreateT>& reqcreates);
-
-    
-    /**
-     * @brief Extracts / parses an entire instruction container (its
-     *        instruction records, which are stored in a list)
-     *
-     * @tparam T: data type of instruction records
-     * @param area: disassembly area to extract records from, will be
-     *        modified
-     * @param icHeader: header of instruction container
-     * @param result_list: accumulates the deserialized instruction
-     *        records
-     */
-    template <typename T>
-    void extractInstructionContainerElements (DisassemblyArea& area, const ICHeaderT& icHeader, std::deque<T>& result_list)
-    {
-      EvTracing dbg (*this, "extractInstructionContainerElements");
-      if (icHeader.icNumRecords == 0)
-	{
-	  error ("extractInstructionContainerElements: number of records is zero");
-	}
-      
-      for (int i=0; i<icHeader.icNumRecords; i++)
-	{
-	  T element;
-	  element.deserialize (area);
-	  result_list.push_back(element);
-	}
-    };
-    
     
     // ---------------------------------------------------------------------
     // Helpers for sending standard confirmations to higher layers

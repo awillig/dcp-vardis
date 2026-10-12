@@ -21,7 +21,8 @@
 #include <format>
 #include <inet/common/IProtocolRegistrationListener.h>
 #include <dcp/bp/bp_queueing_mode.h>
-#include <dcp/bp/bp_services_status.h>
+#include <dcp/bp/bp_status.h>
+#include <dcp/vardis/vardis_process_payload.h>
 #include <dcpsim/bp/BPTransmitPayload_m.h>
 #include <dcpsim/bp/BPPayloadTransmitted_m.h>
 #include <dcpsim/common/DcpSimGlobals.h>
@@ -373,70 +374,11 @@ void VardisProtocol::handleBPReceivedPayloadIndication(BPReceivePayload_Indicati
     }
 
     const bytevect& bvpayload = payload->getPayload();
-
+    ByteVectorDisassemblyArea area ("vardis-handleBPReceivedPayloadIndication", bvpayload);
     dbg.val("bvpayload.size", bvpayload.size());
 
-    // In the first step we deconstruct the packet and put all the
-    // instruction records into their own lists without yet processing
-    // them. We then process them later on in the specified order
-
-    std::deque<VarSummT>       icSummaries;
-    std::deque<VarUpdateT>     icUpdates;
-    std::deque<VarReqUpdateT>  icRequestVarUpdates;
-    std::deque<VarReqCreateT>  icRequestVarCreates;
-    std::deque<VarCreateT>     icCreateVariables;
-    std::deque<VarDeleteT>     icDeleteVariables;
-
-    ByteVectorDisassemblyArea area ("vardis-handleBPReceivedPayloadIndication", bvpayload);
-
-    // Dispatch on InstructionContainerT
-    while (area.used() < area.available())
-    {
-	ICHeaderT icHeader;
-	icHeader.deserialize(area);
-	
-        dbg.val ("area.used", (int) area.used(), "icHeader.icType.val", (int) icHeader.icType.val);
-        switch(icHeader.icType.val)
-        {
-        case ICTYPE_SUMMARIES:
-            dbg.text("considering ICTYPE_SUMMARIES");
-            extractInstructionContainerElements<VarSummT> (area, icHeader, icSummaries);
-            break;
-        case ICTYPE_UPDATES:
-            dbg.text("considering ICTYPE_UPDATES");
-            extractInstructionContainerElements<VarUpdateT> (area, icHeader, icUpdates);
-            break;
-        case ICTYPE_REQUEST_VARUPDATES:
-            dbg.text("considering ICTYPE_REQUEST_VARUPDATES");
-            extractInstructionContainerElements<VarReqUpdateT> (area, icHeader, icRequestVarUpdates);
-            break;
-        case ICTYPE_REQUEST_VARCREATES:
-            dbg.text("considering ICTYPE_REQUEST_VARCREATES");
-            extractInstructionContainerElements<VarReqCreateT> (area, icHeader, icRequestVarCreates);
-            break;
-        case ICTYPE_CREATE_VARIABLES:
-            dbg.text("considering ICTYPE_CREATE_VARIABLES");
-            extractInstructionContainerElements<VarCreateT> (area, icHeader, icCreateVariables);
-            break;
-        case ICTYPE_DELETE_VARIABLES:
-            dbg.text("considering ICTYPE_DELETE_VARIABLES");
-            extractInstructionContainerElements<VarDeleteT> (area, icHeader, icDeleteVariables);
-            break;
-        default:
-            error("VardisProtocol::handleBPReceivedPayloadIndication: unknown ICType");
-            break;
-        }
-    }
-
-    // Now process the received containers in the specified order
-    // (database updates)
-    processVarCreateList(icCreateVariables);
-    processVarDeleteList(icDeleteVariables);
-    processVarUpdateList(icUpdates);
-    processVarSummaryList(icSummaries);
-    processVarReqUpdateList(icRequestVarUpdates);
-    processVarReqCreateList(icRequestVarCreates);
-
+    process_received_payload (*vardis_protocol_data_p, area);
+    
     delete payload;
 }
 
@@ -743,93 +685,6 @@ void VardisProtocol::generatePayload ()
     }
 }
 
-
-// ========================================================================================
-// Helpers for deconstructing and processing received packets
-// ========================================================================================
-
-
-// ----------------------------------------------------
-
-/**
- * The following methods process queues of received instruction container
- * records sequentially.
- */
-
-void VardisProtocol::processVarCreateList(const std::deque<VarCreateT>& creates)
-{
-  EvTracing dbg(*this, "processVarCreateList");
-  
-  for (auto it = creates.begin(); it != creates.end(); it++)
-    {
-      vardis_protocol_data_p->process_var_create(*it);
-    }
-}
-
-// ----------------------------------------------------
-
-
-void VardisProtocol::processVarDeleteList(const std::deque<VarDeleteT>& deletes)
-{
-    EvTracing dbg(*this, "processVarDeleteList");
-
-    for (auto it = deletes.begin(); it != deletes.end(); it++)
-    {
-        vardis_protocol_data_p->process_var_delete(*it);
-    }
-}
-
-// ----------------------------------------------------
-
-
-void VardisProtocol::processVarUpdateList(const std::deque<VarUpdateT>& updates)
-{
-    EvTracing dbg(*this, "processVarUpdateList");
-
-    for (auto it = updates.begin(); it != updates.end(); it++)
-    {
-        vardis_protocol_data_p->process_var_update(*it);
-    }
-}
-
-// ----------------------------------------------------
-
-
-void VardisProtocol::processVarSummaryList(const std::deque<VarSummT>& summs)
-{
-    EvTracing dbg(*this, "processVarSummaryList");
-
-    for (auto it = summs.begin(); it != summs.end(); it++)
-    {
-        vardis_protocol_data_p->process_var_summary(*it);
-    }
-}
-
-// ----------------------------------------------------
-
-
-void VardisProtocol::processVarReqUpdateList(const std::deque<VarReqUpdateT>& requpdates)
-{
-    EvTracing dbg(*this, "processVarReqUpdateList");
-
-    for (auto it = requpdates.begin(); it != requpdates.end(); it++)
-    {
-        vardis_protocol_data_p->process_var_requpdate(*it);
-    }
-}
-
-// ----------------------------------------------------
-
-
-void VardisProtocol::processVarReqCreateList(const std::deque<VarReqCreateT>& reqcreates)
-{
-    EvTracing dbg(*this, "processVarReqCreateList");
-
-    for (auto it = reqcreates.begin(); it != reqcreates.end(); it++)
-    {
-        vardis_protocol_data_p->process_var_reqcreate(*it);
-    }
-}
 
 
 // ========================================================================================
