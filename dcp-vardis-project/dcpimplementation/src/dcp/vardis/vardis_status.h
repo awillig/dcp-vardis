@@ -72,22 +72,22 @@ constexpr std::string_view to_string(dcp::vardis::VardisStatus stat) {
     switch (stat)
       {
 	// status codes prescribed by the specification
-      case dcp::vardis::VardisStatus::Ok:                              return "Ok";
-      case dcp::vardis::VardisStatus::Variable_Exists:                 return "Variable_Exists";
-      case dcp::vardis::VardisStatus::Description_Too_Long:            return "Description_Too_Long";
-      case dcp::vardis::VardisStatus::Value_Too_Long:                  return "Value_Too_Long";
-      case dcp::vardis::VardisStatus::Empty_Value:                     return "Empty_Value";
-      case dcp::vardis::VardisStatus::Illegal_Repcount:                return "Illegal_Repcount";
-      case dcp::vardis::VardisStatus::Variable_Does_Not_Exist:         return "Variable_Does_Not_Exist";
-      case dcp::vardis::VardisStatus::Not_Producer:                    return "Not_Producer";
-      case dcp::vardis::VardisStatus::Variable_Is_Deleted:             return "Variable_Is_Deleted";
-      case dcp::vardis::VardisStatus::Inactive:                        return "Inactive";
+      case dcp::vardis::VardisStatus::Ok:                              return "VARDIS-STATUS-OK";
+      case dcp::vardis::VardisStatus::Variable_Exists:                 return "VARDIS-STATUS-VARIABLE-EXISTS";
+      case dcp::vardis::VardisStatus::Description_Too_Long:            return "VARDIS-STATUS-DESCRIPTION-TOO-LONG";
+      case dcp::vardis::VardisStatus::Value_Too_Long:                  return "VARDIS-STATUS-VALUE-TOO-LONG";
+      case dcp::vardis::VardisStatus::Empty_Value:                     return "VARDIS-STATUS-EMPTY-VALUE";
+      case dcp::vardis::VardisStatus::Illegal_Repcount:                return "VARDIS-STATUS-ILLEGAL-REPCOUNT";
+      case dcp::vardis::VardisStatus::Variable_Does_Not_Exist:         return "VARDIS-STATUS-VARIABLE-DOES-NOT-EXIST";
+      case dcp::vardis::VardisStatus::Not_Producer:                    return "VARDIS-STATUS-NOT-PRODUCER";
+      case dcp::vardis::VardisStatus::Variable_Is_Deleted:             return "VARDIS-STATUS-VARIABLE-IS-DELETED";
+      case dcp::vardis::VardisStatus::Inactive:                        return "VARDIS-STATUS-INACTIVE";
 
 	// implementation-dependent status codes
-      case dcp::vardis::VardisStatus::Internal_Error:                  return "Internal_Error";
-      case dcp::vardis::VardisStatus::Application_Already_Registered:  return "Application_Already_Registered";
-      case dcp::vardis::VardisStatus::Internal_Shared_Memory_Error:    return "Internal_Shared_Memory_Error";
-      case dcp::vardis::VardisStatus::Unknown_Application:             return "Unknown_Application";
+      case dcp::vardis::VardisStatus::Internal_Error:                  return "VARDIS-STATUS-INTERNAL-ERROR";
+      case dcp::vardis::VardisStatus::Application_Already_Registered:  return "VARDIS-STATUS-APPLICATION-ALREADY-REGISTERED";
+      case dcp::vardis::VardisStatus::Internal_Shared_Memory_Error:    return "VARDIS-STATUS-INTERNAL-SHARED-MEMORY-ERROR";
+      case dcp::vardis::VardisStatus::Unknown_Application:             return "VARDIS-STATUS-UNKNOWN-APPLICATION";
 	
       default:
 	throw std::invalid_argument(std::format("to_string: illegal Vardis status code {}", static_cast<uint16_t> (stat)));

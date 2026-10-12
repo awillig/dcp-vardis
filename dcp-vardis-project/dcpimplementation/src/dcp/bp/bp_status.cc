@@ -24,7 +24,7 @@
 
 std::ostream& operator<<(std::ostream& os, const dcp::bp::BPStatus& stat)
   {
-    os << "BPStatus-" << to_string (stat);
+    os << to_string (stat);
     return os;
   }
   

@@ -24,7 +24,7 @@
 
 std::ostream& operator<<(std::ostream& os, const dcp::vardis::VardisStatus stat)
   {
-    os << "VardisStatus-" << to_string (stat);
+    os << to_string (stat);
     return os;
   }
   

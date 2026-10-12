@@ -73,21 +73,21 @@ namespace dcp::bp {
  */
 constexpr std::string_view to_string(dcp::bp::BPStatus stat) {
   switch (stat) {
-    case dcp::bp::BPStatus::Ok                             : return "Ok";
-    case dcp::bp::BPStatus::Protocol_Already_Registered    : return "Protocol_Already_Registered";
-    case dcp::bp::BPStatus::Illegal_Max_Payload_Size       : return "Illegal_Max_Payload_Size";
-    case dcp::bp::BPStatus::Unknown_Protocol               : return "Unknown_Protocol";
-    case dcp::bp::BPStatus::Payload_Too_Large              : return "Payload_Too_Large";
-    case dcp::bp::BPStatus::Empty_Payload                  : return "Empty_Payload";
-    case dcp::bp::BPStatus::Illegal_Dropping_Queue_Size    : return "Illegal_Dropping_Queue_Size";
-    case dcp::bp::BPStatus::Unknown_Queueing_Mode          : return "Unknown_Queueing_Mode";
-    case dcp::bp::BPStatus::Inactive                       : return "Inactive";
-    case dcp::bp::BPStatus::Internal_Error                 : return "Internal_Error";
-    case dcp::bp::BPStatus::Internal_Shared_Memory_Error   : return "Internal_Shared_Memory_Error";
-    case dcp::bp::BPStatus::Illegal_Service_Type           : return "Illegal_Service_Type";
-    case dcp::bp::BPStatus::Illegal_Protocol_Type          : return "Illegal Protocol Type";
+    case dcp::bp::BPStatus::Ok                             : return "BP-STATUS-OK";
+    case dcp::bp::BPStatus::Protocol_Already_Registered    : return "BP-STATUS-PROTOCOL-ALREADY-REGISTERED";
+    case dcp::bp::BPStatus::Illegal_Max_Payload_Size       : return "BP-STATUS-ILLEGAL-MAX-PAYLOAD-SIZE";
+    case dcp::bp::BPStatus::Unknown_Protocol               : return "BP-STATUS-UNKNOWN-PROTOCOL";
+    case dcp::bp::BPStatus::Payload_Too_Large              : return "BP-STATUS-PAYLOAD-TOO-LARGE";
+    case dcp::bp::BPStatus::Empty_Payload                  : return "BP-STATUS-EMPTY-PAYLOAD";
+    case dcp::bp::BPStatus::Illegal_Dropping_Queue_Size    : return "BP-STATUS-ILLEGAL-DROPPING-QUEUE-SIZE";
+    case dcp::bp::BPStatus::Unknown_Queueing_Mode          : return "BP-STATUS-UNKNOWN-QUEUEING-MODE";
+    case dcp::bp::BPStatus::Inactive                       : return "BP-STATUS-INACTIVE";
+    case dcp::bp::BPStatus::Internal_Error                 : return "BP-STATUS-INTERNAL-ERROR";
+    case dcp::bp::BPStatus::Internal_Shared_Memory_Error   : return "BP-STATUS-INTERNAL-SHARED-MEMORY-ERROR";
+    case dcp::bp::BPStatus::Illegal_Service_Type           : return "BP-STATUS-ILLEGAL-SERVICE-TYPE";
+    case dcp::bp::BPStatus::Illegal_Protocol_Type          : return "BP-STATUS-ILLEGAL-PROTOCOL-TYPE";
     default:
-      throw std::invalid_argument("to_string: unknown BP status value");    
+      throw std::invalid_argument("to_string: unknown BP status value");
     }
   return "";  
 }  
