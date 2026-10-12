@@ -27,7 +27,7 @@
 #include <dcp/common/transmissible_type.h>
 #include <dcp/vardis/vardis_constants.h>
 #include <dcp/vardis/vardis_protocol_statistics.h>
-#include <dcp/vardis/vardis_services_status.h>
+#include <dcp/vardis/vardis_status.h>
 #include <dcp/vardis/vardis_transmissible_types.h>
 
 
@@ -50,11 +50,64 @@
  */
 
 namespace dcp::vardis {
+
+  /*************************************************************************
+   * Base classes for primitives
+   ************************************************************************/
   
+
+  /**
+   * @brief Vardis service names
+   */
+
+  enum class VardisServiceType : std::uint16_t {
+    RTDB_DescribeDatabase,
+    RTDB_DescribeVariable,
+    RTDB_Create,
+    RTDB_Delete,
+    RTDB_Update,
+    RTDB_Read,
+    
+    Register,
+    Deregister,
+    
+    ShutDown,
+    Activate,
+    Deactivate,
+    GetStatistics};
+
+
+  /**
+   * @brief Base classes for Vardis service primitives
+   */
+  
+  class VardisServiceRequest : public ServiceRequest {
+  public:    
+    VardisServiceRequest (VardisServiceType st) : ServiceRequest(static_cast<uint16_t>(st)){};
+    VardisServiceType stype() const { return static_cast<VardisServiceType>(s_type); };
+  };
+
+  class VardisServiceConfirm : public ServiceConfirm {
+  public:    
+    VardisServiceConfirm (VardisServiceType st) : ServiceConfirm(static_cast<uint16_t>(st)){};
+    VardisServiceConfirm(VardisServiceType st, VardisStatus stat)
+        : ServiceConfirm(static_cast<uint16_t>(st),
+                         static_cast<uint16_t>(stat)){};
+    VardisServiceType stype() const { return static_cast<VardisServiceType>(s_type); };
+    VardisStatus stat() const { return static_cast<VardisStatus>(status_code); };
+    };
+
+  class VardisServiceIndication : public ServiceIndication {
+  public:    
+    VardisServiceIndication (VardisServiceType st) : ServiceIndication(static_cast<uint16_t>(st)){};
+    VardisServiceType stype() const { return static_cast<VardisServiceType>(s_type); };
+  };
+
+
+
   /*************************************************************************
    * Services exchanged via command interface with fixed-size primitives
    ************************************************************************/
-
   
   /**
    * @brief VardisRegister service primitives, exchanged via command socket
@@ -638,3 +691,32 @@ namespace dcp::vardis {
   
   
 };  // namespace dcp::vardis
+
+
+
+/**
+ * @brief Converts Vardis service name to string
+ *
+ * Throws for unknown service name.
+ */
+constexpr std::string_view to_string (dcp::vardis::VardisServiceType st) {
+  switch (st) {
+  case dcp::vardis::VardisServiceType::RTDB_DescribeDatabase : return "Vardis-RTDB_DescribeDatabase";
+  case dcp::vardis::VardisServiceType::RTDB_DescribeVariable : return "Vardis-RTDB_DescribeVariable";
+  case dcp::vardis::VardisServiceType::RTDB_Create           : return "Vardis-RTDB_Create";
+  case dcp::vardis::VardisServiceType::RTDB_Delete           : return "Vardis-RTDB_Delete";
+  case dcp::vardis::VardisServiceType::RTDB_Update           : return "Vardis-RTDB_Update";
+  case dcp::vardis::VardisServiceType::RTDB_Read             : return "Vardis-RTDB_Read";
+  case dcp::vardis::VardisServiceType::Register              :  return "Vardis-Register";
+  case dcp::vardis::VardisServiceType::Deregister            :  return "Vardis-Deregister";
+  case dcp::vardis::VardisServiceType::ShutDown              :  return "Vardis-ShutDown";
+  case dcp::vardis::VardisServiceType::Activate              :  return "Vardis-Activate";
+  case dcp::vardis::VardisServiceType::Deactivate            :  return "Vardis-Deactivate";
+  case dcp::vardis::VardisServiceType::GetStatistics         :  return "Vardis-GetStatistics";
+  default:
+    throw std::invalid_argument("to_string: unknown Vardis service type");
+  }
+  return "";
+}
+
+

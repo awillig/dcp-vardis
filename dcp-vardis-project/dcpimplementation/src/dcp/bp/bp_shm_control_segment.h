@@ -23,7 +23,7 @@
 #include <dcp/common/global_types_constants.h>
 #include <dcp/common/sharedmem_finite_queue.h>
 #include <dcp/bp/bp_service_primitives.h>
-#include <dcp/bp/bp_services_status.h>
+#include <dcp/bp/bp_status.h>
 
 
 /**

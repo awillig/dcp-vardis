@@ -26,6 +26,7 @@
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/vardis/vardis_configuration.h>
 #include <dcp/vardis/vardis_logging.h>
+#include <dcp/vardis/vardis_process_payload.h>
 #include <dcp/vardis/vardis_receiver.h>
 
 using dcp::bp::BPLengthT;
@@ -34,143 +35,7 @@ using dcp::bp::BPStatus;
 namespace dcp::vardis {
 
   static const uint16_t rx_buffer_length = 4000;
-
-  // #############################################################################
-
-  // -----------------------------------------------------------------
-
-  template <typename T>
-  void extractInstructionContainerElements (DisassemblyArea& area, const ICHeaderT& icHeader, std::deque<T>& result_list)
-  {
-    if (icHeader.icNumRecords == 0)
-      {
-	DCPLOG_INFO(log_rx) << "extractInstructionContainerElements: number of records is zero";
-	throw VardisReceiveException ("extractInstructionContainerElements", "number of records is zero");
-      }
-    
-    for (int i=0; i<icHeader.icNumRecords; i++)
-      {
-        T element;
-        element.deserialize (area);
-        result_list.push_back(element);
-      }
-  };
   
-  // -----------------------------------------------------------------
-
-  void process_received_payload (VardisRuntimeData& runtime, DisassemblyArea& area)
-  {
-    std::deque<VarSummT>       icSummaries;
-    std::deque<VarUpdateT>     icUpdates;
-    std::deque<VarReqUpdateT>  icRequestVarUpdates;
-    std::deque<VarReqCreateT>  icRequestVarCreates;
-    std::deque<VarCreateT>     icCreateVariables;
-    std::deque<VarDeleteT>     icDeleteVariables;
-
-    // Dispatch on ICType
-    while (area.used() < area.available())
-      {
-	ICHeaderT icHeader;
-	icHeader.deserialize(area);
-	
-	switch(icHeader.icType.val)
-	  {
-	  case ICTYPE_SUMMARIES:
-	    {
-	      extractInstructionContainerElements<VarSummT> (area, icHeader, icSummaries);
-	      break;
-	    }
-	  case ICTYPE_UPDATES:
-	    {
-	      extractInstructionContainerElements<VarUpdateT> (area, icHeader, icUpdates);
-	      break;
-	    }
-	  case ICTYPE_REQUEST_VARUPDATES:
-	    {
-	      extractInstructionContainerElements<VarReqUpdateT> (area, icHeader, icRequestVarUpdates);
-	      break;
-	    }
-	  case ICTYPE_REQUEST_VARCREATES:
-	    {
-	      extractInstructionContainerElements<VarReqCreateT> (area, icHeader, icRequestVarCreates);
-	      break;
-	    }
-	  case ICTYPE_CREATE_VARIABLES:
-	    {
-	      extractInstructionContainerElements<VarCreateT> (area, icHeader, icCreateVariables);
-	      break;
-	    }
-	  case ICTYPE_DELETE_VARIABLES:
-	    {
-	      extractInstructionContainerElements<VarDeleteT> (area, icHeader, icDeleteVariables);
-	      break;
-	    }
-	  default:
-	    {
-	      throw VardisReceiveException ("process_received_payload",
-					    std::format("wrong instruction container type {}", (int) icHeader.icType.val));
-	    }
-	  }
-      }
-
-
-    // Now process the received containers in the specified order
-    // (database updates).
-    //
-    // ISSUE: It is unclear on whether it is better / more efficient to
-    // acquire a lock just once and process all containers in one go,
-    // or do them separately. The current do-both solution is not
-    // really elegant
-    if (runtime.vardis_config.vardis_conf.lockingForIndividualContainers)
-      {
-	{ ScopedVariableStoreMutex mtx (runtime);
-	  for (auto it = icCreateVariables.begin(); it != icCreateVariables.end(); ++it)
-	    runtime.protocol_data.process_var_create (*it);
-	}
-	
-	{ ScopedVariableStoreMutex mtx (runtime);
-	  for (auto it = icDeleteVariables.begin(); it != icDeleteVariables.end(); ++it)
-	    runtime.protocol_data.process_var_delete (*it);
-	}
-	
-	{ ScopedVariableStoreMutex mtx (runtime);
-	  for (auto it = icUpdates.begin(); it != icUpdates.end(); ++it)
-	    runtime.protocol_data.process_var_update (*it);
-	}
-	
-	{ ScopedVariableStoreMutex mtx (runtime);
-	  for (auto it = icSummaries.begin(); it != icSummaries.end(); ++it)
-	    runtime.protocol_data.process_var_summary (*it);
-	}
-	
-	{ ScopedVariableStoreMutex mtx (runtime);
-	  for (auto it = icRequestVarUpdates.begin(); it != icRequestVarUpdates.end(); ++it)
-	    runtime.protocol_data.process_var_requpdate (*it);
-	}
-	
-	{ ScopedVariableStoreMutex mtx (runtime);
-	  for (auto it = icRequestVarCreates.begin(); it != icRequestVarCreates.end(); ++it)
-	    runtime.protocol_data.process_var_reqcreate (*it);
-	}
-      }
-    else
-      {
-	ScopedVariableStoreMutex mtx (runtime);
-	for (auto it = icCreateVariables.begin(); it != icCreateVariables.end(); ++it)
-	  runtime.protocol_data.process_var_create (*it);
-	for (auto it = icDeleteVariables.begin(); it != icDeleteVariables.end(); ++it)
-	  runtime.protocol_data.process_var_delete (*it);
-	for (auto it = icUpdates.begin(); it != icUpdates.end(); ++it)
-	  runtime.protocol_data.process_var_update (*it);
-	for (auto it = icSummaries.begin(); it != icSummaries.end(); ++it)
-	  runtime.protocol_data.process_var_summary (*it);
-	for (auto it = icRequestVarUpdates.begin(); it != icRequestVarUpdates.end(); ++it)
-	  runtime.protocol_data.process_var_requpdate (*it);
-	for (auto it = icRequestVarCreates.begin(); it != icRequestVarCreates.end(); ++it)
-	  runtime.protocol_data.process_var_reqcreate (*it);
-      }
-  }
-
   // -----------------------------------------------------------------
   
   void receiver_thread (VardisRuntimeData& runtime)
@@ -201,7 +66,8 @@ namespace dcp::vardis {
 		  << "Processing payload of length "
 		  << result_length;
 		MemoryChunkDisassemblyArea area ("vd-rx", (size_t) result_length.val, rx_buffer);
-		process_received_payload (runtime, area);
+		ScopedVariableStoreMutex mtx (runtime);
+		process_received_payload (runtime.protocol_data, area);
 	      }
 	    else
 	      {

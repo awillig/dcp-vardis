@@ -248,3 +248,12 @@ namespace dcp::vardis {
 
   
 };  // namespace dcp::vardis
+
+
+std::ostream& operator<<(std::ostream& os, const dcp::vardis::VardisServiceType st)
+  {
+    os << "VardisServiceType-" << to_string (st);
+    return os;
+  }
+
+

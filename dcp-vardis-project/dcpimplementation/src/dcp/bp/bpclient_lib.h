@@ -30,7 +30,7 @@
 #include <dcp/common/sharedmem_structure_base.h>
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcp/bp/bp_service_primitives.h>
-#include <dcp/bp/bp_services_status.h>
+#include <dcp/bp/bp_status.h>
 #include <dcp/bp/bp_shm_control_segment.h>
 #include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/bp/bpclient_configuration.h>

@@ -20,7 +20,6 @@
 
 #include <dcp/bp/bp_service_primitives.h>
 #include <dcp/bp/bp_queueing_mode.h>
-#include <dcp/bp/bp_services_status.h>
 
 
 namespace dcp::bp {
@@ -210,7 +209,15 @@ namespace dcp::bp {
     return os;
   }
 
-
-  
-  
 };  // namespace dcp::bp
+
+
+
+
+std::ostream& operator<<(std::ostream& os, const dcp::bp::BPServiceType& st)
+  {
+    os << "BPServiceType-" << to_string (st);
+    return os;
+  }
+
+

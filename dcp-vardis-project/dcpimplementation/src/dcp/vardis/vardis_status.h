@@ -27,35 +27,13 @@
 #include <dcp/common/service_primitives.h>
 
 /**
- * @brief This module provides definitions of the Vardis services and
- *        status names, base classes for Vardis service primitives,
- *        and helper functions to convert a Vardis service name or a
- *        Vardis status name to a string
+ * @brief This module provides definitions of the Vardis status names,
+ *        base classes for Vardis service primitives, and helper
+ *        functions to convert a Vardis status name to a string
  */
 
 
 namespace dcp::vardis {
-
-  /**
-   * @brief Vardis service names
-   */
-
-  enum class VardisServiceType : std::uint16_t {
-    RTDB_DescribeDatabase,
-    RTDB_DescribeVariable,
-    RTDB_Create,
-    RTDB_Delete,
-    RTDB_Update,
-    RTDB_Read,
-    
-    Register,
-    Deregister,
-    
-    ShutDown,
-    Activate,
-    Deactivate,
-    GetStatistics};
-
 
   /**
    * @brief Vardis status names
@@ -81,58 +59,7 @@ namespace dcp::vardis {
     };
 
   
-  /**
-   * @brief Base classes for Vardis service primitives
-   */
-  
-  class VardisServiceRequest : public ServiceRequest {
-  public:    
-    VardisServiceRequest (VardisServiceType st) : ServiceRequest(static_cast<uint16_t>(st)){};
-    VardisServiceType stype() const { return static_cast<VardisServiceType>(s_type); };
-  };
-
-  class VardisServiceConfirm : public ServiceConfirm {
-  public:    
-    VardisServiceConfirm (VardisServiceType st) : ServiceConfirm(static_cast<uint16_t>(st)){};
-    VardisServiceConfirm(VardisServiceType st, VardisStatus stat)
-        : ServiceConfirm(static_cast<uint16_t>(st),
-                         static_cast<uint16_t>(stat)){};
-    VardisServiceType stype() const { return static_cast<VardisServiceType>(s_type); };
-    VardisStatus stat() const { return static_cast<VardisStatus>(status_code); };
-    };
-
-  class VardisServiceIndication : public ServiceIndication {
-  public:    
-    VardisServiceIndication (VardisServiceType st) : ServiceIndication(static_cast<uint16_t>(st)){};
-    VardisServiceType stype() const { return static_cast<VardisServiceType>(s_type); };
-  };
 };  // namespace dcp::vardis
-
-
-/**
- * @brief Converts Vardis service name to string
- *
- * Throws for unknown service name.
- */
-constexpr std::string_view to_string (dcp::vardis::VardisServiceType st) {
-  switch (st) {
-  case dcp::vardis::VardisServiceType::RTDB_DescribeDatabase : return "Vardis-RTDB_DescribeDatabase";
-  case dcp::vardis::VardisServiceType::RTDB_DescribeVariable : return "Vardis-RTDB_DescribeVariable";
-  case dcp::vardis::VardisServiceType::RTDB_Create           : return "Vardis-RTDB_Create";
-  case dcp::vardis::VardisServiceType::RTDB_Delete           : return "Vardis-RTDB_Delete";
-  case dcp::vardis::VardisServiceType::RTDB_Update           : return "Vardis-RTDB_Update";
-  case dcp::vardis::VardisServiceType::RTDB_Read             : return "Vardis-RTDB_Read";
-  case dcp::vardis::VardisServiceType::Register              :  return "Vardis-RegisterP";
-  case dcp::vardis::VardisServiceType::Deregister            :  return "Vardis-Deregister";
-  case dcp::vardis::VardisServiceType::ShutDown              :  return "Vardis-ShutDown";
-  case dcp::vardis::VardisServiceType::Activate              :  return "Vardis-Activate";
-  case dcp::vardis::VardisServiceType::Deactivate            :  return "Vardis-Deactivate";
-  case dcp::vardis::VardisServiceType::GetStatistics         :  return "Vardis-GetStatistics";
-  default:
-    throw std::invalid_argument("to_string: unknown Vardis service type");
-  }
-  return "";
-}
 
 
 /**
@@ -172,5 +99,4 @@ constexpr std::string_view to_string(dcp::vardis::VardisStatus stat) {
 
 
 
-std::ostream& operator<< (std::ostream& os, const dcp::vardis::VardisServiceType st);
 std::ostream& operator<< (std::ostream& os, const dcp::vardis::VardisStatus stat);

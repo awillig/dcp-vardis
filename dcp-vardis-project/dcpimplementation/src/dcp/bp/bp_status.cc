@@ -18,15 +18,8 @@
  */
 
 
-#include <dcp/bp/bp_services_status.h>
+#include <dcp/bp/bp_status.h>
 
-
-
-std::ostream& operator<<(std::ostream& os, const dcp::bp::BPServiceType& st)
-  {
-    os << "BPServiceType-" << to_string (st);
-    return os;
-  }
 
 
 std::ostream& operator<<(std::ostream& os, const dcp::bp::BPStatus& stat)

@@ -64,13 +64,16 @@ if (DEFINED ENV{__omnetpp_root_dir})
   add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
   add_library(dcplib-bp-sim SHARED
     dcp/bp/bp_queueing_mode.cc
+    dcp/bp/bp_status.cc
     dcp/bp/bp_service_primitives.cc
     dcp/bp/bp_client_static_info.cc
     dcp/bp/bp_transmissible_types.cc)
   add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
   add_library(dcplib-vardis-sim SHARED
     dcp/vardis/vardis_protocol_data.cc
+    dcp/vardis/vardis_process_payload.cc
     dcp/vardis/vardis_protocol_statistics.cc
+    dcp/vardis/vardis_status.cc
     dcp/vardis/vardis_service_primitives.cc
     dcp/vardis/vardis_transmissible_types.cc)
   add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})

@@ -23,7 +23,7 @@
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/bp/bp_shm_control_segment.h>
 #include <dcp/bp/bp_service_primitives.h>
-#include <dcp/bp/bp_services_status.h>
+#include <dcp/bp/bp_status.h>
 
 using dcp::bp::BPTransmitPayload_Request;
 using dcp::bp::BPTransmitPayload_Confirm;

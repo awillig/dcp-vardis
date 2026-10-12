@@ -35,24 +35,6 @@
 
 namespace dcp::bp {
 
-  /**
-   * @brief BP Service names
-   */
-  enum class BPServiceType : std::uint16_t {
-    RegisterProtocol,
-    DeregisterProtocol,
-    ListRegisteredProtocols,
-    ClearBuffer,
-    QueryNumberBufferedPayloads,
-    ReceivePayload,
-    TransmitPayload,
-    
-    ShutDown,
-    Activate,
-    Deactivate,
-    GetStatistics};
-
-
   
   /**
    * @brief BP Status value names
@@ -81,53 +63,8 @@ namespace dcp::bp {
    */
 
   
-  class BPServiceRequest : public ServiceRequest {
-  public:    
-    BPServiceRequest (BPServiceType st) : ServiceRequest(static_cast<uint16_t>(st)){};
-    BPServiceType stype() const { return static_cast<BPServiceType>(s_type); };
-  };
 
-  class BPServiceConfirm : public ServiceConfirm {
-  public:    
-    BPServiceConfirm (BPServiceType st) : ServiceConfirm(static_cast<uint16_t>(st)){};
-    BPServiceConfirm(BPServiceType st, BPStatus stat)
-        : ServiceConfirm(static_cast<uint16_t>(st),
-			 static_cast<uint16_t> (stat)){};
-    BPServiceType stype() const { return static_cast<BPServiceType>(s_type); };
-    BPStatus stat() const { return static_cast<BPStatus>(status_code); };
-    };
-
-  class BPServiceIndication : public ServiceIndication {
-  public:    
-    BPServiceIndication (BPServiceType st) : ServiceIndication(static_cast<uint16_t>(st)){};
-    BPServiceType stype() const { return static_cast<BPServiceType>(s_type); };
-  };
 };  // namespace dcp::bp
-
-
-/**
- * @brief Converts BP service name to string
- *
- * Throws for unknown service name.
- */
-constexpr std::string_view to_string (dcp::bp::BPServiceType st) {
-  switch (st) {
-  case dcp::bp::BPServiceType::RegisterProtocol             :  return "BP-RegisterProtocol";
-  case dcp::bp::BPServiceType::DeregisterProtocol           :  return "BP-DeregisterProtocol";
-  case dcp::bp::BPServiceType::ListRegisteredProtocols      :  return "BP-ListRegisteredProtocols";
-  case dcp::bp::BPServiceType::ClearBuffer                  :  return "BP-ClearBuffer";
-  case dcp::bp::BPServiceType::QueryNumberBufferedPayloads  :  return "BP-QueryNumberBufferedPayloads";
-  case dcp::bp::BPServiceType::ReceivePayload               :  return "BP-ReceivePayload";
-  case dcp::bp::BPServiceType::TransmitPayload              :  return "BP-TransmitPayload";
-  case dcp::bp::BPServiceType::ShutDown                     :  return "BP-ShutDown";
-  case dcp::bp::BPServiceType::Activate                     :  return "BP-Activate";
-  case dcp::bp::BPServiceType::Deactivate                   :  return "BP-Deactivate";
-  case dcp::bp::BPServiceType::GetStatistics                :  return "BP-GetStatistics";
-  default:
-    throw std::invalid_argument("to_string: unknown BP service type");
-  }
-  return "";
-}
 
 
 
@@ -157,5 +94,5 @@ constexpr std::string_view to_string(dcp::bp::BPStatus stat) {
 
 
 
-std::ostream& operator<< (std::ostream& os, const dcp::bp::BPServiceType st);
+
 std::ostream& operator<< (std::ostream& os, const dcp::bp::BPStatus stat);

@@ -19,15 +19,7 @@
 
 
 #include <iostream>
-#include <dcp/vardis/vardis_services_status.h>
-
-
-
-std::ostream& operator<<(std::ostream& os, const dcp::vardis::VardisServiceType st)
-  {
-    os << "VardisServiceType-" << to_string (st);
-    return os;
-  }
+#include <dcp/vardis/vardis_status.h>
 
 
 std::ostream& operator<<(std::ostream& os, const dcp::vardis::VardisStatus stat)

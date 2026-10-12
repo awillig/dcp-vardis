@@ -3,7 +3,7 @@
 #include <dcp/common/command_socket.h>
 #include <dcp/common/exceptions.h>
 #include <dcp/common/logging_helpers.h>
-#include <dcp/bp/bp_services_status.h>
+#include <dcp/bp/bp_status.h>
 
 
 using dcp::byte;
