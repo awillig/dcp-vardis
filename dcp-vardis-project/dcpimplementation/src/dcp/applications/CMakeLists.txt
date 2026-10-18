@@ -1,0 +1,27 @@
+project(DCPStack-SampleApps VERSION 1.3.6 DESCRIPTION "DCP Sample Applications" LANGUAGES CXX)
+
+message(STATUS "Configuring subproject ${PROJECT_NAME} (\"${PROJECT_DESCRIPTION}\")")
+
+add_executable (srpapp-nt srpapp-display-neighbour-table.cc)
+add_executable (srpapp-gen srpapp-test-generate-sd.cc)
+add_executable (vdapp-delete vardisapp-delete-variable.cc)
+add_executable (vdapp-describe vardisapp-describe-variable.cc)
+add_executable (vdapp-list vardisapp-list-variables.cc)
+add_executable (vdapp-tconsumer vardisapp-test-consumer.cc)
+add_executable (vdapp-tproducer vardisapp-test-producer.cc)
+
+target_include_directories(srpapp-nt PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(srpapp-gen PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(vdapp-delete PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(vdapp-describe PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(vdapp-list PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(vdapp-tconsumer PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(vdapp-tproducer PUBLIC ${CMAKE_SOURCE_DIR})
+
+target_link_libraries(srpapp-nt PRIVATE dcp-srp ncurses)
+target_link_libraries(srpapp-gen PRIVATE dcp-srp)
+target_link_libraries(vdapp-delete PRIVATE dcp-vardis)
+target_link_libraries(vdapp-describe PRIVATE dcp-vardis)
+target_link_libraries(vdapp-list PRIVATE dcp-vardis)
+target_link_libraries(vdapp-tconsumer PRIVATE dcp-vardis ncurses)
+target_link_libraries(vdapp-tproducer PRIVATE dcp-vardis)
