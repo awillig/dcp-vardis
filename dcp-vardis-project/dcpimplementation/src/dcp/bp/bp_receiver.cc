@@ -54,7 +54,7 @@ namespace dcp::bp {
     if (clientProt.static_info.protocolId != pldHdr.protocolId)
       {
 	DCPLOG_ERROR(log_rx)
-	  << "deliver_payload: found internal consistency around protocol identifiers, dropping payload.";
+	  << "deliver_payload: found internal inconsistency around protocol identifiers, dropping payload.";
 	
 	area.incr (pldHdr.length.val);
 	clientProt.cntDroppedIncomingPayloads += 1;
