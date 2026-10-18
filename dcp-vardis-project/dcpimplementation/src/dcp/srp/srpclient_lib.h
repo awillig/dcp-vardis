@@ -24,7 +24,7 @@
 #include <dcp/common/command_socket.h>
 #include <dcp/common/exceptions.h>
 #include <dcp/srp/srpclient_configuration.h>
-#include <dcp/srp/srp_services_status.h>
+#include <dcp/srp/srp_status.h>
 #include <dcp/srp/srp_store_fixedmem_shm.h>
 #include <dcp/srp/srp_transmissible_types.h>
 
