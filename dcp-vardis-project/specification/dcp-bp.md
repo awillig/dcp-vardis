@@ -1,3 +1,9 @@
+
+[comment]: # Copyright (C) 2026 Andreas Willig, University of Canterbury
+[comment]: # 
+[comment]: # This work is licensed under a Creative Commons Attribution 
+[comment]: # 4.0 International License (CC BY).
+
 ---
 
 # The Beaconing Protocol (BP) {#chap-beaconing-protocol}
@@ -33,8 +39,8 @@ guarantees at least for some client protocols.
   identifier) is a 16-bit unsigned integer value uniquely identifying
   a client protocol. The following values are pre-defined:
     - `BP_PROTID_SRP = 1` represents the SRP client protocol.
-    - `BP_PROTID_VARDIS = 2` represents the VarDis client
-      protocol.
+    - `BP_PROTID_VARDIS = 2` represents the VarDis client protocol.
+	- `BP_PROTID_BLOBDIS = 3` represents the BlobDis client protocol.
 
 - The transmissible data type `BPLengthT` is a 16-bit unsigned
   integer value indicating the length of a payload block. A payload is
@@ -163,7 +169,7 @@ guarantees at least for some client protocols.
 
 The BP maintains a variable `currentClientProtocols` of type
 `List<BPClientProtocol>`. In addition to the standard operations on
-list (see Section [Queues and Lists](#sec-queues-list)) this list also
+list (see Section [Queues and Lists](#sec-queues-lists)) this list also
 supports the following operations: 
 
 - `lProtocolExists()`, which takes as parameter a value of type

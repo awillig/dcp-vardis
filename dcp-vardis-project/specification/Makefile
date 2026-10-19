@@ -1,7 +1,7 @@
 
-all : dcpvardis-spec.html dcpvardis-spec.pdf
+all : dcpspec.html dcpspec.pdf
 
-MDFILES = frontmatter.md dcp-version-contributors.md dcp-changelog.md dcp-context.md dcp-datatypes.md dcp-architecture.md dcp-bp.md dcp-srp.md dcp-vardis.md dcp-issues.md
+MDFILES = frontmatter.md dcp-version-contributors.md dcp-changelog.md dcp-context.md dcp-datatypes.md dcp-architecture.md dcp-bp.md dcp-srp.md dcp-vardis.md dcp-blobdis.md dcp-issues.md
 
 TOCOPTS = --toc --toc-depth=2
 
@@ -19,10 +19,10 @@ PDOPTS = -V colorlinks=true \
          -V linktoc=all 
     
 
-dcpvardis-spec.html : $(MDFILES) Makefile
+dcpspec.html : $(MDFILES) Makefile
 	@-rm $@
 	pandoc $(MDFILES) $(PDOPTS) $(TOCOPTS) --number-sections -s -t html -o $@
 
-dcpvardis-spec.pdf : $(MDFILES) Makefile
+dcpspec.pdf : $(MDFILES) Makefile
 	@-rm $@
 	pandoc $(MDFILES) $(PDOPTS) $(TOCOPTS) --number-sections -s -t pdf -o $@

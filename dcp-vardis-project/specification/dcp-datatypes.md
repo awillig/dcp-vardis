@@ -1,3 +1,9 @@
+
+[comment]: # Copyright (C) 2026 Andreas Willig, University of Canterbury
+[comment]: # 
+[comment]: # This work is licensed under a Creative Commons Attribution 
+[comment]: # 4.0 International License (CC BY).
+
 ---
 
 # Basic Data Types and Conventions {#chap-datatypes}
@@ -80,7 +86,7 @@ is transmitted in network byte order.
   within a few milliseconds will be sufficient, applications might
   require greater accuracy.
 
-  In a number of places we want to transmit variable-length contiguous
+- In a number of places we want to transmit variable-length contiguous
   blocks of bytes. For this purpose we use the transmissible data type
   `MemBlockT`, which contains two fields:
     - `length` is an eight-bit unsigned integer representing how many
@@ -126,6 +132,7 @@ generally supports the following operations:
 - `contains()` takes a value of element type `T` as parameter and
   returns `true` if the queue contains an entry with value equal to
   the parameter, and `false` otherwise.
+- `clear()` removes all elements from the queue.
 
 The `List` data type generally supports the following operations:
 

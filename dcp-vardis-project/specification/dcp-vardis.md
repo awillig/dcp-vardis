@@ -1,3 +1,9 @@
+
+[comment]: # Copyright (C) 2026 Andreas Willig, University of Canterbury
+[comment]: # 
+[comment]: # This work is licensed under a Creative Commons Attribution 
+[comment]: # 4.0 International License (CC BY).
+
 ---
 
 # The VarDis (Variable Dissemination) Protocol {#chap-vardis}
@@ -836,10 +842,10 @@ it carries the status code `VARDIS-STATUS-OK`.
 
 The configurable parameters of VarDis can be set by applications or
 station management entities through a suitably defined
-implementation-dependent management interface. Parameter changes are
-assumed to take effect immediately and will apply to all subsequently
-generated beacons and service invocations, but they are not applied
-retroactively. For example, if the value of the parameter
+implementation-dependent management interface. Valid parameter changes
+are assumed to take effect immediately and will apply to all
+subsequently generated beacons and service invocations, but they are
+not applied retroactively. For example, if the value of the parameter
 `VARDISPAR_MAX_DESCRIPTION_LENGTH` is reduced, variables that have
 been conforming at the time of their creation but are not anymore will
 be retained in the real-time database.
@@ -933,7 +939,7 @@ and under the following conditions:
 - Third step: When `reqCreateQ.empty()` indicates a non-empty queue
   and there is sufficient space left in the VarDis payload, then
   generate an `ICTYPE-REQUEST-VARCREATES` instruction container with as
-  many distinct `VarRecCreateT` instruction records as are available
+  many distinct `VarReqCreateT` instruction records as are available
   and may fit into the remaining VarDis payload.
 - Fourth step: When `summaryQ.empty()` indicates a non-empty queue,
   `VARDISPAR_MAX_SUMMARIE` is larger than zero and there is sufficient

@@ -1,3 +1,9 @@
+
+[comment]: # Copyright (C) 2026 Andreas Willig, University of Canterbury
+[comment]: # 
+[comment]: # This work is licensed under a Creative Commons Attribution 
+[comment]: # 4.0 International License (CC BY).
+
 ---
 
 # Change Log
@@ -17,6 +23,12 @@ such as language issues, typos or minor errors are not reported.
   networks sharing a geographic region. In particular, received
   beacons with a `networkId` different from the one configured in
   `BPPAR_NETWORK_ID` are simply dropped.
+- Added a new pre-defined client protocol identifier
+  `BP_PROTID_BLOBDIS`.
+
+### Changes in `dcp-datatypes.md`
+
+- Added `clear()` operation to queue data type
 
 ### Changes in `dcp-vardis.md`
 
@@ -38,6 +50,12 @@ such as language issues, typos or minor errors are not reported.
   each eligible variable whether it has timed out. In this case, the
   variable is marked as deleted and `VarDeleteT` instructions are sent
   out into the network.
+
+### Added new Protocol Specification `dcp-blobdis.md`
+
+### Other Changes
+
+- All specification files now have a copyright notice (CC BY 4.0)
 
 ## Changes for Version 1.3
 
