@@ -15,10 +15,10 @@ add_library (dcp-common SHARED
 if (DEFINED ENV{__omnetpp_root_dir})
   set(OPP_INCLUDE_PATH "$ENV{__omnetpp_root_dir}/include")
   message(STATUS "Configuring subproject ${PROJECT_NAME} (\"${PROJECT_DESCRIPTION}\") with OMNeT++ support")
+  add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
   add_library(dcpsim-common SHARED
     debug_helpers.cc
     global_types_constants.cc)
-  add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
   target_include_directories(dcpsim-common PUBLIC ${CMAKE_SOURCE_DIR})
 else()
   message(STATUS "Configuring subproject ${PROJECT_NAME} (\"${PROJECT_DESCRIPTION}\")")

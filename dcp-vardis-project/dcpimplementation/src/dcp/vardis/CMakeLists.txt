@@ -26,6 +26,7 @@ add_executable (dcpmain-vardis vardis_main.cc)
 if (DEFINED ENV{__omnetpp_root_dir})
   set(OPP_INCLUDE_PATH "$ENV{__omnetpp_root_dir}/include")
   message(STATUS "Configuring subproject ${PROJECT_NAME} (\"${PROJECT_DESCRIPTION}\") with OMNeT++ support")
+  add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
   add_library(dcpsim-vardis SHARED
     vardis_protocol_data.cc
     vardis_process_payload.cc
@@ -33,7 +34,6 @@ if (DEFINED ENV{__omnetpp_root_dir})
     vardis_status.cc
     vardis_service_primitives.cc
     vardis_transmissible_types.cc)
-  add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
   target_include_directories(dcpsim-vardis PUBLIC ${CMAKE_SOURCE_DIR})
 else()
   message(STATUS "Configuring subproject ${PROJECT_NAME} (\"${PROJECT_DESCRIPTION}\")")

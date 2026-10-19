@@ -24,14 +24,14 @@ add_executable (dcpmain-bp bp_main.cc)
 # targets linked against OMNeT++ simulation tool, if available
 if (DEFINED ENV{__omnetpp_root_dir})
   set(OPP_INCLUDE_PATH "$ENV{__omnetpp_root_dir}/include")
-  message(STATUS "Configuring subproject ${PROJECT_NAME} (\"${PROJECT_DESCRIPTION}\") with OMNeT++ support")    
+  message(STATUS "Configuring subproject ${PROJECT_NAME} (\"${PROJECT_DESCRIPTION}\") with OMNeT++ support")
+  add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
   add_library(dcpsim-bp SHARED
     bp_queueing_mode.cc
     bp_status.cc
     bp_service_primitives.cc
     bp_client_static_info.cc
     bp_transmissible_types.cc)
-  add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
   target_include_directories(dcpsim-bp PUBLIC ${CMAKE_SOURCE_DIR})
 else()
     message(STATUS "Configuring subproject ${PROJECT_NAME} (\"${PROJECT_DESCRIPTION}\")")
