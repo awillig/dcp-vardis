@@ -44,7 +44,6 @@ namespace dcp::vardis {
   {
     if (icHeader.icNumRecords == 0)
       {
-	DCPLOG_INFO(log_rx) << "extractInstructionContainerElements: number of records is zero";
 	throw VardisReceiveException ("extractInstructionContainerElements", "number of records is zero");
       }
     
