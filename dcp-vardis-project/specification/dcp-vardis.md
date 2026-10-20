@@ -461,7 +461,7 @@ To manipulate and specify the contents of the instruction containers
 in future beacons, for each container type (see Section [Instruction
 Containers](#vardis-definitions-instruction-containers)), the VarDis
 instance maintains a number of variables of type `Queue<VarIdT>` (see
-Section [Queues and Lists](#sec-queues-lists)).
+Section [`Queue<T>`](#sec-datatypes-containers-queues)).
 
 
 A VarDis entity maintains the following queues at runtime, all of type
