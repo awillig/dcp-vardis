@@ -15,146 +15,192 @@ large objects -- blobs) to nodes.
 
 ## Purpose
 
-A blob (binary large object) refers to finite-sized immutable block of
-contiguous binary data with no (or rather: opaque) internal structure,
-which belongs to a particular application.  The fundamental aim of the
-BlobDis protocol is to disseminate a blob reliably (in-order,
-complete, and identical to the original blob) and efficiently from a
-**source node** (or simply source) to a subset of nodes in the
-network, the so-called **listening nodes** (or listeners), which are
-running the same application. To achieve this, BlobDis uses the
-services of the underlying BP protocol. We refer to the set of all
-involved nodes (source and listeners) as the **participants** in the
-BlobDis protocol. The set of participants can vary between different
-blob transfers, depending on which node runs which application(s).
+A blob (binary large object) refers to finite-sized block of
+contiguous binary data with no discernible internal structure, which
+belongs to a particular application.  The fundamental aim of the
+BlobDis protocol is to disseminate a blob reliably (in-order and
+complete), to preserve its integrity (making sure the copy in a
+participant is identical to the original blob), and to achieve
+reasonably efficient transfer of a blob from a **source node** (or
+simply source) to a subset of nodes in the network, the so-called
+**listening nodes** (or listeners), which are running the same
+application. To achieve this, BlobDis uses the services of the
+underlying BP protocol. We refer to the set of all involved nodes
+(source and listeners) as the **participants** in the dissemination of
+a blob. The set of participants can vary between different blob
+transfers, depending on which node runs which applications.
 
 A blob can be substantially larger than the maximum size of a beacon,
 and therefore the participants will need to transmit the blobs over
-multiple beacon payloads. A key but not easily quantifiable limitation
-of BlobDis is that blobs must be able to fit into the main (or random
-access) memory of all participants, so that during the blob transfer
-each participant is able to quickly access arbitrary parts of the blob
-to re-transmit it upon request. Participants will need to reserve the
-required amount of memory for the entire duration of the blob
-transfer.
+multiple beacon payloads. A key but not immediately quantifiable
+limitation of BlobDis is that blobs must be able to fit into the main
+(or random access) memory of all participants, so that during the blob
+transfer each participant is able to quickly access arbitrary parts of
+the blob to re-transmit it upon request. Participants will need to
+reserve the required amount of memory for the entire duration of the
+blob transfer, including some extra time at the end where blob data is
+kept in memory to satisfy retransmission requests from neighbored
+participants.
 
-The BlobDis protocol is built around the assumptions that blobs can be
+The BlobDis protocol is built under the assumption that blobs can be
 quite large, and their dissemination may take substantial amounts of
-time. This means that data corruption can occur while blob data is in
-transit between participants, and it can also occur while the blob
-data resides in the memory of nodes. A key feature of BlobDis is that
-blob data is accompanied by suitable hashes, allowing each participant
-to verify the integrity of the stored blob data and request its
-re-transmission if needed.
+time due to data transmissions being restricted to periodic
+beacons. This means that data corruption can occur not only while blob
+data is in transit between participants (during which it is usually
+protected by frame checksums offered by the UWB, see [The Underlying
+Wireless Bearer](#sec-architecture-uwb)), but it can also occur while
+the blob data resides in the memory of participants. A key feature of
+BlobDis is that blob data is accompanied by suitable hashes, allowing
+each participant to verify the integrity of the stored blob data and
+request its re-transmission if needed.
 
-The BlobDis protocol supports application multiplexing, different
-applications have different application identifiers, and each blob is
+The BlobDis protocol supports application multiplexing, each blob is
 associated with exactly one application. Applications can be
-dynamically registered and de-registered with a BlobDis instance. A
-participant that has no registered application for a given blob can
-choose whether it wants to nonetheless be a participant in the blob
-transfer (to improve reliability) or not. A participant that does have
-a registered application is always assumed to be a willing
+dynamically registered and de-registered with a BlobDis instance
+running in a node, using unique application identifiers. A node that
+has no registered application for a given blob does not become a
+participant, i.e. it does not engage in its dissemination. A node that
+does have a registered application is always assumed to be a willing
 participant, assuming it has sufficient memory available for the
 blob. An example of a potential application is file dissemination,
-where a blob might include metadata like the file name or creation
-timestamp as well as the actual file data, and the application might
-even manage the transfer of very large files by partitioning it into
-multiple blobs. Note, however, that such application protocols are
-outside the scope of BlobDis.
+where a blob might include file metadata like the file and path name,
+creation timestamp or permissions, as well as the actual file data,
+and the application might even manage the transfer of very large files
+by partitioning it into multiple blobs and staging their dissemination
+in a suitable manner. Note, however, that such application protocols
+are outside the scope of BlobDis.
 
-The BlobDis protocol supports parallel transfer of multiple blobs,
-which can originate from one or multiple sources.
+The BlobDis protocol supports parallel dissemination of multiple
+blobs, from one or from multiple sources.
 
 
 ## High-level Overview
 
+A key design target for BlobDis was to avoid any topological or
+routing state in the dissemination of a blob, hence no spanning tree
+or (connected) dominating set is constructed for the participants in a
+blob transfer. This limitation requires participants to be be
+sufficiently densely deployed in a network, but provides the most
+flexibility in dealing with drone mobility.
+
+As stated above, key requirements for BlobDis are reliability and
+integrity of a blob transfer. Reliability refers to ensuring that
+participants obtain the blob completely and in the right order, and
+that no errors are introduced during transmission. This is achieved by
+UWB frame checksums as well as by a retransmission mechanism within
+BlobDis. Integrity is established by having the source node not only
+transmit the actual blob data, but by pre-computing hashes for the
+blob data and disseminating these hashes along with the blob
+data. Listeners are required to periodically verify received blob data
+against these hashes while the blob resides in memory, and request
+retransmissions of both hashes and their covered blob data when this
+verification fails.
+
+A blob belongs to an application. It is transmitted by one node, and
+received by all other nodes that can be reached and have the
+corresponding application currently registered with BlobDis
+(participants). It is assumed that all participants engage in the blob
+transfer, assuming they have sufficient memory for the blob data.
 
 After an application has handed over a new blob for transmission on
-the source node, it first determines its **metadata**, which includes
-amongst other things a suitably chosen unique **blob identifier**, the
-length of the blob in bytes, the application identifier, a hash value
-covering the entire blob, and other values. 
+the source node, the local BlobDis entity first determines its
+**metadata**, which includes amongst other things a suitably chosen
+unique **blob identifier**, the length of the blob in bytes, the
+application identifier, and other values. The blob identifiers are
+chosen such that they are unique, even if an application on a source
+requests two blob transmissions in short succession, or if it does
+both before and after a crash-and-reboot event. The blob identifier
+includes the node identifier of the transmitter node (of type
+`NodeIdentifierT`, see Section [Basic Transmissible Data
+Types](#chap-datatypes-basic-transmissible)) and a timestamp.
+  
+A blob is partitioned into contiguous and equal-sized **parts** (the
+last part may be smaller). A part is characterized by its starting
+offset within the blob and its size. The sender computes for each part
+a separate **partial hash** (or phash), and disseminates these phashes
+along with the actual blob data. A listener will only be able to
+complete the reception of a blob if it has all blob data and all
+phashes, and if all phashes indeed verify their associated part data.
 
+A part in turn is sub-divided into an integral number of equal-sized
+**chunks**, and the size of a full-sized part must be an integer
+multiple of the chunk size. The last chunk of the last part can have a
+smaller chunk size. A chunk is the basic unit of transmission of blob
+data, the application must choose the chunk size such that at least
+the chunk data and all relevant BlobDis and BP headers can be
+accommodated in a BlobDis payload. The chunks within a blob are
+numbered from zero onwards, so that the starting byte offset of a
+chunk within the blob is given by its chunk number multiplied by its
+chunk number. Similarly, parts are numbered as well and the starting
+byte offset of a part is given by its part number times the part size
+chosen for a blob.
+  
+To disseminate a blob, all participants transmit its metadata, all
+phashes and all blob data. After a listener has received the metadata
+of a blob, it allocates the memory required to store the blob and
+starts to collect chunks and phashes. Once all the data and the phash
+for a part are available, the integrity of the part is verified. If
+this verification fails, both the phash and the part data are dropped
+and a retransmission is requested. Once all blob data has been
+verified, the listener hands over the blob data to the local
+application for further processing. The completed blob will remain in
+memory for a while so it can be used to serve retransmissions of blob
+data or phashes to other listeners.
 
-Two key requirements for the BlobDis design are reliability and
-integrity. Reliability refers to ensuring that participants obtain the
-blob completely and in the right order, and that no errors are
-introduced during transmission. This is achieved on the one hand by
-relying on the frame checksums available in the UWB, and on the other
-hands on retransmission mechanisms built into BlobDis. The need for
-integrity is motivated by the need to keep a blob in a participants
-memory for the entire duration of the transfer, including some extra
-time at the end to fulfil any retransmission requests from other
-participants. Blobs are protected with suitable checksums or hashes,
-and participating nodes periodically verify these checksums / hashes
-while the blob resides in memory. If parts of the blob fail this
-check, a retransmission is requested.
+Any participant periodically checks whether it has all required blob
+data and phashes, and if not it requests (re-)transmissions of these
+from neighbors. These periodic checks also include integrity checks
+for completely received parts for which also their phash is available,
+and the request of retransmissions for those parts where the integrity
+check fails.
 
-
-
-- No need for topological / routing state
-
-- A blob belongs to an application. It is transmitted by one node, and
-  received by all other nodes that can be reached and have the
-  corresponding application currently registered with BlobDis.
-- A blob has a unique **blob identifier**, which includes the node
-  identifier of the transmitter node and timestamp information of
-  sufficient resolution that two different blob transmission started
-  at the same transmitter nearly simultaneously will have different
-  blob identifiers.
-- The blob identifier, the blob size, the generating application and
-  other important data are part of the blob's **metadata**.
-- A blob is partitioned into equal-sized contiguous **parts** (except
-  the last part). The integrity of a part is protected by a
-  corresponding **partial hash** (or phash).
-- A part is sub-divided into an integral number of equal-sized
-  **chunks**, and the size of a full-sized part must be an integer
-  multiple of the chunk size. The last chunk of the last part can have
-  a smaller chunk size.
-- The transmission of a blob includes at least the transmission of its
-  metadata, the chunks required to cover all the blob data, and all
-  the phashes for all the parts of a blob.
-- After a receiver node has received the metadata of a blob, it
-  allocates the memory required to store the blob and starts to
-  collect chunks and phashes. Once all the data and the phash for a
-  part are available, the part is verified. If this verification
-  fails, both the phash and the part data are dropped and a
-  retransmission is requested. Once all blob data has been verified,
-  the blob is handed over to the local application. The completed blob
-  will remain in memory for a while so it can be used to serve
-  retransmissions of blob data or phashes to other nodes.
-- A receiver frequently checks whether it misses any blob data or
-  phashes, and requests re-transmissions from neighbours.
-- A node only participates in the dissemination of a blob if it has
-  the corresponding application locally registered.
-
-
+In the BlobDis protocol neighboured participants interact with each
+other through exchanging **instruction records**, which include
+records for requesting and transmitting metadata, phashes and chunks.
 
 ## Key Data Types and Definitions
-### Basic Transmissible Data Types
+
+### Basic Transmissible Data Types {#blobdis-basic-transmissible-data-types}
+
+We start by defining some transmissible data types used by BlobDis
+(see Section [Naming and Typesetting
+Conventions](#chap-datatypes-conventions)). The types for instruction
+records are described in Section [Transmissible Data Types for
+Instruction Records](#subsubsec-instruction-records).
+
 #### `BlobOffsetT`
 
-A *blob* is a contiguous group of bytes of finite length, and these
-bytes are indexed starting from zero. The type `BlobOffsetT` is an
-unsigned integer with an implementation-defined length in bytes (which
-must be at least as many bytes as used for the BP type `BPLengthT`,
-see Section [BP Data
+The type `BlobOffsetT` is an unsigned integer with an
+implementation-defined length in bytes (which must be at least as many
+bytes as used for the BP type `BPLengthT`, see Section [BP Data
 Types](#subsubsec-beaconing-protocol-data-types). It is used to
-represent an index within the blob, and it is also used to give the
-size of the blob or parts of it.
+represent:
 
-A *part* is a contiguous sub-block of a blob, which lies entirely
-within the blob. A part is specified by its starting index of type
-`BlobOffsetT` and a length of type `BlobOffsetT`.
+- a byte index,
+- a part number,
+- a chunk number,
+- or a size within the blob in bytes (e.g. the size of a part).
+
+A part is identified by its part number, and it covers the byte
+indices with the starting index given by the part number times the
+part size, and the end index (including) given by the start index plus
+the part size minus one (with obvious adjustments for the last part in
+the blob).
+
+Similarly, a chunk is identified by its chunk number and it covers the
+byte indices with the starting index given by the chunk number times
+the chunk size, and the end index (including) given by the start index
+plus the chunk size minus one (with adjustments for the last chunk in
+the blob).
 
 
 #### `BlobAppIdentifierT`
 
 An application is identified by a value of type `BlobAppIdentifierT`,
 an unsigned integer with an implementation-dependent number of bytes
-(at least two bytes). Application identifiers are assumed to be
-centrally managed, and the BlobDis protocol does not contain
+(at least two bytes). BlobDis assumes that different applications have
+different application identifiers. This has to be ensured through
+mechanisms outside the BlobDis protocol. BlobDis does not contain
 mechanisms to ensure uniqueness or consistency of application
 identifiers, other than a BlobDis instance refusing to register two
 different applications under the same identifier.
@@ -165,22 +211,29 @@ indicates that no particular app is specified.
 #### `BlobIdentifierT`
 
 The type `BlobIdentifierT` aims to provide a globally unique
-identifier for a blob, unique across time, applications and nodes. The
-only strict requirement stated in this specification is that it has a
-fixed and well-known length, all other details are left to
-implementations. A possible suggestion is for a blob identifier to
-include the node identifier (of type `NodeIdentifierT`, see Section
-[Basic Transmissible Data Types](#chap-datatypes-basic-transmissible))
-of the source node, and a timestamp of type `TimeStampT` to
-distinguish different blobs originated on the same source node (this
-is assuming that the timer granularity on a source node is
-sufficiently small to reliably distinguish assign different time
-stamps to successive requests for transmitting a new blob), or
-alternatively a source-local sequence number value, with different
-sequence numbers assigned to subsequent blobs originating on the same
-source node (no matter their application).
+identifier for a blob, unique across time and nodes. A value of this
+type has two fields:
 
-*ADD SOME SORT OF CHECK CHARACTERS TO BLOB IDENTIFIER TYPE?*
+- `nodeId` of type `NodeIdentifierT` contains the node identifier of
+  the source node for a blob.
+
+- `tstamp` of type `TimeStampT` is a timestamp representing the time
+  at which the application on the source requested the dissemination
+  of the blob. Implementations must ensure that different transmission
+  requests on the same source generate different values for the
+  `tstamp` field, for example by waiting for some time after the time
+  stamp value has been set.
+
+The types `NodeIdentifierT` and `TimeStampT` are discussed in Section
+[Basic Transmissible Data Types](#chap-datatypes-basic-transmissible).
+
+Two values of type `BlobIdentifierT` are considered equal when both
+their `nodeId` and `tstamp` fields are equal. The internal structure
+of a value of type `BlobIdentifierT` is irrelevant for the BlobDis
+entity, only the ability to compare two values for equality, and the
+ability to order two values are being used (the latter only for
+efficient lookup in container data structures).
+
 
 #### `BlobCrcT` and `BlobHashT`
 
@@ -189,13 +242,18 @@ preservation of in-memory integrity. Both types can be used to
 calculate a checksum or a hash value over a memory block of arbitrary
 size. The type `BlobCrcT` represents a CRC checksum of either sixteen
 or thirty-two bits of length (using the CRC-16-CCITT or CRC-32
-polynomials), to be used to protect protocol headers and similarly
-small structures. The type `BlobHashT` contains two parts:
+polynomials, depending on the implementation. See [Cyclic Redundancy
+Check /
+Wikipedia](https://en.wikipedia.org/wiki/Cyclic_redundancy_check)), to
+be used to protect metadata and similarly small structures. The type
+`BlobHashT` contains two parts:
 
   - `hash`: an MD5 hash covering a part of a blob
-  - `crc` of type `BlobCrcT` as a checksum for the hash value.
+  - `crc` of type `BlobCrcT` as a checksum for the `hash` value.
+
 Furthermore, the following operations are defined on a value of type
 `BlobHashT`:
+
   - `calc_crc(): BlobHashT -> BlobHashT`: calculates CRC value over
     the `hash` field and stores the result in the `crc` field, returns
     updated phash.
@@ -210,37 +268,53 @@ Furthermore, the following operations are defined on a value of type
     returns whether the freshly calculated hash matches the `hash`
     value in the given `BlobHashT`.
 
+Note that a `BlobHashT` value has its own CRC checksum. Without this,
+in case of a disagreement between a phash and the part data referenced
+by that phash both have to be dropped and their retransmission
+requested. In the rare case where just the phash is wrong, having it
+protected separately by a checksum allows to avoid requesting
+retransmissions of part data.
+
 
 #### `BlobMetadataT`
 
 The type `BlobMetadataT` contains all relevant data that a participant
 will need during the transfer of a blob, and no memory will be
-allocated before valid metadata is available. This type has the
-following fields:
+allocated for blob data storage before valid metadata is
+available. This type has the following fields:
 
   - `appId` of type `BlobAppIdentifierT` indicates the application
-    this blob belongs to.
+    this blob belongs to. It has to be a value different from
+    `nullAppIdentifier`.
   - `blobId` of type `BlobIdentifierT` contains the blob identifier.
   - `length` of type `BlobOffsetT` gives the total length of the
     blob in bytes.
+  - `chunkSize` of type `BlobOffsetT` indicates the length of one
+    full-sized chunk. Its value must be strictly positive and it must
+    not exceed the value of the `BLOBDISPAR_MAX_CHUNK_SIZE`
+    configuration parameter, see Section [Configurable
+    Parameters](#blobdis-configurable-parameters). If a node
+    receives a metadata record with a larger `chunkSize` value, it
+    does not become a participant in this blob transfer.
   - `partSize` of type `BlobOffsetT` indicates how large a part of a
-    blob should be. Parts are protected by partial hashes
-    (*phashes*). This value must be strictly positive, a recommended
-    default value is 4,096. Implementations are allowed to introduce
+    blob should be. Parts are protected by phashes. This value must be
+    strictly positive, it must be an integer multiple of the
+    `chunkSize` parameter, and it must not exceed the value of the
+    `length` field. Implementations are allowed to introduce
     additional restrictions, e.g. allowing only multiples of a certain
     base size.
   - `keepaliveTime`, a 16-bit unsigned integer specifying a time
-    interval in units of seconds. Once a node has a completed
-    blob available (either because it is the sender of the blob or
-    after complete reception of all data and verification of all
-    parts) it keeps the blob in memory for a while to serve
-    retransmission requests for phashes and blob data. The blob can be
-    removed from memory when, after being completely available, no
-    request for phashes or blob data have been received for at least
-    the keepalive time. The keepalive time is strictly positive and
-    given in units of seconds. For the case of receiving a blob, it is
-    assumed that by this time the relevant application on the
-    participant has processed the received blob.
+    interval in units of seconds. Once a node has a completed blob
+    available (either because it is the sender of the blob or after
+    complete reception of all data and verification of all parts) it
+    keeps the blob in memory for a while to serve retransmission
+    requests for phashes and blob data. The blob can be removed from
+    memory when, after being completely available, no request for
+    phashes or blob data have been received for at least the keepalive
+    time. The keepalive time is strictly positive and given in units
+    of seconds. For the case of receiving a blob, it is assumed that
+    by this time the relevant application on the participant has
+    processed the received blob.
   - `timeoutTime`, 16-bit unsigned integer specifying a time interval
     in units of seconds. This value indicates how much time a
     participant waits for receiving any new data for an incomplete
@@ -255,25 +329,24 @@ following fields:
 Furthermore, the following operations are defined on a value of type
 `BlobMetadataT`:
 
-  - `calc_crc(): BlobMetadataT --> BlobMetadataT`: calculates CRC value over
-    all fields except the `crc` field and stores the result in the
-    `crc` field, returns updated metadata.
-  - `verify_crc(): BlobMetadataT --> Bool`: calculates the CRC value
-    over the all fields but the `crc` field to `crc` value, and checks
-    for equality.
+  - `calc_crc()`: calculates CRC value over all fields except the
+    `crc` field (which is assumed to have zero value) and stores the
+    result in the `crc` field, returns updated metadata.
+  - `verify_crc()`: calculates the CRC value over the all fields but
+    the `crc` field (which enters the calculation as if it had zero
+    value) and compares the result to the value of the `crc`
+    field. Returns `true` if both values are equal, and `false`
+    otherwise. A return value of `false` hence indicates a wrong
+    checksum.
 
-
-In BlobDis a blob is sub-divided into parts of common size given by
-`partSize` (except for the last part). Each is characterized by its
-starting offset of type `BlobOffsetT`, and has an associated partial
-hash (phash).
 
 #### `BlobdisHeaderT`
 
-A Blobdis payload starts with a record of type `BlobdisHeaderT`,
-followed by one or more blob containers, where each blob container
-starts with a record of type `BlobHeaderT`, following by one or more
-instruction records.
+A Blobdis payload starts with a single record of type
+`BlobdisHeaderT`, followed by one or more blob containers, where each
+blob container starts with a record of type `BlobHeaderT` (see Section
+[`BlobHeaderT'](#blobdis-data-type-blob-header-t)), following by one
+or more instruction records.
 
 The type `BlobdisHeaderT` includes the following fields:
 
@@ -284,30 +357,39 @@ The type `BlobdisHeaderT` includes the following fields:
     BlobDis implementation in the receiving node.
   - `minorVersion` is an eight-bit unsigned integer denoting the minor
     version of the BlobDis implementation that the sender of the
-    payload uses.
+    payload uses. Implementations can react in an
+    implementation-dependent way if the `minorVersion` field of an
+    incoming BlobDis payload does not match the minor version of the
+    local BlobDis entity.
 
 
-#### `BlobHeaderT`
+#### `BlobHeaderT` {#blobdis-data-type-blob-header-t}
 
-The data type `BlobHeaderT` is used in a beacon payload. The BlobDis
-beacon payload can include instructions for multiple blob
-transfers. The instructions for each blob transfer are grouped in
-**blob containers**. Each such container starts with `BlobHeaderT`
-which mainly identifies a unique blob, followed by a number of
-instruction records that pertain to this very blob. It has the
-following fields:
+The data type `BlobHeaderT` is used in a BlobDis payload. The BlobDis
+payload can include instructions for multiple blob transfers. The
+instruction records for each blob transfer are grouped in **blob
+containers**. Each such container starts with a header of type
+`BlobHeaderT` which mainly identifies the current blob, followed by a
+number of instruction records that pertain to this very blob. This
+header has the following fields:
 
   - `blobId` of type `BlobIdentifierT` gives the common blob
-    identifier that the indicated number of subsequent instruction
-    records belong to.
+    identifier that the following instruction records apply to.
   - `length` of type `BPLengthT` gives the total length in bytes for
-    the remainder of the container (i.e. all instruction records
-    subsumed by the same `BlobHeaderT`).
-  - *Instead of length give perhaps the number of instruction records?*
+    the remainder of the blob container (i.e. all instruction records
+    subsumed by the same `BlobHeaderT`). This value must be a strictly
+    positive number. An implementation needs to check that all
+    contained instruction records are complete.
 
 
-### Transmissible Data Types for Instruction Records
-#### Instruction Records and Record Types {#subsubsubsec:instruction-record-types}
+### Transmissible Data Types for Instruction Records {#subsubsec-instruction-records}
+
+In the following we describe the different types of instruction
+records. Note that for all instruction record types defined here it is
+possible to infer the length of the complete instruction record after
+reading the instruction record header.
+
+#### Instruction Record Type `IRTypeT` {#subsubsubsec:instruction-record-types}
 
 The instruction records for one specific blob follow a header of type
 `BlobHeaderT`, which provides the common `blobId` value for all
@@ -326,19 +408,18 @@ following values are defined:
   - `IRTYPE-PHASH-RESPONSE = 6`
   - `IRTYPE-ABORT = 7`
 
-#### `IRMetadataRequestT`
+#### `IRMetadataRequestT` {#subsubsubsec:instruction-record-metadata-request}
 
 The transmissible data type `IRMetadataRequestT` is an instruction
 record used by a participant to request transmission of the
 `BlobMetadataT` record for a previously overheard unknown
-`BlobIdentifierT`. This instruction record includes the following
-fields:
+`BlobIdentifierT` value. This instruction record includes the
+following field:
 
-  - `irType` of type `IRTypeT` contains the value
-    `IRTYPE-METADATA-REQUEST`.
+  - `irType` of type `IRTypeT` contains the value `IRTYPE-METADATA-REQUEST`.
 
 
-#### `IRMetadataResponseT`
+#### `IRMetadataResponseT` {#subsubsubsec:instruction-record-metadata-response}
 	
 The transmissible data type `IRMetadataResponseT` is used by a
 participant to transmit blob metadata, either unsolicited
@@ -346,87 +427,92 @@ participant to transmit blob metadata, either unsolicited
 response to a previously received `IRMetadataRequestT` request. This
 instruction record contains the following fields:
 
-  - `irType` of type `IRTypeT` contains the value
-    `IRTYPE-METADATA-RESPONSE`.
+  - `irType` of type `IRTypeT` contains the value `IRTYPE-METADATA-RESPONSE`.
   - `metadata` of type `BlobMetadataT` contains a blob metadata
     record.
 
-#### `IRChunkT`
+#### `IRChunkT` {#subsubsubsec:instruction-record-chunk}
 
 The transmissible data type `IRChunkT` is used by a participant to
 transmit a chunk of data (i.e. a contiguous block of data) of the
 blob. This instruction record includes the following fields:
 
   - `irType` of type `IRTypeT` contains the value `IRTYPE-CHUNK`.
-  - `offset` of type `BlobOffsetT` contains the index of the first
-	byte of the chunk within the overall blob.
+  - `chunkNumber` of type `BlobOffsetT` contains the chunk number of this
+    chunk. The starting index within the blob data is obtained by
+    multiplying the value of this field with the `chunkSize` field of
+    the blob metadata.
   - `length` of type `BPLengthT` contains the size of the chunk. The
-    chunk must lie entirely within the blob. This field must have a
-    value strictly larger than zero.
+    chunk must lie entirely within the blob, and the value of the
+    `length` field must be identical to the `chunkSize` field in the
+    blob metadata (with obvious adjustments for the last chunk). This
+    field must have a value strictly larger than zero.
   - `data` is a contiguous block of bytes of size `length`
 	containing the actual chunk data.
 
-#### `IRGapT`
+#### `IRGapT` {#subsubsubsec:instruction-record-gap}
 
 The transmissible data type `IRGapT` is used by a participant to let
-other participants know about blocks of data it is still missing, and
+other participants know about blocks of data it is still missing
+(ranges of missing chunks, identified by their chunk numbers), and
 asking them for transmission of suitable chunks covering some or all
 of the gap. This instruction record includes the following fields:
 
   - `irType` of type `IRTypeT` contains the value `IRTYPE-GAP`.
-  - `start` of type `BlobOffsetT` contains the index of the first
-	byte of the advertised gap within the overall blob.
-  - `size` of type `BlobOffsetT` contains the size of the requested
-    blob data.
-
-#### `IRPHashRequestT`
-
-The transmissible data type `IRPHashRequestT` is used by a
-participant to request a partial hash, covering a certain part of the
-blob. Such a partial hash covers `partSize` bytes of the blob
-(cf. type `BlobMetadataT`), which we also refer to as a *part*. The
-blob is partitioned into such parts, with all but the last part having
-size `partSize`. This instruction record includes the following
-fields:
-
-  - `irType` of type `IRTypeT` contains the value
-    `IRTYPE-PHASH-REQUEST`.
-  - `offset` of type `BlobOffsetT` identifies the starting index of
-	the blob part for which the partial hash is to be requested. It
-	must be evenly divisible by the `partSize` value in the
-	blob metadata.
+  - `chunkNumber` of type `BlobOffsetT` contains the chunk number of
+    the first chunk that the sender is missing. 
+  - `size` of type `BlobOffsetT` contains the requested number of
+    chunks.
 
 
-#### `IRPHashResponseT`
+#### `IRPHashRequestT` {#subsubsubsec:instruction-record-phash-request}
+
+The transmissible data type `IRPHashRequestT` is used by a participant
+to request a partial hash for a given part (of size `partSize`
+indicated in the blob metadata, except for the last part). This
+instruction record includes the following fields:
+
+  - `irType` of type `IRTypeT` contains the value `IRTYPE-PHASH-REQUEST`.
+  - `partNumber` of type `BlobOffsetT` identifies the part number of
+	the blob part for which the partial hash is to be requested.
+
+
+#### `IRPHashResponseT` {#subsubsubsec:instruction-record-phash-response}
 
 The transmissible data type `IRPHashResponseT` is used by a
 participant to send a partial hash for a given blob. The instruction
 record includes the following fields:
 
   - `irType` of type `IRTypeT` contains the value `IRTYPE-PHASH-RESPONSE`.
-  - `offset` of type `BlobOffsetT` gives the starting offset of the
+  - `partNumber` of type `BlobOffsetT` gives the part number of the
     blob part covered by this partial hash.
-  - `phash` of type `BlobHashT` is a partial hash value
+  - `phash` of type `BlobHashT` is a partial hash value.
 
 
-#### `IRAbortT`
+#### `IRAbortT` {#subsubsubsec:instruction-record-abort}
 
-The transmissible data type `IRAbortT` is used by a source node to
-abort the dissemination of a blob sent by that source node. It is used
-to alert other nodes that they can signal their relevant applications
-and release any resources used by the blob. The instruction record has
-the following fields:
+The transmissible data type `IRAbortT` is used by a source to abort
+the dissemination of a blob sent by that source node. It is used to
+alert other nodes that they can signal their relevant applications and
+release any resources used by the blob. The instruction record has the
+following fields:
 
-  - `irType` of type `IRTypeT` contains the value `IRTYPE-ABORT`
+  - `irType` of type `IRTypeT` contains the value `IRTYPE-ABORT`.
+
 
 ### Data Types for Runtime Data
-#### `BlobDisApplication`
 
-This non-transmissible data type contains data describing a BlobDis
-application. It contains at minimum the following fields:
+We now describe some non-transmissible data types that a BlobDis
+entity uses at runtime.
+
+#### `BlobDisApplication` {#subsubsec-runtime-types-blobdis-application}
+
+This data type contains data describing a BlobDis application. It
+contains at minimum the following fields:
 
   - `appId` of type `BlobAppIdentifierT` contains the identifier of
-    the application
+    the application. This value has to differ from
+    `nullAppIdentifier`.
   - `description` of type `String` is a human-readable short
     description of the application. There is no limit on the length of
     this description.
@@ -435,7 +521,8 @@ Implementations can add further fields, e.g. to maintain statistics
 about the number of blobs in various states of processing that have so
 far been observed for this application.
 
-#### `MemRef`
+
+#### `MemRef` {#subsubsec-runtime-types-blobdis-memref}
 
 This type is implementation- and operating-system dependent. It
 represents a reference to the memory where the data of a blob is
@@ -452,90 +539,62 @@ Operations supported:
   - `bdmem_allocated()`: takes as parameter a `MemRef` value and
     returns a Boolean indicating whether memory has been allocated or
     not.
-  - `bdmem_ref()`: takes as parameter a `MemRef` value and an offset
+  - `bdmem_ref()`: takes as parameter a `MemRef` value and a byte offset
     of type `BlobOffsetT`, and provides read access to the blob memory
     at the given offset.
-  - `bdmem_memcpy()`: 
 
 
-#### `BlobProcessingStatus`
+#### `BlobProcessingStatus` {#subsubsec-runtime-types-blobdis-blob-processing-status}
 
 This is an unsigned integer value which describes the processing
 status of a blob. We first consider the case of an incoming blob,
-i.e. a blob that is being transmitted by another node and which is to
-be received by this node. As a first step, the ego node must receive
-the metadata for the blob -- before it has the metadata it will ignore
-any other instructions (including those containing blob data or
-partial hashes).  After it has the metadata, the node will accept
-chunks and partial hashes. When all partial hashes and all chunks are
-available, the blob will be checked for correctness. If parts of the
-blob are incorrect, their retransmission will be requested. If all
-parts of the blob are correct, the ego node will keep the blob in
-memory for a certain amount of time before removing the blob entirely
-(moving it to the blacklist to avoid further engagement). We
-distinguish the following values for the blob processing status:
+i.e. a blob for which the present node is a (potential) listener. As a
+first step, the present node must receive the metadata for the blob --
+before it has the metadata it will ignore any other instruction
+records (including those containing blob data or partial hashes).
+After it has the metadata and allocated the required memory for the
+blob data, the listener will accept chunks and partial hashes. When
+all partial hashes and chunks are available, the blob will be checked
+for integrity. If parts of the blob are incorrect, their
+retransmission will be requested (both the data chunks for the part
+and the phash). If all parts of the blob are correct, the present node
+keeps the blob in memory for a certain amount of time before removing
+it entirely. We distinguish the following values for the blob
+reception status:
 
-  - `RXSTATUS-NO-METADATA = 1`: the node has not yet received
+  - `RXSTATUS-NO-METADATA = 1`: the present node has not yet received
     the metadata.
-  - `RXSTATUS-INCOMPLETE-PHASHES = 2`: the node has the metadata but does
-    not yet have all partial hashes (it may or may not have any
-    chunks).
-  - `RXSTATUS-INCOMPLETE-DATA = 3`: the node has the metadata and
-    all partial hashes, but does not yet have all chunks.
-  - `RXSTATUS-COMPLETE-DATA = 4`: the node has the metadata and
-    all chunks and the hashes have been verified.
-
+  - `RXSTATUS-INCOMPLETE = 2`: the present node has the metadata but does
+    not yet have all phashes or all data chunks.
+  - `RXSTATUS-COMPLETE = 3`: the present node has the metadata, all phashes,
+    all data chunks and has successfully verified the integrity of all
+    data parts.
+  - `RXSTATUS-ABORTED = 4`: the blob reception has been aborted.
 
 When we transmit a blob ourselves, we first send the metadata,
 followed by the partial hashes, followed by all chunks. We distinguish
 the following values for the blob processing status:
 
-  - `TXSTATUS-SENDING = 5`: the ego is in the process of initial
-    transmission of the metadata, phashes and blob data.
-  - `TXSTATUS-COMPLETED = 6`: the ego node has now sent all
-    the partial hashes and all chunks but keeps the blob in memory for
+  - `TXSTATUS-SENDING = 5`: the present node is in the process of
+    initial transmission of the metadata, phashes and blob data.
+  - `TXSTATUS-COMPLETED = 6`: the present node has sent the metadata,
+    all phashes, and all chunks but keeps the blob in memory for
     a while to respond to retransmission requests for chunks or
-    partial hashes.
-  - `TXSTATUS-ABORTED = 7`: there are probably not many
-    situations where an abort can happen. One is if during the blob
-    transfer the initially calculated phashes don't check out anymore,
-    i.e. when either the phashes or the blob data have gone sour.
+    phashes.
+  - `TXSTATUS-ABORTED = 7`: This can for example happen when during
+    the blob transfer the initially calculated phashes don't match the
+    part data anymore, i.e. when either the phashes or the blob data
+    have been corrupted while residing in memory.
 
-#### `AbortReason`
+#### `AbortReason` {#subsubsec-runtime-types-blobdis-abort-reason}
 
 This is an unsigned integer value which describes why the BlobDis
-entity aborted the dissemination of a blob. We distinguish the
-following values:
+entity aborted the dissemination of a blob (either as a listener or as
+a source). We distinguish the following values:
 
   - `ABORT-REASON-TIMEOUT = 1`
   - `ABORT-REASON-SOURCE-ABORT = 2`
 
-
-
-#### `Dictionary<k,v>`
-
-We refer to a dictionary to be a (mutable) data type akin to an
-associative map or a dictionary in the Python programming language. A
-dictionary type is written as `Dictionary<k,v>`, where `k` is the type
-of dictionary keys to be used (for lookup operations), and `v` is the
-type of values to be used in the dictionary. The key operations of a
-dictionary are:
-
-  - `exists()`: takes as parameters a dictionary and a key of type `k`
-    and returns a Boolean indicating whether or not a pair with the
-    given key and an associated value is stored in the
-    dictionary. The dictionary is not modified.
-  - `lookup()`: takes as parameter a dictionary and key of type `k`
-    and returns the corresponding value of type `v`, which must be
-    available in the dictionary. The dictionary is not modified.
-  - `adjoin()`: takes as parameters a dictionary, a key of type `k`
-    and a value of type `v`, and returns an updated dictionary. If the
-    key-value pair did not exist in the given dictionary, it has been
-    added. If it did exist, the old value for the given key is
-    replaced by the new one.
-  - `remove()`: takes as parameters a dictionary and a key of type
-    `k`, and returns an updated dictionary, in which the key-value
-    pair with the key matching the given key (if any) is removed.
 
 #### `Interval` and `IntervalList`
 
@@ -739,9 +798,12 @@ status codes are possible:
     in a `DBApp-Register.request` primitive has already been
     registered previously.
   - `BLOBDIS-STATUS-ILLEGAL-BLOB-LENGTH`: the `length` value is zero.
+  - `BLOBDIS-STATUS-ILLEGAL-BLOB-STATUS`: the blob has a processing
+    status that is unknown (see Section
+    [`BlobProcessingStatus`](#subsubsec-runtime-types-blobdis-blob-processing-status)).
   - `BLOBDIS-STATUS-INACTIVE`: the BlobDis entity is currently
     inactive.
-  - `BLOBDIS-STATUS-BLOW-UNKNOWN`: the given blob identifier does not
+  - `BLOBDIS-STATUS-BLOB-UNKNOWN`: the given blob identifier does not
     correspond to a known blob.
   - `BLOBDIS-STATUS-BLOB-BLACKLISTED`: an operation has been attempted
     on a blacklisted blob. (*OR RETURN BLOBDIS-STATUS-OK WHEN THIS IS ATTEMPTED??*)
@@ -1044,7 +1106,7 @@ steps:
 
 5. If (blobrt.status not in RXSTATUS-*)
       stop processing
-	  return status code BLOBDIS-STATUS-ABORT-ON-TRANSMIT-BLOB
+	  return status code BLOBDIS-STATUS-ILLEGAL-BLOB-STATUS
 
 -- 6. blobrt.memref.bdmem_free()
 
@@ -1088,24 +1150,6 @@ have already been released by BlobDis.
 (*WE REALLY NEED TO GIVE THE APPLICATION SOME TIME AFTER IT GOT
 COMPLETION INDICATION AND IS WORKING ON THE DATA*)
 
-
-#### Optional Service `BD-RxProgress` (Indication)
-
-As a courtesy, BlobDis can inform an application about the progress in
-receiving a blob, measured as the percentage of data that has been
-received so far. This percentage is reported by the BlobDis entity
-submitting an `BD-RxProgress.indication` primitive to the application
-owning a blob, which carries at least the following parameters:
-
-  - `blobId` of type `BlobIdentifierT`: the identifier of the blob.
-  - `appId` of type `BlobAppIdentifierT`: the registered application
-    for this blob. 
-  - `percentage` is an unsigned integer value between 0 and 100,
-    indicating the largest integer value below the actual percentage
-    of data that has been received so far.
-
-Progress reports are an optional feature and not considered
-furthermore in this document.
 
 ### Blob Transmission Services
 #### Service `BD-TxTransmit` (Request, Confirm)
@@ -1326,24 +1370,6 @@ the memory used for storing the data of the aborted blob, as this may
 have already been released by BlobDis. (*REVIEW THIS SENTENCE*)
 
 
-#### Optional Service `BD-TxProgress` (Indication)
-
-As a courtesy, BlobDis can inform an application about the progress in
-transmitting a blob, measured as the percentage of data that has been
-sent so far for the first time (*THAT WILL BE MEASURED BY USING
-stat_chunks_sent*). This percentage is reported by the BlobDis entity
-submitting an `BD-TxProgress.indication` primitive to the application
-sending a blob, which carries at least the following parameters:
-
-  - `blobId` of type `BlobIdentifierT`: the identifier of the blob.
-  - `appId` of type `BlobAppIdentifierT`: the registered application
-    for this blob. 
-  - `percentage` is an unsigned integer value between 0 and 100,
-    indicating the largest integer value below the actual percentage
-    of data that has been received so far.
-
-Progress reports are an optional feature and not considered
-furthermore in this document.
 
 ### Management
 #### Service `BD-MgmtListBlacklist` (Request, Confirm)
@@ -1442,7 +1468,7 @@ implementation needs to support. These are:
 - `BLOBDISPAR_MAX_CHUNK_SIZE` of type `BPLengthT` gives the maximum
   size of payload data in a chunk, must be positive, but must not
   exceed `BLOBDISPAR_MAX_PAYLOAD_SIZE` minus `sizeof(BlobHeaderT)` and
-  any separate BlobDis headers.
+  any separate BlobDis headers. (*BE MORE PRECISE*)
 
 - `BLOBDISPAR_MAX_BLOB_CONTAINER_SIZE` of type `BPLengthT` gives the
   maximum size of a single blob container, must be at least as large as
@@ -1662,7 +1688,7 @@ is being received (i.e. has a status in `RXSTATUS-*`):
 
 -- check expiry of keepalive time
 9. If (    (curr_time - blobrt.tstamp_lastreq > metadata.keepaliveTime)
-        && (status == RXSTATUS-COMPLETE-DATA))
+        && (status == RXSTATUS-COMPLETE))
 	  -- No retransmission request for a while, deactivate blob,
 	  -- release resources, add to blacklist and inform application
       blobrt.phashes.clear()
@@ -1680,8 +1706,8 @@ is being received (i.e. has a status in `RXSTATUS-*`):
        If (not phash.verify_crc())
 	      blobrt.phashes.remove (phash)
 		  blobrt.txq_phash_request.qAppend (offs)
-	      If (status == RXSTATUS-COMPLETE-DATA)
-		     blobrt.status = RXSTATUS-INCOMPLETE-DATA
+	      If (status == RXSTATUS-COMPLETE)
+		     blobrt.status = RXSTATUS-INCOMPLETE
 
 -- verify integrity of complete parts with phashes
 11. for all (offs,phash) in blobrt.phashes do:
@@ -1691,8 +1717,8 @@ is being received (i.e. has a status in `RXSTATUS-*`):
 		  blobrt.gaps.adjoin (offs, partSize)
 		  blobrt.blocks.remove (offs, partSize)
 		  blobrt.txq_gap.adjoin(offs, partSize)
-	      If (status == RXSTATUS-COMPLETE-DATA)
-		     blobrt.status = RXSTATUS-INCOMPLETE-DATA
+	      If (status == RXSTATUS-COMPLETE)
+		     blobrt.status = RXSTATUS-INCOMPLETE
 			 
 -- check whether we are still missing phashes
 12. If (    (blobrt.txq_phash_request.empty())
@@ -1927,7 +1953,7 @@ instruction record is processed as follows:
 
 4. With blobrt : BlobRuntimeData do:
         blobrt.metadata = metadata
-		blobrt.status   = RXSTATUS-INCOMPLETE-PHASHES
+		blobrt.status   = RXSTATUS-INCOMPLETE
 		blobrt.memref.bdmem_allocate (metadata.length)
 		blobrt.phashes.clear()
 		blobrt.gaps.clear()
@@ -1963,7 +1989,7 @@ instruction record is processed as follows:
 	   
 2. If (    (status in TXSTATUS-*)
         || (status == RXSTATUS-NO-METADATA)
-		|| (status == RXSTATUS-COMPLETE-DATA))
+		|| (status == RXSTATUS-COMPLETE))
 	  stop processing
 
 3. If (    (offset+length >= metadata.length)
@@ -1992,7 +2018,7 @@ instruction record is processed as follows:
 6. If (    (blobrt.gaps.empty())
         && (all required phashes are available)
 		&& (all stored phashes match their respective parts))
-      blobrt.status = RXSTATUS-COMPLETE-DATA
+      blobrt.status = RXSTATUS-COMPLETE
 	  send BD-RxCompletion.indication to application given by metadata.appId
 
 ~~~
@@ -2122,7 +2148,6 @@ An `IRAbortT` instruction record contains no further data. The blob
 identifier of the relevant blob is contained in `blobId`. The
 instruction record is processed as follows:
 
----
 
 ~~~
 
@@ -2149,7 +2174,26 @@ instruction record is processed as follows:
 
 ~~~
 
----
+
+## Limitations
+
+The present BlobDis specification has a number of limitations, which
+may or may not be addressed in future versions of this specification:
+
+- A node can only become a participant in a blob dissemination when it
+  has the relevant application registered locally, and does not
+  otherwise engage. When too few nodes engage in a particular
+  application the participants may not form a connected subset and
+  blob dissemination may fail. In a future version, BlobDis may add a
+  mode allowing a node to engage in blob dissemination without having
+  an application registered.
+
+- Currently there is no mechanism allowing a BlobDis entity to inform
+  an application about the progress of a blob transfer (either sending
+  or receiving a blob).
+
+- No consideration has been given to security concerns.
+
 
 ## Scratch
 
@@ -2284,11 +2328,8 @@ instruction record is processed as follows:
 - Update the following other chapters of the DCP spec:
     - Changelog
 	- Context and aims
-	- Datatypes to add dictionary?
 	- DCP Architecture and protocol overview
 	- Known issues, shortcomings and comments
-  Perhaps rename overall project from DCP/Vardis to simply DCP stack?
-- Reduce `RXSTATUS-*` values just to three?
 - Implement handling of `tstamp_metadata` to let a blob wait for some
   time to receive incoming chunks and phashes before starting to send
   requests for gaps. Invent an associated configuration value for
@@ -2307,15 +2348,44 @@ instruction record is processed as follows:
   request new copies and they are wrong again? Is there a way to end
   this after some time?
 - Maintain the queue semantics, but add an `adjoin` operation?
-
-
-<!--DECISION: FOR NOW WE DO NOT SUPPORT PARTICIPATION IN
-    NON-REGISTERED APPLICATIONS-->
+- Does a phash need a separate checksum? I can throw away a hash
+  either when its checksum fails, or when it fails to verify its
+  underlying part (though in that case I also throw away data).
+- State that there is an assumption that a crash/reboot sequence takes
+  *much* longer than the clock resolution, so that blob identifiers
+  generated before and after a crash/reboot are guaranteed to be
+  distinct.
+- Think more about the `nullAppIdentifier` and its use. Is this
+  something I could send indications to?
+- State that `ownNodeIdentifier` gets initialized after BP
+  registration.
+- Check in all the right places that the `appId` metadata field for a
+  blob is different from `nullAppIdentifier`.
+- When getting metadata for a blob (either Tx or Rx) check that the
+  `keepaliveTime` and `timeoutTime` parameters are strictly positive,
+  otherwise abort transfer with a suitable abort reason.
+- Will `BlobdisHeaderT` need a counter for the number of instruction
+  containers?
+- State that all instruction records are processed atomically,
+  payloads are processed atomically.
+- When processing received instruction records in a payload, ensure
+  that you stop processing when you cannot infer the length of an
+  instruction record. Or insure that all instruction records have
+  their lengths as an explicit field (in particular chunks). Also
+  check that any instruction records other than `IRMetadataResponseT`
+  are not processed when no metadata is present, and that in this
+- When processing a received chunk, double-check the `length` field
+  against `chunkSize` information from the metadata.
+- check result of `bdmem_allocate()` using the `bdmem_allocated()`
+  function in all the right places.
+- dropped the `bdmem_memcpy()` operation, ensure that it is really not
+  needed.
+- Identify situations where to set status to `RXSTATUS-ABORTED`, which
+  is a new status value.
+- Add more values to `AbortReason` if needed.
 
 <!--DECISION: THERE WILL BE NO RESTART MANAGEMENT SERVICE, REDUNDANT-->
 
-<!--DECISION: WE WILL NOT IMPLEMENT PROGRESS REPORTS FOR THE TIME
-    BEING. THE LOGIC TO DO SO WILL NEED TO GO INTO PERIODIC ACTIVITIES-->
 
 <!--DECISION: ADOPT FIXED-SIZE CHUNKS, SO THAT EACH RECEIVED CHUNK IS
     EITHER COMPLETELY AVAILABLE OR COMPLETELY NEW -->

@@ -25,10 +25,17 @@ such as language issues, typos or minor errors are not reported.
   `BPPAR_NETWORK_ID` are simply dropped.
 - Added a new pre-defined client protocol identifier
   `BP_PROTID_BLOBDIS`.
+- Instead of type `List<T>` we now use type `Dictionary<k,v>` to hold
+  the currently registered protocols.
+  
 
 ### Changes in `dcp-datatypes.md`
 
 - Added `clear()` operation to queue data type
+- Moved `Queue<T>` into separate section
+- Removed type `List<T>`
+- Added dictionary data type (Section
+  [`Dictionary<k,v>`](#sec-datatypes-containers-dictionaries)).
 
 ### Changes in `dcp-vardis.md`
 
@@ -55,7 +62,12 @@ such as language issues, typos or minor errors are not reported.
 
 ### Other Changes
 
-- All specification files now have a copyright notice (CC BY 4.0)
+- All specification files now have a copyright and license notice (CC
+  BY 4.0)
+
+- The previous name 'DCP/VarDis' for the entire protocol stack has
+  been replaced by 'DCP stack' to signify that VarDis is now just one
+  of the available client protocols, and not a central one anymore.
 
 ## Changes for Version 1.3
 
@@ -86,11 +98,11 @@ such as language issues, typos or minor errors are not reported.
   contain additional implementation-dependent parameters, and that
   correspondingly the processing may also contain additional steps.
 
-- The BP header (type `BPHeaderT` now has an extra field giving the
+  The BP header (type `BPHeaderT` now has an extra field giving the
   total length of the payload [excluding header] to deal with
   underlying wireless bearers that pad up payloads. This arose when
-  implementing DCP/VarDis on top of a WiFi interface with EthernetII
-  encapsulation.
+  implementing the DCP stack on top of a WiFi interface with
+  EthernetII encapsulation.
 
 - Added the concept of activation and deactivation of a running BP
   instance. In its deactivated state, the instance will not generate
@@ -161,8 +173,8 @@ such as language issues, typos or minor errors are not reported.
 	  
 - Use of `sizeof()` expressions have now been replaced with
   `ssizeof()` to clarify that this expression has its own meaning
-  within DCP/VarDis that differs from its meaning in other programming
-  languages such as C++.
+  within the DCP stack that differs from its meaning in other
+  programming languages such as C++.
 
 ### Changes in `dcp-version-contributors.md`
 
@@ -176,7 +188,7 @@ such as language issues, typos or minor errors are not reported.
   are to have a width that is an integer multiple of a byte.
 
 - Clarified that the accuracy of `TimeStampT` is mainly relevant for
-  applications, whereas DCP/VarDis has more modest accuracy
+  applications, whereas the DCP stack has more modest accuracy
   requirements.
 
 - The length of a string of type `StringT` is now limited to 255
