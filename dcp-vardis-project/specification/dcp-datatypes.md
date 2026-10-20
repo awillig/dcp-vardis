@@ -76,13 +76,13 @@ is transmitted in network byte order.
   node can extract that identifier from a received beacon to identify
   the sender. Furthermore, each of the DCP protocols is able to
   retrieve the own node identifier. Node identifiers have no deeper
-  meaning in the DCP/VarDis stack, it is only necessary to compare two
+  meaning in the DCP stack, it is only necessary to compare two
   node identifiers for equality.
 
 - Nodes have access to a source of physical time
   (e.g. GPS). Timestamps are represented using a fixed-length data
   type `TimeStampT` that is not specified here in detail. We expect
-  that for the operations of the DCP/VarDis protocols an accuracy of
+  that for the operations of the DCP stack an accuracy of
   within a few milliseconds will be sufficient, applications might
   require greater accuracy.
 
@@ -100,19 +100,16 @@ is transmitted in network byte order.
   used for strings, then the length of the string may be larger than
   the number of characters displayed to human users.
 
-
-
-## Queues and Lists {#sec-queues-lists}
+## `Queue<T>` {#sec-datatypes-containers-queues}
 
 In some places the DCP constituent protocols need to keep runtime data
-organized in (first-in-first-out) queues or lists. As is common in
-modern programming languages, we treat queues and lists as abstract
-parameterizable data types that can have elements of a particular
-element type `T`. We refer to the type of a queue with element type
-`T` by the type name `Queue<T>`, and similarly we refer to the type of
-a list made up of elements of type `T` as `List<T>`.
+organized in (first-in-first-out) queues. As is common in modern
+programming languages, we treat queues as abstract parameterizable
+data types that can have elements of a particular element type `T`. We
+refer to the type of a queue with element type `T` by the type name
+`Queue<T>`.
 
-For the purposes of this specification, the `Queue` data type
+For the purposes of this specification, the `Queue<T>` data type
 generally supports the following operations:
 
 - `qTake()` removes the head-of-line element from the queue and
@@ -134,20 +131,32 @@ generally supports the following operations:
   the parameter, and `false` otherwise.
 - `clear()` removes all elements from the queue.
 
-The `List` data type generally supports the following operations:
 
-- `lInsert()` inserts a new element of element type `T` into a list.
-- `lRemove()` takes a value of element type `T` as a parameter and
-  removes all elements with the same value from the list.
-- `lIsEmpty()` returns a value of type `Bool` telling whether or not
-  the list is empty. It does not take any parameters and does not
-  modify the list.
-- `lExists()` takes a value of element type `T` as parameter and
-  returns `true` if the list contains an entry with value equal to
-  the parameter, and `false` otherwise.
-- `lLength()` takes no parameters and returns the number of elements
-  currently stored in the list.
-  
+## `Dictionary<k,v>` {#sec-datatypes-containers-dictionaries}
+
+We refer to a dictionary to be a (mutable) data type akin to an
+associative map in the C++ standard library or a dictionary in the
+Python programming language. A dictionary type is written as
+`Dictionary<k,v>`, where `k` is the type of dictionary keys to be used
+(for lookup operations), and `v` is the type of values to be used in
+the dictionary. The key operations of a dictionary are:
+
+  - `exists()`: takes as parameters a dictionary and a key of type `k`
+    and returns a Boolean indicating whether or not a pair with the
+    given key and an associated value is stored in the
+    dictionary. The dictionary is not modified.
+  - `lookup()`: takes as parameter a dictionary and key of type `k`
+    and returns the corresponding value of type `v`, which must be
+    available in the dictionary. The dictionary is not modified.
+  - `adjoin()`: takes as parameters a dictionary, a key of type `k`
+    and a value of type `v`, and returns an updated dictionary. If the
+    key-value pair did not exist in the given dictionary, it has been
+    added. If it did exist, the old value for the given key is
+    replaced by the new one.
+  - `remove()`: takes as parameters a dictionary and a key of type
+    `k`, and returns an updated dictionary, in which the key-value
+    pair with the key matching the given key (if any) is removed.
+
 
 ## Other Conventions
 
@@ -169,7 +178,7 @@ The `List` data type generally supports the following operations:
   shall be returned to the entity generating the `S.request`
   primitive.
 
-- We use pseudo-code to describe parts of the behaviour of DCP/VarDis
+- We use pseudo-code to describe parts of the behaviour of DCP
   protocols. Syntactically, in this pseudo-code we borrow some
   elements of the C++ programming language.
 
