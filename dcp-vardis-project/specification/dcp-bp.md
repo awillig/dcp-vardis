@@ -168,20 +168,8 @@ guarantees at least for some client protocols.
 ### Client Protocol List
 
 The BP maintains a variable `currentClientProtocols` of type
-`List<BPClientProtocol>`. In addition to the standard operations on
-list (see Section [Queues and Lists](#sec-queues-lists)) this list also
-supports the following operations: 
-
-- `lProtocolExists()`, which takes as parameter a value of type
-  `BPProtocolIdT` and returns a `Bool` indicating whether the list
-  contains an entry of type `BPClientProtocol` with `protocolId` field
-  equal to the parameter (result is `true`) or not (result `false`).
-- `lRemoveProtocol()`, which takes as parameter a value of type
-  `BPProtocolIdT` and removes all entries from the list for which their
-  `protocolId` field is equal to the parameter.
-- `lLookupProtocol()`, which takes as parameter a value of type
-  `BPProtocolIdT` and returns the first entry from the list for which
-  its `protocolId` field is equal to the parameter (if it exists).
+`Dictionary<BPProtocolId, BPClientProtocol>` (see Section
+[`Dictionary<k,v>`](#sec-datatypes-containers-dictionaries)).
 
 
 ## Service Interface
@@ -255,7 +243,7 @@ the BP entity performs at least the following actions:
 
 
 ~~~
-1.     If (currentClientProtocols.lProtocolExists(protId) == true) then
+1.     If (currentClientProtocols.exists(protId) == true) then
           stop processing, return status code BP-STATUS-PROTOCOL-ALREADY-REGISTERED
 2.     If (maxPayloadSize <= 0)
           stop processing, return status code BP-STATUS-ILLEGAL-MAX-PAYLOAD-SIZE
@@ -277,7 +265,7 @@ the BP entity performs at least the following actions:
 				 .bufferOccupied         =  false
 				 .bufferEntry            =  empty buffer
 				 .allowMultiplePayloads  =  allowMultiplePayloads
-6.     currentClientProtocols.lInsert(newent)
+6.     currentClientProtocols.adjoin(protId, newent)
 7.     return status code BP-STATUS-OK
 ~~~
 
@@ -310,10 +298,10 @@ To process the `BP-DeregisterProtocol.request` service primitive,
 the BP performs at least the following actions:
 
 ~~~
-1.     If (currentClientProtocols.lProtocolExists(protId) == false) then
+1.     If (currentClientProtocols.exists(protId) == false) then
           stop processing, return status code BP-STATUS-UNKNOWN-PROTOCOL
 2.     de-allocate buffers / queues as appropriate for chosen queueMode
-3.     currentClientProtocols.lRemoveProtocol(protId)
+3.     currentClientProtocols.remove(protId)
 4.     return status code BP-STATUS-OK
 ~~~
 
@@ -414,9 +402,9 @@ To process the `BP-TransmitPayload.request` primitive, the BP
 performs at least the following actions:
 
 ~~~
-1.     If (currentClientProtocols.lProtocolExists(protId) == false) then
+1.     If (currentClientProtocols.exists(protId) == false) then
           stop processing, return status code BP-STATUS-UNKNOWN-PROTOCOL
-2.     Let protEntry = currentClientProtocols.lLookupProtocol(protId)
+2.     Let protEntry = currentClientProtocols.lookup(protId)
 3.     If (length > protEntry.maxPayloadSize) then
           stop processing, return status code BP-STATUS-PAYLOAD-TOO-LARGE
 4.     If (length == 0) then
@@ -476,9 +464,9 @@ performs at least the following actions:
 
 
 ~~~
-1.     If (currentClientProtocols.lProtocolExists(protId) == false) then
+1.     If (currentClientProtocols.exists(protId) == false) then
           stop processing, return status code BP-STATUS-UNKNOWN-PROTOCOL
-2.     Let protEntry = currentClientProtocols.lLookupProtocol(protId)
+2.     Let protEntry = currentClientProtocols.lookup(protId)
 3.     If (    (protEntry.queueMode == BP_QMODE_QUEUE_DROPTAIL)
 			|| (protEntry.queueMode == BP_QMODE_QUEUE_DROPHEAD)) then
           protEntry.queue.qClear()
@@ -541,9 +529,9 @@ After receiving the `BP-QueryNumberBufferedPayloads.request` service
 primitive, the BP performs at least the following actions:
 
 ~~~
-1.     If (currentClientProtocols.lProtocolExists(protId) == false) then
+1.     If (currentClientProtocols.exists(protId) == false) then
           stop processing, return status code BP-STATUS-UNKNOWN-PROTOCOL
-2.     Let protEntry = currentClientProtocols.lLookupProtocol(protId)
+2.     Let protEntry = currentClientProtocols.lookup(protId)
 3.     If (    (protEntry.queueMode == BP_QMODE_QUEUE_DROPTAIL) 
             || (protEntry.queueMode == BP_QMODE_QUEUE_DROPHEAD)) then
           stop processing, return status code BP-STATUS-OK and value of protEntry.queue.qLength()
@@ -691,10 +679,10 @@ beacon, then no beacon is being generated.
 
 ## Initialization, Runtime and Shutdown {#bp-initialization-runtime-shutdown}
 
-During initialization of the BP the list of currently registered
+During initialization of the BP the dictionary of currently registered
 client protocols (variable `currentClientProtocols`) is initialized as
-the empty list, and the 32-bit variable `bpSequenceNumber` is
-initialized to zero.
+empty, and the 32-bit variable `bpSequenceNumber` is initialized to
+zero.
 
 Furthermore, BP retrieves from the UWB the maximum allowed packet size
 and stores this in the global variable `UWB-MaxPacketSize`. The value of
@@ -737,7 +725,7 @@ payloads present for transmission)..
 
 When preparing a beacon packet, the BP inspects all available payload
 queues and buffers (fields `queue`, `bufferOccupied` and `bufferEntry`
-of the currently registered protocols in the list
+of the currently registered protocols in the dictionary
 `currentClientProtocols`, see Section [Service
 TransmitPayload](#bp-service-bp-transmit-payload)) in an unspecified,
 implementation-dependent order. It is also left to the implementation
@@ -881,7 +869,7 @@ steps:
               plength       = pblock.header.length
 		      blocklength   = plength + ssizeof(BPPayloadHeaderT)
 3.c.      index = index + blocklength
-3.d.      If (    (currentClientProtocols.lProtocolExists(protId) == true) 
+3.d.      If (    (currentClientProtocols.exists(protId) == true) 
                && (index < bearlen)) then
              send BP-ReceivePayload.indication primitive prim to client protocol, with
 		         prim.protId  = protId
