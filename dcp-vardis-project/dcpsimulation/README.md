@@ -2,22 +2,22 @@
 DCP/Vardis Simulation for OMNeT++
 =================================
 
-The DCP/Vardis simulator is an open-source simulation model for the
-DCP/Vardis protocol stack as described in this [arXiv
+The DCP simulator is an open-source simulation model for the DCP
+protocol stack as described in this [arXiv
 report](https://arxiv.org/abs/2404.01570) and its enhanced and revised
 [journal version](https://doi.org/10.1016/j.comcom.2024.108021). It
 aims to be a reasonably (though not completely) faithful and complete
-implementation of the DCP/VarDis protocol stack specification, which
-can be found [here](https://github.com/awillig/dcp-vardis.git). The
-simulator has been developed for the OMNeT++ discrete-event simulation
-framework ([website](https://omnetpp.org)) and in addition uses the
-INET module library for OMNeT++
-([website](https://inet.omnetpp.org/)). The simulator shares
-substantial amounts of code with the DCP implementation (which can be
-found in the directory `dcpimplementation` adjacent to the current
-directory `dcpsimulation`).
+implementation of the DCP protocol stack specification, which can be
+found [here](https://github.com/awillig/dcp-vardis.git). The simulator
+has been developed for the OMNeT++ discrete-event simulation framework
+([website](https://omnetpp.org)) and in addition uses the INET module
+library for OMNeT++ ([website](https://inet.omnetpp.org/)). The
+simulator shares substantial amounts of code with the DCP
+implementation (which can be found in the directory
+`dcpimplementation` adjacent to the current directory
+`dcpsimulation`).
 
-IMPORTANT: The DCP/Vardis specification, implementation and simulation
+IMPORTANT: The DCP stack specification, implementation and simulation
 model are being continuously developed, bugs are corrected, features
 are added, et cetera. We do not guarantee that the implementation or
 simulator code fully conforms to the specification or that the
@@ -31,11 +31,12 @@ Willig](mailto:andreas.willig@canterbury.ac.nz).
 Versions
 ========
 
-Presently, the code is developed under Ubuntu Linux 24.04 on an
-AARCH64 platform. It works together with OMNeT++ in version 6.1 and
-builds on the INET framework in version 4.5.4. Both OMNeT++ and the
-INET framework have been built with the `gcc` toolchain in version
-13.3. The code itself uses features of the C++20 standard.
+Presently, the code is developed under Ubuntu Linux 26.04 on an
+AARCH64 platform. It works together with OMNeT++ in versions 6.1 to
+6.4, and builds on the INET framework in version 4.5.4, 4.6 and
+4.7. Both OMNeT++ and the INET framework have been built with the
+`gcc` toolchain in version 13.3. The code itself uses features of the
+C++20 standard.
 
 
 Build process
@@ -49,15 +50,14 @@ shell under Linux. For other shells, you will need to modify some
 commands accordingly.
 
 To install and build the code, first make sure that OMNeT++ in version
-6.0 or higher (we have tested versions 6.03, 6.1 and 6.3), and the
-INET framework in version 4.5 or higher (we have tested version 4.6) are
-installed and their `setenv` files are included in (or called from)
-your shell startup file (file `~/.bashrc`). Confirm this by running
-```shell
-echo $INET_ROOT
-``` 
-which should output the installation directory of
-the INET source files. Furthermore, ensure that: 
+6.0 or higher (we have tested versions 6.03, 6.1, 6.3 and 6.4), and the
+INET framework in version 4.5 or higher (we have tested versions 4.6
+and 4.7) are installed and their `setenv` files are included in (or
+called from) your shell startup file (file `~/.bashrc`). Confirm this
+by running ```shell echo $INET_ROOT ``` which should output the
+installation directory of the INET source files. Furthermore, ensure
+that:
+
   - INET is built (i.e. that the file `libINET.so` and/or
     `libINET_dbg.so` exists in `$INET_ROOT/src/`); and
   - the `bin/` sub-directory of your OMNeT++ installation directory is
@@ -69,30 +69,38 @@ the INET source files. Furthermore, ensure that:
 
 Before building the simulator you will have to build the DCP
 implementation to create suitable libraries that can be linked to the
-simulator. This can be achieved as follows:
+simulator. This can be achieved as follows (but see the file
+`README.md` in the `dcpimplementation` sub-directory):
+
 ``` shell
 cd dcpimplementation/src
 rm -rf ../_build/
-cmake -S . -B ../_build
+cmake -S . -B ../_build -D CMAKE_BUILD_TYPE=Debug
 cmake --build ../_build
 ```
-You can follow this by running the available unit tests:
+
+In the previous instructions, you can replace the build type `Debug`
+by the build type `Release`. You can follow this by running the
+available unit tests:
 
 ``` shell
 cd ../_build/ && ctest && cd ../src/
 ```
 
-To build the DCP/Vardis simulator run the following commands
+To build the DCP/Vardis simulator run the following commands:
+
 ```shell
 cd ../../dcpsimulation
-opp_makemake -f -r -M release --deep -I$INET_ROOT/src -I./src -I../dcpimplementation/src -L$INET_ROOT/src -L../dcpimplementation/_build -lINET -ldcplib-common-sim -ldcplib-bp-sim -ldcplib-vardis-sim
+opp_makemake -f -r -M release --deep -I$INET_ROOT/src -I./src -I../dcpimplementation/src -L$INET_ROOT/src -L../dcpimplementation/_build/dcp/bp -L../dcpimplementation/_build/dcp/common -L../dcpimplementation/_build/dcp/vardis -lINET -ldcpsim-common -ldcpsim-bp -ldcpsim-vardis
 make clean
 make -j$nproc
 ```
-This invocation builds the simulation in the OMNeT++ release mode and
-uses `$nproc` processor cores for compilation. If you want to build in
-the OMNeT++ debug mode, then replace the `-M release` option by `-M
-debug` and replace `-lINET` by `-lINET_dbg`.
+
+This invocation builds the simulation in the OMNeT++ release mode (it
+would be advantageous if you had built the DCP implementation in
+`Release` mode) and uses `$nproc` processor cores for compilation. If
+you want to build in the OMNeT++ debug mode, then replace the `-M release` 
+option by `-M debug` and replace `-lINET` by `-lINET_dbg`.
 
 To run the simulations make sure that your `NEDPATH` environment
 variable points to the `src` sub-directory of the `dcpsimulation`
@@ -100,6 +108,7 @@ directory, to the `src` sub-directory of your INET installation, and
 to the current directory `.`. Then change into the `simulation/` 
 sub-directory and run the generated executable with the provided
 example simulation:
+
 ```shell
 ../out/gcc-release/dcpsimulation -u Cmdenv -c TestNetwork
 ```
