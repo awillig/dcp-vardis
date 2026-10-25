@@ -23,6 +23,7 @@
 #include <inet/linklayer/common/MacAddress.h>
 #include <inet/linklayer/common/InterfaceTag_m.h>
 #include <inet/linklayer/common/MacAddressTag_m.h>
+#include <dcp/bp/bp_transmissible_headers.h>
 #include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/common/global_types_constants.h>
 #include <dcpsim/bp/BeaconingProtocol.h>
@@ -301,8 +302,6 @@ void BeaconingProtocol::constructAndTransmitBeacon (std::list< Ptr<const Chunk> 
     bv.reserve (2*BPHeaderT::fixed_size());
     ByteVectorAssemblyArea area ("constructAndTransmitBeacon", BPHeaderT::fixed_size(), bv);
     BPHeaderT bpHdr;
-    bpHdr.version     =  bpProtocolVersion;
-    bpHdr.magicNo     =  bpMagicNo;
     bpHdr.senderId    =  getOwnNodeId();
     bpHdr.networkId   =  bpNetworkIdentifier;
     bpHdr.length      =  BPHeaderT::fixed_size();   /* ISSUE: Just so that well-formedness check does not fail, but is otherwise ignored for now */
