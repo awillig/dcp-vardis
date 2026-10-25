@@ -40,7 +40,6 @@ namespace dcp::vardis {
   const uint16_t   defaultValueQueueMaxEntries                  =  20;
   const uint16_t   defaultValuePayloadGenerationIntervalMS      =  30;
   const uint16_t   defaultValuePollRTDBServiceIntervalMS        =  25;
-  const bool       defaultValueLockingForIndividualContainers   =  false;
   
   /**
    * @brief This struct contains the Vardis protocol configuration
@@ -112,12 +111,6 @@ namespace dcp::vardis {
      */
     uint16_t queueMaxEntries       =  defaultValueQueueMaxEntries;
 
-
-    /**
-     * @brief Process received payload in one go or with one locking
-     *        operation per container
-     */
-    bool lockingForIndividualContainers = defaultValueLockingForIndividualContainers;
     
     
     /**************************************************

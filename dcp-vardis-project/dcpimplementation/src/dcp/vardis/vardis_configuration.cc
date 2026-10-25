@@ -43,7 +43,6 @@ namespace dcp::vardis {
       (opt("pollRTDBServiceIntervalMS").c_str(),    po::value<uint16_t>(&pollRTDBServiceIntervalMS)->default_value(defaultValuePollRTDBServiceIntervalMS),  txt("interval for checking RTDB service requests in shared memory (in ms)").c_str())
       (opt("queueMaxEntries").c_str(),              po::value<uint16_t>(&queueMaxEntries)->default_value(defaultValueQueueMaxEntries), txt("maximum entries in BP queue for Vardis").c_str())
 
-      (opt("lockingIndividualContainers").c_str(),              po::value<bool>(&lockingForIndividualContainers)->default_value(defaultValueLockingForIndividualContainers), txt("Locking protocol data for processing individual containers (instead of one lock per received payload)").c_str())
 
       ;
   }
@@ -93,14 +92,10 @@ namespace dcp::vardis {
        << " , logAutoFlush = " << cfg.logging_conf.logAutoFlush
        << " , minimumSeverityLevel = " << cfg.logging_conf.minimumSeverityLevel
        << " , rotationSize = " << cfg.logging_conf.rotationSize
-
        << " , commandSocketFile[BP] = " << cfg.bp_cmdsock_conf.commandSocketFile
        << " , commandSocketTimeoutMS[BP] = " << cfg.bp_cmdsock_conf.commandSocketTimeoutMS
-
        << " , shmAreaNameBP = " << cfg.bp_shm_conf.shmAreaName
-
        << " , shmAreaNameVarStore = " << cfg.vardis_shm_vardb_conf.shmAreaName
-      
        << " , maxValueLength = " << cfg.vardis_conf.maxValueLength
        << " , maxDescriptionLength = " << cfg.vardis_conf.maxDescriptionLength
        << " , maxRepetitions = " << cfg.vardis_conf.maxRepetitions
@@ -110,8 +105,6 @@ namespace dcp::vardis {
        << " , pollRTDBServiceIntervalMS = " << cfg.vardis_conf.pollRTDBServiceIntervalMS
        << " , payloadGenerationIntervalMS = " << cfg.vardis_conf.payloadGenerationIntervalMS
        << " , queueMaxEntries = " << cfg.vardis_conf.queueMaxEntries
-       << " , lockingforindividualcontainers = " << cfg.vardis_conf.lockingForIndividualContainers
-    
        << " }";
     return os;
   }
