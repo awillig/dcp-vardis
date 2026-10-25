@@ -22,7 +22,7 @@
 #include <inet/common/IProtocolRegistrationListener.h>
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcp/bp/bp_status.h>
-#include <dcp/vardis/vardis_process_payload.h>
+#include <dcp/vardis/vardis_payload_handling.h>
 #include <dcpsim/bp/BPTransmitPayload_m.h>
 #include <dcpsim/bp/BPPayloadTransmitted_m.h>
 #include <dcpsim/common/DcpSimGlobals.h>
@@ -631,16 +631,8 @@ void VardisProtocol::handleRTDBDeleteRequest (RTDBDelete_Request* deleteReq)
 void VardisProtocol::constructPayload(bytevect& bv, unsigned int& containers_added)
 {
     EvTracing dbg(*this, "constructPayload");
-
     ByteVectorAssemblyArea area ("vardis-constructPayload", maxPayloadSize.val, bv);
-
-    vardis_protocol_data_p->makeICTypeCreateVariables (area, containers_added);
-    vardis_protocol_data_p->makeICTypeDeleteVariables (area, containers_added);
-    vardis_protocol_data_p->makeICTypeRequestVarCreates (area, containers_added);
-    vardis_protocol_data_p->makeICTypeSummaries (area, containers_added);
-    vardis_protocol_data_p->makeICTypeUpdates (area, containers_added);
-    vardis_protocol_data_p->makeICTypeRequestVarUpdates (area, containers_added);
-
+    construct_payload (*vardis_protocol_data_p, area, containers_added);
     bv.resize (area.used());
 }
 

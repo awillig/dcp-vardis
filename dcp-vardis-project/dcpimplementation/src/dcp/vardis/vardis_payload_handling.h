@@ -29,10 +29,11 @@
 
 
 /**
- * @brief This module provides a function to process an incoming
- *        payload, available in a disassembly area. This module
- *        assumes that all non-protocol aspects like locking etc. are
- *        handled elsewhere.
+ * @brief This module provides top-level functions for Vardis payload
+ *        processing, one to construct an outgoing payload, and one to
+ *        process an incoming payload, available in a disassembly
+ *        area. This module assumes that all non-protocol aspects like
+ *        locking etc. are handled elsewhere.
  */
 
 
@@ -43,13 +44,29 @@ namespace dcp::vardis {
    *        instruction records in the order given in the
    *        specification, with no regard for locking etc.
    *
-   * @param  prot_data: protocol data object containing methods to
+   * @param  prot_data: Protocol data object containing methods to
    *         process individual instruction records
-   * @param  area: disassembly area containing the received payload
+   * @param  area: Disassembly area containing the received payload
    *
    * Can throw upon processing errors.
    */
 
   void process_received_payload (VardisProtocolData& prot_data, DisassemblyArea& area); 
 
+
+  /**
+   * @brief Constructs an outgoing payload
+   *
+   * @param prot_data: Protocol data object containing methods to
+   *        construct the different types of instruction containers
+   * @param area: Assembly area in which to construct the payload
+   * @param containers_added: output parameter counting how many
+   *        Vardis instruction containers have been added to the
+   *        payload
+   *
+   */
+  void construct_payload (VardisProtocolData& prot_data,
+			  AssemblyArea& area,
+			  unsigned int& containers_added);
+  
 };  // namespace dcp::vardis

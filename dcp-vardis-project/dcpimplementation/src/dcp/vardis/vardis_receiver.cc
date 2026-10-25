@@ -26,7 +26,7 @@
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/vardis/vardis_configuration.h>
 #include <dcp/vardis/vardis_logging.h>
-#include <dcp/vardis/vardis_process_payload.h>
+#include <dcp/vardis/vardis_payload_handling.h>
 #include <dcp/vardis/vardis_receiver.h>
 
 using dcp::bp::BPLengthT;

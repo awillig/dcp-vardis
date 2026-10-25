@@ -27,6 +27,7 @@
 #include <dcp/bp/bp_service_primitives.h>
 #include <dcp/vardis/vardis_transmitter.h>
 #include <dcp/vardis/vardis_logging.h>
+#include <dcp/vardis/vardis_payload_handling.h>
 
 
 using dcp::bp::BPTransmitPayload_Request;
@@ -34,54 +35,6 @@ using dcp::bp::BPShmControlSegment;
 
 namespace dcp::vardis {
 
-  // -----------------------------------------------------------------
-
-  void construct_payload (VardisRuntimeData& runtime, AssemblyArea& area, unsigned int& containers_added)
-  {
-    VardisProtocolData& pd         = runtime.protocol_data;
-    try {
-      if (runtime.vardis_config.vardis_conf.lockingForIndividualContainers)
-	{
-	  { ScopedVariableStoreMutex mtx (runtime);  pd.makeICTypeCreateVariables (area, containers_added); }
-	  { ScopedVariableStoreMutex mtx (runtime);  pd.makeICTypeDeleteVariables (area, containers_added); }
-	  { ScopedVariableStoreMutex mtx (runtime);  pd.makeICTypeRequestVarCreates (area, containers_added); }
-	  { ScopedVariableStoreMutex mtx (runtime);  pd.makeICTypeSummaries (area, containers_added); }
-	  { ScopedVariableStoreMutex mtx (runtime);  pd.makeICTypeUpdates (area, containers_added); }
-	  { ScopedVariableStoreMutex mtx (runtime);  pd.makeICTypeRequestVarUpdates (area, containers_added); }
-	}
-      else
-	{
-	  ScopedVariableStoreMutex mtx (runtime);
-	  pd.makeICTypeCreateVariables (area, containers_added);
-	  pd.makeICTypeDeleteVariables (area, containers_added);
-	  pd.makeICTypeRequestVarCreates (area, containers_added);
-	  pd.makeICTypeSummaries (area, containers_added);
-	  pd.makeICTypeUpdates (area, containers_added);
-	  pd.makeICTypeRequestVarUpdates (area, containers_added);
-	}
-    }
-    catch (DcpException& e) {
-      DCPLOG_FATAL(log_mgmt_command)
-	<< "Caught exception during payload construction. "
-	<< "Exception type: " << e.ename()
-	<< ", module: " << e.modname()
-	<< ", message: " << e.what()
-	<< "Exiting.";
-      runtime.vardis_exitFlag = true;
-      containers_added = 0;
-    }
-
-    catch (std::exception& e)
-      {
-	DCPLOG_FATAL(log_tx)
-	  << "Caught exception during payload construction: "
-	  << e.what()
-	  << ". Exiting.";
-	runtime.vardis_exitFlag = true;
-	containers_added = 0;
-      }
-  }
-  
   // -----------------------------------------------------------------
   
   void transmitter_thread (VardisRuntimeData& runtime)
@@ -104,8 +57,9 @@ namespace dcp::vardis {
 	    byte* area_ptr = memaddr + sizeof(BPTransmitPayload_Request);
 	    MemoryChunkAssemblyArea area ("vd-tx", std::min((size_t) runtime.vardis_config.vardis_conf.maxPayloadSize, bufferSize), area_ptr);
 	    unsigned int containers_added = 0;
+	    ScopedVariableStoreMutex mtx (runtime);
 	    
-	    construct_payload (runtime, area, containers_added);
+	    construct_payload (runtime.protocol_data, area, containers_added);
 	    
 	    if (containers_added == 0)
 	      return (size_t) 0;

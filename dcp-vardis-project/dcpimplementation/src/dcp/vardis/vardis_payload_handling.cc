@@ -20,7 +20,7 @@
 
 #include <queue>
 #include <dcp/vardis/vardis_logging.h>
-#include <dcp/vardis/vardis_process_payload.h>
+#include <dcp/vardis/vardis_payload_handling.h>
 
 
 namespace dcp::vardis {
@@ -129,5 +129,20 @@ namespace dcp::vardis {
       prot_data.process_var_reqcreate (*it);
   }
 
-    
+
+  // -----------------------------------------------------------------
+
+
+  void construct_payload (VardisProtocolData& prot_data,
+			  AssemblyArea& area,
+			  unsigned int& containers_added)
+  {
+    prot_data.makeICTypeCreateVariables (area, containers_added);
+    prot_data.makeICTypeDeleteVariables (area, containers_added);
+    prot_data.makeICTypeRequestVarCreates (area, containers_added);
+    prot_data.makeICTypeSummaries (area, containers_added);
+    prot_data.makeICTypeUpdates (area, containers_added);
+    prot_data.makeICTypeRequestVarUpdates (area, containers_added);
+  }
+  
 };  // namespace dcp::vardis
