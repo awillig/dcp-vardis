@@ -9,7 +9,7 @@ add_library(dcp-vardis SHARED
   vardis_logging.cc
   vardis_management_command.cc
   vardis_management_rtdb.cc
-  vardis_process_payload.cc
+  vardis_payload_handling.cc
   vardis_protocol_data.cc
   vardis_protocol_statistics.cc
   vardis_receiver.cc  
@@ -29,7 +29,7 @@ if (DEFINED ENV{__omnetpp_root_dir})
   add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
   add_library(dcpsim-vardis SHARED
     vardis_protocol_data.cc
-    vardis_process_payload.cc
+    vardis_payload_handling.cc
     vardis_protocol_statistics.cc
     vardis_status.cc
     vardis_service_primitives.cc
