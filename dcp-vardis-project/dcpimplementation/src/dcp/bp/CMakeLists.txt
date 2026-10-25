@@ -1,5 +1,11 @@
-project(DCPStack-BP VERSION 1.3.6 DESCRIPTION "DCP Beaconing Protocol" LANGUAGES CXX)
+project(DCPStack-BP VERSION 1.9.0 DESCRIPTION "DCP Beaconing Protocol" LANGUAGES CXX)
 
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/bp_version.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/bp_version.h"
+    @ONLY
+)
 
 add_library(dcp-bp SHARED
   bpclient_lib.cc
@@ -17,6 +23,7 @@ add_library(dcp-bp SHARED
   bp_shm_control_segment.cc
   bp_status.cc
   bp_transmissible_types.cc
+  bp_transmissible_headers.cc
   bp_transmitter.cc)
 
 add_executable (dcpmain-bp bp_main.cc)
@@ -31,14 +38,18 @@ if (DEFINED ENV{__omnetpp_root_dir})
     bp_status.cc
     bp_service_primitives.cc
     bp_client_static_info.cc
-    bp_transmissible_types.cc)
+    bp_transmissible_types.cc
+    bp_transmissible_headers.cc)
   target_include_directories(dcpsim-bp PUBLIC ${CMAKE_SOURCE_DIR})
+  target_include_directories(dcpsim-bp PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 else()
     message(STATUS "Configuring subproject ${PROJECT_NAME} (\"${PROJECT_DESCRIPTION}\")")
 endif()
 
 target_include_directories(dcp-bp PUBLIC ${CMAKE_SOURCE_DIR})
 target_include_directories(dcpmain-bp PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(dcp-bp PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
+target_include_directories(dcpmain-bp PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
 target_link_libraries(dcp-bp PUBLIC dcp-common tins ${Boost_PROGRAM_OPTIONS_LIBRARY} ${LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
 target_link_libraries(dcpmain-bp PRIVATE dcp-bp)

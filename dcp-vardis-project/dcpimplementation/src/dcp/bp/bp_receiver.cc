@@ -24,6 +24,7 @@
 #include <dcp/common/debug_helpers.h>
 #include <dcp/common/global_types_constants.h>
 #include <dcp/bp/bp_receiver.h>
+#include <dcp/bp/bp_transmissible_headers.h>
 #include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/bp/bp_logging.h>
 #include <dcp/bp/bp_client_protocol_data.h>

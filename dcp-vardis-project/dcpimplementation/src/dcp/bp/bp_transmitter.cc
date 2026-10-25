@@ -30,6 +30,7 @@
 #include <dcp/bp/bp_client_protocol_data.h>
 #include <dcp/bp/bp_logging.h>
 #include <dcp/bp/bp_service_primitives.h>
+#include <dcp/bp/bp_transmissible_headers.h>
 #include <dcp/bp/bp_transmissible_types.h>
 #include <dcp/bp/bp_transmitter.h>
 
@@ -168,8 +169,6 @@ namespace dcp::bp {
 	// total length only now)
 	bv_payload.resize(area.used());
 	BPHeaderT bpHdr;
-	bpHdr.version      =   bpHeaderVersion;
-	bpHdr.magicNo      =   bpMagicNo;
 	bpHdr.senderId     =   runtime.ownNodeIdentifier;
 	bpHdr.networkId    =   runtime.bp_config.bp_conf.ownNetworkIdentifier;
 	bpHdr.length       =   area.used() - dcp::bp::BPHeaderT::fixed_size();

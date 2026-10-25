@@ -33,6 +33,7 @@ extern "C" {
 #include <dcp/common/other_helpers.h>
 #include <dcp/bp/bp_management_command.h>
 #include <dcp/bp/bp_transmissible_types.h>
+#include <dcp/bp/bp_transmissible_headers.h>
 #include <dcp/bp/bp_service_primitives.h>
 #include <dcp/bp/bp_logging.h>
 #include <dcp/bp/bp_client_protocol_data.h>

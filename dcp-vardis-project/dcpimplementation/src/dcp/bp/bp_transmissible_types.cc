@@ -33,27 +33,5 @@ namespace dcp::bp {
     os << netwId.val;
     return os;
   }
-  
-  std::ostream& operator<<(std::ostream& os, const BPHeaderT& hdr)
-  {
-    os << "BPHeaderT { version = " << (int) hdr.version
-       << " , magicNo = " << (int) hdr.magicNo
-       << " , senderId = " << hdr.senderId
-       << " , networkId = " << hdr.networkId
-       << " , length = " << hdr.length
-       << " , numPayloads = " << (int) hdr.numPayloads
-       << " , seqno = " << hdr.seqno
-       << " }";
-    return os;
-  }
-
-
-  std::ostream& operator<<(std::ostream& os, const BPPayloadHeaderT& phdr)
-  {
-      os << "BPPayloadHeaderT { protocolId = " << phdr.protocolId
-	 << " , length = " << phdr.length
-	 << " }";
-      return os;
-  }
-  
+    
 }

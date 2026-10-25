@@ -23,6 +23,7 @@
 #include <tins/tins.h>
 #include <dcp/common/logging_helpers.h>
 #include <dcp/bp/bp_transmissible_types.h>
+#include <dcp/bp/bp_transmissible_headers.h>
 #include <dcp/bp/bp_configuration.h>
 
 using std::cerr;
