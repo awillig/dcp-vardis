@@ -24,12 +24,6 @@ using dcp::srp::defaultSRPStoreShmName;
 using namespace dcp;
 using namespace dcp::srp;
 
-void print_version ()
-{
-  cout << dcp::dcpHighlevelDescription
-       << " -- version " << dcp::dcpVersionNumber
-       << endl;
-}
 
 
 bool       exitFlag = false;
@@ -73,7 +67,6 @@ int main (int argc, char* argv [])
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help,h",         "produce help message and exit")
-    ("version,v",      "show version information and exit")
     ("shmstore,s",     po::value<std::string>(&shmname_store)->default_value(defaultSRPStoreShmName), "Unique name of shared memory area for SRP store")
     ("period",         po::value<int>(&periodTmp), "Generation period (in ms)")
     ("averagex",       po::value<double>(&average_x), "Average of generated Gaussian for x-coordinates")
@@ -98,12 +91,6 @@ int main (int argc, char* argv [])
       {
 	cout << std::string (argv[0]) << " [-s <shmstore>] <genperiodMS> <average-x> <average-y> <average-z> <stddev>" << endl;
 	cout << desc << endl;
-	return EXIT_SUCCESS;
-      }
-
-    if (vm.count("version"))
-      {
-	print_version();
 	return EXIT_SUCCESS;
       }
 

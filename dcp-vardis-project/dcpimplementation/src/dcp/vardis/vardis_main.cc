@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <exception>
+#include <format>
 #include <csignal>
 #include <signal.h>
 #include <sys/types.h>
@@ -20,6 +21,7 @@
 #include <dcp/vardis/vardis_scrubber.h>
 #include <dcp/vardis/vardis_transmitter.h>
 #include <dcp/vardis/vardisclient_lib.h>
+#include "vardis_version.h"
 
 
 using dcp::DcpException;
@@ -40,9 +42,9 @@ using namespace dcp::vardis;
 
 std::string get_protocol_name ()
 {
-  char buf [500] = "Variable Dissemination Protocol ";
-
-  return std::string(std::string(buf) + dcp::dcpVersionNumber);
+  return std::format ("Variable Dissemination Protocol -- Version {}.{}",
+		      (int) VARDIS_VERSION_NUMBER_MAJOR,
+		      (int) VARDIS_VERSION_NUMBER_MINOR);
 }
 
 

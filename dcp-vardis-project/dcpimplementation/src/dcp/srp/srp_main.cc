@@ -4,6 +4,7 @@
 #include <csignal>
 #include <signal.h>
 #include <thread>
+#include <format>
 #include <chrono>
 #include <boost/program_options.hpp>
 #include <dcp/common/debug_helpers.h>
@@ -19,6 +20,7 @@
 #include <dcp/srp/srp_scrubber.h>
 #include <dcp/srp/srp_transmissible_types.h>
 #include <dcp/srp/srp_transmitter.h>
+#include "srp_version.h"
 
 using dcp::BPClientRuntime;
 using dcp::DcpException;
@@ -37,9 +39,9 @@ using namespace dcp::srp;
 
 std::string get_protocol_name ()
 {
-  char buf [500] = "State Reporting Protocol ";
-
-  return std::string(std::string(buf) + dcp::dcpVersionNumber);
+  return std::format ("State Reporting Protocol -- Version {}.{}",
+		      (int) SRP_VERSION_NUMBER_MAJOR,
+		      (int) SRP_VERSION_NUMBER_MINOR);
 }
 
 

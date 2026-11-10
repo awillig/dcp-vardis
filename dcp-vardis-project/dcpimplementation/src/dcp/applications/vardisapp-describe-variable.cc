@@ -13,13 +13,6 @@ using namespace dcp;
 using namespace dcp::vardis;
 
 
-void print_version ()
-{
-  cout << dcp::dcpHighlevelDescription
-       << " -- version " << dcp::dcpVersionNumber
-       << endl;
-}
-
 void output_cmdline_guidance (char* argv[])
 {
   cout << std::string (argv[0]) << " [-s <sockname>] <varid>" << endl;
@@ -35,7 +28,6 @@ int main (int argc, char* argv [])
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help,h",         "produce help message and exit")
-    ("version,v",      "show version information and exit")
     ("sockname,s",     po::value<std::string>(&cmdsock_name)->default_value(defaultVardisCommandSocketFileName), "filename of VarDis command socket (UNIX Domain Socket)")
     ("shmgdb,g",       po::value<std::string>(&shmname_glob)->default_value(defaultVardisStoreShmName), "Unique name of shared memory area for accessing VarDis variables (global database)")
     ("varid",          po::value<int>(&varIdTmp), "Variable identifier")
@@ -54,12 +46,6 @@ int main (int argc, char* argv [])
 	output_cmdline_guidance(argv);
 	cout << std::string (argv[0]) << " [-s <sockname>]" << endl;
 	cout << desc << endl;
-	return EXIT_SUCCESS;
-      }
-
-    if (vm.count("version"))
-      {
-	print_version();
 	return EXIT_SUCCESS;
       }
 

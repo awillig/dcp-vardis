@@ -48,8 +48,7 @@ namespace dcp {
    ***************************************************************/
 
 
-  const std::string dcpVersionNumber        = "1.3";     /*!< Version number of DCP spec this implementation follows */
-  const std::string dcpHighlevelDescription = "DCP (Drone Coordination Protocol)";
+  const std::string dcpHighlevelDescription = "DCP (Drone Coordination Protocol) Stack";
 
 
   /****************************************************************
