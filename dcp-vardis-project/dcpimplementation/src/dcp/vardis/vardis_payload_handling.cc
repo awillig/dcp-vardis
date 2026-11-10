@@ -66,6 +66,21 @@ namespace dcp::vardis {
     std::deque<VarCreateT>     icCreateVariables;
     std::deque<VarDeleteT>     icDeleteVariables;
 
+    if (area.available() < VardisHeaderT::fixed_size())
+      throw VardisReceiveException ("process_received_payload",
+				    "payload too small for Vardis header");
+
+    // check Vardis header / version information
+    VardisHeaderT vheader;
+    vheader.deserialize(area);
+    if (not vheader.version_match())
+      {
+	DCPLOG_TRACE(log_rx)
+	  << "Processing payload: dropping due to incorrect version "
+	  << vheader;
+	return;
+      }
+    
     // Dispatch on ICType
     while (area.used() < area.available())
       {
@@ -137,6 +152,8 @@ namespace dcp::vardis {
 			  AssemblyArea& area,
 			  unsigned int& containers_added)
   {
+    VardisHeaderT vheader;
+    vheader.serialize(area);
     prot_data.makeICTypeCreateVariables (area, containers_added);
     prot_data.makeICTypeDeleteVariables (area, containers_added);
     prot_data.makeICTypeRequestVarCreates (area, containers_added);

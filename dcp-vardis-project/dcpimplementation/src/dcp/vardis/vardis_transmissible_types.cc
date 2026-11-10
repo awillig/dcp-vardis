@@ -19,6 +19,7 @@
 
 
 #include <dcp/vardis/vardis_transmissible_types.h>
+#include "vardis_version.h"
 
 namespace dcp::vardis {
 
@@ -148,5 +149,26 @@ namespace dcp::vardis {
     os << "InstructionContainerT { val = " << vardis_instruction_container_to_string (ic.val) << " }";
     return os;
   }
-    
+
+
+  VardisHeaderT::VardisHeaderT ()
+  {
+    versionMajor = VARDIS_VERSION_NUMBER_MAJOR;
+    versionMinor = VARDIS_VERSION_NUMBER_MINOR;
+  }
+  
+  bool VardisHeaderT::version_match ()
+  {
+    return (versionMajor == VARDIS_VERSION_NUMBER_MAJOR);
+  }
+
+  std::ostream& operator<< (std::ostream& os, const VardisHeaderT& vh)
+  {
+    os << "VardisHeaderT {V" << (int) vh.versionMajor 
+       << "." << (int) vh.versionMinor
+       << "}";
+    return os;
+  }
+
+  
 };  // namespace dcp::vardis

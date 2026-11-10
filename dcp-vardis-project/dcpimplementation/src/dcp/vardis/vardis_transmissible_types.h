@@ -634,6 +634,37 @@ namespace dcp::vardis {
   };
   
 
+  // -----------------------------------------
+    
+  /**
+   * @brief Type representing header of a Vardis payload
+   *
+   * It just carries version information.
+   */
+  
+  class VardisHeaderT : public TransmissibleType<sizeof(byte)+sizeof(byte)> {
+  public:
+    byte  versionMajor;
+    byte  versionMinor;
+
+    VardisHeaderT ();
+
+    virtual void serialize (AssemblyArea& area) const
+    {
+      area.serialize_byte(versionMajor);
+      area.serialize_byte(versionMinor);
+    };
+
+    virtual void deserialize (DisassemblyArea& area)
+    {
+      versionMajor = area.deserialize_byte();
+      versionMinor = area.deserialize_byte();
+    };
+
+    bool version_match ();
+    
+    friend std::ostream& operator<<(std::ostream& os, const VardisHeaderT& vh);
+  };  
   
   // -----------------------------------------
 

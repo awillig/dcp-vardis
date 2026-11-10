@@ -1,4 +1,10 @@
-project(DCPStack-VarDis VERSION 1.3.6 DESCRIPTION "DCP Variable Dissemination Protocol" LANGUAGES CXX)
+project(DCPStack-VarDis VERSION 2.0.0 DESCRIPTION "DCP Variable Dissemination Protocol" LANGUAGES CXX)
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/vardis_version.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/vardis_version.h"
+    @ONLY
+)
 
 add_library(dcp-vardis SHARED
   vardisclient_configuration.cc
@@ -35,12 +41,15 @@ if (DEFINED ENV{__omnetpp_root_dir})
     vardis_service_primitives.cc
     vardis_transmissible_types.cc)
   target_include_directories(dcpsim-vardis PUBLIC ${CMAKE_SOURCE_DIR})
+  target_include_directories(dcpsim-vardis PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 else()
   message(STATUS "Configuring subproject ${PROJECT_NAME} (\"${PROJECT_DESCRIPTION}\")")
 endif()
 
 target_include_directories(dcp-vardis PUBLIC ${CMAKE_SOURCE_DIR})
 target_include_directories(dcpmain-vardis PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(dcp-vardis PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
+target_include_directories(dcpmain-vardis PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
 target_link_libraries(dcp-vardis PUBLIC dcp-bp dcp-common)
 target_link_libraries(dcpmain-vardis PRIVATE dcp-vardis)
