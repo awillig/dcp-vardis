@@ -53,11 +53,16 @@ namespace dcp::srp {
    *        actual safety data and metadata such as a sequence number
    */
   typedef struct ExtendedSafetyDataT {
+    byte              majorVersion;
+    byte              minorVersion;
     SafetyDataT       safetyData;
     NodeIdentifierT   nodeId;
     TimeStampT        timeStamp;
     uint32_t          seqno;
 
+    ExtendedSafetyDataT ();
+    bool version_match () const;
+    
     friend std::ostream& operator<<(std::ostream& os, const ExtendedSafetyDataT& esd);    
   } ExtendedSafetyDataT;
 

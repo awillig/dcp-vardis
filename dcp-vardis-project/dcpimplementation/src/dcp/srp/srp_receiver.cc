@@ -65,6 +65,14 @@ namespace dcp::srp {
 		
 		if (pESD->nodeId == runtime.srp_store.get_own_node_identifier ())
 		  continue;
+
+		if (not pESD->version_match())
+		  {
+		    DCPLOG_INFO(log_rx)
+		      << "Payload has wrong version number: V" << (int) pESD->majorVersion
+		      << "." << (int) pESD->minorVersion;
+		    continue;
+		  }
 		
 		ScopedNeighbourTableMutex mtx (runtime);
 		runtime.srp_store.insert_esd_entry (*pESD);	      

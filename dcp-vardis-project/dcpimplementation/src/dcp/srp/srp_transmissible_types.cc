@@ -19,6 +19,7 @@
 
 
 #include <dcp/srp/srp_transmissible_types.h>
+#include "srp_version.h"
 
 namespace dcp::srp {
 
@@ -31,10 +32,23 @@ namespace dcp::srp {
     return os;
   }
 
+  ExtendedSafetyDataT::ExtendedSafetyDataT ()
+  {
+    majorVersion = SRP_VERSION_NUMBER_MAJOR;
+    minorVersion = SRP_VERSION_NUMBER_MINOR;
+  }
 
+  bool ExtendedSafetyDataT::version_match() const
+  {
+    return (majorVersion == SRP_VERSION_NUMBER_MAJOR);
+  }
+  
+  
   std::ostream& operator<<(std::ostream& os, const ExtendedSafetyDataT& esd)
   {
-      os << "ExtendedSafetyDataT { safetyData = " << esd.safetyData
+    os << "ExtendedSafetyDataT { V" << esd.majorVersion
+       << "." << esd.minorVersion
+       << ", safetyData = " << esd.safetyData
 	 << " , nodeId = " << esd.nodeId
 	 << " , timeStamp = " << esd.timeStamp
 	 << " , seqno = " << esd.seqno

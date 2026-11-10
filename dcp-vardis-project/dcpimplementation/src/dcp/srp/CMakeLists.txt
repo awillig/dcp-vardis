@@ -1,5 +1,10 @@
-project(DCPStack-SRP VERSION 1.3.6 DESCRIPTION "DCP State Reporting Protocol" LANGUAGES CXX)
+project(DCPStack-SRP VERSION 2.0.0 DESCRIPTION "DCP State Reporting Protocol" LANGUAGES CXX)
 
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/srp_version.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/srp_version.h"
+    @ONLY
+)
 
 add_library(dcp-srp SHARED
   srpclient_configuration.cc
@@ -23,12 +28,16 @@ if (DEFINED ENV{__omnetpp_root_dir})
     srp_transmissible_types.cc)
   add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
   target_include_directories(dcpsim-srp PUBLIC ${CMAKE_SOURCE_DIR})
+  target_include_directories(dcpsim-srp PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 else()
     message(STATUS "Configuring subproject ${PROJECT_NAME} (\"${PROJECT_DESCRIPTION}\")")
 endif()
 
 target_include_directories(dcp-srp PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(dcp-srp PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 target_include_directories(dcpmain-srp PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(dcpmain-srp PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
+
 
 target_link_libraries(dcp-srp PUBLIC dcp-bp dcp-common)
 target_link_libraries(dcpmain-srp PRIVATE dcp-srp)
