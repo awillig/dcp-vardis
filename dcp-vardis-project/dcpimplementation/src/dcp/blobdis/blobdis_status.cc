@@ -19,20 +19,12 @@
 
 
 #include <iostream>
-#include <dcp/blobdis/blobdis_services_status.h>
-
-
-
-std::ostream& operator<<(std::ostream& os, const dcp::blobdis::BlobdisServiceType st)
-  {
-    os << "BlobdisServiceType-" << to_string (st);
-    return os;
-  }
+#include <dcp/blobdis/blobdis_status.h>
 
 
 std::ostream& operator<<(std::ostream& os, const dcp::blobdis::BlobdisStatus stat)
   {
-    os << "BlobdisStatus-" << to_string (stat);
+    os << to_string (stat);
     return os;
   }
   

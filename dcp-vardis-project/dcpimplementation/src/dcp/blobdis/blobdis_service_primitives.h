@@ -24,6 +24,7 @@
 #include <format>
 #include <string>
 #include <stdexcept>
+#include <dcp/blobdis/blobdis_status.h>
 #include <dcp/common/service_primitives.h>
 
 /**
@@ -45,54 +46,27 @@ namespace dcp::blobdis {
     AppDeregister,
     AppListRegistered,
     AppDescribe,
-
+    
     RxNewBlob,
     RxCompletion,
     RxRelease,
     RxAbort,
-    RxProgress,
-
+    
     TxTransmit,
     TxCompletion,
     TxRelease,
     TxAbort,
-    TxProgress,
-
-    MgmtListBlacklist,
-    MgmtListActiveBlobs,
+    
+    MgmtBlacklist,
+    MgmtActiveBlobs,
+    MgmtMetadataStatus,  
     MgmtActivate,
     MgmtDeactivate,
-    MgmtStatus,
     
     ShutDown,
     GetStatistics
   };
-
-
-  /**
-   * @brief Blobdis status names
-   */
-
-
-  enum class BlobdisStatus : std::uint16_t {
-    Ok,
-    Application_Unknown,
-    Application_Already_Registered,
-    Illegal_Blob_Length,
-    Inactive,
-    Blob_Unknown,
-    Blob_Blacklisted,
-    Abort_On_Transmit_Blob,
-    Abort_On_Receive_Blob,
-    Blob_Already_Aborted,
-    Illegal_Part_Size,
-    Illegal_Time_Value,
-    Illegal_App_Identifier,
-
-    Internal_Error,
-    Internal_Shared_Memory_Error
-    };
-
+  
   
   /**
    * @brief Base classes for Blobdis service primitives
@@ -130,24 +104,22 @@ namespace dcp::blobdis {
 constexpr std::string_view to_string (dcp::blobdis::BlobdisServiceType st) {
   switch (st) {
   case dcp::blobdis::BlobdisServiceType::AppRegister:         return "BD-AppRegister";
-  case dcp::blobdis::BlobdisServiceType::AppDegister:         return "BD-AppDeregister";
+  case dcp::blobdis::BlobdisServiceType::AppDeregister:       return "BD-AppDeregister";
   case dcp::blobdis::BlobdisServiceType::AppListRegistered:   return "BD-AppListRegistered";
   case dcp::blobdis::BlobdisServiceType::AppDescribe:         return "BD-AppDescribe";
   case dcp::blobdis::BlobdisServiceType::RxNewBlob:           return "BD-RxNewBlob";
   case dcp::blobdis::BlobdisServiceType::RxCompletion:        return "BD-RxCompletion";
   case dcp::blobdis::BlobdisServiceType::RxRelease:           return "BD-RxRelease";
   case dcp::blobdis::BlobdisServiceType::RxAbort:             return "BD-RxAbort";
-  case dcp::blobdis::BlobdisServiceType::RxProgress:          return "BD-RxProgress";
   case dcp::blobdis::BlobdisServiceType::TxTransmit:          return "BD-TxTransmit";
   case dcp::blobdis::BlobdisServiceType::TxCompletion:        return "BD-TxCompletion";
   case dcp::blobdis::BlobdisServiceType::TxRelease:           return "BD-TxRelease";
   case dcp::blobdis::BlobdisServiceType::TxAbort:             return "BD-TxAbort";
-  case dcp::blobdis::BlobdisServiceType::TxProgress:          return "BD-TxProgress";
-  case dcp::blobdis::BlobdisServiceType::MgmtListBlacklist:   return "BD-MgmtListBlacklist";
-  case dcp::blobdis::BlobdisServiceType::MgmtListActiveBlobs: return "BD-MgmtListActiveBlobs";
+  case dcp::blobdis::BlobdisServiceType::MgmtBlacklist:       return "BD-MgmtBlacklist";
+  case dcp::blobdis::BlobdisServiceType::MgmtActiveBlobs:     return "BD-MgmtActiveBlobs";
+  case dcp::blobdis::BlobdisServiceType::MgmtMetadataStatus:  return "BD-MgmtMetadataStatus";
   case dcp::blobdis::BlobdisServiceType::MgmtActivate:        return "BD-MgmtActivate";
   case dcp::blobdis::BlobdisServiceType::MgmtDeactivate:      return "BD-MgmtDeactivate";
-  case dcp::blobdis::BlobdisServiceType::MgmtStatus:          return "BD-MgmtStatus";
   case dcp::blobdis::BlobdisServiceType::ShutDown:            return "ShutDown";
   case dcp::blobdis::BlobdisServiceType::GetStatistics:       return "GetStatistics"; 
   default:
@@ -157,43 +129,5 @@ constexpr std::string_view to_string (dcp::blobdis::BlobdisServiceType st) {
 }
 
 
-/**
- * @brief Converts Blobdis status name to string
- *
- * Throws for unknown status name
- */
-
-constexpr std::string_view to_string(dcp::blobdis::BlobdisStatus stat) {
-    switch (stat)
-      {
-	// status codes prescribed by the specification
-      case dcp::blobdis::BlobdisStatus::Ok:                              return "Ok";
-      case dcp::blobdis::BlobdisStatus::Application_Unknown:             return "Application_Unknown";
-      case dcp::blobdis::BlobdisStatus::Application_Already_Registered:  return "Application_Already_Registered";
-      case dcp::blobdis::BlobdisStatus::Illegal_Blob_Length:             return "Illegal_Blob_Length";
-      case dcp::blobdis::BlobdisStatus::Inactive:                        return "Inactive";
-      case dcp::blobdis::BlobdisStatus::Blob_Unknown:                    return "Blob_Unknonwn";
-      case dcp::blobdis::BlobdisStatus::Blob_Blacklisted:                return "Blob_Blacklisted";
-      case dcp::blobdis::BlobdisStatus::Abort_On_Transmit_Blob:          return "Abort_On_Transmit_Blob";
-      case dcp::blobdis::BlobdisStatus::Abort_On_Receive_Blob:           return "Abort_On_Receive_Blob";
-      case dcp::blobdis::BlobdisStatus::Blob_Already_Aborted:            return "Blob_Already_Aborted";
-      case dcp::blobdis::BlobdisStatus::Illegal_Part_Size:               return "Illegal_Part_Size";
-      case dcp::blobdis::BlobdisStatus::Illegal_Time_Value:              return "Illegal_Time_Value";
-      case dcp::blobdis::BlobdisStatus::Illegal_App_Identifier:          return "Illegal_App_Identifier";
-	
-	// implementation-dependent status codes
-      case dcp::blobdis::BlobdisStatus::Internal_Error:                  return "Internal_Error";
-      case dcp::blobdis::BlobdisStatus::Internal_Shared_Memory_Error:    return "Internal_Shared_Memory_Error";
-	
-      default:
-	throw std::invalid_argument(std::format("to_string: illegal Blobdis status code {}", static_cast<uint16_t> (stat)));
-      }
-    return "";
-  }
-    
-
-
-
 
 std::ostream& operator<< (std::ostream& os, const dcp::blobdis::BlobdisServiceType st);
-std::ostream& operator<< (std::ostream& os, const dcp::blobdis::BlobdisStatus stat);
