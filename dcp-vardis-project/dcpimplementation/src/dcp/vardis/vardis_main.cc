@@ -2,7 +2,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <exception>
-#include <format>
 #include <csignal>
 #include <signal.h>
 #include <sys/types.h>
@@ -40,19 +39,11 @@ namespace po = boost::program_options;
 using namespace dcp::vardis;
 
 
-std::string get_protocol_name ()
-{
-  return std::format ("Variable Dissemination Protocol -- Version {}.{}",
-		      (int) VARDIS_VERSION_NUMBER_MAJOR,
-		      (int) VARDIS_VERSION_NUMBER_MINOR);
-}
-
-
 
 void print_version ()
 {
   cout << dcp::dcpHighlevelDescription
-       << " -- " << get_protocol_name()
+       << " -- " << VardisClientRuntime::get_protocol_name()
        << endl;
 }
 
@@ -78,7 +69,7 @@ int run_vardis_demon (const std::string cfg_filename)
 
   BPStaticClientInfo client_info;
   client_info.protocolId      =  dcp::BP_PROTID_VARDIS;
-  std::strncpy (client_info.protocolName, get_protocol_name().c_str(), dcp::bp::maximumProtocolNameLength);
+  std::strncpy (client_info.protocolName, VardisClientRuntime::get_protocol_name().c_str(), dcp::bp::maximumProtocolNameLength);
   client_info.maxPayloadSize         =  vdconfig.vardis_conf.maxPayloadSize;
   client_info.queueingMode           =  dcp::bp::BPQueueingMode::Q_DropHead;
   client_info.maxEntries             =  vdconfig.vardis_conf.queueMaxEntries;

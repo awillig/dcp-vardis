@@ -86,6 +86,12 @@ namespace dcp {
     NodeIdentifierT get_own_node_identifier () const;
 
 
+    /**
+     * @brief Returns string with SRP protocol name and version number
+     */
+    static std::string get_protocol_name ();
+
+    
     /****************************************************************
      * Management services
      ***************************************************************/

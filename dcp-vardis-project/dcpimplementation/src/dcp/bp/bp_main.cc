@@ -19,7 +19,6 @@
 #include <dcp/bp/bp_receiver.h>
 #include <dcp/bp/bp_logging.h>
 #include <dcp/bp/bpclient_lib.h>
-#include "bp_version.h"
 
 
 using dcp::BPClientConfiguration;
@@ -40,9 +39,7 @@ using namespace dcp::bp;
 
 void print_version ()
 {
-  cout << std::format ("Beaconing Protocol (BP) -- Version {}.{}",
-		       (int) BP_VERSION_NUMBER_MAJOR,
-		       (int) BP_VERSION_NUMBER_MINOR)
+  cout << BPClientRuntime::get_protocol_name()
        << endl;
 }
 

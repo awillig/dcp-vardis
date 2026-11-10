@@ -4,7 +4,6 @@
 #include <csignal>
 #include <signal.h>
 #include <thread>
-#include <format>
 #include <chrono>
 #include <boost/program_options.hpp>
 #include <dcp/common/debug_helpers.h>
@@ -13,6 +12,7 @@
 #include <dcp/common/sharedmem_configuration.h>
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcp/bp/bpclient_lib.h>
+#include <dcp/srp/srpclient_lib.h>
 #include <dcp/srp/srp_configuration.h>
 #include <dcp/srp/srp_logging.h>
 #include <dcp/srp/srp_receiver.h>
@@ -20,7 +20,7 @@
 #include <dcp/srp/srp_scrubber.h>
 #include <dcp/srp/srp_transmissible_types.h>
 #include <dcp/srp/srp_transmitter.h>
-#include "srp_version.h"
+
 
 using dcp::BPClientRuntime;
 using dcp::DcpException;
@@ -35,21 +35,14 @@ using namespace std::chrono_literals;
 
 namespace po = boost::program_options;
 
+using namespace dcp;
 using namespace dcp::srp;
-
-std::string get_protocol_name ()
-{
-  return std::format ("State Reporting Protocol -- Version {}.{}",
-		      (int) SRP_VERSION_NUMBER_MAJOR,
-		      (int) SRP_VERSION_NUMBER_MINOR);
-}
-
 
 
 void print_version ()
 {
   cout << dcp::dcpHighlevelDescription
-       << " -- " << get_protocol_name()
+       << " -- " << SRPClientRuntime::get_protocol_name()
        << endl;
 }
 
@@ -75,7 +68,9 @@ int run_srp_demon (const std::string cfg_filename)
 
   BPStaticClientInfo client_info;
   client_info.protocolId      =  dcp::BP_PROTID_SRP;
-  std::strncpy (client_info.protocolName, get_protocol_name().c_str(), dcp::bp::maximumProtocolNameLength);
+  std::strncpy (client_info.protocolName,
+		SRPClientRuntime::get_protocol_name().c_str(),
+		dcp::bp::maximumProtocolNameLength);
   client_info.maxPayloadSize         =  sizeof(ExtendedSafetyDataT);
   client_info.queueingMode           =  dcp::bp::BPQueueingMode::Once;
   client_info.maxEntries             =  0;
