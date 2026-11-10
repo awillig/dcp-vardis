@@ -157,7 +157,7 @@ namespace dcp::vardis {
     versionMinor = VARDIS_VERSION_NUMBER_MINOR;
   }
   
-  bool VardisHeaderT::version_match ()
+  bool VardisHeaderT::version_match () const
   {
     return (versionMajor == VARDIS_VERSION_NUMBER_MAJOR);
   }

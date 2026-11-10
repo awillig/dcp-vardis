@@ -661,7 +661,7 @@ namespace dcp::vardis {
       versionMinor = area.deserialize_byte();
     };
 
-    bool version_match ();
+    bool version_match () const;
     
     friend std::ostream& operator<<(std::ostream& os, const VardisHeaderT& vh);
   };  
