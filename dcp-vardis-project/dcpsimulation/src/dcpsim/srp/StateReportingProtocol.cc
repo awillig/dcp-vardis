@@ -18,6 +18,7 @@
 #include <inet/common/IProtocolRegistrationListener.h>
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcp/common/global_types_constants.h>
+#include <dcp/srp/srp_protocol_name.h>
 #include <dcpsim/srp/StateReportingProtocol.h>
 #include <dcpsim/bp/BPTransmitPayload_m.h>
 #include <dcpsim/bp/BPPayloadTransmitted_m.h>
@@ -297,5 +298,10 @@ void StateReportingProtocol::registerAsBPClient(void)
     EvTracing dbg(*this, "registerAsBPClient");
 
     // register ourselves directly as a client protocol with BP
-    sendRegisterProtocolRequest(BP_PROTID_SRP, std::format("SRP -- State Reporting Protocol V{}", dcpVersionNumber), maximumSRPPayloadLength, BPQueueingMode::Once, false, 0);
+    sendRegisterProtocolRequest(BP_PROTID_SRP,
+				dcp::srp::get_protocol_name(),
+				maximumSRPPayloadLength,
+				BPQueueingMode::Once,
+				false,
+				0);
 }

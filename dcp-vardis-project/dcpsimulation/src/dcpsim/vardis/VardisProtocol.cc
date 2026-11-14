@@ -23,6 +23,7 @@
 #include <dcp/bp/bp_queueing_mode.h>
 #include <dcp/bp/bp_status.h>
 #include <dcp/vardis/vardis_payload_handling.h>
+#include <dcp/vardis/vardis_protocol_name.h>
 #include <dcpsim/bp/BPTransmitPayload_m.h>
 #include <dcpsim/bp/BPPayloadTransmitted_m.h>
 #include <dcpsim/common/DcpSimGlobals.h>
@@ -155,7 +156,12 @@ void VardisProtocol::registerAsBPClient()
 
     dbg.val("maxPayloadSize", maxPayloadSize);
 
-    sendRegisterProtocolRequest(BP_PROTID_VARDIS, std::format("VarDis -- Variable Dissemination Protocol V{}", dcpVersionNumber), maxPayloadSize, BPQueueingMode::Q_DropHead, false, 10);
+    sendRegisterProtocolRequest(BP_PROTID_VARDIS,
+				dcp::vardis::get_protocol_name(),
+				maxPayloadSize,
+				BPQueueingMode::Q_DropHead,
+				false,
+				10);
 
 }
 

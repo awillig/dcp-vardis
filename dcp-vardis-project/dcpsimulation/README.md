@@ -91,7 +91,7 @@ To build the DCP/Vardis simulator run the following commands:
 
 ```shell
 cd ../../dcpsimulation
-opp_makemake -f -r -M release --deep -I$INET_ROOT/src -I./src -I../dcpimplementation/src -L$INET_ROOT/src -L../dcpimplementation/_build/dcp/bp -L../dcpimplementation/_build/dcp/common -L../dcpimplementation/_build/dcp/vardis -lINET -ldcpsim-common -ldcpsim-bp -ldcpsim-vardis
+opp_makemake -f -r -M release --deep -I$INET_ROOT/src -I./src -I../dcpimplementation/src -L$INET_ROOT/src -L../dcpimplementation/_build/dcp/bp -L../dcpimplementation/_build/dcp/common -L../dcpimplementation/_build/dcp/vardis -L../dcpimplementation/_build/dcp/srp -lINET -ldcpsim-common -ldcpsim-bp -ldcpsim-srp -ldcpsim-vardis
 make clean
 make -j$nproc
 ```
