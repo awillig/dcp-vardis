@@ -219,11 +219,6 @@ namespace dcp {
 
 
     /**
-     * @brief Returns string with BP protocol name and version number
-     */
-    static std::string get_protocol_name ();
-
-    /**
      * @brief Returns flag indicating whether this client protocol
      *        expects and processes BP-TransmitPayload.confirm
      *        primitives

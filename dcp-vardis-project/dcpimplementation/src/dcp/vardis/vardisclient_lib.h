@@ -150,12 +150,6 @@ namespace dcp {
     std::string get_shm_segment_name () const { return shmSegmentName; };
     
 
-    /**
-     * @brief Return name and version of Vardis protocol as a string
-     */
-    static std::string get_protocol_name ();
-    
-    
     /****************************************************************
      * Management services
      ***************************************************************/

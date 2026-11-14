@@ -21,7 +21,6 @@
 #include <functional>
 #include <dcp/srp/srp_constants.h>
 #include <dcp/srp/srpclient_lib.h>
-#include "srp_version.h"
 
 
 namespace dcp {
@@ -41,16 +40,6 @@ namespace dcp {
   {
     return srp_store.get_own_node_identifier ();
   }
-
-  // -----------------------------------------------------------------------------------
-
-  std::string SRPClientRuntime::get_protocol_name ()
-  {
-    return std::format ("State Reporting Protocol -- Version {}.{}",
-			(int) SRP_VERSION_NUMBER_MAJOR,
-			(int) SRP_VERSION_NUMBER_MINOR);
-  }
-
   
   // -----------------------------------------------------------------------------------
 

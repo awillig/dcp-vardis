@@ -15,6 +15,7 @@
 #include <dcp/srp/srpclient_lib.h>
 #include <dcp/srp/srp_configuration.h>
 #include <dcp/srp/srp_logging.h>
+#include <dcp/srp/srp_protocol_name.h>
 #include <dcp/srp/srp_receiver.h>
 #include <dcp/srp/srp_runtime_data.h>
 #include <dcp/srp/srp_scrubber.h>
@@ -42,7 +43,7 @@ using namespace dcp::srp;
 void print_version ()
 {
   cout << dcp::dcpHighlevelDescription
-       << " -- " << SRPClientRuntime::get_protocol_name()
+       << " -- " << dcp::srp::get_protocol_name()
        << endl;
 }
 
@@ -69,7 +70,7 @@ int run_srp_demon (const std::string cfg_filename)
   BPStaticClientInfo client_info;
   client_info.protocolId      =  dcp::BP_PROTID_SRP;
   std::strncpy (client_info.protocolName,
-		SRPClientRuntime::get_protocol_name().c_str(),
+		dcp::srp::get_protocol_name().c_str(),
 		dcp::bp::maximumProtocolNameLength);
   client_info.maxPayloadSize         =  sizeof(ExtendedSafetyDataT);
   client_info.queueingMode           =  dcp::bp::BPQueueingMode::Once;

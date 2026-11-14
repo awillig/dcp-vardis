@@ -15,6 +15,7 @@
 #include <dcp/vardis/vardis_logging.h>
 #include <dcp/vardis/vardis_management_command.h>
 #include <dcp/vardis/vardis_management_rtdb.h>
+#include <dcp/vardis/vardis_protocol_name.h>
 #include <dcp/vardis/vardis_receiver.h>
 #include <dcp/vardis/vardis_runtime_data.h>
 #include <dcp/vardis/vardis_scrubber.h>
@@ -43,7 +44,7 @@ using namespace dcp::vardis;
 void print_version ()
 {
   cout << dcp::dcpHighlevelDescription
-       << " -- " << VardisClientRuntime::get_protocol_name()
+       << " -- " << dcp::vardis::get_protocol_name()
        << endl;
 }
 
@@ -69,7 +70,7 @@ int run_vardis_demon (const std::string cfg_filename)
 
   BPStaticClientInfo client_info;
   client_info.protocolId      =  dcp::BP_PROTID_VARDIS;
-  std::strncpy (client_info.protocolName, VardisClientRuntime::get_protocol_name().c_str(), dcp::bp::maximumProtocolNameLength);
+  std::strncpy (client_info.protocolName, dcp::vardis::get_protocol_name().c_str(), dcp::bp::maximumProtocolNameLength);
   client_info.maxPayloadSize         =  vdconfig.vardis_conf.maxPayloadSize;
   client_info.queueingMode           =  dcp::bp::BPQueueingMode::Q_DropHead;
   client_info.maxEntries             =  vdconfig.vardis_conf.queueMaxEntries;

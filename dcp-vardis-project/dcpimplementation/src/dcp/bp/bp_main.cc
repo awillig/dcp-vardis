@@ -15,6 +15,7 @@
 #include <dcp/bp/bp_runtime_data.h>
 #include <dcp/bp/bp_management_command.h>
 #include <dcp/bp/bp_management_payload.h>
+#include <dcp/bp/bp_protocol_name.h>
 #include <dcp/bp/bp_transmitter.h>
 #include <dcp/bp/bp_receiver.h>
 #include <dcp/bp/bp_logging.h>
@@ -39,7 +40,7 @@ using namespace dcp::bp;
 
 void print_version ()
 {
-  cout << BPClientRuntime::get_protocol_name()
+  cout << dcp::bp::get_protocol_name()
        << endl;
 }
 

@@ -33,7 +33,6 @@ extern "C" {
 #include <dcp/common/other_helpers.h>
 #include <dcp/bp/bpclient_lib.h>
 #include <dcp/bp/bp_service_primitives.h>
-#include "bp_version.h"
 
 using dcp::ShmException;
 using namespace dcp::bp;
@@ -90,17 +89,6 @@ namespace dcp {
       deregister_with_bp ();
   }
 
-
-  // -----------------------------------------------------------------------------------
-
-  std::string BPClientRuntime::get_protocol_name ()
-  {
-    return std::format ("Beaconing Protocol -- Version {}.{}",
-			(int) BP_VERSION_NUMBER_MAJOR,
-			(int) BP_VERSION_NUMBER_MINOR);
-  }
-
-  
   // -----------------------------------------------------------------------------------
   
   void BPClientRuntime::check_protocol_name (const char* protName)

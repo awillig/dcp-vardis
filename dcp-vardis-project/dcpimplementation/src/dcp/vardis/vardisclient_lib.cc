@@ -22,7 +22,6 @@
 #include <dcp/vardis/vardis_service_primitives.h>
 #include <dcp/vardis/vardis_constants.h>
 #include <dcp/vardis/vardisclient_lib.h>
-#include "vardis_version.h"
 
 using namespace dcp::vardis;
 
@@ -80,15 +79,6 @@ namespace dcp {
       {
         deregister_application();
       }
-  }
-
-  // -----------------------------------------------------------------------------------
-
-  std::string VardisClientRuntime::get_protocol_name ()
-  {
-    return std::format ("Variable Dissemination Protocol -- Version {}.{}",
-			(int) VARDIS_VERSION_NUMBER_MAJOR,
-			(int) VARDIS_VERSION_NUMBER_MINOR);
   }
 
   // -----------------------------------------------------------------------------------

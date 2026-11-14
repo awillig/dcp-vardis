@@ -11,6 +11,7 @@ add_library(dcp-srp SHARED
   srpclient_lib.cc
   srp_configuration.cc
   srp_logging.cc
+  srp_protocol_name.cc
   srp_receiver.cc
   srp_scrubber.cc
   srp_status.cc
@@ -24,6 +25,7 @@ if (DEFINED ENV{__omnetpp_root_dir})
   set(OPP_INCLUDE_PATH "$ENV{__omnetpp_root_dir}/include")
   message(STATUS "Configuring subproject ${PROJECT_NAME} (\"${PROJECT_DESCRIPTION}\") with OMNeT++ support")
   add_library(dcpsim-srp SHARED
+    srp_protocol_name.cc
     srp_status.cc
     srp_transmissible_types.cc)
   add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})

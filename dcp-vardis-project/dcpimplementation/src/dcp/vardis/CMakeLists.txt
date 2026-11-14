@@ -17,6 +17,7 @@ add_library(dcp-vardis SHARED
   vardis_management_rtdb.cc
   vardis_payload_handling.cc
   vardis_protocol_data.cc
+  vardis_protocol_name.cc
   vardis_protocol_statistics.cc
   vardis_receiver.cc  
   vardis_scrubber.cc
@@ -36,6 +37,7 @@ if (DEFINED ENV{__omnetpp_root_dir})
   add_library(dcpsim-vardis SHARED
     vardis_protocol_data.cc
     vardis_payload_handling.cc
+    vardis_protocol_name.cc
     vardis_protocol_statistics.cc
     vardis_status.cc
     vardis_service_primitives.cc

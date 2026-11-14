@@ -16,6 +16,7 @@ add_library(dcp-bp SHARED
   bp_logging.cc
   bp_management_command.cc
   bp_management_payload.cc
+  bp_protocol_name.cc
   bp_queueing_mode.cc
   bp_receiver.cc
   bp_runtime_data.cc
@@ -34,6 +35,7 @@ if (DEFINED ENV{__omnetpp_root_dir})
   message(STATUS "Configuring subproject ${PROJECT_NAME} (\"${PROJECT_DESCRIPTION}\") with OMNeT++ support")
   add_compile_options(-D__DCPSIMULATION__ -I${OPP_INCLUDE_PATH})
   add_library(dcpsim-bp SHARED
+    bp_protocol_name.cc
     bp_queueing_mode.cc
     bp_status.cc
     bp_service_primitives.cc
